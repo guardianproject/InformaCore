@@ -7,6 +7,7 @@ import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.SensorSucker;
 import org.witness.informa.utils.SensorSucker.LocalBinder;
 import org.witness.securesmartcam.ImageEditor;
+import org.witness.ssc.video.VideoEditor;
 import org.witness.sscphase1.Eula.OnEulaAgreedTo;
 import org.witness.sscphase1.InformaSettings.OnSettingsSeen;
 import org.witness.securesmartcam.utils.ObscuraConstants;
@@ -20,6 +21,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -35,7 +37,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgreedTo, OnSettingsSeen {
-	private Button choosePictureButton, takePictureButton;		
+	private Button choosePictureButton, chooseVideoButton, takePictureButton;		
 	
 	private Uri uriCameraImage = null;
 	
@@ -128,6 +130,9 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
     	choosePictureButton = (Button) this.findViewById(R.id.ChoosePictureButton);
     	choosePictureButton.setOnClickListener(this);
     	
+    	chooseVideoButton = (Button) this.findViewById(R.id.ChooseVideoButton);
+    	chooseVideoButton.setOnClickListener(this);
+    	
     	takePictureButton = (Button) this.findViewById(R.id.TakePictureButton);
     	takePictureButton.setOnClickListener(this);
     }
@@ -150,7 +155,26 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
 			}
 			
-		} else if (v == takePictureButton) {
+		}
+		else if (v == chooseVideoButton) 
+		{
+			
+			try
+			{
+				 setContentView(R.layout.mainloading);
+				Intent intent = new Intent(Intent.ACTION_PICK);
+				intent.setType("video/*"); //limit to image types for now
+				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
+				
+			}
+			catch (Exception e)
+			{
+				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
+				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
+			}
+			
+		}
+		else if (v == takePictureButton) {
 			
 			setContentView(R.layout.mainloading);
 			
@@ -185,6 +209,7 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 	        
 			takePictureButton.setVisibility(View.VISIBLE);
 			choosePictureButton.setVisibility(View.VISIBLE);
+			chooseVideoButton.setVisibility(View.VISIBLE);
 		} 
 	}
 
@@ -194,20 +219,37 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 		if (resultCode == RESULT_OK)
 		{
 			setContentView(R.layout.mainloading);
-			Log.d(InformaConstants.TAG, "HELLO ON ACTIVITY RESULT");
 			
 			if (requestCode == ObscuraConstants.GALLERY_RESULT) 
 			{
 				if (intent != null)
 				{
-					Uri uriGalleryImage = intent.getData();
+					Uri uriGalleryFile = intent.getData();
 						
-					if (uriGalleryImage != null)
+					if (uriGalleryFile != null)
 					{
-						Intent passingIntent = new Intent(this,ImageEditor.class);
-						passingIntent.setData(uriGalleryImage);
-						startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
+						Cursor cursor = managedQuery(uriGalleryFile, null, 
+                                null, null, null); 
+						cursor.moveToNext(); 
+						// Retrieve the path and the mime type 
+						String path = cursor.getString(cursor 
+						                .getColumnIndex(MediaStore.MediaColumns.DATA)); 
+						String mimeType = cursor.getString(cursor 
+						                .getColumnIndex(MediaStore.MediaColumns.MIME_TYPE));
 						
+						if (mimeType == null || mimeType.startsWith("image"))
+						{
+							Intent passingIntent = new Intent(this,ImageEditor.class);
+							passingIntent.setData(uriGalleryFile);
+							startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
+						}
+						else if (mimeType.startsWith("video"))
+						{
+
+							Intent passingIntent = new Intent(this,VideoEditor.class);
+							passingIntent.setData(uriGalleryFile);
+							startActivityForResult(passingIntent, ObscuraConstants.VIDEO_EDITOR);
+						}
 					}
 					else
 					{
@@ -236,10 +278,8 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 				{
 					takePictureButton.setVisibility(View.VISIBLE);
 					choosePictureButton.setVisibility(View.VISIBLE);
+					chooseVideoButton.setVisibility(View.VISIBLE);
 				}
-			}
-			else if(requestCode == InformaConstants.FROM_INFORMA_WIZARD) {
-				// TODO: whatever confirmation?
 			}
 		}
 		else

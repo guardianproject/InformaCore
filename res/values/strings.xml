@@ -9,14 +9,19 @@
 	<string name="WalkThroughContinueButton">Continue</string>
 	<string name="WalkThroughTextView">This is an application which helps protect the privacy of individuals that may appear in pictures.</string>
 	<string name="WalkThroughPrefSliderLabel">Select Risk Level</string>
+    <string name="menu_about">About InformaCam</string>
+    <string name="menu_logout">Logout</string>
+    
     <string name="menu_new_region">New Tag</string>
+    <string name="menu_detect">Detect Faces</string>    
     <string name="menu_panic">Panic</string>
  	<string name="menu_image_prefs">Image Prefs</string>
     <string name="menu_save">Save</string>
     <string name="menu_share">Share</string>
+    <string name="menu_send_hash">Send Hash</string>
     <string name="menu_prefs">Preferences</string>
-    <string name="menu_about">About InformaCam</string>
-    <string name="menu_logout">Logout</string>
+    <string name="menu_clear_regions">Clear</string>
+    
     <string name="imgprefs_eraseexif">Erase All Exif Data</string>
     <string name="ok">OK</string>
     <string name="save">Save</string>
@@ -144,4 +149,10 @@
     <string name="preferences_image_handling_text">What should the app do with your original images?</string>
     <string name="preferences_language_label">Language</string>
     <string name="preferences_language_text">What language should the app use?</string>
+    
+    <!--  VIDEO related -->
+    <string name="welcomeSubMsg">now with video!</string>
+    
+    <string name="play_video">Play Video</string>
+    <string name="share_video">Share Video</string>
 </resources>
