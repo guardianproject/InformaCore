@@ -1318,7 +1318,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	
     	// Create the Uri - This can't be "private"
     	File tmpFileDirectory = new File(Environment.getExternalStorageDirectory().getPath() + ObscuraConstants.TMP_FILE_DIRECTORY);
-    	File tmpFile = new File(tmpFileDirectory, ObscuraConstants.TMP_FILE_NAME);
+    	File tmpFile = new File(tmpFileDirectory, ObscuraConstants.TMP_FILE_NAME_IMAGE);
     	debug(ObscuraConstants.TAG, tmpFile.getPath());
     	
 		try {
@@ -1376,7 +1376,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				new String[] {ObscuraConstants.MIME_TYPE_JPEG},
 				null);
 		
-		File tmp = new File(InformaConstants.DUMP_FOLDER, ObscuraConstants.TMP_FILE_NAME);
+		File tmp = new File(InformaConstants.DUMP_FOLDER, ObscuraConstants.TMP_FILE_NAME_IMAGE);
 		if(tmp.exists())
 			tmp.delete();
 				

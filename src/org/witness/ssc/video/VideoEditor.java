@@ -22,6 +22,8 @@ import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.witness.informa.ReviewAndFinish;
+import org.witness.informa.utils.InformaConstants;
 import org.witness.securesmartcam.detect.GoogleFaceDetection;
 import org.witness.securesmartcam.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
@@ -31,6 +33,7 @@ import org.witness.sscphase1.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -93,13 +96,15 @@ public class VideoEditor extends Activity implements
 
     private final static float REGION_CORNER_SIZE = 26;
     
-    private final static String MIME_TYPE_MP4 = "video/mp4";
     private final static long FACE_TIME_BUFFER = 2000;
 	
 	ProgressDialog progressDialog;
 	int completeActionFlag = -1;
 	
 	Uri originalVideoUri;
+	
+	long firstTimestamp;
+	boolean freshVideo = false;
 
 	File fileExternDir;
 	File redactSettingsFile;
@@ -192,16 +197,43 @@ public class VideoEditor extends Activity implements
 	
 	private long mDuration;
 	
+	BroadcastReceiver br = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context c, Intent i) {
+			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
+		    	
+		    	//reviewAndFinish();
+			}
+				
+			
+		}
+    	
+    };
+    
+    /* TODO: finish up this
+    private void reviewAndFinish() {
+    	mProgressDialog.cancel();
+    	Intent i = new Intent(this, ReviewAndFinish.class);
+    	i.setData(savedImageUri);
+    	startActivity(i);
+    	finish();
+    }
+    */
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.videoeditor);
+		
+		firstTimestamp = System.currentTimeMillis();
 
 		if (getIntent() != null)
 		{
 			// Passed in from ObscuraApp
 			originalVideoUri = getIntent().getData();
+
 			
 			if (originalVideoUri == null)
 			{
@@ -217,7 +249,11 @@ public class VideoEditor extends Activity implements
 				return;
 			}
 			
-			recordingFile = new File(pullPathFromUri(originalVideoUri));
+			if(originalVideoUri.getPath().compareTo(ObscuraConstants.TMP_FILE_DIRECTORY + "cam" + ObscuraConstants.TMP_FILE_NAME_VIDEO) == 0) {
+				recordingFile = new File(originalVideoUri.getPath());
+				freshVideo = true;
+			} else
+				recordingFile = new File(pullPathFromUri(originalVideoUri));
 		}
 		
 		fileExternDir = new File(Environment.getExternalStorageDirectory(),getString(R.string.app_name));
@@ -227,7 +263,6 @@ public class VideoEditor extends Activity implements
 		regionsView = (ImageView) this.findViewById(R.id.VideoEditorImageView);
 		regionsView.setOnTouchListener(this);
 		createCleanSavePath();
-
 
 		videoView = (VideoView) this.findViewById(R.id.SurfaceView);
 		
@@ -319,6 +354,13 @@ public class VideoEditor extends Activity implements
 			 
 			
 			 updateVideoLayout ();
+			 
+			 if(freshVideo) {
+				 sendBroadcast(new Intent()
+					.setAction(InformaConstants.Keys.Service.SET_CURRENT)
+					.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, (firstTimestamp - mDuration))
+					.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
+			 }
 			
 		}
 	
@@ -1238,7 +1280,7 @@ public class VideoEditor extends Activity implements
      		MediaScannerConnection.scanFile(
      				this,
      				new String[] {videoToAdd.getAbsolutePath()},
-     				new String[] {MIME_TYPE_MP4},
+     				new String[] {ObscuraConstants.MIME_TYPE_MP4},
      				null);
 
 //        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
@@ -1279,13 +1321,13 @@ public class VideoEditor extends Activity implements
 	private void playVideo() {
 		
     	Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
-    	intent.setDataAndType(Uri.parse(saveFile.getPath()), MIME_TYPE_MP4);    	
+    	intent.setDataAndType(Uri.parse(saveFile.getPath()), ObscuraConstants.MIME_TYPE_MP4);    	
    	 	startActivity(intent);
 	}
 	
 	private void shareVideo() {
     	Intent intent = new Intent(Intent.ACTION_SEND);
-    	intent.setType(MIME_TYPE_MP4);
+    	intent.setType(ObscuraConstants.MIME_TYPE_MP4);
     	intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(saveFile.getPath()));
     	startActivity(Intent.createChooser(intent, "Share Video"));     
 	}

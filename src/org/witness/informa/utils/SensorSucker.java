@@ -95,6 +95,7 @@ public class SensorSucker extends Service {
 		br.add(new Broadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.SET_CURRENT)));
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.SEAL_LOG)));
+		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.LOCK_LOGS)));
 		
 		for(BroadcastReceiver b : br)
 			registerReceiver(b, ((Broadcaster) b)._filter);
@@ -105,6 +106,18 @@ public class SensorSucker extends Service {
 		
 		capturedEvents = imageRegions = new JSONArray();
 		imageData = new JSONObject();
+	}
+	
+	private void lockLogs() {
+		_phone.lockLog();
+		_geo.lockLog();
+		_acc.lockLog();
+	}
+	
+	private void unlockLogs() {
+		_phone.unlockLog();
+		_geo.unlockLog();
+		_acc.unlockLog();
 	}
 	
 	private void handleBluetooth(BluetoothDevice device) throws JSONException {
@@ -142,6 +155,7 @@ public class SensorSucker extends Service {
 		captureEventData.put(InformaConstants.Keys.Suckers.ACCELEROMETER, _acc.returnCurrent());
 		
 		capturedEvents.put(captureEventData);
+		Log.d(InformaConstants.TAG, "captured data: " + captureEventData.toString());
 	}
 	
 	private void sealLog(String imageRegionData, String localMediaPath, long[] encryptTo) throws Exception {
@@ -172,6 +186,7 @@ public class SensorSucker extends Service {
 					informaCallback.post(new Runnable() {
 						@Override
 						public void run() {
+							unlockLogs();
 							sendBroadcast(
 									new Intent()
 									.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
@@ -197,10 +212,7 @@ public class SensorSucker extends Service {
 			}
 			
 		};
-		new Thread(r).start();
-		
-		stopSucking();
-		
+		new Thread(r).start();	
 	}
 	
 	public class Broadcaster extends BroadcastReceiver {
@@ -221,6 +233,7 @@ public class SensorSucker extends Service {
 		public void onReceive(Context c, Intent i) {
 			try {
 				if(InformaConstants.Keys.Service.STOP_SERVICE.equals(i.getAction())) {
+					unlockLogs();
 					stopSucking();
 				} else if(BluetoothDevice.ACTION_FOUND.equals(i.getAction())) {
 					handleBluetooth((BluetoothDevice) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
@@ -237,6 +250,11 @@ public class SensorSucker extends Service {
 					handleExif(i.getStringExtra(InformaConstants.Keys.Image.EXIF));
 				} else if(InformaConstants.Keys.Service.START_SERVICE.equals(i.getAction()))
 					startUpService();
+				else if(InformaConstants.Keys.Service.LOCK_LOGS.equals(i.getAction()))
+					lockLogs();
+				else if(InformaConstants.Keys.Service.UNLOCK_LOGS.equals(i.getAction()))
+					unlockLogs();
+				
 			} catch (Exception e) {
 				Log.e(InformaConstants.TAG, "error",e);
 			}

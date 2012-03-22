@@ -23,7 +23,7 @@ public class SensorLogger<T> {
 	File mLog;
 	JSONArray mBuffer;
 	
-	boolean isRunning;
+	boolean isRunning, canBeCleared;
 	
 	public static Context _c;
 	
@@ -31,6 +31,7 @@ public class SensorLogger<T> {
 		_c = c;
 		mBuffer = new JSONArray();
 		isRunning = true;
+		canBeCleared = true;
 	}
 	
 	public T getSucker() {
@@ -63,6 +64,14 @@ public class SensorLogger<T> {
 			mTimer.cancel();
 	}
 	
+	public void lockLog() {
+		canBeCleared = false;
+	}
+	
+	public void unlockLog() {
+		canBeCleared = true;
+	}
+	
 	public boolean getIsRunning() {
 		return isRunning;
 	}
@@ -81,7 +90,7 @@ public class SensorLogger<T> {
 	}
 
 	public void sendToBuffer(JSONObject logItem) throws JSONException {
-		if(mBuffer.length() > 60) {
+		if(mBuffer.length() > 60 && canBeCleared) {
 			mBuffer = null;
 			mBuffer = new JSONArray();
 			Log.d(InformaConstants.TAG, "LOG CLEARED");

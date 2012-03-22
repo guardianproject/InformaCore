@@ -82,7 +82,7 @@ public class ImageConstructor {
 	public ImageConstructor(Context c, String metadataObjectString, String baseName) throws JSONException, NoSuchAlgorithmException, IOException {
 		this.c = c;
 		this.unredactedRegions = new ArrayList<ContentValues>();
-		clone = new File(InformaConstants.DUMP_FOLDER, ObscuraConstants.TMP_FILE_NAME);
+		clone = new File(InformaConstants.DUMP_FOLDER, ObscuraConstants.TMP_FILE_NAME_IMAGE);
 		
 		_sp = PreferenceManager.getDefaultSharedPreferences(c);
 		dh = new DatabaseHelper(c);

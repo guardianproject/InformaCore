@@ -33,11 +33,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.Toast;
 
 public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgreedTo, OnSettingsSeen {
-	private Button choosePictureButton, chooseVideoButton, takePictureButton;		
+	private Button choosePictureButton, chooseVideoButton, takePictureButton, takeVideoButton;		
 	
 	private Uri uriCameraImage = null;
 	
@@ -79,9 +80,7 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 		if (tmpFile.exists())
 			tmpFile.delete();
 	}
-
-
-					
+				
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,6 +134,9 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
     	
     	takePictureButton = (Button) this.findViewById(R.id.TakePictureButton);
     	takePictureButton.setOnClickListener(this);
+    	
+    	takeVideoButton = (Button) this.findViewById(R.id.TakeVideoButton);
+    	takeVideoButton.setOnClickListener(this);
     }
 
 	public void onClick(View v) {
@@ -174,7 +176,7 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 			}
 			
 		}
-		else if (v == takePictureButton) {
+		else if (v == takePictureButton || v == takeVideoButton) {
 			
 			setContentView(R.layout.mainloading);
 			
@@ -183,23 +185,31 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 
 	          
 	            ContentValues values = new ContentValues();
-	          
-	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
+	            Intent  intent = new Intent();
+	            String tmpFileName = ObscuraConstants.TMP_FILE_NAME_IMAGE;;
+	            
+	            if(v == takePictureButton) {
+	            	intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE );
+	            	values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
+	            } else if(v == takeVideoButton) {
+	            	intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+	            	values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
+	            	tmpFileName = ObscuraConstants.TMP_FILE_NAME_VIDEO;
+	            }
 	      
 	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
 
-	            File tmpFileDirectory = new File(Environment.getExternalStorageDirectory().getPath() + ObscuraConstants.TMP_FILE_DIRECTORY);
+	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
 	            if (!tmpFileDirectory.exists())
 	            	tmpFileDirectory.mkdirs();
 	            
-	            File tmpFile = new File(tmpFileDirectory,"cam" + ObscuraConstants.TMP_FILE_NAME);
+	            File tmpFile = new File(tmpFileDirectory,"cam" + tmpFileName);
 	        	
 	        	uriCameraImage = Uri.fromFile(tmpFile);
 	            //uriCameraImage = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-	            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE );
-	            intent.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
 	            
+	            intent.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
 	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
 	        }   else {
 	            new AlertDialog.Builder(ObscuraApp.this)
@@ -208,9 +218,10 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 	        }
 	        
 			takePictureButton.setVisibility(View.VISIBLE);
+			takeVideoButton.setVisibility(View.VISIBLE);
 			choosePictureButton.setVisibility(View.VISIBLE);
 			chooseVideoButton.setVisibility(View.VISIBLE);
-		} 
+		}
 	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -270,15 +281,39 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 				
 				if (uriCameraImage != null)
 				{
-					Intent passingIntent = new Intent(this,ImageEditor.class);
-					passingIntent.setData(uriCameraImage);
-					startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
+					Intent passingIntent = null;
+					int rc = -1;
+					
+					if(MimeTypeMap.getFileExtensionFromUrl(uriCameraImage.getPath()).compareTo(ObscuraConstants.MimeTypes.JPEG) == 0) {
+						passingIntent = new Intent(this,ImageEditor.class);
+						rc = ObscuraConstants.IMAGE_EDITOR;
+					}
+						
+					else if(MimeTypeMap.getFileExtensionFromUrl(uriCameraImage.getPath()).compareTo(ObscuraConstants.MimeTypes.MP4) == 0) {
+						passingIntent = new Intent(this, VideoEditor.class);
+						rc = ObscuraConstants.VIDEO_EDITOR;
+					}
+					
+					if(passingIntent != null) {
+						passingIntent.setData(uriCameraImage);
+						startActivityForResult(passingIntent, resultCode);
+					} else {
+						takePictureButton.setVisibility(View.VISIBLE);
+						takeVideoButton.setVisibility(View.VISIBLE);
+						choosePictureButton.setVisibility(View.VISIBLE);
+						chooseVideoButton.setVisibility(View.VISIBLE);
+						
+						sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
+					}
 				}
 				else
 				{
 					takePictureButton.setVisibility(View.VISIBLE);
+					takeVideoButton.setVisibility(View.VISIBLE);
 					choosePictureButton.setVisibility(View.VISIBLE);
 					chooseVideoButton.setVisibility(View.VISIBLE);
+					
+					sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
 				}
 			}
 		}

@@ -38,6 +38,8 @@ public class InformaConstants {
 			public final static String SET_EXIF = "setExif";
 			public final static String FINISH_ACTIVITY = "finishActivity";
 			public final static String START_SERVICE = "startService";
+			public final static String LOCK_LOGS = "lockLogs";
+			public final static String UNLOCK_LOGS = "unlockLogs";
 		}
 		
 		public final static class Informa {

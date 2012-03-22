@@ -25,29 +25,36 @@
 			android:layout_width="fill_parent" 
 			android:layout_height="wrap_content" android:gravity="center_vertical|center_horizontal"
 			android:background="#cc333333"
+			android:weightSum="1.0"
 			>
 			<Button  android:id="@+id/TakePictureButton" 
 				android:text="Camera" 
-							    android:layout_width="125dp"
-							    android:layout_height="match_parent"
-
-				android:drawableTop="@drawable/ic_camera"  android:layout_marginRight="5dp">
-			</Button>
-
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="0.25"
+				android:drawableTop="@drawable/ic_camera"
+				android:layout_marginRight="5dp" />
+			<Button  android:id="@+id/TakeVideoButton" 
+				android:text="Camcorder" 
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="0.25"
+				android:drawableTop="@drawable/ic_camera"
+				android:layout_marginRight="5dp" />
 			<Button
 			    android:id="@+id/ChoosePictureButton"
-			    android:layout_width="125dp"
-			    android:layout_height="match_parent"
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="0.25"
 			    android:drawableTop="@drawable/ic_gallery"
-			    android:text="Photos" >
-
-			</Button>
+			    android:text="Photos" />
 			<Button  android:id="@+id/ChooseVideoButton" 
 				android:text="Videos" 
-				android:layout_width="125dp"
-							    android:layout_height="match_parent"				
-				android:drawableTop="@drawable/ic_video" android:layout_marginLeft="5dp">
-			</Button>
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="0.25"				
+				android:drawableTop="@drawable/ic_video"
+				android:layout_marginLeft="5dp" />
 		</LinearLayout>
 	</LinearLayout>
 </FrameLayout>

@@ -4,6 +4,7 @@ import org.witness.securesmartcam.filters.PixelizeObscure;
 import org.witness.sscphase1.R;
 
 import android.content.Context;
+import android.os.Environment;
 import android.widget.Toast;
 
 public class ObscuraConstants {
@@ -20,6 +21,14 @@ public class ObscuraConstants {
 	
 	public final static String CAMERA_TMP_FILE = "ssctmp.jpg";
 	public final static String MIME_TYPE_JPEG = "image/jpeg";
+	
+	public final static String CAMCORDER_TMP_FILE = "ssctmp.mp4";
+	public final static String MIME_TYPE_MP4 = "video/mp4";
+	
+	public final static class MimeTypes {
+		public final static String MP4 = "mp4";
+		public final static String JPEG = "jpg";
+	}
 	
 	public static final int NONE = 0;
 	public static final int DRAG = 1;
@@ -49,9 +58,10 @@ public class ObscuraConstants {
 	public final static int NEW_REGION_MENU_ITEM = 4;
 	
 	// Constant for temp filename
-	public final static String TMP_FILE_NAME = "tmp.jpg";
+	public final static String TMP_FILE_NAME_IMAGE = "tmp.jpg";
+	public static final String TMP_FILE_NAME_VIDEO = "tmp.mp4";
 	
-	public final static String TMP_FILE_DIRECTORY = "/Android/data/org.witness.sscphase1/files/";
+	public final static String TMP_FILE_DIRECTORY = Environment.getExternalStorageDirectory().getPath() + "/Android/data/org.witness.sscphase1/files/";
 	
 	// for saving images
     public final static String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
