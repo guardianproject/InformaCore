@@ -117,6 +117,7 @@ public class Informa {
 		Set<Corroboration> corroboration;
 		Set<ImageRegion> imageRegions;
 		Set<VideoRegion> videoRegions;
+		Set<Event> events;
 		
 		public Data(int sourceType, Device device) {
 			this.sourceType = sourceType;
@@ -133,6 +134,7 @@ public class Informa {
 				this.videoRegions = new HashSet<VideoRegion>();
 				this.imageRegions = null;
 				this.imageHash = null;
+				this.events = new HashSet<Event>();
 			}
 		}
 	}
@@ -206,6 +208,16 @@ public class Informa {
 			this.deviceBTAddress = deviceBTAddress;
 			this.deviceBTName = deviceBTName;
 			this.selfOrNeighbor = selfOrNeighbor;
+		}
+	}
+	
+	public class Event extends InformaZipper {
+		JSONObject eventData;
+		int eventType;
+		
+		public Event(int eventType, JSONObject eventData) {
+			this.eventType = eventType;
+			this.eventData = eventData;
 		}
 	}
 	
@@ -398,6 +410,7 @@ public class Informa {
 		Set<ImageRegion> imageRegions = new HashSet<ImageRegion>();
 		Set<Corroboration> corroboration = new HashSet<Corroboration>();
 		Set<Location> locations = new HashSet<Location>();
+		Set<Event> events = new HashSet<Event>();
 		
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_c);
 		
@@ -493,11 +506,19 @@ public class Informa {
 					}
 					break;
 				}
-			} else if(rd.getInt(CaptureEvent.TYPE) == CaptureEvents.BLUETOOTH_DEVICE_SEEN) {
-				corroboration.add(new Corroboration(rd.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS), rd.getString(Keys.Device.BLUETOOTH_DEVICE_NAME), InformaConstants.Device.IS_NEIGHBOR));
-			} else if(rd.getInt(CaptureEvent.TYPE) == CaptureEvents.DURATIONAL_LOG) {
-				// TODO: parse this data for a video
-			}
+			} else if(rd.getInt(CaptureEvent.TYPE) == CaptureEvents.BLUETOOTH_DEVICE_SEEN || rd.getInt(CaptureEvent.TYPE) == CaptureEvents.DURATIONAL_LOG) {
+				switch(rd.getInt(CaptureEvent.TYPE)) {
+				case CaptureEvents.BLUETOOTH_DEVICE_SEEN:
+					corroboration.add(new Corroboration(rd.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS), rd.getString(Keys.Device.BLUETOOTH_DEVICE_NAME), InformaConstants.Device.IS_NEIGHBOR));
+				default:
+					JSONObject event = new JSONObject();
+					event.put(CaptureEvent.TIMESTAMP, rd.getLong(CaptureEvent.MATCH_TIMESTAMP));
+					event.put(CaptureEvent.EVENT, rd);
+					rd.remove(CaptureEvent.MATCH_TIMESTAMP);
+					events.add(new Event((Integer) rd.remove(CaptureEvent.TYPE), event));
+					break;
+				}
+			} 
 		}
 		
 		genealogy = new Genealogy(
@@ -519,6 +540,7 @@ public class Informa {
 			data.imageRegions = imageRegions;
 			data.imageHash = MediaHasher.hash(new File(genealogy.localMediaPath), "MD5");
 			data.exif = new Exif(exifData);
+			data.events = null;
 			
 			try {
 				images = new Image[intendedDestinations.length];
@@ -550,6 +572,7 @@ public class Informa {
 		} else if(imageData.getInt(Keys.Media.MEDIA_TYPE) == MediaTypes.VIDEO) {
 			data.videoRegions = null;
 			data.videoHash = MediaHasher.hash(new File(genealogy.localMediaPath), "MD5");
+			data.events = events;
 			
 			try {
 				videos = new Video[intendedDestinations.length];

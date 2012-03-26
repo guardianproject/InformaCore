@@ -110,7 +110,6 @@ public class VideoConstructor {
 		if(!ass.exists())
 			ass.createNewFile();
 		
-		
 		// 1. load up temp ass
 		BufferedReader br = new BufferedReader(new InputStreamReader(context.getAssets().open("informa.ass")));
 		String line, cloneLine;
@@ -120,7 +119,7 @@ public class VideoConstructor {
 			// 2. replace %vroot
 			if(line.contains(Ass.VROOT))
 				line.replace(Ass.VROOT, mdPack.getJSONObject(Keys.Informa.GENEALOGY).getString(Keys.Genealogy.LOCAL_MEDIA_PATH));
-			sb.append(line);
+			sb.append(line + "\n");
 		}
 		// 3. clone last line
 		cloneLine = line;

@@ -194,10 +194,10 @@ public class SensorSucker extends Service {
 	private void handleBluetooth(BluetoothDevice device) throws JSONException {
 		JSONObject captureEventData = new JSONObject();
 		
-		captureEventData.put(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.BLUETOOTH_DEVICE_SEEN);
-		captureEventData.put(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis());
-		captureEventData.put(InformaConstants.Keys.Suckers.Phone.BLUETOOTH_DEVICE_NAME, device.getName());
-		captureEventData.put(InformaConstants.Keys.Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS, device.getAddress());
+		captureEventData.put(CaptureEvent.TYPE, CaptureEvents.BLUETOOTH_DEVICE_SEEN);
+		captureEventData.put(CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis());
+		captureEventData.put(Suckers.Phone.BLUETOOTH_DEVICE_NAME, device.getName());
+		captureEventData.put(Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS, device.getAddress());
 		
 		capturedEvents.put(captureEventData);
 	}
@@ -205,8 +205,8 @@ public class SensorSucker extends Service {
 	private void handleExif(String exif) throws JSONException {
 		JSONObject captureEventData = new JSONObject();
 		
-		captureEventData.put(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.EXIF_REPORTED);
-		captureEventData.put(InformaConstants.Keys.Image.EXIF, (JSONObject) new JSONTokener(exif).nextValue());
+		captureEventData.put(CaptureEvent.TYPE, InformaConstants.CaptureEvents.EXIF_REPORTED);
+		captureEventData.put(Keys.Image.EXIF, (JSONObject) new JSONTokener(exif).nextValue());
 		
 		capturedEvents.put(captureEventData);
 	}

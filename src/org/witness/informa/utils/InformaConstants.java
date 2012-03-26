@@ -57,6 +57,7 @@ public class InformaConstants {
 			public final static String ON_VIDEO_START = "timestampOnVideoStart";
 			public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
 			public final static String VIDEO_TRACK = Video.VIDEO_TRACK;
+			public final static String EVENT = "captureEvent";
 		}
 		
 		public final static class ImageRegion {
