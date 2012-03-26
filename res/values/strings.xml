@@ -103,11 +103,11 @@
 	<string name="chooser_no_choice_warning_text">You have not selected any trusted destinations.  Continue anyway?\nWarning: your image will be redacted, but metadata will not be saved.</string>
 	
 	<!--  INFORMA CONFIRM ACTIVITY -->
-	<string name="informaConfirm_title">Images Saved</string>
-	<string name="informaConfirm_text">Your image has been saved and is now being encrypted and sent to your trusted destinations.</string>
-	<string name="informaConfirm_btn_view">View Image</string>
+	<string name="informaConfirm_title">Media Saved</string>
+	<string name="informaConfirm_text">Your media has been saved and is now being encrypted and sent to your trusted destinations.</string>
+	<string name="informaConfirm_btn_view">View</string>
 	<string name="informaConfirm_btn_quit">Quit Informa</string>
-	<string name="informaConfirm_btn_takeAnother">Take Another Image</string>
+	<string name="informaConfirm_btn_takeAnother">Take Another</string>
 	
 	<!--  EULA related -->
     <string name="eula_title">You agree to:</string>

@@ -68,7 +68,7 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 			}
 		});
 		
-		getTimer().schedule(getTask(), 0, 10000L);
+		getTimer().schedule(getTask(), 0, InformaConstants.Suckers.LogRate.ACC);
 	}
 	
 	private void readAccelerometer() throws JSONException {
@@ -125,6 +125,8 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 						currentLight = sVals;
 						break;
 					}
+					
+					//sendToBuffer(sVals);
 				} catch(JSONException e) {}
 			}
 		}

@@ -55,7 +55,7 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 			}
 		});
 		
-		getTimer().schedule(getTask(), 0, 10000L);
+		getTimer().schedule(getTask(), 0, InformaConstants.Suckers.LogRate.GEO);
 	}
 	
 	public JSONObject forceReturn() {

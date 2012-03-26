@@ -75,7 +75,7 @@ public class FFMPEGWrapper {
 		public static final String ARG_FORMAT = "-f";
 		
 	}
-	
+		
 	public void processVideo(File redactSettingsFile, 
 			Vector<ObscureRegion> obscureRegions, File inputFile, File outputFile, String format, 
 			int width, int height, int frameRate, int kbitRate, float sizeMult, ShellCallback sc) throws Exception {

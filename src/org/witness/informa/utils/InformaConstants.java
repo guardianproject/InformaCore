@@ -40,6 +40,7 @@ public class InformaConstants {
 			public final static String START_SERVICE = "startService";
 			public final static String LOCK_LOGS = "lockLogs";
 			public final static String UNLOCK_LOGS = "unlockLogs";
+			public final static String INFLATE_VIDEO_TRACK = "inflateDataForVideoTrack";
 		}
 		
 		public final static class Informa {
@@ -52,6 +53,9 @@ public class InformaConstants {
 			public final static String TYPE = "captureEvent";
 			public final static String MATCH_TIMESTAMP = "matchTimestamp";
 			public final static String TIMESTAMP = "timestamp";
+			public final static String ON_VIDEO_START = "timestampOnVideoStart";
+			public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
+			public final static String VIDEO_TRACK = Video.VIDEO_TRACK;
 		}
 		
 		public final static class ImageRegion {
@@ -109,17 +113,26 @@ public class InformaConstants {
 			public final static String DISPLAY_NAME = Intent.Destination.DISPLAY_NAME;
 		}
 		
+		public final static class Media {
+			public final static String MEDIA_TYPE = "source_type";
+		}
+		
 		public final static class Image {
 			public static final String METADATA = "source_metadata";
 			public static final String CONTAINMENT_ARRAY = "source_containmentArray";
 			public static final String UNREDACTED_IMAGE_HASH = "source_unredactedImageHash";
 			public static final String REDACTED_IMAGE_HASH = "source_redactedImageHash";
-			public final static String MEDIA_TYPE = "source_type";
 			public final static String LOCAL_MEDIA_PATH = "localMediaPath";
 			public final static String TIMESTAMP = "timestamp";
 			public final static String LOCATION_OF_ORIGINAL = "source_locationOfOriginal";
 			public final static String LOCATION_OF_OBSCURED_VERSION = "source_locationOfObscuredVersion";
 			public final static String EXIF = "exifData";
+		}
+		
+		public final static class Video {
+			public final static String FIRST_TIMESTAMP = CaptureEvent.ON_VIDEO_START;
+			public final static String DURATION = "videoDuration";
+			public final static String VIDEO_TRACK = "videoTrack";
 		}
 		
 		public final static class Owner {
@@ -149,7 +162,7 @@ public class InformaConstants {
 			public final static String PHONE = "Suckers_Phone";
 			public final static String ACCELEROMETER = "Suckers_Accelerometer";
 			public final static String GEO = "Suckers_Geo";
-			
+						
 			public final static class Accelerometer {
 				public final static String ACC = "acc";
 				public final static String ORIENTATION = "orientation";
@@ -203,18 +216,22 @@ public class InformaConstants {
 		public final static int REGION_GENERATED = 7;
 		public final static int EXIF_REPORTED = 8;
 		public final static int BLUETOOTH_DEVICE_SEEN = 9;
+		public final static int VALUE_CHANGE = 4;
+		public final static int DURATIONAL_LOG = 3;
 	}
 
 	public final static class LocationTypes {
 		public final static int ON_MEDIA_CAPTURED = 10;
 		public final static int ON_MEDIA_SAVED = 11;
 		public final static int ON_REGION_GENERATED = 12;
+		public final static int ON_VIDEO_START = 13;
 	}
 	
 	public final static class CaptureTimestamps {
 		public final static int ON_MEDIA_CAPTURED = LocationTypes.ON_MEDIA_CAPTURED;
 		public final static int ON_MEDIA_SAVED = LocationTypes.ON_MEDIA_SAVED;
 		public final static int ON_REGION_GENERATED = LocationTypes.ON_REGION_GENERATED;
+		public final static int ON_VIDEO_START = LocationTypes.ON_VIDEO_START;
 	}
 
 	public final static class SecurityLevels {
@@ -250,6 +267,14 @@ public class InformaConstants {
 	public final static class Selections {
 		public final static String SELECT_ONE = "select_one";
 		public final static String SELECT_MULTI = "select_multi";
+	}
+	
+	public final static class Suckers {
+		public final static class LogRate {
+			public final static long ACC = 500L;
+			public final static long PHONE = 5000L;
+			public final static long GEO = 10000L;
+		}
 	}
 	
 	public final static int NOT_REPORTED = -1;

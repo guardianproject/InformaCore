@@ -296,6 +296,7 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 					
 					if(passingIntent != null) {
 						passingIntent.setData(uriCameraImage);
+						passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
 						startActivityForResult(passingIntent, resultCode);
 					} else {
 						takePictureButton.setVisibility(View.VISIBLE);
@@ -317,8 +318,10 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 				}
 			}
 		}
-		else
+		else {
+			sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
 			setLayout();
+		}
 		
 		
 		

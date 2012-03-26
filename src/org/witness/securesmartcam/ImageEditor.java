@@ -176,6 +176,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	mProgressDialog.cancel();
     	Intent i = new Intent(this, ReviewAndFinish.class);
     	i.setData(savedImageUri);
+    	i.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO);
     	startActivity(i);
     	finish();
     }
@@ -1404,6 +1405,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
     	Intent informa = new Intent()
 			.setAction(InformaConstants.Keys.Service.SEAL_LOG)
+			.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO)
 			.putExtra(InformaConstants.Keys.ImageRegion.DATA, imageRegionObject.toString())
 			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, pullPathFromUri(savedImageUri).getAbsolutePath());
 			

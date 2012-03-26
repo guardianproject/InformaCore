@@ -47,6 +47,7 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.reviewandfinish);
 		savedImageUri = getIntent().getData();
+		Log.d(InformaConstants.TAG, "HERE IS THE URI: " + savedImageUri.getPath());
 		
 		_sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
@@ -75,6 +76,21 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 	
     }
     
+    private void viewVideo() {
+    	Intent vView = new Intent(android.content.Intent.ACTION_VIEW);
+    	vView.setType(ObscuraConstants.MIME_TYPE_MP4);
+    	vView.putExtra(Intent.EXTRA_STREAM, savedImageUri);
+
+   	 	startActivity(Intent.createChooser(vView, "Play Video"));
+   	 	//finish();
+   	 	
+   	 	/*
+   	 	 * Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
+    	intent.setDataAndType(Uri.parse(saveFile.getPath()), ObscuraConstants.MIME_TYPE_MP4);    	
+   	 	startActivity(intent);
+   	 	 */
+    }
+    
     public File pullPathFromUri(Uri uri) {
 
     	String originalImageFilePath = null;
@@ -99,8 +115,15 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
-		if(v == confirmView) {			
-			viewImage();
+		if(v == confirmView) {	
+			switch(getIntent().getIntExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO)) {
+			case InformaConstants.MediaTypes.PHOTO:
+				viewImage();
+				break;
+			case InformaConstants.MediaTypes.VIDEO:
+				viewVideo();
+				break;
+			}
 		} else if(v == confirmQuit) {			
 			if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
 	    		_sp.edit().putString(Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).commit();

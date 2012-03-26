@@ -20,6 +20,8 @@ public class SensorLogger<T> {
 	Timer mTimer = new Timer();
 	TimerTask mTask;
 	
+	String tag;
+	
 	File mLog;
 	JSONArray mBuffer;
 	
@@ -40,6 +42,14 @@ public class SensorLogger<T> {
 	
 	public void setSucker(T sucker) {
 		_sucker = sucker;
+	}
+	
+	public String getTag() {
+		return tag;
+	}
+	
+	public void setTag(String name) {
+		this.tag = name;
 	}
 	
 	public JSONArray getLog() {
@@ -76,6 +86,12 @@ public class SensorLogger<T> {
 		return isRunning;
 	}
 	
+	public JSONObject returnFromLog() {
+		JSONObject logged = new JSONObject();
+		
+		return logged;
+	}
+	
 	public JSONObject returnCurrent() throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		JSONObject current = new JSONObject();
 		
@@ -90,7 +106,7 @@ public class SensorLogger<T> {
 	}
 
 	public void sendToBuffer(JSONObject logItem) throws JSONException {
-		if(mBuffer.length() > 60 && canBeCleared) {
+		if(mBuffer.length() > 100 && canBeCleared) {
 			mBuffer = null;
 			mBuffer = new JSONArray();
 			Log.d(InformaConstants.TAG, "LOG CLEARED");

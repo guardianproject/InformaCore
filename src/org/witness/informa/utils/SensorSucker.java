@@ -10,8 +10,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,7 +23,11 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.Informa;
 import org.witness.informa.Informa.Image;
+import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
+import org.witness.informa.utils.InformaConstants.Keys.Suckers;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.suckers.*;
@@ -48,8 +56,8 @@ public class SensorSucker extends Service {
 	SensorLogger<PhoneSucker> _phone;
 	SensorLogger<AccelerometerSucker> _acc;
 
-	JSONArray capturedEvents, imageRegions;
-	JSONObject imageData;
+	JSONArray capturedEvents, mediaRegions;
+	JSONObject mediaData;
 	Handler informaCallback;
 	
 	List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
@@ -96,6 +104,8 @@ public class SensorSucker extends Service {
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.SET_CURRENT)));
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.SEAL_LOG)));
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.LOCK_LOGS)));
+		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.UNLOCK_LOGS)));
+		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK)));
 		
 		for(BroadcastReceiver b : br)
 			registerReceiver(b, ((Broadcaster) b)._filter);
@@ -104,17 +114,77 @@ public class SensorSucker extends Service {
 		_phone = new PhoneSucker(getApplicationContext());
 		_acc = new AccelerometerSucker(getApplicationContext());
 		
-		capturedEvents = imageRegions = new JSONArray();
-		imageData = new JSONObject();
+		capturedEvents = mediaRegions = new JSONArray();
+		mediaData = new JSONObject();
+	}
+	
+	private void inflateFromLogs(long startFrom, long duration) throws JSONException {
+		// 1. get the parts of from the log that concern us here
+		ArrayList<JSONObject> logs = new ArrayList<JSONObject>();
+		
+		logs.addAll(truncateLog(_acc.getLog(), startFrom, (startFrom + duration)));
+		logs.addAll(truncateLog(_geo.getLog(), startFrom, (startFrom + duration)));
+		logs.addAll(truncateLog(_phone.getLog(), startFrom, (startFrom + duration)));
+		
+				
+		Map<Long, JSONObject> videoLog = new ConcurrentHashMap<Long, JSONObject>();
+		for(JSONObject entry : logs) {
+			String cTag = null;
+			if(entry.has(Suckers.Accelerometer.AZIMUTH) || entry.has(Suckers.Accelerometer.X) || entry.has(Suckers.Accelerometer.LIGHT_METER_VALUE))
+				cTag = Suckers.ACCELEROMETER;
+			else if(entry.has(Suckers.Geo.GPS_COORDS))
+				cTag = Suckers.GEO;
+			else if(entry.has(Suckers.Phone.CELL_ID))
+				cTag = Suckers.PHONE;
+			
+			try {
+				long timestamp = (Long) entry.remove(CaptureEvent.TIMESTAMP);
+			
+				if(videoLog.containsKey(timestamp)) {
+					videoLog.get(timestamp).accumulate(cTag, entry);
+				} else {
+					JSONObject captureEvent = new JSONObject();
+					captureEvent.put(cTag, entry);
+					videoLog.put(timestamp, captureEvent);
+				}
+			} catch(NullPointerException e) {}
+		}
+		Log.d(InformaConstants.TAG, videoLog.toString());
+		
+		Iterator<Entry<Long, JSONObject>> i = videoLog.entrySet().iterator();
+		while(i.hasNext()) {
+			Entry<Long, JSONObject> event = i.next();
+			JSONObject captureEventData = new JSONObject();
+			captureEventData.put(CaptureEvent.TYPE, CaptureEvents.DURATIONAL_LOG);
+			captureEventData.put(CaptureEvent.MATCH_TIMESTAMP, event.getKey());
+			captureEventData.put(CaptureEvent.VIDEO_TRACK, event.getValue());
+			capturedEvents.put(captureEventData);
+		}
+		
+		Log.d(InformaConstants.TAG, "HUGE DUMP FOR THE VIDEO:\n" + capturedEvents.toString());
+	}
+	
+	private ArrayList<JSONObject> truncateLog(JSONArray log, long start, long end) throws JSONException {
+		ArrayList<JSONObject> newLog = new ArrayList<JSONObject>();
+		Log.d(InformaConstants.TAG, "this timestamp: " + start + " to " + end);
+		for(int i = 0; i < log.length(); i++) {
+			JSONObject entry = log.getJSONObject(i);
+			if(entry.getLong(CaptureEvent.TIMESTAMP) >= (start - 2000) && entry.getLong(CaptureEvent.TIMESTAMP) <= (end + 2000)) {
+				newLog.add(entry);
+			}
+		}
+		return newLog;
 	}
 	
 	private void lockLogs() {
+		Log.d(InformaConstants.TAG, "logs are now locked!");
 		_phone.lockLog();
 		_geo.lockLog();
 		_acc.lockLog();
 	}
 	
 	private void unlockLogs() {
+		Log.d(InformaConstants.TAG, "logs are now unlocked!");
 		_phone.unlockLog();
 		_geo.unlockLog();
 		_acc.unlockLog();
@@ -158,61 +228,102 @@ public class SensorSucker extends Service {
 		Log.d(InformaConstants.TAG, "captured data: " + captureEventData.toString());
 	}
 	
-	private void sealLog(String imageRegionData, String localMediaPath, long[] encryptTo) throws Exception {
-		imageData.put(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, localMediaPath);
-		imageData.put(InformaConstants.Keys.Image.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO);
-		imageRegions = (JSONArray) new JSONTokener(imageRegionData).nextValue();
+	private void sealLog(String regionData, String localMediaPath, long[] encryptTo, int mediaType) throws Exception {
+		mediaData.put(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, localMediaPath);
 		final long[] intendedDestinations = encryptTo;
+		mediaData.put(InformaConstants.Keys.Media.MEDIA_TYPE, mediaType);
 		
-		//TODO informa in new thread
-		//Informa informa = new Informa(getApplicationContext(), imageData, imageRegions, capturedEvents, encryptTo);
 		informaCallback = new Handler();
+		Runnable r = null;
 		
-		Runnable r = new Runnable() {
-			Informa informa; 
+		mediaRegions = (JSONArray) new JSONTokener(regionData).nextValue();
+		
+		if(mediaType == MediaTypes.VIDEO) {
+			r = new Runnable() {
+				Informa informa;
+				
+				@Override
+				public void run() {
+					try {
+						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
+						
+						informaCallback.post(new Runnable() {
+							@Override
+							public void run() {
+								unlockLogs();
+								sendBroadcast(
+										new Intent()
+										.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+							}
+						});
+					} catch (IllegalArgumentException e) {
+						Log.e(InformaConstants.TAG, "informa called Illegal Arguments",e);
+					} catch (JSONException e) {
+						Log.e(InformaConstants.TAG, "informa called JSONException?",e);
+					} catch (IllegalAccessException e) {
+						Log.e(InformaConstants.TAG, "informa called Illegal Access",e);
+					} catch (NoSuchAlgorithmException e) {
+						Log.e(InformaConstants.TAG, "informa called NoSuchAlgoException",e);
+					} catch (IOException e) {
+						Log.e(InformaConstants.TAG, "informa called IOException",e);
+					} catch (NullPointerException e) {
+						Log.e(InformaConstants.TAG, "informa called NPE",e);
+						sendBroadcast(
+								new Intent()
+								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+					}
+				}
+			};
+		} else if(mediaType == MediaTypes.PHOTO) {
 			
-			@Override
-			public void run() {
-				try {
-					informa = new Informa(getApplicationContext(), imageData, imageRegions, capturedEvents, intendedDestinations);
-					Image[] img = informa.getImages();
+		
+			r = new Runnable() {
+				Informa informa; 
+			
+				@Override
+				public void run() {
+					try {
+						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
+						Image[] img = informa.getImages();
+						
+						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
+						for(Image i : img)
+							ic.createVersionForTrustedDestination(i.getAbsolutePath(),i.getIntendedDestination());
+								
+						ic.doCleanup();
+						
+						informaCallback.post(new Runnable() {
+							@Override
+							public void run() {
+								unlockLogs();
+								sendBroadcast(
+										new Intent()
+										.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+							}
+						});
+					} catch (IllegalArgumentException e) {
+						Log.e(InformaConstants.TAG, "informa called Illegal Arguments",e);
+					} catch (JSONException e) {
+						Log.e(InformaConstants.TAG, "informa called JSONException?",e);
+					} catch (IllegalAccessException e) {
+						Log.e(InformaConstants.TAG, "informa called Illegal Access",e);
+					} catch (NoSuchAlgorithmException e) {
+						Log.e(InformaConstants.TAG, "informa called NoSuchAlgoException",e);
+					} catch (IOException e) {
+						Log.e(InformaConstants.TAG, "informa called IOException",e);
+					} catch (NullPointerException e) {
+						Log.e(InformaConstants.TAG, "informa called NPE",e);
+						sendBroadcast(
+								new Intent()
+								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+					}
 					
-					ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
-					for(Image i : img)
-						ic.createVersionForTrustedDestination(i.getAbsolutePath(),i.getIntendedDestination());
-							
-					ic.doCleanup();
-					
-					informaCallback.post(new Runnable() {
-						@Override
-						public void run() {
-							unlockLogs();
-							sendBroadcast(
-									new Intent()
-									.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
-						}
-					});
-				} catch (IllegalArgumentException e) {
-					Log.e(InformaConstants.TAG, "informa called Illegal Arguments",e);
-				} catch (JSONException e) {
-					Log.e(InformaConstants.TAG, "informa called JSONException?",e);
-				} catch (IllegalAccessException e) {
-					Log.e(InformaConstants.TAG, "informa called Illegal Access",e);
-				} catch (NoSuchAlgorithmException e) {
-					Log.e(InformaConstants.TAG, "informa called NoSuchAlgoException",e);
-				} catch (IOException e) {
-					Log.e(InformaConstants.TAG, "informa called IOException",e);
-				} catch (NullPointerException e) {
-					Log.e(InformaConstants.TAG, "informa called NPE",e);
-					sendBroadcast(
-							new Intent()
-							.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
 				}
 				
-			}
-			
-		};
-		new Thread(r).start();	
+			};
+				
+		}
+		new Thread(r).start();
 	}
 	
 	public class Broadcaster extends BroadcastReceiver {
@@ -241,7 +352,8 @@ public class SensorSucker extends Service {
 					sealLog(
 						i.getStringExtra(InformaConstants.Keys.ImageRegion.DATA), 
 						i.getStringExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH), 
-						i.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST));
+						i.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST),
+						i.getIntExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO));
 				} else if(InformaConstants.Keys.Service.SET_CURRENT.equals(i.getAction())) {
 					captureEventData(
 						i.getLongExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, 0L),
@@ -254,6 +366,8 @@ public class SensorSucker extends Service {
 					lockLogs();
 				else if(InformaConstants.Keys.Service.UNLOCK_LOGS.equals(i.getAction()))
 					unlockLogs();
+				else if(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
+					inflateFromLogs(i.getLongExtra(InformaConstants.Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(InformaConstants.Keys.Video.DURATION, 0));
 				
 			} catch (Exception e) {
 				Log.e(InformaConstants.TAG, "error",e);

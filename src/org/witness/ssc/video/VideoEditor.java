@@ -22,6 +22,9 @@ import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.witness.informa.KeyChooser;
 import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.securesmartcam.detect.GoogleFaceDetection;
@@ -169,10 +172,9 @@ public class VideoEditor extends Activity implements
 	                	
 	                	break;
 	                	
-	                case 3: //completed
+	                case 3: //TODO: completed
 	                	progressDialog.dismiss();
-	                	askPostProcessAction();    			
-	                	
+	                	launchInforma();	                	
 	                	break;
 	                
 	                case 5:	                	
@@ -210,24 +212,12 @@ public class VideoEditor extends Activity implements
 		}
     	
     };
-    
-    /* TODO: finish up this
-    private void reviewAndFinish() {
-    	mProgressDialog.cancel();
-    	Intent i = new Intent(this, ReviewAndFinish.class);
-    	i.setData(savedImageUri);
-    	startActivity(i);
-    	finish();
-    }
-    */
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.videoeditor);
-		
-		firstTimestamp = System.currentTimeMillis();
 
 		if (getIntent() != null)
 		{
@@ -251,9 +241,19 @@ public class VideoEditor extends Activity implements
 			
 			if(originalVideoUri.getPath().compareTo(ObscuraConstants.TMP_FILE_DIRECTORY + "cam" + ObscuraConstants.TMP_FILE_NAME_VIDEO) == 0) {
 				recordingFile = new File(originalVideoUri.getPath());
+				firstTimestamp = getIntent().getLongExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, 0L);
 				freshVideo = true;
-			} else
+				
+			} else {
 				recordingFile = new File(pullPathFromUri(originalVideoUri));
+				firstTimestamp = (Long) parseMetadataForValue(InformaConstants.CaptureTimestamps.ON_VIDEO_START);
+			}
+			
+			sendBroadcast(new Intent()
+				.setAction(InformaConstants.Keys.Service.SET_CURRENT)
+				.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, firstTimestamp)
+				.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
+			
 		}
 		
 		fileExternDir = new File(Environment.getExternalStorageDirectory(),getString(R.string.app_name));
@@ -335,6 +335,18 @@ public class VideoEditor extends Activity implements
 		
 	}
 	
+	// TODO: this!
+	private Object parseMetadataForValue(int value) {
+		Object result = null;
+		switch(value) {
+		case InformaConstants.CaptureTimestamps.ON_VIDEO_START:
+			result = new Long(10L);
+			break;
+		}
+		
+		return result;
+	}
+	
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		
@@ -357,9 +369,9 @@ public class VideoEditor extends Activity implements
 			 
 			 if(freshVideo) {
 				 sendBroadcast(new Intent()
-					.setAction(InformaConstants.Keys.Service.SET_CURRENT)
-					.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, (firstTimestamp - mDuration))
-					.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
+					.setAction(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK)
+					.putExtra(InformaConstants.Keys.Video.FIRST_TIMESTAMP, firstTimestamp)
+					.putExtra(InformaConstants.Keys.Video.DURATION, mDuration));
 			 }
 			
 		}
@@ -1223,8 +1235,14 @@ public class VideoEditor extends Activity implements
 					
 				};
 				
+				sendBroadcast(new Intent()
+					.setAction(InformaConstants.Keys.Service.SET_CURRENT)
+					.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
+					.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_SAVED));
+				
 				// Could make some high/low quality presets	
 				ffmpeg.processVideo(redactSettingsFile, obscureRegions, recordingFile, saveFile, format, mediaPlayer.getVideoWidth(), mediaPlayer.getVideoHeight(), frameRate, bitRate, sizeMult, sc);
+				
 			}
 			catch (Exception e)
 			{
@@ -1284,6 +1302,19 @@ public class VideoEditor extends Activity implements
      				null);
 
 //        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
+     		
+     		/* TODO: seal log!
+        	Intent informa = new Intent()
+    			.setAction(InformaConstants.Keys.Service.SEAL_LOG)
+    			.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.VIDEO)
+    			.putExtra(InformaConstants.Keys.ImageRegion.DATA, imageRegionObject.toString())
+    			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, pullPathFromUri(savedImageUri).getAbsolutePath());
+    			
+    		if(encryptList[0] != 0)
+    			informa.putExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST, encryptList);
+    		
+        	sendBroadcast(informa);
+        	*/
 	}
 	
 	private void askPostProcessAction ()
@@ -1332,8 +1363,45 @@ public class VideoEditor extends Activity implements
     	startActivity(Intent.createChooser(intent, "Share Video"));     
 	}
 	
+	private void launchInforma() {
+    	Intent keyChooser = new Intent(this, KeyChooser.class);
+		startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
+	}
+	
+	private void reviewAndFinish(long[] encryptList) {
+    	
+		Intent informa = new Intent()
+			.setAction(InformaConstants.Keys.Service.SEAL_LOG)
+			.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.VIDEO)
+			.putExtra(InformaConstants.Keys.ImageRegion.DATA, new JSONArray().toString())
+			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, saveFile.getAbsolutePath());
+		
+		if(encryptList[0] != 0)
+			informa.putExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST, encryptList);
+	
+		sendBroadcast(informa);
+		
+    	Intent i = new Intent(this, ReviewAndFinish.class);
+    	i.setData(Uri.parse(saveFile.getPath()));
+    	i.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.VIDEO);
+    	startActivity(i);
+    	finish();
+    	//askPostProcessAction();
+    }
+	
+	// TODO: onActivityResult
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 		super.onActivityResult(requestCode, resultCode, intent);
+		if(resultCode == Activity.RESULT_OK) {
+			if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER) {
+				long[] encryptList = new long[] {0L};
+        		if(intent.hasExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST))
+        			encryptList = intent.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST);
+				reviewAndFinish(encryptList);
+			}
+		} else if(resultCode == Activity.RESULT_CANCELED && intent.hasExtra(InformaConstants.Keys.USER_CANCELED_EVENT)) {
+			reviewAndFinish(new long[] {0L});
+		}
 		
 	}
 
@@ -1346,6 +1414,7 @@ public class VideoEditor extends Activity implements
 	}
 	
 	public void inflatePopup(boolean showDelayed) {
+		Log.d(LOGTAG, "HELLO POPUP MENU?");
 		if (popupMenu == null)
 			initPopup();
 
@@ -1619,6 +1688,4 @@ public class VideoEditor extends Activity implements
 		// return final image
 		return bmOut;
 	}
-
-
 }
