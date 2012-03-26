@@ -68,7 +68,6 @@ public class PhoneSucker extends SensorLogger {
 	
 	public String getIMEI() {
 		try {
-			Log.d(InformaConstants.SUCKER_TAG, tm.getDeviceId());
 			return tm.getDeviceId();
 		} catch(NullPointerException e) {
 			Log.e(InformaConstants.TAG,"getIMEI error",e);
@@ -105,7 +104,6 @@ public class PhoneSucker extends SensorLogger {
 			fr.put(InformaConstants.Keys.Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS, ba.getAddress());
 			fr.put(InformaConstants.Keys.Suckers.Phone.BLUETOOTH_DEVICE_NAME, ba.getName());
 			fr.put(InformaConstants.Keys.Suckers.Phone.CELL_ID, getCellId());
-			Log.d(InformaConstants.SUCKER_TAG, fr.toString());
 			return fr;
 		} catch (JSONException e) {
 			return null;

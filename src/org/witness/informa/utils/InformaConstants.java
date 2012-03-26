@@ -9,6 +9,7 @@ public class InformaConstants {
 	public final static String TAG = "************ INFORMA ***********";
 	public final static String READOUT = "******************* INFORMA READOUT ******************";
 	public final static String SUCKER_TAG = "******************** SUCKER SERVICE ******************";
+	public final static String VIDEO_LOG = "******************** FFMPEG WRAPPER ******************";
 	public final static String PW_EXPIRY = "**EXPIRED**";
 	public final static int FROM_INFORMA_WIZARD = 3;
 	public final static int FROM_INFORMA_TAGGER = 4;
@@ -90,6 +91,11 @@ public class InformaConstants {
 		
 		public final static class Data {
 			public final static String IMAGE_REGIONS = "imageRegions";
+			public final static String VIDEO_REGIONS = "videoRegions";
+		}
+		
+		public final static class Genealogy {
+			public final static String LOCAL_MEDIA_PATH = "localMediaPath";
 		}
 		
 		public final static class Location {
@@ -122,7 +128,7 @@ public class InformaConstants {
 			public static final String CONTAINMENT_ARRAY = "source_containmentArray";
 			public static final String UNREDACTED_IMAGE_HASH = "source_unredactedImageHash";
 			public static final String REDACTED_IMAGE_HASH = "source_redactedImageHash";
-			public final static String LOCAL_MEDIA_PATH = "localMediaPath";
+			public final static String LOCAL_MEDIA_PATH = Genealogy.LOCAL_MEDIA_PATH;
 			public final static String TIMESTAMP = "timestamp";
 			public final static String LOCATION_OF_ORIGINAL = "source_locationOfOriginal";
 			public final static String LOCATION_OF_OBSCURED_VERSION = "source_locationOfObscuredVersion";
@@ -133,6 +139,13 @@ public class InformaConstants {
 			public final static String FIRST_TIMESTAMP = CaptureEvent.ON_VIDEO_START;
 			public final static String DURATION = "videoDuration";
 			public final static String VIDEO_TRACK = "videoTrack";
+		}
+		
+		public final static class Ass {
+			public final static String VROOT = "%vroot";
+			public final static String BLOCK_START = "%blockstart";
+			public final static String BLOCK_END = "%blockend";
+			public final static String BLOCK_DATA = "%mdload";
 		}
 		
 		public final static class Owner {

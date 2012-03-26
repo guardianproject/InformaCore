@@ -77,18 +77,10 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
     }
     
     private void viewVideo() {
-    	Intent vView = new Intent(android.content.Intent.ACTION_VIEW);
-    	vView.setType(ObscuraConstants.MIME_TYPE_MP4);
-    	vView.putExtra(Intent.EXTRA_STREAM, savedImageUri);
-
-   	 	startActivity(Intent.createChooser(vView, "Play Video"));
-   	 	//finish();
-   	 	
-   	 	/*
-   	 	 * Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
-    	intent.setDataAndType(Uri.parse(saveFile.getPath()), ObscuraConstants.MIME_TYPE_MP4);    	
+    	Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
+    	intent.setDataAndType(savedImageUri, ObscuraConstants.MIME_TYPE_MP4);    	
    	 	startActivity(intent);
-   	 	 */
+   	 	finish();
     }
     
     public File pullPathFromUri(Uri uri) {

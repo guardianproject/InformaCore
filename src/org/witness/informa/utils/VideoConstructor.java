@@ -1,7 +1,8 @@
-package org.witness.ssc.video;
+package org.witness.informa.utils;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,18 +14,26 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Vector;
 
-import org.witness.ssc.video.ShellUtils.ShellCallback;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.witness.informa.Informa.Video;
+import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Ass;
+import org.witness.informa.utils.io.BinaryInstaller;
+import org.witness.informa.utils.io.ShellUtils;
+import org.witness.informa.utils.io.ShellUtils.ShellCallback;
+import org.witness.ssc.video.ObscureRegion;
 
 import android.content.Context;
 import android.util.Log;
 
-public class FFMPEGWrapper {
+public class VideoConstructor {
 
 	String[] libraryAssets = {"ffmpeg"};
 	File fileBinDir;
 	Context context;
 
-	public FFMPEGWrapper(Context _context) throws FileNotFoundException, IOException {
+	public VideoConstructor(Context _context) throws FileNotFoundException, IOException {
 		context = _context;
 		fileBinDir = context.getDir("bin",0);
 
@@ -75,6 +84,59 @@ public class FFMPEGWrapper {
 		public static final String ARG_FORMAT = "-f";
 		
 	}
+	
+	public void writeMetadata(Video source) throws Exception {
+		Log.d(InformaConstants.VIDEO_LOG, source.getMetadataPackage().toString());
+		
+		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
+		Runtime.getRuntime().exec("chmod 700 " +ffmpegBin);
+		
+		String[] ffmpegCommand = {
+				ffmpegBin, "-y",
+				"-i", source.getClonePath(), 
+				"-i", generateAssFile(source.getMetadataPackage(), source.getIntendedDestination()),
+				"-scodec", "copy",
+				"-vcodec", "copy",
+				"-acodec", "copy",
+				source.getAbsolutePath()
+		};
+		
+		execProcess(ffmpegCommand, null);
+		
+	}
+	
+	public String generateAssFile(JSONObject mdPack, String intendedDestination) throws IOException, JSONException {
+		File ass = new File(InformaConstants.DUMP_FOLDER, intendedDestination + ".ass");
+		if(!ass.exists())
+			ass.createNewFile();
+		
+		
+		// 1. load up temp ass
+		BufferedReader br = new BufferedReader(new InputStreamReader(context.getAssets().open("informa.ass")));
+		String line, cloneLine;
+		
+		StringBuilder sb = new StringBuilder();
+		while((line = br.readLine()) != null) {
+			// 2. replace %vroot
+			if(line.contains(Ass.VROOT))
+				line.replace(Ass.VROOT, mdPack.getJSONObject(Keys.Informa.GENEALOGY).getString(Keys.Genealogy.LOCAL_MEDIA_PATH));
+			sb.append(line);
+		}
+		// 3. clone last line
+		cloneLine = line;
+		
+		// 4. iterate over metadata and set vars
+		// TODO: parse metadata as proper ass file
+		
+		// 5. save file
+		FileWriter fw = new FileWriter(ass.getAbsolutePath());
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(sb.toString());
+		bw.close();
+		fw.close();
+		
+		return ass.getAbsolutePath();
+	}
 		
 	public void processVideo(File redactSettingsFile, 
 			Vector<ObscureRegion> obscureRegions, File inputFile, File outputFile, String format, 
@@ -116,6 +178,10 @@ public class FFMPEGWrapper {
     	
     	execProcess(ffmpegCommand, sc);
 	    
+	}
+	
+	public void doCleanup() {
+		// TODO: remove ass files
 	}
 	
 	private void writeRedactData(File redactSettingsFile, Vector<ObscureRegion> obscureRegions, float sizeMult) throws IOException {

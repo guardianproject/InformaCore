@@ -26,11 +26,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.witness.informa.KeyChooser;
 import org.witness.informa.ReviewAndFinish;
+import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.io.ShellUtils;
+import org.witness.informa.utils.io.ShellUtils.ShellCallback;
 import org.witness.securesmartcam.detect.GoogleFaceDetection;
 import org.witness.securesmartcam.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
-import org.witness.ssc.video.ShellUtils.ShellCallback;
 import org.witness.sscphase1.R;
 
 import android.app.Activity;
@@ -144,7 +146,7 @@ public class VideoEditor extends Activity implements
 	
 	boolean mAutoDetectEnabled = false;
 	
-	FFMPEGWrapper ffmpeg;
+	VideoConstructor ffmpeg;
 	
 	int timeNudgeOffset = 2;
 	
@@ -1170,7 +1172,7 @@ public class VideoEditor extends Activity implements
 			try
 			{
 				if (ffmpeg == null)
-					ffmpeg = new FFMPEGWrapper(VideoEditor.this.getBaseContext());
+					ffmpeg = new VideoConstructor(VideoEditor.this.getBaseContext());
 	
 				float sizeMult = .75f;
 				int frameRate = 15;
@@ -1385,7 +1387,7 @@ public class VideoEditor extends Activity implements
     	i.setData(Uri.parse(saveFile.getPath()));
     	i.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.VIDEO);
     	startActivity(i);
-    	finish();
+    	//finish();
     	//askPostProcessAction();
     }
 	

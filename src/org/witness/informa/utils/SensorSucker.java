@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.Informa;
 import org.witness.informa.Informa.Image;
+import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
@@ -246,6 +247,18 @@ public class SensorSucker extends Service {
 				public void run() {
 					try {
 						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
+						Video[] videos = informa.getVideos();
+						
+						VideoConstructor vc = new VideoConstructor(getApplicationContext());
+						for(Video vid : videos) {
+							try {
+								vc.writeMetadata(vid);
+							} catch (Exception e) {
+								Log.e(InformaConstants.VIDEO_LOG, e.toString());
+							}
+						}
+						
+						vc.doCleanup();
 						
 						informaCallback.post(new Runnable() {
 							@Override
@@ -268,6 +281,7 @@ public class SensorSucker extends Service {
 						Log.e(InformaConstants.TAG, "informa called IOException",e);
 					} catch (NullPointerException e) {
 						Log.e(InformaConstants.TAG, "informa called NPE",e);
+						unlockLogs();
 						sendBroadcast(
 								new Intent()
 								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));

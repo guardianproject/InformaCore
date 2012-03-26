@@ -276,7 +276,7 @@ public class Informa {
 			mime = ".jpg";
 			break;
 		case MediaTypes.VIDEO:
-			mime = ".mp4";
+			mime = ".mkv";
 			break;
 		}
 		return mime;
@@ -310,7 +310,7 @@ public class Informa {
 	
 	public class Video extends File {
 		private static final long serialVersionUID = 1L;
-		private String intendedDestination;
+		private String intendedDestination, originalPath;
 		private JSONObject metadataPackage;
 
 		public Video(String path, String intendedDestination) throws JSONException, IllegalArgumentException, IllegalAccessException {
@@ -322,14 +322,20 @@ public class Informa {
 			this.metadataPackage.put(Keys.Informa.INTENT, Informa.this.intent.zip());
 			this.metadataPackage.put(Keys.Informa.GENEALOGY, Informa.this.genealogy.zip());
 			this.metadataPackage.put(Keys.Informa.DATA, Informa.this.data.zip());
+			
+			this.originalPath = Informa.this.genealogy.localMediaPath;
 		}
 		
 		public String getIntendedDestination() {
 			return this.intendedDestination;
 		}
 		
-		public String getMetadataPackage() {
-			return this.metadataPackage.toString();
+		public String getClonePath() {
+			return this.originalPath;
+		}
+		
+		public JSONObject getMetadataPackage() {
+			return this.metadataPackage;
 		}
 	}
 	
@@ -370,6 +376,10 @@ public class Informa {
 	
 	public Image[] getImages() {
 		return images;
+	}
+	
+	public Video[] getVideos() {
+		return videos;
 	}
 	
 	public Informa(
@@ -505,7 +515,6 @@ public class Informa {
 		data.corroboration = corroboration;
 		data.location = locations;
 		
-		dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
 		if(imageData.getInt(Keys.Media.MEDIA_TYPE) == MediaTypes.PHOTO) {
 			data.imageRegions = imageRegions;
 			data.imageHash = MediaHasher.hash(new File(genealogy.localMediaPath), "MD5");
@@ -514,6 +523,7 @@ public class Informa {
 			try {
 				images = new Image[intendedDestinations.length];
 				for(int i=0; i<intendedDestinations.length; i++) {
+					dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
 					try {
 						Cursor td = dh.getValue(
 								db, 
@@ -531,7 +541,7 @@ public class Informa {
 						td.close();
 						images[i] = new Image(newPath, email);
 					} catch(NullPointerException e) {
-						Log.e(InformaConstants.TAG, "fracking npe",e); //watch your mouth!
+						Log.e(InformaConstants.TAG, "fracking npe",e);
 					}
 				}
 			} catch(NullPointerException e) {
@@ -544,6 +554,7 @@ public class Informa {
 			try {
 				videos = new Video[intendedDestinations.length];
 				for(int i=0; i<intendedDestinations.length; i++) {
+					dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
 					try {
 						Cursor td = dh.getValue(
 								db, 

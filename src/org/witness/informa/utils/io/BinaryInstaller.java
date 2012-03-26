@@ -1,7 +1,7 @@
 /* Copyright (c) 2009, Nathan Freitas, Orbot / The Guardian Project - http://openideals.com/guardian */
 /* See LICENSE for licensing information */
 
-package org.witness.ssc.video;
+package org.witness.informa.utils.io;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
