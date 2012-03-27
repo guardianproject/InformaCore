@@ -26,6 +26,7 @@ import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Ass;
 import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
+import org.witness.informa.utils.InformaConstants.Keys.Data;
 import org.witness.informa.utils.InformaConstants.Keys.Events;
 import org.witness.informa.utils.io.BinaryInstaller;
 import org.witness.informa.utils.io.ShellUtils;
@@ -177,9 +178,16 @@ public class VideoConstructor {
 			}
 						
 		}
-		Log.d(InformaConstants.VIDEO_LOG, "log dump: " + eventLog.toString());
-		//Dialog: 0,%blockstart,%blockend,DefaultVCD, NTP,0000,0000,0000,,{\pos(400,570)}%mdload
+		mdPack.getJSONObject(Keys.Informa.DATA).remove(Keys.Data.EVENTS);
 		
+		
+		JSONObject informa = new JSONObject();
+		informa.put(Keys.Informa.GENEALOGY, mdPack.getJSONObject(Keys.Informa.GENEALOGY));
+		informa.put(Keys.Informa.INTENT, mdPack.getJSONObject(Keys.Informa.INTENT));
+		informa.put(Keys.Informa.DATA, mdPack.getJSONObject(Keys.Informa.DATA));
+		eventLog.put(zero, informa);
+		
+		Log.d(InformaConstants.VIDEO_LOG, "log dump: " + eventLog.toString());		
 		
 		for(Entry<Long, JSONObject> entry : eventLog.entrySet()) {
 			String cl = new String(cloneLine);
@@ -187,8 +195,6 @@ public class VideoConstructor {
 			long blockStart = Math.abs(entry.getKey() - zero);
 			long blockEnd = blockStart + 200;
 			
-			//cl.replace(Ass.BLOCK_START, "0:00:00.18");
-			//cl.replace(Ass.BLOCK_END, "0:00:00.58");
 			cl = cl.replace(Ass.BLOCK_START, millisToHIS(blockStart));
 			cl = cl.replace(Ass.BLOCK_END, millisToHIS(blockEnd));
 			cl = cl.replace(Ass.BLOCK_DATA, entry.getValue().toString());
