@@ -170,7 +170,7 @@ public class SensorSucker extends Service {
 		Log.d(InformaConstants.TAG, "this timestamp: " + start + " to " + end);
 		for(int i = 0; i < log.length(); i++) {
 			JSONObject entry = log.getJSONObject(i);
-			if(entry.getLong(CaptureEvent.TIMESTAMP) >= (start - 2000) && entry.getLong(CaptureEvent.TIMESTAMP) <= (end + 2000)) {
+			if(entry.getLong(CaptureEvent.TIMESTAMP) >= start && entry.getLong(CaptureEvent.TIMESTAMP) <= end) {
 				newLog.add(entry);
 			}
 		}
@@ -251,11 +251,7 @@ public class SensorSucker extends Service {
 						
 						VideoConstructor vc = new VideoConstructor(getApplicationContext());
 						for(Video vid : videos) {
-							try {
-								vc.writeMetadata(vid);
-							} catch (Exception e) {
-								Log.e(InformaConstants.VIDEO_LOG, e.toString());
-							}
+							vc.writeMetadata(vid);
 						}
 						
 						vc.doCleanup();

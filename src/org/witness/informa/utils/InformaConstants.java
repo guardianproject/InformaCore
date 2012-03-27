@@ -53,11 +53,11 @@ public class InformaConstants {
 		public final static class CaptureEvent {
 			public final static String TYPE = "captureEvent";
 			public final static String MATCH_TIMESTAMP = "matchTimestamp";
-			public final static String TIMESTAMP = "timestamp";
+			public final static String TIMESTAMP = Image.TIMESTAMP;
 			public final static String ON_VIDEO_START = "timestampOnVideoStart";
 			public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
 			public final static String VIDEO_TRACK = Video.VIDEO_TRACK;
-			public final static String EVENT = "captureEvent";
+			public final static String EVENT = Events.CAPTURE_EVENT;
 		}
 		
 		public final static class ImageRegion {
@@ -93,10 +93,12 @@ public class InformaConstants {
 		public final static class Data {
 			public final static String IMAGE_REGIONS = "imageRegions";
 			public final static String VIDEO_REGIONS = "videoRegions";
+			public final static String EVENTS = "events";
 		}
 		
 		public final static class Genealogy {
 			public final static String LOCAL_MEDIA_PATH = "localMediaPath";
+			public final static String DATE_CREATED = "dateCreated";
 		}
 		
 		public final static class Location {
@@ -112,6 +114,13 @@ public class InformaConstants {
 				public final static String EMAIL = "destinationEmail";
 				public final static String DISPLAY_NAME = "displayName";
 			}
+		}
+		
+		public final static class Events {
+			public final static String EVENT_DATA = "eventData";
+			public final static String CAPTURE_EVENT = CaptureEvent.TYPE;
+			public final static String TYPE = "eventType";
+			public final static String TIMESTAMP = CaptureEvent.TIMESTAMP;
 		}
 		
 		public final static class TrustedDestinations {

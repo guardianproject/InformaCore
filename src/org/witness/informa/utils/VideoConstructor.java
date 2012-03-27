@@ -12,13 +12,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Ass;
+import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
+import org.witness.informa.utils.InformaConstants.Keys.Events;
 import org.witness.informa.utils.io.BinaryInstaller;
 import org.witness.informa.utils.io.ShellUtils;
 import org.witness.informa.utils.io.ShellUtils.ShellCallback;
@@ -85,23 +93,39 @@ public class VideoConstructor {
 		
 	}
 	
-	public void writeMetadata(Video source) throws Exception {
+	public void writeMetadata(Video source) {
 		Log.d(InformaConstants.VIDEO_LOG, source.getMetadataPackage().toString());
 		
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
-		Runtime.getRuntime().exec("chmod 700 " +ffmpegBin);
+		try {
+			Runtime.getRuntime().exec("chmod 700 " +ffmpegBin);
+		} catch (IOException e) {
+			Log.e(InformaConstants.VIDEO_LOG, e.toString());
+		}
 		
-		String[] ffmpegCommand = {
-				ffmpegBin, "-y",
-				"-i", source.getClonePath(), 
-				"-i", generateAssFile(source.getMetadataPackage(), source.getIntendedDestination()),
-				"-scodec", "copy",
-				"-vcodec", "copy",
-				"-acodec", "copy",
-				source.getAbsolutePath()
-		};
+		try {
+			String[] ffmpegCommand = {
+					ffmpegBin, "-y",
+					"-i", source.getClonePath(), 
+					"-i", generateAssFile(source.getMetadataPackage(), source.getIntendedDestination()),
+					"-scodec", "copy",
+					"-vcodec", "copy",
+					"-acodec", "copy",
+					source.getAbsolutePath()
+			};
+			
+			try {
+				execProcess(ffmpegCommand, null);
+			} catch (Exception e) {
+				Log.e(InformaConstants.VIDEO_LOG, e.toString());
+			}
+		} catch (IOException e) {
+			Log.e(InformaConstants.VIDEO_LOG, e.toString());
+		} catch (JSONException e) {
+			Log.e(InformaConstants.VIDEO_LOG, e.toString());
+		}
 		
-		execProcess(ffmpegCommand, null);
+		
 		
 	}
 	
@@ -112,20 +136,68 @@ public class VideoConstructor {
 		
 		// 1. load up temp ass
 		BufferedReader br = new BufferedReader(new InputStreamReader(context.getAssets().open("informa.ass")));
-		String line, cloneLine;
+		String line, cloneLine = null;
 		
 		StringBuilder sb = new StringBuilder();
 		while((line = br.readLine()) != null) {
 			// 2. replace %vroot
 			if(line.contains(Ass.VROOT))
-				line.replace(Ass.VROOT, mdPack.getJSONObject(Keys.Informa.GENEALOGY).getString(Keys.Genealogy.LOCAL_MEDIA_PATH));
-			sb.append(line + "\n");
+				line = line.replace(Ass.VROOT, mdPack.getJSONObject(Keys.Informa.GENEALOGY).getString(Keys.Genealogy.LOCAL_MEDIA_PATH));
+			cloneLine = new String(line);
+			if(!line.contains(Ass.BLOCK_DATA))
+				sb.append(line + "\n");
 		}
 		// 3. clone last line
-		cloneLine = line;
+		
+		Log.d(InformaConstants.VIDEO_LOG, "clone line: " + cloneLine);
+		
+		long zero = mdPack.getJSONObject(Keys.Informa.GENEALOGY).getLong(Keys.Genealogy.DATE_CREATED);
 		
 		// 4. iterate over metadata and set vars
 		// TODO: parse metadata as proper ass file
+		JSONArray events = mdPack.getJSONObject(Keys.Informa.DATA).getJSONArray(Keys.Data.EVENTS);
+		Map<Long, JSONObject> eventLog = new ConcurrentHashMap<Long, JSONObject>();
+		for(int e=0; e<events.length(); e++) {
+			JSONObject event = events.getJSONObject(e).getJSONObject(Events.EVENT_DATA);
+			//{"eventData":{"captureEvent":{"device_bluetooth_name":"VIDEOCLASH (2)","device_bluetooth_address":"00:22:41:CB:4B:03"},"timestamp":1332786615932},"eventType":9}
+			long timestamp = (Long) event.remove(Events.TIMESTAMP);
+			event.remove(Events.TYPE);
+						
+			try {
+				if(eventLog.containsKey(timestamp))
+					eventLog.get(timestamp).accumulate(Events.CAPTURE_EVENT, event.get(Events.CAPTURE_EVENT));
+				else {
+					Log.d(InformaConstants.VIDEO_LOG, "event log has no entry for " + timestamp);
+					eventLog.put(timestamp, event);
+					// 1332798919020
+				}
+				
+			} catch(NullPointerException npe) {
+				Log.e(InformaConstants.VIDEO_LOG, "HEY WHAT: " + npe);
+			}
+						
+		}
+		Log.d(InformaConstants.VIDEO_LOG, "log dump: " + eventLog.toString());
+		//Dialog: 0,%blockstart,%blockend,DefaultVCD, NTP,0000,0000,0000,,{\pos(400,570)}%mdload
+		
+		
+		for(Entry<Long, JSONObject> entry : eventLog.entrySet()) {
+			String cl = new String(cloneLine);
+			
+			long blockStart = Math.abs(entry.getKey() - zero);
+			long blockEnd = blockStart + 200;
+			
+			//cl.replace(Ass.BLOCK_START, "0:00:00.18");
+			//cl.replace(Ass.BLOCK_END, "0:00:00.58");
+			cl = cl.replace(Ass.BLOCK_START, millisToHIS(blockStart));
+			cl = cl.replace(Ass.BLOCK_END, millisToHIS(blockEnd));
+			cl = cl.replace(Ass.BLOCK_DATA, entry.getValue().toString());
+			sb.append(cl + "\n");
+			
+			Log.d(InformaConstants.VIDEO_LOG, "ts: " + entry.getKey() + "\nblockStart: " + blockStart + "\nblockEnd: " + blockEnd);
+			Log.d(InformaConstants.VIDEO_LOG, "converted: " + millisToHIS(blockStart) + "/" + millisToHIS(blockEnd));
+		}
+		
 		
 		// 5. save file
 		FileWriter fw = new FileWriter(ass.getAbsolutePath());
@@ -133,8 +205,14 @@ public class VideoConstructor {
 		bw.write(sb.toString());
 		bw.close();
 		fw.close();
-		
+		Log.d(InformaConstants.VIDEO_LOG, "done saving " + ass.getAbsolutePath());
 		return ass.getAbsolutePath();
+	}
+	
+	private String millisToHIS(long millis) {
+		SimpleDateFormat sdf = new SimpleDateFormat("mm:ss.SSS");
+		String time = sdf.format(new Date(millis));
+		return "00:" + time;
 	}
 		
 	public void processVideo(File redactSettingsFile, 
