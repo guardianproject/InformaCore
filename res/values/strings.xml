@@ -12,6 +12,14 @@
     <string name="menu_about">About InformaCam</string>
     <string name="menu_logout">Logout</string>
     
+    <!--  Main Menu -->
+    <string name="camera">Camera</string>
+    <string name="camcorder">Camcorder</string>
+    <string name="choose_photos">Photos</string>
+    <string name="choose_videos">Videos</string>
+    
+    <string name="menu_new_media">New\u2026</string>
+    <string name="menu_import_media">Import\u2026</string>
     <string name="menu_new_region">New Tag</string>
     <string name="menu_detect">Detect Faces</string>    
     <string name="menu_panic">Panic</string>
@@ -28,7 +36,7 @@
     <string name="back">Back</string>
     <string name="next">Next</string>
     <string name="done">Done</string>
-    <string name="saving">Saving...</string>
+    <string name="saving">Saving\u2026</string>
     
     <string name="idtaggerh1">Identify</string>
     <string name="idtaggerh12">Consentify</string>
@@ -73,7 +81,7 @@
     <string name="menu_delete_original">Delete Original</string>
     <string name="menu_preview">Preview</string>
     
-    <string name="loading_image">Loading photo...</string>
+    <string name="loading_image">Loading photo\u2026</string>
     
     <string name="about">This app was developed by the SecureSmartCam Team, a joint effort by WITNESS and the Guardian Project.</string>
 
@@ -129,7 +137,7 @@
 	<string name="informaPrefs_keyalias">Destination Name:</string>
 	<string name="informaPrefs_keyemail">Destination Email:</string>
 	<string name="informaPrefs_trustedDestinations_title">Trusted Destinations</string>
-	<string name="informaPrefs_trustedDestinations_prompt">Manage your trusted destinations...</string>
+	<string name="informaPrefs_trustedDestinations_prompt">Manage your trusted destinations\u2026</string>
 	
 	<!--  INFORMA TRUSTED DESTINATIONS MANAGER -->
 	<string name="tdmanager_title">Trusted Destinations Manager</string>

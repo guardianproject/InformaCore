@@ -48,12 +48,27 @@
 		<item name="@android:windowExitAnimation">@anim/disappear</item>
 	</style>
 	
-  <style name="CustomTheme">        
-    <item name="android:windowNoTitle">true</item>
-    <item name="android:paddingTop">10px</item>
-  </style>
-  <style name="Theme.CustomDialog" parent="android:style/Theme.Dialog">
-  	<item name="android:windowNoTitle">true</item>
-  	<item name="android:padding">10px</item>
-  </style>
+	<!--  Overlay Screen -->
+  	<style name="Theme.CustomDialog" parent="android:style/Theme.Dialog">
+  		<item name="android:windowNoTitle">true</item>
+  		<item name="android:padding">10px</item>
+  	</style>
+  	
+  	<!--  Main Menu -->
+  	<style name="ButtonsMainMenu">
+  	    <item name="android:layout_width">0dp</item>
+		<item name="android:layout_height">match_parent</item>
+		<item name="android:layout_weight">0.25</item>
+		<item name="android:background">@drawable/menu_button_selector</item>
+		<item name="android:textSize">14dip</item>
+		<item name="android:textColor">#ff444444</item>
+  	</style>
+  	
+  	<!--  Fonts -->
+  	<style name="H1">
+  	    <item name="android:layout_width">fill_parent</item>
+  	    <item name="android:layout_height">wrap_content</item>
+  	    <item name="android:textColor">#ffffffff</item>
+  	    <item name="android:textSize">40dp</item>
+  	</style>
 </resources>

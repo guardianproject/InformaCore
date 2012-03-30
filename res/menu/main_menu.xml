@@ -1,16 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <item android:id="@+id/menu_panic"
-        android:title="@string/menu_panic"
-        android:icon="@drawable/ic_menu_panic" />
-
+    <item android:id="@+id/menu_New"
+        android:title="@string/menu_new_media"
+        android:showAsAction="always|withText">
+        <menu>
+            <item android:id="@+id/TakePictureButton"
+       			android:title="@string/camera"
+        		android:icon="@drawable/menu_camera_selector" />
+    		<item android:id="@+id/TakeVideoButton"
+        		android:title="@string/camcorder"
+        		android:icon="@drawable/menu_camcorder_selector" />
+        </menu>
+    </item>
+    <item android:id="@+id/menu_Import"
+        android:title="@string/menu_import_media"
+        android:showAsAction="always|withText">
+        <menu>
+            <item android:id="@+id/ChoosePictureButton"
+        		android:title="@string/choose_photos"
+        		android:icon="@drawable/menu_gallery_selector" />
+    		<item android:id="@+id/ChooseVideoButton"
+        		android:title="@string/choose_videos"
+        		android:icon="@drawable/menu_videos_selector" />
+        </menu>
+    </item>
+    <item android:id="@+id/menu_about"
+        android:title="@string/menu_about"
+        android:orderInCategory="0" />
     <item android:id="@+id/menu_prefs"
         android:title="@string/menu_prefs"
-        android:icon="@drawable/ic_menu_prefs" />
-
-    <item android:id="@+id/menu_logout"
+        android:orderInCategory="1" />
+	<item android:id="@+id/menu_logout"
         android:title="@string/menu_logout"
-        android:icon="@drawable/ic_menu_logout" />
-        
+        android:orderInCategory="2" />		
 </menu>

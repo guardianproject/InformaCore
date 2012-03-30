@@ -12,7 +12,12 @@ import org.witness.sscphase1.Eula.OnEulaAgreedTo;
 import org.witness.sscphase1.InformaSettings.OnSettingsSeen;
 import org.witness.securesmartcam.utils.ObscuraConstants;
 
-import android.app.Activity;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -29,17 +34,11 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.webkit.MimeTypeMap;
-import android.widget.Button;
 import android.widget.Toast;
 
-public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgreedTo, OnSettingsSeen {
-	private Button choosePictureButton, chooseVideoButton, takePictureButton, takeVideoButton;		
-	
+public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSettingsSeen {
+	ActionBar ab;	
 	private Uri uriCameraImage = null;
 	
 	SensorSucker informaService;
@@ -83,6 +82,7 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 				
     @Override
     public void onCreate(Bundle savedInstanceState) {
+    	setTheme(R.style.Theme_Sherlock_Light);
         super.onCreate(savedInstanceState);
 
         setLayout();
@@ -112,7 +112,7 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 		super.onResume();
 		
 		final SharedPreferences eula = getSharedPreferences(Eula.PREFERENCES_EULA,
-                Activity.MODE_PRIVATE);
+                SherlockActivity.MODE_PRIVATE);
 	  
         if (eula.getBoolean(Eula.PREFERENCE_EULA_ACCEPTED, false)) {
         	boolean res = InformaSettings.show(this);
@@ -125,104 +125,12 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 
 	private void setLayout() {
         setContentView(R.layout.mainmenu);
+        ab = getSupportActionBar();
+        ab.setDisplayShowTitleEnabled(false);
+        ab.setDisplayShowHomeEnabled(false);
         
-    	choosePictureButton = (Button) this.findViewById(R.id.ChoosePictureButton);
-    	choosePictureButton.setOnClickListener(this);
-    	
-    	chooseVideoButton = (Button) this.findViewById(R.id.ChooseVideoButton);
-    	chooseVideoButton.setOnClickListener(this);
-    	
-    	takePictureButton = (Button) this.findViewById(R.id.TakePictureButton);
-    	takePictureButton.setOnClickListener(this);
-    	
-    	takeVideoButton = (Button) this.findViewById(R.id.TakeVideoButton);
-    	takeVideoButton.setOnClickListener(this);
+        
     }
-
-	public void onClick(View v) {
-		if (v == choosePictureButton) 
-		{
-			
-			try
-			{
-				setContentView(R.layout.mainloading);
-				Intent intent = new Intent(Intent.ACTION_PICK);
-				intent.setType("image/*"); //limit to image types for now
-				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
-				
-			}
-			catch (Exception e)
-			{
-				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
-				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
-			}
-			
-		}
-		else if (v == chooseVideoButton) 
-		{
-			
-			try
-			{
-				 setContentView(R.layout.mainloading);
-				Intent intent = new Intent(Intent.ACTION_PICK);
-				intent.setType("video/*"); //limit to image types for now
-				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
-				
-			}
-			catch (Exception e)
-			{
-				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
-				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
-			}
-			
-		}
-		else if (v == takePictureButton || v == takeVideoButton) {
-			
-			setContentView(R.layout.mainloading);
-			
-			String storageState = Environment.getExternalStorageState();
-	        if(storageState.equals(Environment.MEDIA_MOUNTED)) {
-
-	          
-	            ContentValues values = new ContentValues();
-	            Intent  intent = new Intent();
-	            String tmpFileName = ObscuraConstants.TMP_FILE_NAME_IMAGE;;
-	            
-	            if(v == takePictureButton) {
-	            	intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE );
-	            	values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
-	            } else if(v == takeVideoButton) {
-	            	intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-	            	values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
-	            	tmpFileName = ObscuraConstants.TMP_FILE_NAME_VIDEO;
-	            }
-	      
-	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
-
-	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
-	            if (!tmpFileDirectory.exists())
-	            	tmpFileDirectory.mkdirs();
-	            
-	            File tmpFile = new File(tmpFileDirectory,"cam" + tmpFileName);
-	        	
-	        	uriCameraImage = Uri.fromFile(tmpFile);
-	            //uriCameraImage = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
-	            
-	            intent.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
-	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
-	        }   else {
-	            new AlertDialog.Builder(ObscuraApp.this)
-	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
-	            .setCancelable(true).create().show();
-	        }
-	        
-			takePictureButton.setVisibility(View.VISIBLE);
-			takeVideoButton.setVisibility(View.VISIBLE);
-			choosePictureButton.setVisibility(View.VISIBLE);
-			chooseVideoButton.setVisibility(View.VISIBLE);
-		}
-	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 		
@@ -298,24 +206,12 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 						passingIntent.setData(uriCameraImage);
 						passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
 						startActivityForResult(passingIntent, resultCode);
-					} else {
-						takePictureButton.setVisibility(View.VISIBLE);
-						takeVideoButton.setVisibility(View.VISIBLE);
-						choosePictureButton.setVisibility(View.VISIBLE);
-						chooseVideoButton.setVisibility(View.VISIBLE);
+					} else
 						
 						sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
-					}
 				}
-				else
-				{
-					takePictureButton.setVisibility(View.VISIBLE);
-					takeVideoButton.setVisibility(View.VISIBLE);
-					choosePictureButton.setVisibility(View.VISIBLE);
-					chooseVideoButton.setVisibility(View.VISIBLE);
-					
+				else					
 					sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
-				}
 			}
 		}
 		else {
@@ -379,29 +275,107 @@ public class ObscuraApp extends Activity implements OnClickListener, OnEulaAgree
 
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
-		
-    	MenuItem aboutMenuItem = menu.add(Menu.NONE, ObscuraConstants.ABOUT, Menu.NONE, getString(R.string.menu_about));
-    	aboutMenuItem.setIcon(R.drawable.ic_menu_about);
-    	
-    	MenuItem prefsMenuItem = menu.add(Menu.NONE, ObscuraConstants.PREFS, Menu.NONE, getString(R.string.menu_prefs));
-    	prefsMenuItem.setIcon(R.drawable.ic_menu_prefs);
-    	
-    	MenuItem logoutMenuItem = menu.add(Menu.NONE, ObscuraConstants.LOGOUT, Menu.NONE, getString(R.string.menu_logout));
-    	logoutMenuItem.setIcon(R.drawable.ic_menu_logout);
-    	
-    	return true;
+		MenuInflater mi = getSupportMenuInflater();
+		mi.inflate(R.menu.main_menu, menu);
+    	return super.onCreateOptionsMenu(menu);
 	}
 	
     public boolean onOptionsItemSelected(MenuItem item) {	
+    	String storageState = Environment.getExternalStorageState();
         switch (item.getItemId()) {
-        	case ObscuraConstants.ABOUT:
+        	case R.id.menu_about:
         		displayAbout();
         		return true;
-        	case ObscuraConstants.PREFS:
+        	case R.id.menu_prefs:
         		launchPrefs();
         		return true;
-        	case ObscuraConstants.LOGOUT:
+        	case R.id.menu_logout:
         		doLogout();
+        	case R.id.TakePictureButton:
+        		setContentView(R.layout.mainloading);
+    			
+    	        if(storageState.equals(Environment.MEDIA_MOUNTED)) {
+    	            ContentValues values = new ContentValues();
+    	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
+    	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
+    	            
+    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
+    	            if (!tmpFileDirectory.exists())
+    	            	tmpFileDirectory.mkdirs();
+    	            
+    	            File tmpFile = new File(tmpFileDirectory,"cam" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
+    	        	
+    	        	uriCameraImage = Uri.fromFile(tmpFile);
+    	            //uriCameraImage = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+    	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
+    	            
+    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
+    	        }   else {
+    	            new AlertDialog.Builder(ObscuraApp.this)
+    	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
+    	            .setCancelable(true).create().show();
+    	        }
+        		return true;
+        	case R.id.TakeVideoButton:
+            	setContentView(R.layout.mainloading);
+    			
+    	        if(storageState.equals(Environment.MEDIA_MOUNTED)) {
+    	            ContentValues values = new ContentValues();
+    	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
+    	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
+
+    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
+    	            if (!tmpFileDirectory.exists())
+    	            	tmpFileDirectory.mkdirs();
+    	            
+    	            File tmpFile = new File(tmpFileDirectory,"cam" + ObscuraConstants.TMP_FILE_NAME_VIDEO);
+    	        	
+    	        	uriCameraImage = Uri.fromFile(tmpFile);
+    	            //uriCameraImage = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+    	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
+    	            
+    	        	Intent  intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+    	            	.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
+    	        }   else {
+    	            new AlertDialog.Builder(ObscuraApp.this)
+    	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
+    	            .setCancelable(true).create().show();
+    	        }
+            	
+        		return true;
+        	case R.id.ChoosePictureButton:
+        		try
+    			{
+    				setContentView(R.layout.mainloading);
+    				Intent intent = new Intent(Intent.ACTION_PICK);
+    				intent.setType("image/*"); //limit to image types for now
+    				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
+    				
+    			}
+    			catch (Exception e)
+    			{
+    				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
+    				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
+    			}
+        		return true;
+        	case R.id.ChooseVideoButton:
+        		try
+    			{
+    				 setContentView(R.layout.mainloading);
+    				Intent intent = new Intent(Intent.ACTION_PICK);
+    				intent.setType("video/*"); //limit to image types for now
+    				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
+    				
+    			}
+    			catch (Exception e)
+    			{
+    				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
+    				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
+    			}
+        		return true;
         	default:
         		return false;
         }

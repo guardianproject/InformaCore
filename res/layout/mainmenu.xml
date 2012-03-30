@@ -1,60 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/FrameLayout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg"
-    android:paddingTop="20sp" >
-
-	<LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
-	    
-	    >
-		 <ImageView android:src="@drawable/ic_ssc" 
-		 	android:layout_width="fill_parent" 
-  			android:layout_height="200dp"
-  			android:gravity="center_vertical|center_horizontal" android:layout_marginTop="20dp"/>
-		
-		<TextView android:text="@string/SplashTextViewString"
-			android:id="@+id/SplashTextView" android:layout_width="fill_parent"
-			android:layout_gravity="center_vertical|center_horizontal"
-			android:gravity="center_vertical|center_horizontal" android:textColor="#FFFFff"
-			android:layout_height="wrap_content" android:textSize="40dp"/>
-		
-		
-		<LinearLayout android:orientation="horizontal" 
-			android:layout_width="fill_parent" 
-			android:layout_height="wrap_content" android:gravity="center_vertical|center_horizontal"
-			android:background="#cc333333"
-			android:weightSum="1.0"
-			>
-			<Button  android:id="@+id/TakePictureButton" 
-				android:text="Camera" 
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="0.25"
-				android:drawableTop="@drawable/ic_camera"
-				android:layout_marginRight="5dp" />
-			<Button  android:id="@+id/TakeVideoButton" 
-				android:text="Camcorder" 
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="0.25"
-				android:drawableTop="@drawable/ic_camera"
-				android:layout_marginRight="5dp" />
-			<Button
-			    android:id="@+id/ChoosePictureButton"
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="0.25"
-			    android:drawableTop="@drawable/ic_gallery"
-			    android:text="Photos" />
-			<Button  android:id="@+id/ChooseVideoButton" 
-				android:text="Videos" 
-				android:layout_width="0dp"
-				android:layout_height="match_parent"
-				android:layout_weight="0.25"				
-				android:drawableTop="@drawable/ic_video"
-				android:layout_marginLeft="5dp" />
-		</LinearLayout>
-	</LinearLayout>
-</FrameLayout>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" 
+    android:layout_width="fill_parent" 
+    android:layout_height="fill_parent"
+    android:background="@drawable/bg">
+	 <ImageView
+	    android:src="@drawable/ic_ssc" 
+	 	android:layout_width="fill_parent" 
+ 		android:layout_height="200dp"
+ 		android:gravity="center_vertical|center_horizontal" 
+ 		android:layout_marginTop="20dp"
+ 		android:layout_marginBottom="20dp"/>
+	<org.witness.mods.InformaHeaderTextView style="@style/H1" 
+	    android:text="@string/SplashTextViewString"
+		android:id="@+id/SplashTextView"
+		android:layout_gravity="center_horizontal"
+		android:gravity="center_horizontal"
+		android:layout_marginBottom="20dp"
+		android:layout_alignParentBottom="true" />
+</RelativeLayout>
