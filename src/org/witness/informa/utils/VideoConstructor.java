@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -31,6 +32,7 @@ import org.witness.informa.utils.InformaConstants.Keys.Events;
 import org.witness.informa.utils.io.BinaryInstaller;
 import org.witness.informa.utils.io.ShellUtils;
 import org.witness.informa.utils.io.ShellUtils.ShellCallback;
+import org.witness.securesmartcam.utils.ObscuraConstants;
 import org.witness.ssc.video.ObscureRegion;
 
 import android.content.Context;
@@ -52,8 +54,6 @@ public class VideoConstructor {
 			bi.installFromRaw();
 		}
 	}
-	
-	
 	
 	private void execProcess(String[] cmds, ShellCallback sc) throws Exception {		
         
@@ -125,7 +125,32 @@ public class VideoConstructor {
 		} catch (JSONException e) {
 			Log.e(InformaConstants.VIDEO_LOG, e.toString());
 		}
+	}
+	
+	public byte[] getBitStream(String video) {
+		File h264 = new File(video.substring(0, video.lastIndexOf(ObscuraConstants.MimeTypes.MP4)) + "h264");
+		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
+		try {
+			Runtime.getRuntime().exec("chmod 700 " +ffmpegBin);
+		} catch (IOException e) {
+			Log.e(InformaConstants.VIDEO_LOG, e.toString());
+		}
 		
+		String[] ffmpegCommand = {
+				ffmpegBin, "-y",
+				"-i", video,
+				"-vcodec", "copy",
+				"-vbsf", "h264_mp4toannexb",
+				"-an", h264.getAbsolutePath()
+		};
+		
+		try {
+			execProcess(ffmpegCommand, null);
+			return fileToBytes(h264);
+		} catch (Exception e) {
+			Log.e(InformaConstants.VIDEO_LOG, e.toString());
+			return new byte[]{};
+		}
 		
 		
 	}
@@ -219,6 +244,18 @@ public class VideoConstructor {
 		SimpleDateFormat sdf = new SimpleDateFormat("mm:ss.SSS");
 		String time = sdf.format(new Date(millis));
 		return "00:" + time;
+	}
+	
+	private byte[] fileToBytes(File file) throws IOException {
+		FileInputStream fis = new FileInputStream(file);
+		byte[] fileBytes = new byte[(int) file.length()];
+		
+		int offset = 0;
+		int bytesRead = 0;
+		while(offset < fileBytes.length && (bytesRead = fis.read(fileBytes, offset, fileBytes.length - offset)) >= 0)
+			offset += bytesRead;
+		fis.close();
+		return fileBytes;
 	}
 		
 	public void processVideo(File redactSettingsFile, 

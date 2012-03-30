@@ -201,20 +201,6 @@ public class VideoEditor extends Activity implements
 	
 	private long mDuration;
 	
-	BroadcastReceiver br = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context c, Intent i) {
-			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
-		    	
-		    	//reviewAndFinish();
-			}
-				
-			
-		}
-    	
-    };
-	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

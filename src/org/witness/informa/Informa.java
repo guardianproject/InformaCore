@@ -22,6 +22,7 @@ import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
+import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
@@ -571,7 +572,9 @@ public class Informa {
 			}
 		} else if(imageData.getInt(Keys.Media.MEDIA_TYPE) == MediaTypes.VIDEO) {
 			data.videoRegions = null;
-			data.videoHash = MediaHasher.hash(new File(genealogy.localMediaPath), "MD5");
+			
+			VideoConstructor vc = new VideoConstructor(c.getApplicationContext());
+			data.videoHash = MediaHasher.hash(vc.getBitStream(genealogy.localMediaPath), "MD5");
 			data.events = events;
 			
 			try {
