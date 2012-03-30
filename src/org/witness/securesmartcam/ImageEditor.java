@@ -28,7 +28,12 @@ import org.witness.securesmartcam.filters.RegionProcesser;
 import org.witness.securesmartcam.utils.ObscuraConstants;
 import org.witness.sscphase1.R;
 
-import android.app.Activity;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -65,9 +70,6 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
 import android.util.Log;
 import android.view.Display;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -77,7 +79,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class ImageEditor extends Activity implements OnTouchListener, OnClickListener {
+public class ImageEditor extends SherlockActivity implements OnTouchListener, OnClickListener {
 	// Image Matrix
 	Matrix matrix = new Matrix();
 
@@ -158,6 +160,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     // Keep track of the orientation
     private int originalImageOrientation = ExifInterface.ORIENTATION_NORMAL;
     
+    ActionBar ab;
+    
     BroadcastReceiver br = new BroadcastReceiver() {
 
 		@Override
@@ -202,8 +206,13 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	@SuppressWarnings("unused")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		setTheme(R.style.Theme_Sherlock_Light);
 		super.onCreate(savedInstanceState);
-
+		
+		ab = getSupportActionBar();
+		ab.setDisplayShowHomeEnabled(false);
+		ab.setDisplayShowTitleEnabled(false);
+		ab.hide();
 		
 		sendBroadcast(new Intent()
 			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
@@ -219,10 +228,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
         } catch (Exception e) {
         	versNum = "";
         }
-
-        setTitle(getString(R.string.app_name) + " (" + versNum + ")");
         
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.imageviewer);
 
 		// Calculate the minimum distance
@@ -234,18 +240,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		// Buttons for zooming
 		zoomIn = (Button) this.findViewById(R.id.ZoomIn);
 		zoomOut = (Button) this.findViewById(R.id.ZoomOut);
-		btnNew = (Button) this.findViewById(R.id.New);
-		btnSave = (Button) this.findViewById(R.id.Save);
-		btnShare = (Button) this.findViewById(R.id.Share);
-		btnPreview = (Button) this.findViewById(R.id.Preview);
-		
-		// this, ImageEditor will be the onClickListener for the buttons
 		zoomIn.setOnClickListener(this);
 		zoomOut.setOnClickListener(this);
-		btnNew.setOnClickListener(this);
-		btnSave.setOnClickListener(this);
-		btnShare.setOnClickListener(this);
-		btnPreview.setOnClickListener(this);
 
 		// Instantiate the vibrator
 		vibe = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -662,6 +658,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	@Override
 	public boolean onTouch(View v, MotionEvent event) 
 	{
+		ab.show();
 		if (currRegion != null && (mode == ObscuraConstants.DRAG || currRegion.getBounds().contains(event.getX(), event.getY())))		
 			return onTouchRegion(v, event, currRegion);	
 		else
@@ -1036,25 +1033,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			
 			putOnScreen();
 		} 
-		else if (v == btnNew)
-		{
-			newDefaultRegion();
-		}
-		else if (v == btnPreview)
-		{
-			showPreview();
-		}
-		else if (v == btnSave)
-		{
-
-			Intent keyChooser = new Intent(this, KeyChooser.class);
-			startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
-		}
-		else if (v == btnShare)
-		{
-			// Share Image
-      		shareImage();
-		}
 		else if (mode != ObscuraConstants.DRAG && mode != ObscuraConstants.ZOOM) 
 		{
 			float defaultSize = imageView.getWidth()/4;
@@ -1082,10 +1060,9 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-    	MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.image_editor_menu, menu);
-
-        return true;
+    	MenuInflater mi = getSupportMenuInflater();
+        mi.inflate(R.menu.image_editor_menu_default, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 	
 	private void newDefaultRegion ()
@@ -1118,38 +1095,20 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
-    	
     		case R.id.menu_new_region:
-    			
     			newDefaultRegion();
-
     			return true;
-    			
         	case R.id.menu_save:
-
 				Intent keyChooser = new Intent(this, KeyChooser.class);
 				startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
         		return true;
-        		
-        	case R.id.menu_share:
-        		// Share Image
-          		shareImage();
-        		return true;
-        		
-        	case R.id.menu_about:
-        		// Pull up about screen
-        		displayAbout();
-        		
-        		return true;
-        	
         	case R.id.menu_preview:
         		showPreview();
-        		
         		return true;
-        		
+        	case R.id.menu_about:
+        		return true;
         	case R.id.menu_prefs:
-        		launchPrefs();
-        		
+        		return true;
     		default:
     			return false;
     	}
@@ -1482,7 +1441,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, final Intent data) {
-    	if(resultCode == Activity.RESULT_OK) {
+    	if(resultCode == SherlockActivity.RESULT_OK) {
     		if(requestCode == InformaConstants.FROM_INFORMA_TAGGER) {
     			// replace corresponding image region
     			@SuppressWarnings("unchecked")
@@ -1515,7 +1474,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     				  }
     				},500);
     		}
-    	} else if(resultCode == Activity.RESULT_CANCELED) {
+    	} else if(resultCode == SherlockActivity.RESULT_CANCELED) {
     		// TODO: FIX THIS.
     		if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER && data.hasExtra(InformaConstants.Keys.USER_CANCELED_EVENT)) {
     			mProgressDialog = ProgressDialog.show(this,  "", getResources().getString(R.string.saving));
