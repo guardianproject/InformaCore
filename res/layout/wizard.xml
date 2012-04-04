@@ -1,61 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" style="@style/OverlayActivity"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:weightSum="1.0" >
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_weight="0.1"
-        android:background="#ffffff"
-        android:id="@+id/wizard_progress"
-        android:orientation="horizontal" />
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_weight="0.1"
-        android:text="@string/wizard_main_title"
-        android:textSize="25px" />
+	<RelativeLayout
+	    style="@style/H1Holder"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:orientation="horizontal"
+	    android:id="@+id/wizard_header" >
+	    <org.witness.mods.InformaHeaderTextView style="@style/H1"
+	        android:id="@+id/informaHeaderTextView1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_centerVertical="true"
+	        android:gravity="center"
+	        android:text="@string/wizard_main_title" />
 
-  	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    <TextView style="@style/H2"
+	        android:id="@+id/wizard_progress"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignBottom="@+id/informaHeaderTextView1"
+	        android:layout_alignParentRight="true"
+	        android:paddingRight="6dip" />
+	</RelativeLayout>
+
+	<TextView style="@style/H3"
   	    android:layout_width="fill_parent"
-  	    android:layout_height="0dip"
-  	    android:layout_weight="0.7"
-  	    android:id="@+id/wizard_holder"
-  	    android:weightSum="1.0"
-  	    android:orientation="vertical">
-  	    <TextView
-  	        android:layout_width="fill_parent"
-  	        android:layout_height="wrap_content"
-            android:id="@+id/wizard_frame_title"
-            android:textSize="45px"
-            android:textColor="#94e400" />
-  	</LinearLayout>
+  	    android:layout_height="wrap_content"
+        android:id="@+id/wizard_frame_title"
+        android:layout_marginTop="6dip"
+        android:layout_marginBottom="6dip"
+        android:layout_below="@+id/wizard_header" />
+	<LinearLayout
+	    android:id="@+id/wizard_frame_content"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:orientation="vertical"
+	    android:layout_below="@+id/wizard_frame_title"
+	    android:paddingLeft="6dip"
+	    android:paddingRight="6dip" />
+	    
+  	
    	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
    	    android:layout_width="fill_parent"
-   	    android:layout_height="0dip"
-   	    android:layout_weight="0.1"
+   	    android:layout_height="wrap_content"
    	    android:orientation="horizontal"
    	    android:weightSum="1.0"
-   	    android:id="@+id/wizard_navigation_holder">
+   	    android:id="@+id/wizard_navigation_holder"
+   	    android:layout_alignParentBottom="true"
+   	    >
 
-   	    <Button
+   	    <org.witness.mods.InformaButton style="@style/Button_standard"
    	        android:id="@+id/wizard_done"
    	        android:layout_width="fill_parent"
-   	        android:layout_height="fill_parent"
+   	        android:layout_height="wrap_content"
    	        android:text="@string/done"
    	        android:visibility="gone" />
-   	    <Button
+   	    <org.witness.mods.InformaButton style="@style/Button_standard"
    	        android:layout_width="0dip"
-   	        android:layout_height="fill_parent"
+   	        android:layout_height="wrap_content"
    	        android:layout_weight="0.5"
    	        android:id="@+id/wizard_back"
    	        android:text="@string/back" />
-   	    <Button
+   	    <org.witness.mods.InformaButton style="@style/Button_standard"
    	        android:layout_width="0dip"
-   	        android:layout_height="fill_parent"
+   	        android:layout_height="wrap_content"
    	        android:layout_weight="0.5"
    	        android:id="@+id/wizard_next"
    	        android:text="@string/next" />
@@ -63,4 +77,4 @@
 
     
 
-</LinearLayout>
+</RelativeLayout>

@@ -64,7 +64,6 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	
 	@Override
 	protected void onPause() {
-		// TODO: this is only for testing...
 		super.onPause();
 	}
 	
@@ -95,7 +94,6 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         	if(b.containsKey(Keys.Service.FINISH_ACTIVITY))
         		finish();
         	else if(b.containsKey(Keys.Service.START_SERVICE)) {
-        		Log.d(InformaConstants.TAG, "um hi? restart?");
         		Eula.show(this);
         	}
         		
@@ -345,36 +343,6 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            .setCancelable(true).create().show();
     	        }
             	
-        		return true;
-        	case R.id.ChoosePictureButton:
-        		try
-    			{
-    				setContentView(R.layout.mainloading);
-    				Intent intent = new Intent(Intent.ACTION_PICK);
-    				intent.setType("image/*"); //limit to image types for now
-    				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
-    				
-    			}
-    			catch (Exception e)
-    			{
-    				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
-    				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
-    			}
-        		return true;
-        	case R.id.ChooseVideoButton:
-        		try
-    			{
-    				 setContentView(R.layout.mainloading);
-    				Intent intent = new Intent(Intent.ACTION_PICK);
-    				intent.setType("video/*"); //limit to image types for now
-    				startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
-    				
-    			}
-    			catch (Exception e)
-    			{
-    				Toast.makeText(this, "Unable to open Gallery app", Toast.LENGTH_LONG).show();
-    				Log.e(ObscuraConstants.TAG, "error loading gallery app to choose photo: " + e.getMessage(), e);
-    			}
         		return true;
         	default:
         		return false;

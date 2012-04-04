@@ -3,6 +3,7 @@ package org.witness.securesmartcam.utils;
 import java.util.ArrayList;
 
 import org.witness.informa.utils.InformaConstants;
+import org.witness.mods.InformaTextView;
 import org.witness.sscphase1.R;
 
 import android.content.Context;
@@ -13,7 +14,6 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 public class SelectionsAdapter extends BaseAdapter {
 	ArrayList<Selections> _selections;
@@ -49,12 +49,11 @@ public class SelectionsAdapter extends BaseAdapter {
 	@Override
 	public View getView(final int position, View convertView, final ViewGroup parent) {
 		convertView = li.inflate(R.layout.select_listview, null);
-		TextView selectText = (TextView) convertView.findViewById(R.id.selectText);
+		InformaTextView selectText = (InformaTextView) convertView.findViewById(R.id.selectText);
 		selectText.setText(_selections.get(position)._optionValue);
 		
 		CheckBox selectBox = (CheckBox) convertView.findViewById(R.id.selectBox);
 		selectBox.setSelected(_selections.get(position).getSelected());
-				
 		if(!_isMulti) {
 			
 			selectBox.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
@@ -67,7 +66,7 @@ public class SelectionsAdapter extends BaseAdapter {
 						for(Selections s: _selections) {
 							if(position != _selections.indexOf(s)) {
 								LinearLayout ll = (LinearLayout) parent.getChildAt(_selections.indexOf(s));
-								CheckBox cb = (CheckBox) ll.getChildAt(0);
+								CheckBox cb = (CheckBox) ll.findViewById(R.id.selectBox);
 								
 								s.setSelected(false);
 								cb.setChecked(false);

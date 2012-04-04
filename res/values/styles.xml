@@ -51,7 +51,12 @@
 	<!--  Overlay Screen -->
   	<style name="Theme.CustomDialog" parent="android:style/Theme.Dialog">
   		<item name="android:windowNoTitle">true</item>
-  		<item name="android:padding">10px</item>
+  		<item name="android:textAppearance">@style/P</item>
+  	</style>
+  	
+  	<style name="OverlayActivity">
+  	    <item name="android:background">#ff0a5587</item>
+  	    <item name="android:textColor">#ffffffff</item>
   	</style>
   	
   	<!--  Main Menu -->
@@ -65,10 +70,40 @@
   	</style>
   	
   	<!--  Fonts -->
+  	<style name="H1Holder">
+  		<item name="android:background">#ff8fae22</item>   
+  	</style>
+  	
   	<style name="H1">
-  	    <item name="android:layout_width">fill_parent</item>
-  	    <item name="android:layout_height">wrap_content</item>
+  	    <item name="android:paddingLeft">6dip</item>
+  		<item name="android:paddingRight">6dip</item>
   	    <item name="android:textColor">#ffffffff</item>
-  	    <item name="android:textSize">40dp</item>
+  	    <item name="android:textSize">24dip</item>
+  	</style>
+  	
+  	<style name="H2">
+  	    <item name="android:textColor">#ffffffff</item>
+  	    <item name="android:textSize">18dip</item>
+  	</style>
+  	
+  	<style name="H3">
+  	    <item name="android:textColor">#ff8fae22</item>
+  	    <item name="android:textSize">16dip</item>
+  	    <item name="android:paddingLeft">6dip</item>
+  	    <item name="android:paddingRight">6dip</item>
+  	</style>
+  	
+  	<style name="P" parent="@android:style/TextAppearance">
+  	    <item name="android:textColor">#ffffffff</item>
+  	</style>
+  	
+  	<!--  Buttons -->
+  	<style name="Button_standard">
+  	    <item name="android:textSize">14dip</item>
+  	    <item name="android:background">@drawable/standard_button_selector</item>
+  	    <item name="android:paddingLeft">4dip</item>
+  	    <item name="android:paddingRight">4dip</item>
+  	    <item name="android:paddingTop">8dip</item>
+  	    <item name="android:paddingBottom">8dip</item>
   	</style>
 </resources>

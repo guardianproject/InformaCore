@@ -2,7 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/menu_New"
         android:title="@string/menu_new_media"
-        android:showAsAction="always|withText">
+        android:icon="@drawable/ic_ssc"
+        android:showAsAction="always">
         <menu>
             <item android:id="@+id/TakePictureButton"
        			android:title="@string/camera"
@@ -10,18 +11,6 @@
     		<item android:id="@+id/TakeVideoButton"
         		android:title="@string/camcorder"
         		android:icon="@drawable/menu_camcorder_selector" />
-        </menu>
-    </item>
-    <item android:id="@+id/menu_Import"
-        android:title="@string/menu_import_media"
-        android:showAsAction="always|withText">
-        <menu>
-            <item android:id="@+id/ChoosePictureButton"
-        		android:title="@string/choose_photos"
-        		android:icon="@drawable/menu_gallery_selector" />
-    		<item android:id="@+id/ChooseVideoButton"
-        		android:title="@string/choose_videos"
-        		android:icon="@drawable/menu_videos_selector" />
         </menu>
     </item>
     <item android:id="@+id/menu_about"

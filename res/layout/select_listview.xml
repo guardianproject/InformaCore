@@ -7,7 +7,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/selectBox" />
-    <TextView
+    <org.witness.mods.InformaTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/selectText" />

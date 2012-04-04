@@ -15,11 +15,14 @@ import org.json.JSONObject;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
+import org.witness.mods.InformaButton;
+import org.witness.mods.InformaTextView;
 import org.witness.securesmartcam.utils.ObscuraConstants;
 import org.witness.securesmartcam.utils.Selections;
 import org.witness.securesmartcam.utils.SelectionsAdapter;
 
-import android.app.Activity;
+import com.actionbarsherlock.app.SherlockActivity;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -39,14 +42,13 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-public class Wizard extends Activity implements OnClickListener {
+public class Wizard extends SherlockActivity implements OnClickListener {
 	int current;
 		
-	LinearLayout progress, holder, navigation_holder;
-	TextView frameTitle;
-	Button wizard_next, wizard_back, wizard_done;
+	LinearLayout frame_content, navigation_holder;
+	TextView frame_title, progress;
+	InformaButton wizard_next, wizard_back, wizard_done;
 	
 	private SharedPreferences preferences;
 	private SharedPreferences.Editor _ed;
@@ -68,14 +70,14 @@ public class Wizard extends Activity implements OnClickListener {
 		current = getIntent().getIntExtra("current", 0);
 		wizardForm = new WizardForm(this);
 		
-		frameTitle = (TextView) findViewById(R.id.wizard_frame_title);
-		progress = (LinearLayout) findViewById(R.id.wizard_progress);
-		holder = (LinearLayout) findViewById(R.id.wizard_holder);
+		frame_title = (TextView) findViewById(R.id.wizard_frame_title);
+		
+		frame_content = (LinearLayout) findViewById(R.id.wizard_frame_content);
 		navigation_holder = (LinearLayout) findViewById(R.id.wizard_navigation_holder);
 		
-		wizard_done = (Button) findViewById(R.id.wizard_done);
-		wizard_back = (Button) findViewById(R.id.wizard_back);
-		wizard_next = (Button) findViewById(R.id.wizard_next);
+		wizard_done = (InformaButton) findViewById(R.id.wizard_done);
+		wizard_back = (InformaButton) findViewById(R.id.wizard_back);
+		wizard_next = (InformaButton) findViewById(R.id.wizard_next);
 		
 		if(current < wizardForm.frames.length() - 1)
 			wizard_next.setOnClickListener(this);
@@ -93,6 +95,9 @@ public class Wizard extends Activity implements OnClickListener {
 			setMandatory(wizard_back);
 		}
 		
+		progress = (TextView) findViewById(R.id.wizard_progress);
+		progress.setText((current + 1) + "/" + wizardForm.frames.length());
+		
 		try {
 			initFrame();
 		} catch(JSONException e) {
@@ -106,17 +111,22 @@ public class Wizard extends Activity implements OnClickListener {
 	}
 	
 	public void enableAction(View v) {
-		((Button) v).setAlpha(1.0f);
-		((Button) v).setClickable(true);
+		((InformaButton) v).setAlpha(1.0f);
+		((InformaButton) v).setClickable(true);
+	}
+	
+	public void disableAction(View v) {
+		((InformaButton) v).setAlpha(0.5f);
+		((InformaButton) v).setClickable(false);
 	}
 	
 	public void initFrame() throws JSONException {
 		wizardForm.setFrame(current);
-		frameTitle.setText(wizardForm.getTitle());
+		frame_title.setText(wizardForm.getTitle());
 
 		ArrayList<View> views = wizardForm.getContent();
 		for(View v : views)
-			holder.addView(v);
+			frame_content.addView(v);
 	}
 	
 	@SuppressWarnings("unused")
@@ -283,7 +293,7 @@ public class Wizard extends Activity implements OnClickListener {
 			String[] words = rawTitle.split("_");
 			StringBuffer sb = new StringBuffer();
 			for(String word : words) {
-				sb.append(word + " ");
+				sb.append(word.toUpperCase() + " ");
 			}
 			
 			return sb.toString().substring(0, sb.length() - 1);
@@ -334,7 +344,7 @@ public class Wizard extends Activity implements OnClickListener {
 						Wizard.this.setMandatory(wizard_next);
 					
 					if(type.compareTo("button") == 0) {
-						Button button = new Button(_c);
+						InformaButton button = new InformaButton(_c);
 						button.setText(findKey(s, "text"));
 						
 						String[] args = parseArguments(findKey(s, "args"));
@@ -368,7 +378,6 @@ public class Wizard extends Activity implements OnClickListener {
 									int top, int right, int bottom,
 									int oldLeft, int oldTop, int oldRight,
 									int oldBottom) {
-								// TODO Auto-generated method stub
 								
 							}
 							
@@ -382,37 +391,28 @@ public class Wizard extends Activity implements OnClickListener {
 						edittext.addTextChangedListener(new TextWatcher() {
 
 							@Override
-							public void afterTextChanged(Editable arg0) {
-								
-
-								String pw = arg0.toString();
-								
-								if(pw.length() == 0) {}
-								else if(isValidatedPassword(pw))
-								 {
+							public void afterTextChanged(Editable e) {
+								String pw = e.toString();
+								if(pw.length() == 0) {} 
+								else if(isValidatedPassword(pw)){
 									enableAction(wizard_next);
 									if(callback != null) {
 										if(attachTo == null)
 											callbacks.add(new Callback(callback, new String[] {pw}));
 										
 									}
-								}
-										
+								} else if(!isValidatedPassword(pw)) {
+									disableAction(wizard_next);
+								}		
 							}
 
 							@Override
 							public void beforeTextChanged(CharSequence s,
-									int start, int count, int after) {
-								
-								
-							}
+									int start, int count, int after) {}
 
 							@Override
 							public void onTextChanged(CharSequence s,
-									int start, int before, int count) {
-								
-								
-							}
+									int start, int before, int count) {}
 							
 						});
 						
@@ -423,6 +423,7 @@ public class Wizard extends Activity implements OnClickListener {
 						ListView lv = new ListView(_c);
 						
 						for(String option : findKey(s, "values").split(",")) {
+							Log.d(InformaConstants.TAG, "this option: " + option);
 							if(Character.toString(option.charAt(0)).compareTo("#") == 0) {
 								// populate from callback
 								Callback populate = new Callback(option.substring(1), null);
@@ -443,12 +444,11 @@ public class Wizard extends Activity implements OnClickListener {
 						}
 						
 						callbacks.add(new Callback(callback, new Object[] {selections}));
-						
 						lv.setAdapter(new SelectionsAdapter(_c, selections, type));
 						views.add(lv);
 					}
 				} else {
-					TextView tv = new TextView(_c);
+					InformaTextView tv = new InformaTextView(_c);
 					tv.setText(s);
 					views.add(tv);
 				}
@@ -490,7 +490,7 @@ public class Wizard extends Activity implements OnClickListener {
 	
 	private boolean isValidatedPassword (String password)
 	{
-		return password.length() > 6;
+		return password.length() >= 6;
 	}
 	
 	@Override
@@ -550,7 +550,7 @@ public class Wizard extends Activity implements OnClickListener {
 	protected void onActivityResult(int request, int result, Intent data) {
 		super.onActivityResult(request, result, data);
 		
-		if(result == Activity.RESULT_OK) {
+		if(result == SherlockActivity.RESULT_OK) {
 			apg.onActivityResult(this, request, result, data);
 			
 			switch(request) {

@@ -11,7 +11,8 @@
     	android:layout_width="fill_parent"
     	android:layout_height="wrap_content"
     	android:orientation="vertical"
-    	android:weightSum="1.0" >
+    	android:weightSum="1.0"
+    	android:paddingBottom="6dip" >
 		<Button
 		    android:layout_width="fill_parent"
 	    	android:layout_height="0dip"
@@ -24,6 +25,7 @@
 	    	android:layout_width="fill_parent"
 	    	android:layout_height="0dip"
 	    	android:layout_weight="0.7"
-	    	android:id="@+id/tdmanager_holder" />
+	    	android:id="@+id/tdmanager_holder"
+	    	android:layout_marginBottom="6dip" />
 	</LinearLayout>
 </LinearLayout>
