@@ -2,7 +2,6 @@ package org.witness.informa;
 
 import info.guardianproject.database.sqlcipher.SQLiteDatabase;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.json.JSONException;
@@ -14,10 +13,9 @@ import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.securesmartcam.utils.Selections;
-import org.witness.securesmartcam.utils.SelectionsAdapter;
-import org.witness.sscphase1.R;
+import org.witness.ssc.utils.Selections;
+import org.witness.ssc.utils.SelectionsAdapter;
+import org.witness.ssc.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -52,6 +50,7 @@ public class KeyChooser extends Activity implements OnClickListener {
 		h = new Handler();
 		
 		Runnable r = new Runnable() {
+			@SuppressWarnings("unused")
 			Apg apg;
 			DatabaseHelper dh;
 			SQLiteDatabase db;

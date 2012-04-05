@@ -6,7 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.SensorLogger;
-import org.witness.sscphase1.ObscuraApp;
+import org.witness.ssc.ObscuraApp;
 
 import android.content.Context;
 import android.location.Criteria;

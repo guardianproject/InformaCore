@@ -17,8 +17,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.R;
+import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.R;
 
 import android.content.Context;
 import android.util.Log;

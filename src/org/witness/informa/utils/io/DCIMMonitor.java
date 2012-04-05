@@ -3,8 +3,8 @@ package org.witness.informa.utils.io;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.ObscuraApp;
+import org.witness.ssc.ObscuraApp;
+import org.witness.ssc.utils.ObscuraConstants;
 
 import android.app.Service;
 import android.content.Intent;

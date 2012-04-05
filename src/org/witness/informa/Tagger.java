@@ -10,8 +10,8 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys.ImageRegion;
 import org.witness.informa.utils.Options;
 import org.witness.informa.utils.OptionsAdapter;
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.R;
+import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.R;
 
 import android.app.Activity;
 import android.graphics.Bitmap;

@@ -1,7 +1,7 @@
 package org.witness.ssc.video;
 
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.ObscuraApp;
+import org.witness.ssc.ObscuraApp;
+import org.witness.ssc.utils.ObscuraConstants;
 
 import android.graphics.RectF;
 import android.util.Log;

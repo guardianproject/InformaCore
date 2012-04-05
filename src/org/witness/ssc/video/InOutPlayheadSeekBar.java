@@ -6,8 +6,8 @@
 package org.witness.ssc.video;
 
 
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.R;
+import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.R;
 
 import android.content.Context;
 import android.graphics.Bitmap;

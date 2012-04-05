@@ -2,7 +2,7 @@ package org.witness.ssc.video;
 
 import java.util.Vector;
 
-import org.witness.securesmartcam.utils.ObscuraConstants;
+import org.witness.ssc.utils.ObscuraConstants;
 
 import android.content.Context;
 import android.graphics.Bitmap;

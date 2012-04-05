@@ -32,7 +32,7 @@ import org.witness.informa.utils.InformaConstants.Keys.Events;
 import org.witness.informa.utils.io.BinaryInstaller;
 import org.witness.informa.utils.io.ShellUtils;
 import org.witness.informa.utils.io.ShellUtils.ShellCallback;
-import org.witness.securesmartcam.utils.ObscuraConstants;
+import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.video.ObscureRegion;
 
 import android.content.Context;

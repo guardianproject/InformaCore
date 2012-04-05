@@ -9,7 +9,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.witness.sscphase1.R;
+import org.witness.ssc.R;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;

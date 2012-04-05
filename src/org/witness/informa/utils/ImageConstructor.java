@@ -32,11 +32,11 @@ import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
-import org.witness.securesmartcam.filters.CrowdPixelizeObscure;
-import org.witness.securesmartcam.filters.InformaTagger;
-import org.witness.securesmartcam.filters.PixelizeObscure;
-import org.witness.securesmartcam.filters.SolidObscure;
-import org.witness.securesmartcam.utils.ObscuraConstants;
+import org.witness.ssc.image.filters.CrowdPixelizeObscure;
+import org.witness.ssc.image.filters.InformaTagger;
+import org.witness.ssc.image.filters.PixelizeObscure;
+import org.witness.ssc.image.filters.SolidObscure;
+import org.witness.ssc.utils.ObscuraConstants;
 
 import android.content.ContentValues;
 import android.content.Context;

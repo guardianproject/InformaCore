@@ -2,10 +2,9 @@ package org.witness.informa.utils;
 
 import java.util.ArrayList;
 
-import org.witness.sscphase1.R;
+import org.witness.ssc.R;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

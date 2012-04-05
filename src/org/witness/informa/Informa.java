@@ -26,7 +26,7 @@ import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
-import org.witness.securesmartcam.utils.Selections;
+import org.witness.ssc.utils.Selections;
 
 import android.app.Activity;
 import android.content.ContentValues;

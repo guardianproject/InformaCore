@@ -1,26 +1,14 @@
 package org.witness.informa;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
-import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.LoginCache;
-import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.ObscuraApp;
-import org.witness.sscphase1.R;
+import org.witness.ssc.ObscuraApp;
+import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.R;
 
 import android.app.Activity;
 import android.content.Intent;

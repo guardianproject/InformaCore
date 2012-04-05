@@ -31,7 +31,13 @@
     <string name="menu_share">Share</string>
     <string name="menu_send_hash">Send Hash</string>
     <string name="menu_prefs">Preferences</string>
-    <string name="menu_clear_regions">Clear</string>
+    <string name="menu_clear_regions">Clear All Regions</string>
+    <string name="menu_region_pixelate">Pixelate</string>
+    <string name="menu_region_crowd_pixelate">Pixelate Background</string>
+    <string name="menu_region_redact">Redact</string>
+    <string name="menu_region_identify">Identify</string>
+    <string name="menu_region_delete">Delete</string>
+    <string name="menu_minimize">Hide Menu</string>
     
     <string name="imgprefs_eraseexif">Erase All Exif Data</string>
     <string name="ok">OK</string>

@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.witness.securesmartcam.utils.ObscuraConstants;
-import org.witness.sscphase1.R;
+import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
