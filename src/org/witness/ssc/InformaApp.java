@@ -37,7 +37,7 @@ import android.provider.MediaStore;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
-public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSettingsSeen {
+public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSettingsSeen {
 	ActionBar ab;	
 	private Uri uriCameraImage = null;
 	
@@ -126,8 +126,6 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         ab = getSupportActionBar();
         ab.setDisplayShowTitleEnabled(false);
         ab.setDisplayShowHomeEnabled(false);
-        
-        
     }
 
 	@SuppressWarnings({ "deprecation", "unused" })
@@ -138,51 +136,7 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		{
 			setContentView(R.layout.mainloading);
 			
-			if (requestCode == ObscuraConstants.GALLERY_RESULT) 
-			{
-				if (intent != null)
-				{
-					Uri uriGalleryFile = intent.getData();
-						
-					if (uriGalleryFile != null)
-					{
-						Cursor cursor = managedQuery(uriGalleryFile, null, 
-                                null, null, null); 
-						cursor.moveToNext(); 
-						// Retrieve the path and the mime type 
-						
-						String mimeType = cursor.getString(cursor 
-						                .getColumnIndex(MediaStore.MediaColumns.MIME_TYPE));
-						
-						if (mimeType == null || mimeType.startsWith("image"))
-						{
-							Intent passingIntent = new Intent(this,ImageEditor.class);
-							passingIntent.setData(uriGalleryFile);
-							startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
-						}
-						else if (mimeType.startsWith("video"))
-						{
-
-							Intent passingIntent = new Intent(this,VideoEditor.class);
-							passingIntent.setData(uriGalleryFile);
-							startActivityForResult(passingIntent, ObscuraConstants.VIDEO_EDITOR);
-						}
-					}
-					else
-					{
-						Toast.makeText(this, "Unable to load photo.", Toast.LENGTH_LONG).show();
-	
-					}
-				}
-				else
-				{
-					Toast.makeText(this, "Unable to load photo.", Toast.LENGTH_LONG).show();
-	
-				}
-					
-			}
-			else if (requestCode == ObscuraConstants.CAMERA_RESULT)
-			{
+			if (requestCode == ObscuraConstants.CAMERA_RESULT) {
 				//Uri uriCameraImage = intent.getData();
 				
 				if (uriCameraImage != null)
@@ -211,13 +165,10 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 				else					
 					sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
 			}
-		}
-		else {
+		} else {
 			sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
-			setLayout();
 		}
-		
-		
+		setLayout();
 		
 	}	
 
@@ -311,7 +262,7 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
-    	            new AlertDialog.Builder(ObscuraApp.this)
+    	            new AlertDialog.Builder(InformaApp.this)
     	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
     	            .setCancelable(true).create().show();
     	        }
@@ -338,7 +289,7 @@ public class ObscuraApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            	.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
-    	            new AlertDialog.Builder(ObscuraApp.this)
+    	            new AlertDialog.Builder(InformaApp.this)
     	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
     	            .setCancelable(true).create().show();
     	        }

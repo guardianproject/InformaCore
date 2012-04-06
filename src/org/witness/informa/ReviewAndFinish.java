@@ -6,7 +6,7 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.LoginCache;
 import org.witness.informa.utils.secure.Apg;
-import org.witness.ssc.ObscuraApp;
+import org.witness.ssc.InformaApp;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.R;
 
@@ -107,9 +107,9 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		} else if(v == confirmQuit) {			
 			if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
 	    		_sp.edit().putString(Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).commit();
-			startActivity(new Intent(this, ObscuraApp.class).putExtra(Keys.Service.FINISH_ACTIVITY, "die"));
+			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.FINISH_ACTIVITY, "die"));
 		} else if(v == confirmTakeAnother) {
-			startActivity(new Intent(this, ObscuraApp.class).putExtra(Keys.Service.START_SERVICE, "go"));
+			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.START_SERVICE, "go"));
 		}
 		finish();
 	}

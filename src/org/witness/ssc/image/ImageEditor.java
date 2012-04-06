@@ -909,7 +909,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	 * Create new ImageRegion
 	 */
 	public void createImageRegion(float left, float top, float right, float bottom, boolean showPopup, boolean updateNow) {
-		
+		vibe.vibrate(100);
 		clearImageRegionsEditMode();
 		
 		ImageRegion imageRegion = new ImageRegion(

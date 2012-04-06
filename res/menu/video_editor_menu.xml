@@ -4,6 +4,12 @@
         android:icon="@drawable/menu_current_region_selector"
         android:showAsAction="always">
         <menu>
+            <item android:id="@+id/menu_current_region_set_inpoint"
+                android:title="@string/menu_region_set_inpoint"
+                android:icon="@drawable/editor_set_inpoint" />
+            <item android:id="@+id/menu_current_region_set_outpoint"
+                android:title="@string/menu_region_set_outpoint"
+                android:icon="@drawable/editor_set_outpoint" />
             <item android:id="@+id/menu_current_region_pixelate"
                 android:title="@string/menu_region_redact"
                 android:icon="@drawable/ic_context_pixelate" />

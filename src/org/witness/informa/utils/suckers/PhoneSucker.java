@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.SensorLogger;
-import org.witness.ssc.ObscuraApp;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;

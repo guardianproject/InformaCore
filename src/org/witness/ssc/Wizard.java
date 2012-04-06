@@ -540,7 +540,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			}
 		} else if(v == wizard_done) {
 			_ed.putBoolean(InformaConstants.Keys.Settings.SETTINGS_VIEWED, true).commit();
-			Intent i = new Intent(this, ObscuraApp.class);
+			Intent i = new Intent(this, InformaApp.class);
 			startActivity(i);
 			finish();
 		}

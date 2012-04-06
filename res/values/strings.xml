@@ -38,6 +38,8 @@
     <string name="menu_region_identify">Identify</string>
     <string name="menu_region_delete">Delete</string>
     <string name="menu_minimize">Hide Menu</string>
+    <string name="menu_region_set_inpoint">Set New In-Point</string>
+    <string name="menu_region_set_outpoint">Set New Out-Point</string>
     
     <string name="imgprefs_eraseexif">Erase All Exif Data</string>
     <string name="ok">OK</string>

@@ -32,8 +32,6 @@ import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.suckers.*;
-import org.witness.ssc.ObscuraApp;
-import org.witness.ssc.image.ImageEditor;
 
 import android.app.Activity;
 import android.app.Service;

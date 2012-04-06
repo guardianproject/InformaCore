@@ -83,9 +83,29 @@ public class ObscuraConstants {
 		public static final int CORNER_UPPER_RIGHT = 3;
 		public static final int CORNER_LOWER_RIGHT = 4;
 		
-		private final static float REGION_CORNER_SIZE = 26;    
-		private final static long FACE_TIME_BUFFER = 2000;
+		public final static float REGION_CORNER_SIZE = 26;    
+		public final static long FACE_TIME_BUFFER = 2000;
+		
+		public static final int NONE = 0;
+		public static final int DRAG = 1;
 
+	}
+	
+	public final static class VideoEditor {
+		public final static int PLAY = 1;
+		public final static int STOP = 2;
+		public final static int PROCESS = 3;
+		
+		public final static class Breakpoints {
+			public final static String IN = "Breakpoint.in";
+			public final static String OUT = "Breakpoint.out";
+			public final static String LEFT = "Breakpoint.left";
+			public final static String RIGHT = "Breakpoint.right";
+			public final static String TOTAL_TIME = "Breakpoint.totalTime";
+			public final static String TOTAL_WIDTH = "Breakpoint.totalWidth";
+			public final static String DURATION = "Breakpoint.duration";
+			public final static String FILTER = "Breakpoint.filter";
+		}
 	}
 	
 	public final static class ExifValues {
@@ -100,6 +120,7 @@ public class ObscuraConstants {
 		public final static String INFORMA_TAGGER = "t";
 		public final static String CROWD_PIXELIZE = "i";
 		public final static String SOLID = "s";
+		public final static String VIDEO_PIXELIZE = "pixel";
 	}
 	
 	public static void makeToast(Context c, String m) {
