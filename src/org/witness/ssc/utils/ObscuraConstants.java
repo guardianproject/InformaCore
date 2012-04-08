@@ -69,6 +69,7 @@ public class ObscuraConstants {
 	public final static class Preferences {
 		public final static class Keys {
 			public final static String LANGUAGE = "obscura.language";
+			public final static String SHOW_HINTS = "obscura.showHints";
 		}
 	}
 	

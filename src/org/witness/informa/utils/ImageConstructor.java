@@ -13,7 +13,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -23,6 +25,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
 import org.witness.informa.utils.InformaConstants.Keys.Image;
 import org.witness.informa.utils.InformaConstants.Keys.ImageRegion;
 import org.witness.informa.utils.InformaConstants.Keys.Informa;
@@ -42,8 +45,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore.Images;
 import android.util.Base64;
 import android.util.Log;
 
@@ -92,13 +98,14 @@ public class ImageConstructor {
 		
 		base = baseName.split("_")[0] + ".jpg";
 		
+		metadataObject = (JSONObject) new JSONTokener(metadataObjectString).nextValue();
+		
 		// handle original based on settings
 		handleOriginalImage();
 		
 		// do redaction
-		metadataObject = (JSONObject) new JSONTokener(metadataObjectString).nextValue();
-		this.imageRegions = (JSONArray) (metadataObject.getJSONObject(Keys.Informa.DATA)).getJSONArray(Keys.Data.IMAGE_REGIONS);
 		
+		this.imageRegions = (JSONArray) (metadataObject.getJSONObject(Keys.Informa.DATA)).getJSONArray(Keys.Data.IMAGE_REGIONS);
 		for(int i=0; i<imageRegions.length(); i++) {
 			JSONObject ir = imageRegions.getJSONObject(i);
 			
@@ -216,9 +223,36 @@ public class ImageConstructor {
 		}
 	}
 
-	// TODO:
 	private void copyOriginalToSDCard() {
 		Log.d(InformaConstants.TAG, "copying original to sd card...");
+		SimpleDateFormat sdf = new SimpleDateFormat(ObscuraConstants.EXPORT_DATE_FORMAT);
+		String dateString = "";
+		Date date = new Date();
+		try {
+			JSONObject g = metadataObject.getJSONObject(Informa.GENEALOGY);
+			date.setTime(g.getLong(Genealogy.DATE_CREATED));
+		} catch(JSONException e) {}
+		catch(NullPointerException e) {}
+		
+		dateString = sdf.format(date);
+		
+		ContentValues cv = new ContentValues();
+		cv.put(Images.Media.DATE_ADDED, dateString);
+		cv.put(Images.Media.DATE_TAKEN, dateString);
+		cv.put(Images.Media.DATE_MODIFIED, dateString);
+		cv.put(Images.Media.TITLE, dateString);
+		
+		Uri savedImageUri = c.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, cv);
+		
+		try {
+			copy(Uri.fromFile(clone), savedImageUri);
+			MediaScannerConnection.scanFile(
+					c,
+					new String[] {pullPathFromUri(savedImageUri).getAbsolutePath()},
+					new String[] {ObscuraConstants.MIME_TYPE_JPEG},
+					null);
+		} catch (IOException e) {}
+		
 	}
 	
 	private void encryptOriginal() throws IOException {
@@ -274,6 +308,23 @@ public class ImageConstructor {
 			offset += bytesRead;
 		fis.close();
 		return fileBytes;
+	}
+	
+	public File pullPathFromUri(Uri originalUri) {
+		String originalImageFilePath = null;
+		if (originalUri.getScheme() != null && originalUri.getScheme().equals("file")) 
+			originalImageFilePath = originalUri.toString();
+	    	
+	    else {
+	    	String[] columnsToSelect = { Images.Media.DATA };
+	    	Cursor imageCursor = c.getContentResolver().query(originalUri, columnsToSelect, null, null, null );
+		    if (imageCursor != null && imageCursor.getCount() == 1 ) {
+		    	imageCursor.moveToFirst();
+			    originalImageFilePath = imageCursor.getString(imageCursor.getColumnIndex(Images.Media.DATA));
+		    }
+	    }
+
+		return new File(originalImageFilePath);
 	}
 	
     private void copy (Uri uriSrc, File fileTarget) throws IOException

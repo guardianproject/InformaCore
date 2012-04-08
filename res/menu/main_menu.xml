@@ -8,9 +8,9 @@
             <item android:id="@+id/TakePictureButton"
        			android:title="@string/camera"
         		android:icon="@drawable/menu_camera_selector" />
-    		<item android:id="@+id/TakeVideoButton"
-        		android:title="@string/camcorder"
-        		android:icon="@drawable/menu_camcorder_selector" />
+    		<item android:id="@+id/ChooseGalleryButton"
+        		android:title="@string/choose_photos"
+        		android:icon="@drawable/menu_gallery_selector" />
         </menu>
     </item>
     <item android:id="@+id/menu_about"

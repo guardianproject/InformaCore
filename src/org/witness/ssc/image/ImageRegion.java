@@ -182,35 +182,6 @@ public class ImageRegion {
     	mMatrix.invert(iMatrix);
 	}
 	
-	/*
-	public void inflatePopup(boolean showDelayed) {
-
-		if (mPopupMenu == null)
-			initPopup();
-		
-		
-		if (showDelayed) {
-			// We need layout to pass again, let's wait a second or two
-			new Handler() {
-				@Override
-				 public void handleMessage(Message msg) {
-
-					float[] points = {mBounds.centerX(), mBounds.centerY()};		
-					mMatrix.mapPoints(points);
-					mPopupMenu.show(mImageEditor.getImageView(), (int)points[0], (int)points[1]);
-			        }
-			}.sendMessageDelayed(new Message(), 500);
-		} else {			
-
-			float[] points = {mBounds.centerX(), mBounds.centerY()};		
-			mMatrix.mapPoints(points);
-			mPopupMenu.show(mImageEditor.getImageView(), (int)points[0], (int)points[1]);
-		}
-		
-
-	}
-	*/
-	
 	
 	boolean isSelected ()
 	{
@@ -374,34 +345,30 @@ public class ImageRegion {
 	public void updateRegionProcessor (int obscureType) {
 		
 		switch (obscureType) {
-		
-		case ImageRegion.BG_PIXELATE:
-			Log.v(ObscuraConstants.TAG,"obscureType: BGPIXELIZE");
-			setRegionProcessor(new CrowdPixelizeObscure());
-		break;
+			case ImageRegion.BG_PIXELATE:
+				Log.v(ObscuraConstants.TAG,"obscureType: BGPIXELIZE");
+				setRegionProcessor(new CrowdPixelizeObscure());
+				break;
+			case ImageRegion.REDACT:
+				Log.v(ObscuraConstants.TAG,"obscureType: SOLID");
+				setRegionProcessor(new SolidObscure());
+				break;
+			case ImageRegion.PIXELATE:
+				setRegionProcessor(new PixelizeObscure());
+				break;
+			case ImageRegion.CONSENT:
+				// If the region processor is already a consent tagger, the user wants to edit.
+				// so no need to change the region processor.
+				if(!(getRegionProcessor() instanceof InformaTagger)) {
+					setRegionProcessor(new InformaTagger());
+					mImageEditor.updateDisplayImage();
+				}
 			
-		case ImageRegion.REDACT:
-			Log.v(ObscuraConstants.TAG,"obscureType: SOLID");
-			setRegionProcessor(new SolidObscure());
-			break;
-			
-		case ImageRegion.PIXELATE:
-			Log.v(ObscuraConstants.TAG,"obscureType: PIXELIZE");
-			setRegionProcessor(new PixelizeObscure());
-			break;
-		case ImageRegion.CONSENT:
-			Log.v(ObscuraConstants.TAG,"obscureType: CONSENTIFY!");
-			// If the region processor is already a consent tagger, the user wants to edit.
-			// so no need to change the region processor.
-			if(!(getRegionProcessor() instanceof InformaTagger))
-				setRegionProcessor(new InformaTagger());
-			
-			mImageEditor.launchTagger(this);
-			break;
-		default:
-			Log.v(ObscuraConstants.TAG,"obscureType: NONE/PIXELIZE");
-			setRegionProcessor(new PixelizeObscure());
-			break;
+				mImageEditor.launchTagger(this);
+				break;
+			default:
+				setRegionProcessor(new PixelizeObscure());
+				break;
 		}
 		
 		if(getRegionProcessor().getClass() == InformaTagger.class)
@@ -409,6 +376,7 @@ public class ImageRegion {
 		else
 			imageRegionBorder = unidentifiedBorder;
 		
+		mImageEditor.updateDisplayImage();
 	}
 
 	

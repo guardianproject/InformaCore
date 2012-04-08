@@ -39,6 +39,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -62,6 +63,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
@@ -105,7 +107,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	
 	// ImageView for the original (scaled) image
 	ImageView imageView;
-	
 		
 	// Bitmap for the original image (scaled)
 	Bitmap imageBitmap;
@@ -161,7 +162,10 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     
     ActionBar ab;
     Menu menu;
-    boolean userMinimizedMenu = false;
+    boolean showHints;
+    
+    SharedPreferences sp;
+    SharedPreferences.Editor ed;
     
     BroadcastReceiver br = new BroadcastReceiver() {
 
@@ -219,15 +223,10 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
 			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
 		
-		
-        String versNum = "";
+        sp = PreferenceManager.getDefaultSharedPreferences(this);
+        ed = sp.edit();
         
-        try {
-            String pkg = getPackageName();
-            versNum = getPackageManager().getPackageInfo(pkg, 0).versionName;
-        } catch (Exception e) {
-        	versNum = "";
-        }
+        showHints = sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true);
         
 		setContentView(R.layout.imageviewer);
 
@@ -248,6 +247,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		
 		// Passed in from CameraObscuraMainMenu
 		originalImageUri = getIntent().getData();
+		Log.d(InformaConstants.TAG, originalImageUri.toString());
 		
 		// If originalImageUri is null, we are likely coming from another app via "share"
 		if (originalImageUri == null)
@@ -426,7 +426,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	@Override
 	public void onResume() {
 		super.onResume();
-		Log.d(InformaConstants.TAG, "hello br");
 		registerReceiver(br, new IntentFilter(Keys.Service.FINISH_ACTIVITY));
 	}
 	
@@ -647,7 +646,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 				
 				currRegion.setCornerMode(event.getX(),event.getY());
 				currRegion.setActive(true);
+				
 				regionInContext = currRegion;
+				toggleRegionMenu();
 				
 				mode = ObscuraConstants.DRAG;
 				handled = iRegion.onTouch(v, event);
@@ -679,7 +680,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			case MotionEvent.ACTION_DOWN:
 				// Single Finger down
 				regionInContext = null;
-				menu.getItem(0).setVisible(false);
+				toggleRegionMenu();
 				
 				mode = ObscuraConstants.TAP;				
 				ImageRegion newRegion = findRegion(event);
@@ -687,13 +688,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 				if (newRegion != null)
 				{
 					currRegion = newRegion;
-					try {
-						menu.getItem(0).setVisible(true);
-						if(!ab.isShowing())
-							ab.show();
-					} catch(Exception e){
-						Log.d(InformaConstants.TAG, "this view isn't available yet");
-					}
 					return onTouchRegion(v,  event, currRegion);
 				}
 				else if (currRegion == null)
@@ -709,13 +703,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 
 				}
 				
-				Log.d(InformaConstants.TAG, "touch coords:\nx: " + event.getX() + " y: " + event.getY());
-				try {
-					if(userMinimizedMenu)
-						ab.show();
-				} catch(Exception e){
-					Log.d(InformaConstants.TAG, "this view isn't available yet");
-				}
 				break;
 				
 			case MotionEvent.ACTION_POINTER_DOWN:
@@ -842,6 +829,13 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		return handled; // indicate event was handled
 	}
 	
+	
+	private void toggleRegionMenu() {
+		if(regionInContext != null)
+			menu.getItem(0).setVisible(true);
+		else
+			menu.getItem(0).setVisible(false);
+	}
 	/*
 	 * For live previews
 	 */	
@@ -852,6 +846,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		} else {
 			imageView.setImageBitmap(imageBitmap);
 		}
+		
+		toggleRegionMenu();
 	}
 	
 	/*
@@ -1019,9 +1015,12 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	 */
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
-		this.menu = menu;
     	MenuInflater mi = getSupportMenuInflater();
-        mi.inflate(R.menu.image_editor_menu_default, menu);
+        mi.inflate(R.menu.image_editor_menu, menu);
+        
+        menu.getItem(0).setVisible(false);
+        this.menu = menu;
+        
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -1068,9 +1067,15 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
         	case R.id.menu_preview:
         		showPreview();
         		return true;
-        	case R.id.menu_minimize:
-        		ab.hide();
-        		userMinimizedMenu = true;
+        	case R.id.menu_hide_hints:
+        		if(sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true)) {
+        			ed.putBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, false).commit();
+        			showHints = false;
+        		} else {
+        			ed.putBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true).commit();
+        			showHints = true;
+        		}
+        		
     		default:
     			return false;
     	}
@@ -1132,8 +1137,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 
 	    	if (showBorders)
 	    	{
-		    	//TODO:
-	    		if (currentRegion.isSelected())
+	    		if (currentRegion.isSelected() || currentRegion.equals(regionInContext))
 		    		obscuredPaint.setColor(Color.GREEN);
 		    	else
 		    		obscuredPaint.setColor(Color.WHITE);
@@ -1144,7 +1148,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		    	
 		    	float cSize = CORNER_SIZE;
 		    	
-		    	if (currentRegion.isSelected())
+		    	if (currentRegion.isSelected() || currentRegion.equals(regionInContext))
 		    	{
 		    		obscuredCanvas.drawBitmap(bitmapCornerUL, regionRect.left-cSize, regionRect.top-cSize, obscuredPaint);
 		    		obscuredCanvas.drawBitmap(bitmapCornerLL, regionRect.left-cSize, regionRect.bottom-(cSize/2), obscuredPaint);
@@ -1369,21 +1373,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 						}
     				  }
     				},500);
-    		}
-    	} else if(resultCode == SherlockActivity.RESULT_CANCELED) {
-    		// TODO: FIX THIS.
-    		if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER && data.hasExtra(InformaConstants.Keys.USER_CANCELED_EVENT)) {
-    			mProgressDialog = ProgressDialog.show(this,  "", getResources().getString(R.string.saving));
-    			mHandler.postDelayed(new Runnable() {
-    				@Override
-    				public void run() {
-    					try {
-							saveImage(new long[] {0});
-						} catch (IOException e) {
-							Log.e(InformaConstants.TAG, "err saving image", e);
-						}
-    				}
-    			}, 500);
     		}
     	}
     }

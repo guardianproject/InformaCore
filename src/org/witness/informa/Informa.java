@@ -22,7 +22,6 @@ import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
-import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
@@ -49,7 +48,6 @@ public class Informa {
 	private DatabaseHelper dh;
 	private Apg apg;
 	private Image[] images;
-	private Video[] videos;
 	
 	private Context _c;
 	
@@ -109,7 +107,7 @@ public class Informa {
 	
 	public class Data extends InformaZipper {
 		int sourceType;
-		String imageHash, videoHash;
+		String imageHash;
 		Device device;
 		Exif exif;
 		
@@ -117,7 +115,6 @@ public class Informa {
 		Set<Location> location;
 		Set<Corroboration> corroboration;
 		Set<ImageRegion> imageRegions;
-		Set<VideoRegion> videoRegions;
 		Set<Event> events;
 		
 		public Data(int sourceType, Device device) {
@@ -129,13 +126,6 @@ public class Informa {
 			this.corroboration = new HashSet<Corroboration>();
 			if(sourceType == InformaConstants.MediaTypes.PHOTO) {
 				this.imageRegions = new HashSet<ImageRegion>();
-				this.videoRegions = null;
-				this.videoHash = null;
-			} else if(sourceType == InformaConstants.MediaTypes.VIDEO) {
-				this.videoRegions = new HashSet<VideoRegion>();
-				this.imageRegions = null;
-				this.imageHash = null;
-				this.events = new HashSet<Event>();
 			}
 		}
 	}
@@ -253,25 +243,6 @@ public class Informa {
 		}
 	}
 	
-	public class VideoRegion extends InformaZipper {
-		CaptureTimestamp captureTimestamp;
-		Location location;
-		
-		public String obfuscationType, unredactedRegionHash;
-		JSONObject regionDimensions, regionCoordinates, motionPath;
-		char[] unredactedRegionData;
-		
-		Subject subject;
-		
-		public VideoRegion(CaptureTimestamp captureTimestamp, Location location, String obfuscationType, JSONObject regionDimensions, JSONObject regionCoordinates) {
-			this.captureTimestamp = captureTimestamp;
-			this.location = location;
-			this.obfuscationType = obfuscationType;
-			this.regionDimensions = regionDimensions;
-			this.regionCoordinates = regionCoordinates;
-		}
-	}
-	
 	public class Owner extends InformaZipper {
 		String sigKeyId;
 		int ownershipType;
@@ -321,37 +292,6 @@ public class Informa {
 		
 	}
 	
-	public class Video extends File {
-		private static final long serialVersionUID = 1L;
-		private String intendedDestination, originalPath;
-		private JSONObject metadataPackage;
-
-		public Video(String path, String intendedDestination) throws JSONException, IllegalArgumentException, IllegalAccessException {
-			super(path);
-			
-			this.intendedDestination = intendedDestination;
-			Informa.this.intent = new Intent(intendedDestination);
-			this.metadataPackage = new JSONObject();
-			this.metadataPackage.put(Keys.Informa.INTENT, Informa.this.intent.zip());
-			this.metadataPackage.put(Keys.Informa.GENEALOGY, Informa.this.genealogy.zip());
-			this.metadataPackage.put(Keys.Informa.DATA, Informa.this.data.zip());
-			
-			this.originalPath = Informa.this.genealogy.localMediaPath;
-		}
-		
-		public String getIntendedDestination() {
-			return this.intendedDestination;
-		}
-		
-		public String getClonePath() {
-			return this.originalPath;
-		}
-		
-		public JSONObject getMetadataPackage() {
-			return this.metadataPackage;
-		}
-	}
-	
 	private Object getDBValue(String table, String[] keys, String matchKey, Object matchValue, Class<?> expectedType) {
 		dh.setTable(db, table);
 		Object result = new Object();
@@ -389,10 +329,6 @@ public class Informa {
 	
 	public Image[] getImages() {
 		return images;
-	}
-	
-	public Video[] getVideos() {
-		return videos;
 	}
 	
 	public Informa(
@@ -565,40 +501,6 @@ public class Informa {
 						images[i] = new Image(newPath, email);
 					} catch(NullPointerException e) {
 						Log.e(InformaConstants.TAG, "fracking npe",e);
-					}
-				}
-			} catch(NullPointerException e) {
-				Log.e(InformaConstants.TAG, "there are no intended destinations",e);
-			}
-		} else if(imageData.getInt(Keys.Media.MEDIA_TYPE) == MediaTypes.VIDEO) {
-			data.videoRegions = null;
-			
-			VideoConstructor vc = new VideoConstructor(c.getApplicationContext());
-			data.videoHash = MediaHasher.hash(vc.getBitStream(genealogy.localMediaPath), "MD5");
-			data.events = events;
-			
-			try {
-				videos = new Video[intendedDestinations.length];
-				for(int i=0; i<intendedDestinations.length; i++) {
-					dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
-					try {
-						Cursor td = dh.getValue(
-								db, 
-								new String[] {TrustedDestinations.DISPLAY_NAME, TrustedDestinations.EMAIL},
-								TrustedDestinations.KEYRING_ID,
-								intendedDestinations[i]);
-						td.moveToFirst();
-						String displayName = td.getString(td.getColumnIndex(TrustedDestinations.DISPLAY_NAME));
-						String email = td.getString(td.getColumnIndex(TrustedDestinations.EMAIL));
-						String newPath = 
-								InformaConstants.DUMP_FOLDER + 
-								genealogy.localMediaPath.substring(genealogy.localMediaPath.lastIndexOf("/"), genealogy.localMediaPath.length() - 4) +
-								"_" + displayName.replace(" ", "-") +
-								getMimeType(data.sourceType);
-						td.close();
-						videos[i] = new Video(newPath, email);
-					} catch(NullPointerException e) {
-						Log.e(InformaConstants.TAG, "fracking npe",e); //watch your mouth!
 					}
 				}
 			} catch(NullPointerException e) {

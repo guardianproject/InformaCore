@@ -23,7 +23,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.Informa;
 import org.witness.informa.Informa.Image;
-import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
@@ -237,52 +236,7 @@ public class SensorSucker extends Service {
 		
 		mediaRegions = (JSONArray) new JSONTokener(regionData).nextValue();
 		
-		if(mediaType == MediaTypes.VIDEO) {
-			r = new Runnable() {
-				Informa informa;
-				
-				@Override
-				public void run() {
-					try {
-						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
-						Video[] videos = informa.getVideos();
-						
-						VideoConstructor vc = new VideoConstructor(getApplicationContext());
-						for(Video vid : videos) {
-							vc.writeMetadata(vid);
-						}
-						
-						vc.doCleanup();
-						
-						informaCallback.post(new Runnable() {
-							@Override
-							public void run() {
-								unlockLogs();
-								sendBroadcast(
-										new Intent()
-										.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
-							}
-						});
-					} catch (IllegalArgumentException e) {
-						Log.e(InformaConstants.TAG, "informa called Illegal Arguments",e);
-					} catch (JSONException e) {
-						Log.e(InformaConstants.TAG, "informa called JSONException?",e);
-					} catch (IllegalAccessException e) {
-						Log.e(InformaConstants.TAG, "informa called Illegal Access",e);
-					} catch (NoSuchAlgorithmException e) {
-						Log.e(InformaConstants.TAG, "informa called NoSuchAlgoException",e);
-					} catch (IOException e) {
-						Log.e(InformaConstants.TAG, "informa called IOException",e);
-					} catch (NullPointerException e) {
-						Log.e(InformaConstants.TAG, "informa called NPE",e);
-						unlockLogs();
-						sendBroadcast(
-								new Intent()
-								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
-					}
-				}
-			};
-		} else if(mediaType == MediaTypes.PHOTO) {
+		if(mediaType == MediaTypes.PHOTO) {
 			
 		
 			r = new Runnable() {

@@ -1,0 +1,38 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" style="@style/OverlayActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+		<org.witness.mods.InformaHeaderTextView style="@style/H1"
+			android:layout_width="fill_parent"
+	    	android:layout_height="wrap_content"
+	    	android:text="@string/app_name" />
+	</LinearLayout>
+	<org.witness.mods.InformaHeaderTextView style="@style/H2"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_margin="6dip"
+	    android:id="@+id/about_packageVersion" />
+	<org.witness.mods.InformaTextView style="@style/P"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_margin="6dip"
+	    android:text="@string/about" />
+	<org.witness.mods.InformaTextView style="@style/P"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_margin="6dip"
+	    android:text="@string/about2" />
+	<org.witness.mods.InformaTextView style="@style/P"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_margin="6dip"
+	    android:text="@string/about3" />
+	<org.witness.mods.InformaButton style="@style/Button_standard"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:id="@+id/about_dismiss"
+	    android:text="@string/ok" />
+</LinearLayout>

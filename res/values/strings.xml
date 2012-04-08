@@ -13,10 +13,9 @@
     <string name="menu_logout">Logout</string>
     
     <!--  Main Menu -->
-    <string name="camera">Camera</string>
-    <string name="camcorder">Camcorder</string>
-    <string name="choose_photos">Photos</string>
-    <string name="choose_videos">Videos</string>
+    <string name="camera">Take Photo</string>
+    <string name="choose_photos">Choose from Gallery</string>
+    <string name="gallery_launch_error">Unable to open Gallery app.</string>
     
     <string name="menu_new_media">New\u2026</string>
     <string name="menu_import_media">Import\u2026</string>
@@ -38,10 +37,8 @@
     <string name="menu_region_identify">Identify</string>
     <string name="menu_region_delete">Delete</string>
     <string name="menu_minimize">Hide Menu</string>
-    <string name="menu_region_set_inpoint">Set New In-Point</string>
-    <string name="menu_region_set_outpoint">Set New Out-Point</string>
+    <string name="menu_hide_hints">Show/Hide Hints</string>
     
-    <string name="imgprefs_eraseexif">Erase All Exif Data</string>
     <string name="ok">OK</string>
     <string name="save">Save</string>
     <string name="back">Back</string>
@@ -49,30 +46,9 @@
     <string name="done">Done</string>
     <string name="saving">Saving\u2026</string>
     
-    <string name="idtaggerh1">Identify</string>
-    <string name="idtaggerh12">Consentify</string>
-    <string name="idtaggerp">Type a name (or any identifier), or choose from people you\'ve already tagged.</string>
-    <string name="idtaggerp2">Check this box if you have your subject\s verbal consent to record his/her image.</string>
-    <string name="idtaggersubmit">Submit</string>
-    <string name="encrypttaggerh1">Encrypt This Tag</string>
-    <string name="encrypttaggerp">You can encrypt the selected region to a specific set of public keys, so that only the key holders will be able to view the original image region.</string>
-    <string name="encrypttaggerhint">Tap To Choose</string>
-    
-    <string name="confirm_delete">Do you want to delete the original media file?</string>
-    <string name="confirm_delete_region">Are you sure you want to remove this region box?</string>
-    
     <!-- Informa Options -->
     <string name="informaOpt_consent">Subject has given his/her informed consent to be photographed.</string>
     <string name="informaOpt_autoFilter">Automatically apply this type of filter each time this person appears in an ObscuraCam photo.</string>
-    
-    <string name="mdHumanReadable_intro">Image taken with/modified by ObscuraCam.</string>
-    <string name="mdHumanReadable_onDate">Image saved on:</string>
-    <string name="mdHumanReadable_numTags">Number of edited regions in this image:</string>
-    <string name="mdHumanReadable_consentIntro">Subjects contained in this image:</string>
-    <string name="mdHumanReadable_psudonym">Name/Pseudonym:</string>
-    <string name="mdHumanReadable_coordinates">Coordinates within this image:</string>
-    <string name="mdHumanReadable_consentGiven">Informed consent given?</string>
-    <string name="mdHumanReadable_persistObfuscation">Apply same obfuscation settings to this subject in every photo?</string>
     
      <!-- APG related -->
     <string name="apg_error_activity_not_found">No suitable application for this action found.</string>
@@ -94,11 +70,18 @@
     
     <string name="loading_image">Loading photo\u2026</string>
     
+    <!--  ABOUT Related -->
     <string name="about">This app was developed by the SecureSmartCam Team, a joint effort by WITNESS and the Guardian Project.</string>
-
 	<string name="about2">Learn more at http://witness.org and https://guardianproject.info</string>
-	
 	<string name="about3">This software is freely licensed under the GNU GPL v3.</string>
+	
+	<!--  HINTS  -->
+	<string name="hint_label">Hint:</string>
+	<string name="hint_explain_informa_menu">This is the InformaCam Menu.  Tap this icon to view your options at any point.</string>
+	<string name="hint_explain_suckers">InformaCam has turned on your GPS and Bluetooth in order to start logging more complete data.</string>
+	<string name="hint_explain_suckers_more">What else is this app logging?</string>
+	<string name="hint_explain_image_editor">Tap on the image to create a new tag.\nTap on any displayed tag to edit it: a tag-editor icon will appear in the menu bar.</string>
+	
 	
 	<!--  BASIC STRINGS -->
 	<string name="yes">Yes</string>
@@ -163,6 +146,8 @@
     
     <!--  GLOBAL PREFERENCES related -->
     <string name="preferences_label">InformaCam Preferences</string>
+    <string name="preferences_show_hints_label">Show Hints?</string>
+    <string name="preferences_show_hints_text">Show handy hints as you use the app.</string>
     <string name="preferences_cache_label">Login Options</string>
     <string name="preferences_cache_text">How long should you stay logged in to the app?  If you choose "always," you must manually log out of the app (through the main menu.)</string>
     <string name="preferences_image_handling_label">Image Handling</string>

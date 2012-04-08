@@ -11,7 +11,7 @@
   		android:layout_width="fill_parent" 
   		android:layout_height="fill_parent" />
 		<LinearLayout android:id="@+id/linearLayout1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|center">
-			<Button android:id="@+id/ZoomOut" android:background="@drawable/zoom_out" android:layout_height="wrap_content" android:layout_width="wrap_content"></Button>
-			<Button android:id="@+id/ZoomIn" android:background="@drawable/zoom_in" android:layout_height="wrap_content" android:layout_width="wrap_content"></Button>
+			<Button android:id="@+id/ZoomOut" android:background="@drawable/zoom_out" android:layout_height="wrap_content" android:layout_width="wrap_content" />
+			<Button android:id="@+id/ZoomIn" android:background="@drawable/zoom_in" android:layout_height="wrap_content" android:layout_width="wrap_content" />
 		</LinearLayout>
 </FrameLayout>
