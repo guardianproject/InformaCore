@@ -16,6 +16,7 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.mods.InformaButton;
+import org.witness.mods.InformaEditText;
 import org.witness.mods.InformaTextView;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.utils.Selections;
@@ -39,7 +40,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -370,7 +370,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 						views.add(button);
 						
 					} else if(type.compareTo("input") == 0) {
-						EditText edittext = new EditText(_c);
+						InformaEditText edittext = new InformaEditText(_c);
 						
 						edittext.addOnLayoutChangeListener(new TextView.OnLayoutChangeListener() {
 
@@ -385,7 +385,8 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 						});
 						views.add(edittext);
 					} else if(type.compareTo("password") == 0) {
-						EditText edittext = new EditText(_c);
+						InformaEditText edittext = new InformaEditText(_c);
+						
 						edittext.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
 						edittext.setTransformationMethod(new PasswordTransformationMethod());
 						

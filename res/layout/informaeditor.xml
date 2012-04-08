@@ -1,48 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<LinearLayout style="@style/OverlayActivity"
 	xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:background="#000000"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:weightSum="1.0" >
-    <TextView 
-    	android:layout_width="fill_parent"
-    	android:layout_height="0dip"
-    	android:text="Identify"
-    	android:textSize="30dp"
-    	android:layout_weight="0.15" />
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="0.15">
+    	<org.witness.mods.InformaHeaderTextView style="@style/H1"
+    		android:layout_width="match_parent"
+    		android:layout_height="wrap_content"
+    		android:text="@string/menu_region_identify" />
+    </LinearLayout>
     <LinearLayout
-    	xmlns:android="http://schemas.android.com/apk/res/android"
     	android:orientation="horizontal"
     	android:layout_width="fill_parent"
     	android:layout_height="0dip"
     	android:layout_weight="0.25"
-    	android:weightSum="1.0">
-    	
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip"
+    	android:paddingLeft="6dip"
+    	android:paddingRight="6dip" >
     	<ImageView 
-    		android:layout_width="0dip"
+    		android:layout_width="wrap_content"
     		android:layout_height="wrap_content"
-    		android:layout_weight="0.25"
     		android:id="@+id/imageRegionThumb"
-    		android:src="@drawable/ic_context_id" />
-    		 
-    	<EditText
-    		android:layout_width="0dip"
+    		android:src="@drawable/ic_context_id"
+    		android:layout_marginRight="6dip" />
+    	<EditText style="@style/EditText_standard"
+    		android:layout_width="wrap_content"
     		android:layout_height="wrap_content"
-    		android:layout_weight="0.75"
+    		android:layout_marginRight="6dip"
+    		android:layout_marginLeft="3dip"
     		android:id="@+id/subjectNameHolder"
-    		android:hint="Subject's Name or Pseudonym" />
+    		android:hint="@string/tagger_hint" />
     </LinearLayout>
     <ListView
     	android:layout_width="fill_parent"
     	android:layout_height="wrap_content"
     	android:layout_weight="0.45"
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip"
     	android:id="@+id/otherInformaOptionsHolder" />    	
-    <Button
+    <org.witness.mods.InformaButton style="@style/Button_standard"
     	android:layout_width="fill_parent"
     	android:layout_height="0dip"
     	android:layout_weight="0.15"
-    	android:text="OK"
-    	android:id="@+id/informaSubmit" />
+    	android:text="@string/ok"
+    	android:id="@+id/informaSubmit"
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip" />
 </LinearLayout>    

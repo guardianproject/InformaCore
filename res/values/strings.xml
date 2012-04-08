@@ -115,9 +115,10 @@
 	<string name="tagger_no_name_error">You haven\'t identified anyone!</string>
 	<string name="tagger_informed_consent_question">This subject given his/her informed consent to appear in this image</string>
 	<string name="tagger_subject_filter_preference_question">InformaCam should attempt to add the same image filter to the subject in every image</string>
+	<string name="tagger_hint">Name/Pseudonym</string>
 	
 	<!--  INFORMA KEY CHOOSER  -->
-	<string name="chooser_prompt">Select trusted destinations for your image:</string>
+	<string name="chooser_prompt">Select trusted destinations:</string>
 	<string name="chooser_no_choice_warning_title">Wait!</string>
 	<string name="chooser_no_choice_warning_text">You have not selected any trusted destinations.  Continue anyway?\nWarning: your image will be redacted, but metadata will not be saved.</string>
 	

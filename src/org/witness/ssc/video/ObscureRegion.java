@@ -186,7 +186,6 @@ public class ObscureRegion {
 		}
 		
 		public void redraw() {
-			Log.d(LOG, "fucking redrawing the shit");
 			int dif = (Integer) properties.get(ObscuraConstants.VideoEditor.Breakpoints.OUT) - (Integer) properties.get(ObscuraConstants.VideoEditor.Breakpoints.IN);
 			lp = new RelativeLayout.LayoutParams(mapSecondsToPixels(dif), videoEditor.breakpointHeight - 25);
 			lp.setMargins((Integer) properties.get(ObscuraConstants.VideoEditor.Breakpoints.LEFT), videoEditor.breakpointTop - 10, 0, 0);
