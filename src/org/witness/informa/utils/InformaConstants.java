@@ -82,6 +82,7 @@ public class InformaConstants {
 				public final static String UNREDACTED_HASH = "unredactedRegionHash";
 				public final static String LENGTH = "dataLength";
 				public final static String POSITION = "byteStart";
+				public final static String BYTES = "byteArray";
 			}
 			
 			public final static class Subject {

@@ -46,7 +46,7 @@ namespace jpeg_redaction {
   // without parsing, hoping that it is relocatable.
   class GenericMakerNote : public MakerNote {
   public:
-  GenericMakerNote() : data_(NULL) {}
+  GenericMakerNote() {}
     ~GenericMakerNote() {}
     virtual void Print() const {
       printf("Generic makernote length %zu\n", data_.size());
@@ -93,7 +93,7 @@ namespace jpeg_redaction {
       ifd_ = NULL;
     }
     virtual void Print() const {
-      if (debug > 0)
+      if (debug > 1)
 	printf("Panasonic makernote... %p\n", this);
       if (ifd_ == NULL)
 	throw("Panasonic ifd is NULL");

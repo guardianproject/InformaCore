@@ -57,12 +57,12 @@ import android.util.Base64;
 import android.util.Log;
 
 public class ImageConstructor {
-	private native int constructImage(
+	public native int constructImage(
 			String originalImageFilename, 
 			String informaImageFilename, 
 			String metadataObjectString, 
 			int metadataLength);
-	private native byte[] redactRegion(
+	public native byte[] redactRegion(
 			String originalImageFilename,
 			String informaImageFilename,
 			int left,
@@ -136,14 +136,15 @@ public class ImageConstructor {
 				JSONObject irData = new JSONObject();
 				irData.put(ImageRegion.Data.UNREDACTED_HASH, MediaHasher.hash(redactionPack, "SHA-1"));
 				irData.put(ImageRegion.Data.LENGTH, redactionPack.length);
-				irData.put(ImageRegion.Data.POSITION, appendImageRegion(redactionPack));
+				irData.put(ImageRegion.Data.BYTES, bytesToString(Base64.encode(redactionPack, Base64.NO_WRAP)));
+				//irData.put(ImageRegion.Data.POSITION, appendImageRegion(redactionPack));
 				
 				ir.put(Keys.ImageRegion.UNREDACTED_DATA, irData);
 				
 				//zip data for database
 				ContentValues rcv = new ContentValues();
 				rcv.put(ImageRegion.Data.UNREDACTED_HASH, MediaHasher.hash(redactionPack, "SHA-1"));
-				rcv.put(ImageRegion.DATA, gzipBytes(Base64.encode(redactionPack, Base64.DEFAULT)));
+				rcv.put(ImageRegion.DATA, gzipBytes(Base64.encode(redactionPack, Base64.NO_WRAP)));
 				rcv.put(ImageRegion.BASE, base);
 				unredactedRegions.add(rcv);
 			}
@@ -191,7 +192,8 @@ public class ImageConstructor {
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, intendedDestination);
 		
 		// insert metadata
-		if(constructImage(clone.getAbsolutePath(), informaImageFilename, metadataObject.toString(), metadataObject.toString().length()) > 0) {
+		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, metadataObject.toString(), metadataObject.toString().length());
+		if(metadataLength > 0) {
 			ContentValues cv = new ContentValues();
 			// package zipped image region bytes
 			cv.put(Image.METADATA, metadataObject.toString());
@@ -207,6 +209,7 @@ public class ImageConstructor {
 			db.insert(dh.getTable(), null, cv);
 			
 			result = 1;
+			Log.d(InformaConstants.TAG, "saved metadata length is " + metadataLength + "!");
 		}
 		
 		return result;
@@ -307,6 +310,14 @@ public class ImageConstructor {
 		gos.close();
 		baos.close();
 		return baos.toByteArray();
+	}
+	
+	private String bytesToString(byte[] data) {
+		StringBuffer sb = new StringBuffer();
+		for(byte b : data) {
+			sb.append(Integer.toHexString(0xFF & b));
+		}
+		return sb.toString();
 	}
 	
 	private File bytesToFile(byte[] data, String filename) throws IOException {

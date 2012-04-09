@@ -27,6 +27,7 @@
 #include "redaction.h"
 #include "photoshop_3block.h"
 #include "byte_swapping.h"
+#include "obscura_metadata.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -35,7 +36,6 @@
 namespace jpeg_redaction {
  const int ObscuraMetadata::kObscuraMarker = JPEG_APP0 + 7;
  const char *ObscuraMetadata::kDescriptorType = "ObscuraMetaData";
- const char *ObscuraMetadata::kRedactionDataType = "ObscuraRedaction";
 
   void DumpHex(unsigned char *data, int len) {
     for (int i = 0; i < len; ++i) {
@@ -627,12 +627,15 @@ namespace jpeg_redaction {
   // The length is the length from the file, including the storage for length.
   JpegMarker *Jpeg::AddMarker(int marker, int location, int length,
 			      FILE *pFile, bool loadall) {
+    if (debug > 1)
+      printf("Adding Marker %x\n", marker);
     JpegMarker *markerptr = new JpegMarker(marker, location, length);
     if (loadall)
       markerptr->LoadHere(pFile);
     else
       fseek(pFile, location + length + 2, SEEK_SET);
-    if (marker == jpeg_app + 7) {
+    if (marker == ObscuraMetadata::kObscuraMarker) {
+      printf("Got obscura marker\n");
       obscura_metadata_.ImportMarker(markerptr);
       delete markerptr;
       return NULL;
