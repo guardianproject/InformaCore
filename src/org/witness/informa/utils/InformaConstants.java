@@ -21,6 +21,7 @@ public class InformaConstants {
 
 	public final static class Keys {
 		public final static String USER_CANCELED_EVENT = "userCanceledEvent";
+		public final static String ENCRYPTED_IMAGES = "encryptedImages";
 		
 		public final static class Settings {
 			public static final String INFORMA = "informa";

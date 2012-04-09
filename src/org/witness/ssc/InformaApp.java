@@ -96,9 +96,17 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         
         if(getIntent().getExtras() != null) {
         	Bundle b = getIntent().getExtras();
-        	if(b.containsKey(Keys.Service.FINISH_ACTIVITY))
-        		finish();
-        	else if(b.containsKey(Keys.Service.START_SERVICE)) {
+        	if(b.containsKey(Keys.Service.FINISH_ACTIVITY)) {
+        		this.sendBroadcast(new Intent().setAction(Keys.Service.STOP_SERVICE));
+        		try {
+        			unbindService(sc);
+        		} catch(IllegalArgumentException e) {}
+        		
+        		if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == InformaConstants.LoginCache.ON_CLOSE)
+        			doLogout();
+        		
+        		super.finish();
+        	} else if(b.containsKey(Keys.Service.START_SERVICE)) {
         		Eula.show(this);
         	}
         		
@@ -138,6 +146,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		{
 			setContentView(R.layout.mainloading);
 			Intent passingIntent = new Intent(this, ImageEditor.class);
+			passingIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 			
 			if(requestCode == ObscuraConstants.GALLERY_RESULT)
 				uriCameraImage = intent.getData();
@@ -146,7 +155,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			
 			if(uriCameraImage != null) {
 				passingIntent.setData(uriCameraImage);
-				startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
+				startActivity(passingIntent);
 			} else
 				sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
 		} else {
@@ -238,7 +247,9 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     		Intent startSensorSucker = new Intent(this, SensorSucker.class);
     		bindService(startSensorSucker, sc, Context.BIND_AUTO_CREATE);
     	}
-    	
+
+    	showHints = _sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true);
+
     	if(showHints) {
     		// TODO: show a popup
     	}
@@ -249,7 +260,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	_ed.putString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).commit();
     	_sp = null;
     	_ed = null;
-    	finish();
+    	informaService = null;
+    	super.finish();
     }
     
 	
@@ -269,7 +281,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	public void onEulaAgreedTo() {
 		boolean res = InformaSettings.show(this);
 		if(res) {
-			showHints = _sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true);
 			launchInforma();
 		}
 	}

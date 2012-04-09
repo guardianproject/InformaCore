@@ -107,7 +107,7 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		} else if(v == confirmQuit) {			
 			if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
 	    		_sp.edit().putString(Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).commit();
-			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.FINISH_ACTIVITY, "die"));
+			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.FINISH_ACTIVITY, "die").addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
 		} else if(v == confirmTakeAnother) {
 			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.START_SERVICE, "go"));
 		}

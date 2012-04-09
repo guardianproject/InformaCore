@@ -1,6 +1,7 @@
 package org.witness.ssc;
 
 import org.witness.mods.InformaButton;
+import org.witness.mods.InformaHeaderTextView;
 import org.witness.mods.InformaTextView;
 
 import android.app.Activity;
@@ -9,12 +10,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 
 public class About extends Activity implements OnClickListener {
-	InformaTextView packageVersion;
+	InformaHeaderTextView packageVersion;
 	InformaButton dismiss;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.about);
 		
 		String versNum = "";
         
@@ -25,7 +27,7 @@ public class About extends Activity implements OnClickListener {
         	versNum = "";
         }
         
-        packageVersion = (InformaTextView) findViewById(R.id.about_packageVersion);
+        packageVersion = (InformaHeaderTextView) findViewById(R.id.about_packageVersion);
         packageVersion.setText(versNum);
         
         dismiss = (InformaButton) findViewById(R.id.about_dismiss);

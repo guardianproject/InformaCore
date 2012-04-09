@@ -27,10 +27,12 @@
                  <action android:name="android.intent.action.VIEW" />
                  <action android:name="android.intent.action.EDIT" />
                  <action android:name="android.intent.action.SEND" />
+                 <action android:name="org.thialfihar.android.apg.intent.ENCRYPT_FILE" />
                  
                  <category android:name="android.intent.category.DEFAULT" />
                  <category android:name="android.intent.category.ALTERNATIVE" /> 
-                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" /> 
+                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
+                 
                  
                  <data android:mimeType="image/*" />
              </intent-filter>        
@@ -43,7 +45,13 @@
     	<activity android:name="org.witness.ssc.Preferences" android:label="@string/preferences_label" android:screenOrientation="portrait" />
     	<activity android:name="org.witness.ssc.Login" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
     	<activity android:name="org.witness.ssc.About" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-     	
+     	<activity android:name="org.witness.informa.EncryptActivity" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden">
+     	    <intent-filter>
+     	        <action android:name="org.thialfihar.android.apg.intent.ENCRYPT_FILE" />
+     	    </intent-filter>
+     	</activity>
+    	<activity android:name="org.witness.ssc.FullStop" />
+    	
     	<service android:enabled="true" android:name="org.witness.informa.utils.SensorSucker" />
     </application>
 </manifest> 

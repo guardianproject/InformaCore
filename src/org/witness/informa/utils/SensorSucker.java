@@ -247,10 +247,15 @@ public class SensorSucker extends Service {
 					try {
 						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
 						Image[] img = informa.getImages();
+						final ArrayList<Map<File, String>> imgMap = new ArrayList<Map<File, String>>();
 						
 						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
-						for(Image i : img)
+						for(Image i : img) {
 							ic.createVersionForTrustedDestination(i.getAbsolutePath(),i.getIntendedDestination());
+							Map<File, String> iMap = new HashMap<File, String>();
+							iMap.put(i.getAbsoluteFile(), i.getIntendedDestination());
+							imgMap.add(iMap);
+						}
 								
 						ic.doCleanup();
 						
@@ -260,13 +265,20 @@ public class SensorSucker extends Service {
 								unlockLogs();
 								sendBroadcast(
 										new Intent()
-										.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+										.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY)
+										.putExtra(InformaConstants.Keys.ENCRYPTED_IMAGES, imgMap));
 							}
 						});
 					} catch (IllegalArgumentException e) {
 						Log.e(InformaConstants.TAG, "informa called Illegal Arguments",e);
+						sendBroadcast(
+								new Intent()
+								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
 					} catch (JSONException e) {
 						Log.e(InformaConstants.TAG, "informa called JSONException?",e);
+						sendBroadcast(
+								new Intent()
+								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
 					} catch (IllegalAccessException e) {
 						Log.e(InformaConstants.TAG, "informa called Illegal Access",e);
 					} catch (NoSuchAlgorithmException e) {
@@ -336,5 +348,9 @@ public class SensorSucker extends Service {
 			}
 		}
 			
+	}
+	
+	public interface InformaEncryptor {
+		public void informaEncrypt(ArrayList<Map<File, String>> images);
 	}
 }

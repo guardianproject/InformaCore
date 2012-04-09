@@ -4,6 +4,7 @@ import info.guardianproject.database.sqlcipher.SQLiteDatabase;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
@@ -266,8 +267,8 @@ public class Informa {
 		return mime;
 	}
 	
-	public class Image extends File {
-		private static final long serialVersionUID = 1L;
+	public class Image extends File implements Serializable {
+		private static final long serialVersionUID = 8189892791741740688L;
 		private String intendedDestination;
 		private JSONObject metadataPackage;
 

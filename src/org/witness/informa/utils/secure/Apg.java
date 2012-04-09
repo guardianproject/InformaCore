@@ -9,6 +9,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.witness.informa.utils.InformaConstants;
 import org.witness.ssc.R;
 
 import android.app.Activity;
@@ -19,6 +20,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.Toast;
 
 public class Apg extends CryptoProvider
@@ -480,6 +482,8 @@ public class Apg extends CryptoProvider
         intent.setData(Uri.fromFile(fileToEncrypt));
         
         //intent.putExtra(Apg.EXTRA_TEXT, data);
+        Log.d(InformaConstants.TAG, "HELLO FROM APG: " + activity.getCallingPackage());
+        Log.d(InformaConstants.TAG, "HELLO FROM APG: " + fileToEncrypt.getAbsolutePath());
         
         intent.putExtra(Apg.EXTRA_ENCRYPTION_KEY_IDS, mEncryptionKeyIds);
         intent.putExtra(Apg.EXTRA_SIGNATURE_KEY_ID, mSignatureKeyId);

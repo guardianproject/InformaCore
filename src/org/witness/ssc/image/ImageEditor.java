@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.json.JSONArray;
@@ -22,6 +23,8 @@ import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.SensorSucker.InformaEncryptor;
+import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.image.filters.RegionProcesser;
 import org.witness.ssc.utils.ObscuraConstants;
@@ -78,7 +81,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class ImageEditor extends SherlockActivity implements OnTouchListener, OnClickListener {
+public class ImageEditor extends SherlockActivity implements OnTouchListener, OnClickListener, InformaEncryptor {
 	// Image Matrix
 	Matrix matrix = new Matrix();
 
@@ -166,19 +169,21 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     
     SharedPreferences sp;
     SharedPreferences.Editor ed;
+	Apg apg = Apg.getInstance();
     
     BroadcastReceiver br = new BroadcastReceiver() {
-
+		@SuppressWarnings("unchecked")
 		@Override
 		public void onReceive(Context c, Intent i) {
 			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
-		    	
-		    	reviewAndFinish();
+				try {
+					informaEncrypt((ArrayList<Map<File, String>>) i.getSerializableExtra(InformaConstants.Keys.ENCRYPTED_IMAGES));
+				} catch(NullPointerException e) {
+					Toast.makeText(ImageEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
+					finish();
+				}
 			}
-				
-			
 		}
-    	
     };
     
     private void reviewAndFinish() {
@@ -1340,7 +1345,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     }
     
     @Override
-    public void onActivityResult(int requestCode, int resultCode, final Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
+    	super.onActivityResult(requestCode, resultCode, data);
+    	
     	if(resultCode == SherlockActivity.RESULT_OK) {
     		if(requestCode == InformaConstants.FROM_INFORMA_TAGGER) {
     			// replace corresponding image region
@@ -1373,6 +1380,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 						}
     				  }
     				},500);
+    		} else if(requestCode == Apg.ENCRYPT_MESSAGE) {
+    			apg.onActivityResult(this, requestCode, resultCode, data);
+    			Log.d(InformaConstants.TAG, "fuck you");
     		}
     	}
     }
@@ -1404,5 +1414,21 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	    window.setFormat(PixelFormat.RGBA_8888);
 	    window.getDecorView().getBackground().setDither(true);
 
+	}
+
+	// TODO: THIS IS NOT WORKING.  WHY?
+	@Override
+	public void informaEncrypt(ArrayList<Map<File, String>> images) {
+		apg.setSignatureKeyId(sp.getLong(InformaConstants.Keys.Owner.SIG_KEY_ID, 0));
+		if(apg.isAvailable(this)) {
+			for(Map<File, String> image : images) {
+				Entry<File, String> i = image.entrySet().iterator().next();
+				apg.setEncryptionKeys(apg.getSecretKeyIdsFromEmail(this, i.getValue()));
+				apg.encryptFile(ImageEditor.this, i.getKey());
+			}
+		}
+		apg = null;
+		reviewAndFinish();
+		
 	}
 }
