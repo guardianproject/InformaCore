@@ -29,6 +29,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -107,17 +108,17 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	}
 	
 	public void setMandatory(View v) {
-		((Button) v).setAlpha(0.3f);
-		((Button) v).setClickable(false);
+		((InformaButton) v).getBackground().setAlpha(100);
+		((InformaButton) v).setClickable(false);
 	}
 	
 	public void enableAction(View v) {
-		((InformaButton) v).setAlpha(1.0f);
+		((InformaButton) v).getBackground().setAlpha(255);
 		((InformaButton) v).setClickable(true);
 	}
 	
 	public void disableAction(View v) {
-		((InformaButton) v).setAlpha(0.5f);
+		((InformaButton) v).getBackground().setAlpha(100);
 		((InformaButton) v).setClickable(false);
 	}
 	

@@ -6,6 +6,7 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.LoginCache;
 import org.witness.informa.utils.secure.Apg;
+import org.witness.mods.InformaButton;
 import org.witness.ssc.InformaApp;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.R;
@@ -22,10 +23,9 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 
 public class ReviewAndFinish extends Activity implements OnClickListener {
-	Button confirmView, confirmQuit, confirmTakeAnother;
+	InformaButton confirmView, confirmTakeAnother;
 	Uri savedImageUri;
 	Handler finish;
 	Apg apg;
@@ -39,13 +39,10 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		
 		_sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
-		confirmView = (Button) findViewById(R.id.informaConfirm_btn_view);
+		confirmView = (InformaButton) findViewById(R.id.informaConfirm_btn_view);
 		confirmView.setOnClickListener(this);
 		
-		confirmQuit = (Button) findViewById(R.id.informaConfirm_btn_quit);
-		confirmQuit.setOnClickListener(this);
-		
-		confirmTakeAnother = (Button) findViewById(R.id.informaConfirm_btn_takeAnother);
+		confirmTakeAnother = (InformaButton) findViewById(R.id.informaConfirm_btn_takeAnother);
 		confirmTakeAnother.setOnClickListener(this);
 		
     	if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.AFTER_SAVE)
@@ -104,10 +101,6 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 				viewVideo();
 				break;
 			}
-		} else if(v == confirmQuit) {			
-			if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
-	    		_sp.edit().putString(Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).commit();
-			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.FINISH_ACTIVITY, "die").addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
 		} else if(v == confirmTakeAnother) {
 			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.START_SERVICE, "go"));
 		}
