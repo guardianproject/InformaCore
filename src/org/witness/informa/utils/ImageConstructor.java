@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -46,6 +47,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.preference.PreferenceManager;
@@ -87,24 +90,23 @@ public class ImageConstructor {
 	
 	public ImageConstructor(Context c, String metadataObjectString, String baseName) throws JSONException, NoSuchAlgorithmException, IOException {
 		this.c = c;
-		this.unredactedRegions = new ArrayList<ContentValues>();
+		
+		metadataObject = (JSONObject) new JSONTokener(metadataObjectString).nextValue();
+		unredactedRegions = new ArrayList<ContentValues>();
 		clone = new File(InformaConstants.DUMP_FOLDER, ObscuraConstants.TMP_FILE_NAME_IMAGE);
 		
 		_sp = PreferenceManager.getDefaultSharedPreferences(c);
 		dh = new DatabaseHelper(c);
 		db = dh.getWritableDatabase(_sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
 		
-		unredactedHash = MediaHasher.hash(fileToBytes(clone), "SHA-1");
+		unredactedHash = getBitmapHash(clone);
 		
 		base = baseName.split("_")[0] + ".jpg";
-		
-		metadataObject = (JSONObject) new JSONTokener(metadataObjectString).nextValue();
 		
 		// handle original based on settings
 		handleOriginalImage();
 		
 		// do redaction
-		
 		this.imageRegions = (JSONArray) (metadataObject.getJSONObject(Keys.Informa.DATA)).getJSONArray(Keys.Data.IMAGE_REGIONS);
 		for(int i=0; i<imageRegions.length(); i++) {
 			JSONObject ir = imageRegions.getJSONObject(i);
@@ -151,7 +153,7 @@ public class ImageConstructor {
 		for(ContentValues rcv : unredactedRegions)
 			db.insert(dh.getTable(), null, rcv);
 		
-		redactedHash = MediaHasher.hash(fileToBytes(clone), "SHA-1");
+		redactedHash = getBitmapHash(clone);
 	}
 
 	public void doCleanup() {
@@ -161,11 +163,29 @@ public class ImageConstructor {
 		clone.delete();
 	}
 	
+	private String getBitmapHash(File file) throws NoSuchAlgorithmException, IOException {
+		Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+		ByteBuffer buf = ByteBuffer.allocateDirect(bitmap.getByteCount());
+		bitmap.copyPixelsToBuffer(buf);
+		
+		String hash = MediaHasher.hash(buf.array(), "SHA-1");
+		buf.clear();
+		buf = null;
+		
+		return hash;
+	}
+	
 	public int createVersionForTrustedDestination(String informaImageFilename, String intendedDestination) throws JSONException, NoSuchAlgorithmException, IOException {
 		int result = 0;
 		
 		Log.d(InformaConstants.TAG, "metadata passed:" + metadataObject.toString());
 		Log.d(InformaConstants.TAG, "metadata length = " + metadataObject.toString().length());
+		
+		// insert the unredacted and redacted media hashes
+		JSONObject mediaHash = new JSONObject();
+		mediaHash.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
+		mediaHash.put(Keys.Image.REDACTED_IMAGE_HASH, redactedHash);
+		metadataObject.getJSONObject(Keys.Informa.DATA).put(Keys.Data.MEDIA_HASH, mediaHash);
 		
 		// replace the metadata's intended destination
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, intendedDestination);
@@ -186,7 +206,6 @@ public class ImageConstructor {
 			dh.setTable(db, Tables.IMAGES);
 			db.insert(dh.getTable(), null, cv);
 			
-			// TODO: DO ENCRYPT!
 			result = 1;
 		}
 		

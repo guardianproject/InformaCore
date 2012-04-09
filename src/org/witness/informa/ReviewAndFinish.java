@@ -35,7 +35,6 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.reviewandfinish);
 		savedImageUri = getIntent().getData();
-		Log.d(InformaConstants.TAG, "HERE IS THE URI: " + savedImageUri.getPath());
 		
 		_sp = PreferenceManager.getDefaultSharedPreferences(this);
 		

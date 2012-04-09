@@ -229,8 +229,11 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
 		
         sp = PreferenceManager.getDefaultSharedPreferences(this);
-        ed = sp.edit();
         
+        if(sp.getString(Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).compareTo(InformaConstants.PW_EXPIRY) == 0)
+        	finish();
+        
+        ed = sp.edit();
         showHints = sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true);
         
 		setContentView(R.layout.imageviewer);

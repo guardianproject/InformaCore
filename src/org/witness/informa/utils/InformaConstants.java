@@ -95,6 +95,7 @@ public class InformaConstants {
 			public final static String IMAGE_REGIONS = "imageRegions";
 			public final static String VIDEO_REGIONS = "videoRegions";
 			public final static String EVENTS = "events";
+			public final static String MEDIA_HASH = "mediaHash";
 		}
 		
 		public final static class Genealogy {
@@ -132,6 +133,8 @@ public class InformaConstants {
 		
 		public final static class Media {
 			public final static String MEDIA_TYPE = "source_type";
+			public final static String UNREDACTED_HASH = Image.UNREDACTED_IMAGE_HASH;
+			public final static String REDACTED_HASH = Image.REDACTED_IMAGE_HASH;
 		}
 		
 		public final static class Image {
