@@ -108,7 +108,6 @@ public class SensorLogger<T> {
 		if(mBuffer.length() > 100 && canBeCleared) {
 			mBuffer = null;
 			mBuffer = new JSONArray();
-			Log.d(InformaConstants.TAG, "LOG CLEARED");
 		}
 		
 		logItem.put(InformaConstants.Keys.CaptureEvent.TIMESTAMP, System.currentTimeMillis());
@@ -119,11 +118,12 @@ public class SensorLogger<T> {
 	public JSONObject jPack(String key, Object val) throws JSONException {
 		JSONObject item = new JSONObject();
 		
-		if (val != null)
+		try {
 			item.put(key, val.toString());
-		else
-			item.put(key, ""); //TODO is this the best way to handle null value? n8fr8
-		
+		} catch(NullPointerException e) {
+			item.put(key, "");
+		}
+
 		return item;
 	}
 }

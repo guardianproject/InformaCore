@@ -43,6 +43,7 @@
     	android:layout_weight="0.45"
     	android:paddingTop="10dip"
     	android:paddingBottom="10dip"
+    	android:layout_marginBottom="10dip"
     	android:id="@+id/otherInformaOptionsHolder" />    	
     <org.witness.mods.InformaButton style="@style/Button_standard"
     	android:layout_width="fill_parent"

@@ -81,6 +81,7 @@ public class SensorSucker extends Service {
 	
 	public void onDestroy() {
 		super.onDestroy();
+		Log.d(InformaConstants.SUCKER_TAG, "SERVICE DEFINITELY DISCONNECTED");
 		
 		for(BroadcastReceiver b : br)
 			unregisterReceiver(b);
@@ -223,7 +224,6 @@ public class SensorSucker extends Service {
 		captureEventData.put(InformaConstants.Keys.Suckers.ACCELEROMETER, _acc.returnCurrent());
 		
 		capturedEvents.put(captureEventData);
-		Log.d(InformaConstants.TAG, "captured data: " + captureEventData.toString());
 	}
 	
 	private void sealLog(String regionData, String localMediaPath, long[] encryptTo, int mediaType) throws Exception {
@@ -334,9 +334,9 @@ public class SensorSucker extends Service {
 						i.getIntExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.REGION_GENERATED));
 				} else if(InformaConstants.Keys.Service.SET_EXIF.equals(i.getAction())) {
 					handleExif(i.getStringExtra(InformaConstants.Keys.Image.EXIF));
-				} else if(InformaConstants.Keys.Service.START_SERVICE.equals(i.getAction()))
+				} else if(InformaConstants.Keys.Service.START_SERVICE.equals(i.getAction())) {
 					startUpService();
-				else if(InformaConstants.Keys.Service.LOCK_LOGS.equals(i.getAction()))
+				} else if(InformaConstants.Keys.Service.LOCK_LOGS.equals(i.getAction()))
 					lockLogs();
 				else if(InformaConstants.Keys.Service.UNLOCK_LOGS.equals(i.getAction()))
 					unlockLogs();

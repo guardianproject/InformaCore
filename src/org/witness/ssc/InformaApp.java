@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.LoginCache;
 import org.witness.informa.utils.SensorSucker;
 import org.witness.informa.utils.SensorSucker.LocalBinder;
 import org.witness.ssc.Eula.OnEulaAgreedTo;
@@ -49,6 +50,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
     		LocalBinder lb = (LocalBinder) binder;
     		informaService = lb.getService();
+    		Log.d(InformaConstants.SUCKER_TAG, "SERVICE ABSOLUTELY STARTED");
     	}
     	
     	public void onServiceDisconnected(ComponentName cn) {
@@ -61,7 +63,10 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	{
 		super.onDestroy();
 		deleteTmpFile();
-		
+		sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.STOP_SERVICE));
+		Log.d(InformaConstants.SUCKER_TAG, "ON DESTROY WAS CALLED BY SOMEBODY!");
+		if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
+    		doLogout();
 	}
 	
 	@Override
@@ -93,28 +98,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         
         _sp = PreferenceManager.getDefaultSharedPreferences(this);
     	_ed = _sp.edit();
-        
-        if(getIntent().getExtras() != null) {
-        	Bundle b = getIntent().getExtras();
-        	if(b.containsKey(Keys.Service.FINISH_ACTIVITY)) {
-        		this.sendBroadcast(new Intent().setAction(Keys.Service.STOP_SERVICE));
-        		try {
-        			unbindService(sc);
-        		} catch(IllegalArgumentException e) {}
-        		
-        		if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == InformaConstants.LoginCache.ON_CLOSE)
-        			doLogout();
-        		
-        		super.finish();
-        	} else if(b.containsKey(Keys.Service.START_SERVICE)) {
-        		Eula.show(this);
-        	}
-        		
-        	
-        } else {
-        	Eula.show(this);
-        }
-
     }
     
     @Override
@@ -130,8 +113,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     		if(res)
     			launchInforma();
         }
-				
-	
 	}
 
 	private void setLayout() {
@@ -142,7 +123,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     }
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-		if (resultCode == RESULT_OK)
+		if (resultCode == RESULT_OK && requestCode != ObscuraConstants.IMAGE_EDITOR)
 		{
 			setContentView(R.layout.mainloading);
 			Intent passingIntent = new Intent(this, ImageEditor.class);
@@ -155,11 +136,13 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			
 			if(uriCameraImage != null) {
 				passingIntent.setData(uriCameraImage);
-				startActivity(passingIntent);
+				startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
 			} else
 				sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
 		} else {
-			sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
+			if(requestCode == ObscuraConstants.IMAGE_EDITOR) {
+				launchInforma();
+			}	
 		}
 		setLayout();
 		
@@ -254,27 +237,20 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     		// TODO: show a popup
     	}
     	
+    	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
+    	
     }
     
     public void doLogout() {
     	_ed.putString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).commit();
     	_sp = null;
     	_ed = null;
-    	informaService = null;
+    	sendBroadcast(new Intent().setAction(Keys.Service.STOP_SERVICE));
+		try {
+			unbindService(sc);
+			informaService = null;
+		} catch(IllegalArgumentException e) {}
     	super.finish();
-    }
-    
-	
-    /*
-     * Handling screen configuration changes ourselves, 
-     * we don't want the activity to restart on rotation
-     */
-    @Override
-    public void onConfigurationChanged(Configuration conf) 
-    {
-        super.onConfigurationChanged(conf);
-        // Reset the layout to use the landscape config
-        setLayout();
     }
 
 	@Override

@@ -191,7 +191,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     	Intent i = new Intent(this, ReviewAndFinish.class);
     	i.setData(savedImageUri);
     	i.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO);
-    	startActivity(i);
+    	startActivityForResult(i, ObscuraConstants.REVIEW_MEDIA);
     	finish();
     }
     
@@ -1386,6 +1386,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     		} else if(requestCode == Apg.ENCRYPT_MESSAGE) {
     			apg.onActivityResult(this, requestCode, resultCode, data);
     			Log.d(InformaConstants.TAG, "fuck you");
+    		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
+    			setResult(SherlockActivity.RESULT_OK);
+    			finish();
     		}
     	}
     }

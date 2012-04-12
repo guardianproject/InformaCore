@@ -3,7 +3,7 @@
 	<string-array name="password_cache">
 		<item>Always</item>
 		<item>Until after I save an image</item>
-		<item>Until I close the app</item>
+		<item>Whenever the app finishes</item>
 	</string-array>
 	
 	<string-array name="password_cache_values">

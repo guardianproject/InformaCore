@@ -11,6 +11,8 @@ import org.witness.ssc.InformaApp;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.R;
 
+import com.actionbarsherlock.app.SherlockActivity;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -101,8 +103,8 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 				break;
 			}
 		} else if(v == confirmTakeAnother) {
-			startActivity(new Intent(this, InformaApp.class).putExtra(Keys.Service.START_SERVICE, "go"));
+			setResult(SherlockActivity.RESULT_OK);
+			finish();
 		}
-		finish();
 	}
 }

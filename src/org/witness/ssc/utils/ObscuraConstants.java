@@ -13,6 +13,7 @@ public class ObscuraConstants {
 	public final static int GALLERY_RESULT = 1;
 	public final static int IMAGE_EDITOR = 2;
 	public final static int VIDEO_EDITOR = 3;
+	public final static int REVIEW_MEDIA = 4;
 	
 	public final static int ABOUT = 0;
 	public final static int PREFS = 1;
