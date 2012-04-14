@@ -301,7 +301,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		if (originalImageUri != null) {
 			
 			// Get the orientation
-			File originalFilename = pullPathFromUri(originalImageUri);			
+			File originalFilename = pullPathFromUri(originalImageUri);
+			Log.d(InformaConstants.TAG, "pulling path: " + originalFilename.getAbsolutePath());
 			try {
 				JSONObject exif = new JSONObject();
 				ExifInterface ei = new ExifInterface(originalFilename.getAbsolutePath());
