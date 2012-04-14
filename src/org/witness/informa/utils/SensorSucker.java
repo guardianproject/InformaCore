@@ -241,7 +241,6 @@ public class SensorSucker extends Service {
 		
 			r = new Runnable() {
 				Informa informa; 
-				final ArrayList<Map<File, String>> imgMap = new ArrayList<Map<File, String>>();
 				
 				@Override
 				public void run() {
@@ -249,14 +248,9 @@ public class SensorSucker extends Service {
 						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
 						Image[] img = informa.getImages();
 						
-					
 						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
-						for(Image i : img) {
+						for(Image i : img)
 							ic.createVersionForTrustedDestination(i.getAbsolutePath(),i.getIntendedDestination());
-							Map<File, String> iMap = new HashMap<File, String>();
-							iMap.put(i.getAbsoluteFile(), i.getIntendedDestination());
-							imgMap.add(iMap);
-						}
 						
 						ic.doCleanup();
 					} catch(Exception e) {
@@ -269,8 +263,7 @@ public class SensorSucker extends Service {
 							unlockLogs();
 							sendBroadcast(
 									new Intent()
-									.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY)
-									.putExtra(InformaConstants.Keys.ENCRYPTED_IMAGES, imgMap));
+									.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
 						}
 					});
 				}

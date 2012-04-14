@@ -86,7 +86,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class ImageEditor extends SherlockActivity implements OnTouchListener, OnClickListener, InformaEncryptor {
+public class ImageEditor extends SherlockActivity implements OnTouchListener, OnClickListener {
 	// Image Matrix
 	Matrix matrix = new Matrix();
 
@@ -174,7 +174,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     
     SharedPreferences sp;
     SharedPreferences.Editor ed;
-	Apg apg = Apg.getInstance();
     
     BroadcastReceiver br = new BroadcastReceiver() {
 		@SuppressWarnings("unchecked")
@@ -182,7 +181,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		public void onReceive(Context c, Intent i) {
 			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
 				try {
-					informaEncrypt((ArrayList<Map<File, String>>) i.getSerializableExtra(InformaConstants.Keys.ENCRYPTED_IMAGES));
+					reviewAndFinish();
 				} catch(NullPointerException e) {
 					Toast.makeText(ImageEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
 					finish();
@@ -222,11 +221,14 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		setTheme(R.style.Theme_Sherlock_Light);
+		
 		super.onCreate(savedInstanceState);
 		
 		ab = getSupportActionBar();
 		ab.setDisplayShowHomeEnabled(false);
 		ab.setDisplayShowTitleEnabled(false);
+		
+		Log.d(InformaConstants.TAG, "ON CREATE CALLED");
 		
 		sendBroadcast(new Intent()
 			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
@@ -260,7 +262,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		
 		// Passed in from CameraObscuraMainMenu
 		originalImageUri = getIntent().getData();
-		Log.d(InformaConstants.TAG, originalImageUri.toString());
+		
+		Log.d(InformaConstants.TAG, "created file: " + originalImageUri.toString());
 		
 		// If originalImageUri is null, we are likely coming from another app via "share"
 		if (originalImageUri == null)
@@ -1388,8 +1391,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 						}
     				  }
     				},500);
-    		} else if(requestCode == Apg.ENCRYPT_MESSAGE) {
-    			apg.onActivityResult(this, requestCode, resultCode, data);
     		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
     			setResult(SherlockActivity.RESULT_OK);
     			finish();
@@ -1424,34 +1425,5 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	    window.setFormat(PixelFormat.RGBA_8888);
 	    window.getDecorView().getBackground().setDither(true);
 
-	}
-
-	// TODO: THIS IS NOT WORKING.  WHY?
-	@Override
-	public void informaEncrypt(ArrayList<Map<File, String>> images) {
-		if(apg.isAvailable(this)) {
-			DatabaseHelper dh = new DatabaseHelper(this);
-			SQLiteDatabase db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
-		
-			dh.setTable(db, Tables.SETUP);
-			Cursor c = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
-			if(c != null && c.getCount() != 0) {
-				c.moveToFirst();
-				apg.setSignatureKeyId(c.getLong(0));
-				Log.d(InformaConstants.TAG, "the key you seek is: " + c.getLong(0));
-				c.close();
-			}
-			db.close();
-			dh.close();
-		
-			for(Map<File, String> image : images) {
-				Entry<File, String> i = image.entrySet().iterator().next();
-				apg.setEncryptionKeys(apg.getSecretKeyIdsFromEmail(this, i.getValue()));
-				apg.encryptFile(ImageEditor.this, i.getKey()); // This is probably not the activity we want to run this on.
-			}
-		}
-		apg = null;
-		reviewAndFinish();
-		
 	}
 }

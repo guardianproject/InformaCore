@@ -78,11 +78,13 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	
 	private void deleteTmpFile ()
 	{
+		/*
 		File fileDir = getExternalFilesDir(null);		
 		if (fileDir == null || !fileDir.exists())
 			fileDir = getFilesDir();
+		*/
 		
-		File tmpFile = new File(fileDir,ObscuraConstants.CAMERA_TMP_FILE);
+		File tmpFile = new File(ObscuraConstants.CAMERA_TMP_FILE, ObscuraConstants.CAMERA_TMP_FILE);
 		if (tmpFile.exists())
 			tmpFile.delete();
 	}
@@ -196,6 +198,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            
     	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
     	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Log.d(InformaConstants.TAG, "created file: " + uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)

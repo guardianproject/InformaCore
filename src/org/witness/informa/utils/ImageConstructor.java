@@ -17,6 +17,8 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -36,6 +38,7 @@ import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
+import org.witness.ssc.image.ImageEditor;
 import org.witness.ssc.image.filters.CrowdPixelizeObscure;
 import org.witness.ssc.image.filters.InformaTagger;
 import org.witness.ssc.image.filters.PixelizeObscure;
@@ -52,6 +55,7 @@ import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.provider.MediaStore.Images;
 import android.util.Base64;
 import android.util.Log;
@@ -81,6 +85,7 @@ public class ImageConstructor {
 	Context c;
 	private DatabaseHelper dh;
 	private SQLiteDatabase db;
+	Apg apg;
 	private SharedPreferences _sp;
 	
 	static {
@@ -105,6 +110,17 @@ public class ImageConstructor {
 		
 		// handle original based on settings
 		handleOriginalImage();
+		
+		apg = Apg.getInstance();
+		dh.setTable(db, Tables.SETUP);
+		Cursor cursor = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
+		if(cursor != null && cursor.getCount() != 0) {
+			cursor.moveToFirst();
+			apg.setSignatureKeyId(cursor.getLong(0));
+			Log.d(InformaConstants.TAG, "the key you seek is: " + cursor.getLong(0));
+			cursor.close();
+			
+		}
 		
 		// do redaction
 		this.imageRegions = (JSONArray) (metadataObject.getJSONObject(Keys.Informa.DATA)).getJSONArray(Keys.Data.IMAGE_REGIONS);
@@ -191,8 +207,15 @@ public class ImageConstructor {
 		// replace the metadata's intended destination
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, intendedDestination);
 		
+		// TODO: use APG to encrypt this
+		long[] keyFromEmail = apg.getSecretKeyIdsFromEmail(c, intendedDestination);
+		for(long k : keyFromEmail)
+			Log.d(InformaConstants.TAG, "here is " + k);
+		apg.setEncryptionKeys(keyFromEmail);
+		String encryptedMetadata = metadataObject.toString();
+		
 		// insert metadata
-		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, metadataObject.toString(), metadataObject.toString().length());
+		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, encryptedMetadata, metadataObject.toString().length());
 		if(metadataLength > 0) {
 			ContentValues cv = new ContentValues();
 			// package zipped image region bytes

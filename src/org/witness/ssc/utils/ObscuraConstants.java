@@ -61,7 +61,7 @@ public class ObscuraConstants {
 	public final static String TMP_FILE_NAME_IMAGE = "tmp.jpg";
 	public static final String TMP_FILE_NAME_VIDEO = "tmp.mp4";
 	
-	public final static String TMP_FILE_DIRECTORY = Environment.getExternalStorageDirectory().getPath() + "/Android/data/org.witness.ssc/files/";
+	public final static String TMP_FILE_DIRECTORY = Environment.getExternalStorageDirectory().getPath() + "/InformaCam/tmp/";
 	
 	// for saving images
     public final static String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
