@@ -175,6 +175,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		}
 		enableAction(wizard_next);
 		db.close();
+		dh.close();
 	}
 	
 	private void setUserPGP() {
@@ -182,6 +183,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		SQLiteDatabase.loadLibs(this);
 		
 		dh = new DatabaseHelper(this);
+		Log.d(InformaConstants.TAG, "THIS DB PWD: " + preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 		
 		dh.setTable(db, InformaConstants.Keys.Tables.SETUP);
@@ -200,6 +202,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			enableAction(wizard_next);
 		
 		db.close();
+		dh.close();
 	}
 	
 	private long getPublicTimestamp(long ts) {

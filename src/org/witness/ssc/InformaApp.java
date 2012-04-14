@@ -103,33 +103,14 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     
     @Override
 	protected void onResume() {
-
 		super.onResume();
-		Log.d(InformaConstants.TAG, "got to onresume!");
-		/*
 		final SharedPreferences eula = getSharedPreferences(Eula.PREFERENCES_EULA,
                 SherlockActivity.MODE_PRIVATE);
-        
-		
-	  
-        if (eula.getBoolean(Eula.PREFERENCE_EULA_ACCEPTED, false)) {
-        	Log.d(InformaConstants.TAG, "EULA has not been accepted");
-        	boolean res = InformaSettings.show(this);
+        if (!eula.getBoolean(Eula.PREFERENCE_EULA_ACCEPTED, false)) {
+        	boolean res = Eula.show(this);
     		if(res)
     			launchInforma();
-        } else {
-        	
-        	Log.d(InformaConstants.TAG, "EULA been accepted");
-        }
-        */
-		
-		final boolean eula = _sp.getBoolean(Keys.Settings.EULA_ACCEPTED, false);
-		if(!eula) {
-			Log.d(InformaConstants.TAG, "EULA has not been accepted");
-        	boolean res = InformaSettings.show(this);
-    		if(res)
-    			launchInforma();
-		}
+        } 
 		
 	}
 
