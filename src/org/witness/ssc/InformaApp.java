@@ -64,9 +64,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		super.onDestroy();
 		deleteTmpFile();
 		sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.STOP_SERVICE));
-		Log.d(InformaConstants.SUCKER_TAG, "ON DESTROY WAS CALLED BY SOMEBODY!");
-		if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
-    		doLogout();
+		
+		try {
+			if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
+				doLogout();
+		} catch(NullPointerException e) {} // the user has already logged out, and prefs are null
 	}
 	
 	@Override
@@ -76,8 +78,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	
 	private void deleteTmpFile ()
 	{
-		File fileDir = getExternalFilesDir(null);
-		
+		File fileDir = getExternalFilesDir(null);		
 		if (fileDir == null || !fileDir.exists())
 			fileDir = getFilesDir();
 		

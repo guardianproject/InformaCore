@@ -1,5 +1,7 @@
 package org.witness.ssc.image;
 
+import info.guardianproject.database.sqlcipher.SQLiteDatabase;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,7 +25,9 @@ import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.SensorSucker.InformaEncryptor;
+import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.image.filters.RegionProcesser;
@@ -67,6 +71,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
@@ -1190,7 +1195,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     	Bitmap obscuredBmp = createObscuredBitmap(w,h, false);
     	
     	// Create the Uri - This can't be "private"
-    	File tmpFileDirectory = new File(Environment.getExternalStorageDirectory().getPath() + ObscuraConstants.TMP_FILE_DIRECTORY);
+    	File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
     	File tmpFile = new File(tmpFileDirectory, ObscuraConstants.TMP_FILE_NAME_IMAGE);
     	debug(ObscuraConstants.TAG, tmpFile.getPath());
     	
@@ -1385,7 +1390,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     				},500);
     		} else if(requestCode == Apg.ENCRYPT_MESSAGE) {
     			apg.onActivityResult(this, requestCode, resultCode, data);
-    			Log.d(InformaConstants.TAG, "fuck you");
     		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
     			setResult(SherlockActivity.RESULT_OK);
     			finish();
@@ -1425,12 +1429,25 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	// TODO: THIS IS NOT WORKING.  WHY?
 	@Override
 	public void informaEncrypt(ArrayList<Map<File, String>> images) {
-		apg.setSignatureKeyId(sp.getLong(InformaConstants.Keys.Owner.SIG_KEY_ID, 0));
 		if(apg.isAvailable(this)) {
+			DatabaseHelper dh = new DatabaseHelper(this);
+			SQLiteDatabase db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
+		
+			dh.setTable(db, Tables.SETUP);
+			Cursor c = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
+			if(c != null && c.getCount() != 0) {
+				c.moveToFirst();
+				apg.setSignatureKeyId(c.getLong(0));
+				Log.d(InformaConstants.TAG, "the key you seek is: " + c.getLong(0));
+				c.close();
+			}
+			db.close();
+			dh.close();
+		
 			for(Map<File, String> image : images) {
 				Entry<File, String> i = image.entrySet().iterator().next();
 				apg.setEncryptionKeys(apg.getSecretKeyIdsFromEmail(this, i.getValue()));
-				apg.encryptFile(ImageEditor.this, i.getKey());
+				apg.encryptFile(ImageEditor.this, i.getKey()); // This is probably not the activity we want to run this on.
 			}
 		}
 		apg = null;

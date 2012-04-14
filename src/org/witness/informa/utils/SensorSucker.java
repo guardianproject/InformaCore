@@ -241,14 +241,15 @@ public class SensorSucker extends Service {
 		
 			r = new Runnable() {
 				Informa informa; 
-			
+				final ArrayList<Map<File, String>> imgMap = new ArrayList<Map<File, String>>();
+				
 				@Override
 				public void run() {
 					try {
 						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
 						Image[] img = informa.getImages();
-						final ArrayList<Map<File, String>> imgMap = new ArrayList<Map<File, String>>();
 						
+					
 						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
 						for(Image i : img) {
 							ic.createVersionForTrustedDestination(i.getAbsolutePath(),i.getIntendedDestination());
@@ -256,42 +257,22 @@ public class SensorSucker extends Service {
 							iMap.put(i.getAbsoluteFile(), i.getIntendedDestination());
 							imgMap.add(iMap);
 						}
-								
-						ic.doCleanup();
 						
-						informaCallback.post(new Runnable() {
-							@Override
-							public void run() {
-								unlockLogs();
-								sendBroadcast(
-										new Intent()
-										.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY)
-										.putExtra(InformaConstants.Keys.ENCRYPTED_IMAGES, imgMap));
-							}
-						});
-					} catch (IllegalArgumentException e) {
-						Log.e(InformaConstants.TAG, "informa called Illegal Arguments",e);
-						sendBroadcast(
-								new Intent()
-								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
-					} catch (JSONException e) {
-						Log.e(InformaConstants.TAG, "informa called JSONException?",e);
-						sendBroadcast(
-								new Intent()
-								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
-					} catch (IllegalAccessException e) {
-						Log.e(InformaConstants.TAG, "informa called Illegal Access",e);
-					} catch (NoSuchAlgorithmException e) {
-						Log.e(InformaConstants.TAG, "informa called NoSuchAlgoException",e);
-					} catch (IOException e) {
-						Log.e(InformaConstants.TAG, "informa called IOException",e);
-					} catch (NullPointerException e) {
-						Log.e(InformaConstants.TAG, "informa called NPE",e);
-						sendBroadcast(
-								new Intent()
-								.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+						ic.doCleanup();
+					} catch(Exception e) {
+						Log.d(InformaConstants.SUCKER_TAG, e.toString());
 					}
 					
+					informaCallback.post(new Runnable() {
+						@Override
+						public void run() {
+							unlockLogs();
+							sendBroadcast(
+									new Intent()
+									.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY)
+									.putExtra(InformaConstants.Keys.ENCRYPTED_IMAGES, imgMap));
+						}
+					});
 				}
 				
 			};
@@ -329,6 +310,7 @@ public class SensorSucker extends Service {
 						i.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST),
 						i.getIntExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO));
 				} else if(InformaConstants.Keys.Service.SET_CURRENT.equals(i.getAction())) {
+					Log.d(InformaConstants.SUCKER_TAG, "setting an event: ");
 					captureEventData(
 						i.getLongExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, 0L),
 						i.getIntExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.REGION_GENERATED));
