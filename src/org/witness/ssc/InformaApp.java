@@ -110,7 +110,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         	boolean res = Eula.show(this);
     		if(res)
     			launchInforma();
-        } 
+        } else
+        	onEulaAgreedTo();
 		
 	}
 
