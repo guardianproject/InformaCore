@@ -29,6 +29,7 @@ public class InformaConstants {
 			public static final String HAS_DB_PASSWORD = "informa.PasswordSet";
 			public static final String DB_PASSWORD_CACHE_TIMEOUT = "informa.PasswordCacheTimeout";
 			public static final String DEFAULT_IMAGE_HANDLING = "informa.DefaultImageHandling";
+			public static final String EULA_ACCEPTED = "informa.EulaAccepted";
 		}
 		
 		public final static class Service {

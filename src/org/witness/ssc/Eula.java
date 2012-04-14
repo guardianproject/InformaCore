@@ -21,12 +21,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.ssc.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 /**
  * Displays an EULA ("End User License Agreement") that the user has to accept before
@@ -39,6 +41,8 @@ class Eula {
     public static final String ASSET_EULA = "EULA";
     public static final String PREFERENCE_EULA_ACCEPTED = "eula.accepted";
     public static final String PREFERENCES_EULA = "eula";
+    
+    Activity activity;
 
     /**
      * callback to let the activity know when the user has accepted the EULA.
@@ -61,6 +65,7 @@ class Eula {
     static boolean show(final Activity activity) {
         final SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES_EULA,
                 Activity.MODE_PRIVATE);
+        
         if (!preferences.getBoolean(PREFERENCE_EULA_ACCEPTED, false)) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
             builder.setTitle(R.string.eula_title);
@@ -68,6 +73,10 @@ class Eula {
             builder.setPositiveButton(R.string.eula_accept, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     accept(preferences);
+                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
+                    SharedPreferences.Editor ed = sp.edit();
+                    ed.putBoolean(Keys.Settings.EULA_ACCEPTED, true).commit();
+                    
                     if (activity instanceof OnEulaAgreedTo) {
                         ((OnEulaAgreedTo) activity).onEulaAgreedTo();
                     }

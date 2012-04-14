@@ -78,13 +78,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	
 	private void deleteTmpFile ()
 	{
-		/*
 		File fileDir = getExternalFilesDir(null);		
 		if (fileDir == null || !fileDir.exists())
 			fileDir = getFilesDir();
-		*/
 		
-		File tmpFile = new File(ObscuraConstants.CAMERA_TMP_FILE, ObscuraConstants.CAMERA_TMP_FILE);
+		File tmpFile = new File(fileDir,ObscuraConstants.CAMERA_TMP_FILE);
 		if (tmpFile.exists())
 			tmpFile.delete();
 	}
@@ -107,15 +105,32 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	protected void onResume() {
 
 		super.onResume();
-		
+		Log.d(InformaConstants.TAG, "got to onresume!");
+		/*
 		final SharedPreferences eula = getSharedPreferences(Eula.PREFERENCES_EULA,
                 SherlockActivity.MODE_PRIVATE);
+        
+		
 	  
         if (eula.getBoolean(Eula.PREFERENCE_EULA_ACCEPTED, false)) {
+        	Log.d(InformaConstants.TAG, "EULA has not been accepted");
         	boolean res = InformaSettings.show(this);
     		if(res)
     			launchInforma();
+        } else {
+        	
+        	Log.d(InformaConstants.TAG, "EULA been accepted");
         }
+        */
+		
+		final boolean eula = _sp.getBoolean(Keys.Settings.EULA_ACCEPTED, false);
+		if(!eula) {
+			Log.d(InformaConstants.TAG, "EULA has not been accepted");
+        	boolean res = InformaSettings.show(this);
+    		if(res)
+    			launchInforma();
+		}
+		
 	}
 
 	private void setLayout() {
@@ -198,7 +213,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            
     	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
     	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
-    	        	Log.d(InformaConstants.TAG, "created file: " + uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)
