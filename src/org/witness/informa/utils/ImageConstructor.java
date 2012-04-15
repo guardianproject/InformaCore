@@ -207,11 +207,7 @@ public class ImageConstructor {
 		// replace the metadata's intended destination
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, intendedDestination);
 		
-		// TODO: use APG to encrypt this
-		long[] keyFromEmail = apg.getSecretKeyIdsFromEmail(c, intendedDestination);
-		for(long k : keyFromEmail)
-			Log.d(InformaConstants.TAG, "here is " + k);
-		apg.setEncryptionKeys(keyFromEmail);
+		// TODO: use APG to encrypt this based on intendedDestination!
 		String encryptedMetadata = metadataObject.toString();
 		
 		// insert metadata

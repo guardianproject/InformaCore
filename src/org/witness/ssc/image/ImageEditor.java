@@ -1271,9 +1271,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		}
 		
 		sendBroadcast(new Intent()
-		.setAction(InformaConstants.Keys.Service.SET_CURRENT)
-		.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
-		.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_SAVED));
+			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
+			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
+			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_SAVED));
 	
 		JSONArray imageRegionObject = new JSONArray();
 		try {
@@ -1289,7 +1289,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO)
 			.putExtra(InformaConstants.Keys.ImageRegion.DATA, imageRegionObject.toString())
 			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, pullPathFromUri(savedImageUri).getAbsolutePath());
-			
+		
+    	for(long l : encryptList)
+    		Log.d(InformaConstants.TAG, "to key: " + l);
 		if(encryptList[0] != 0)
 			informa.putExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST, encryptList);
 		

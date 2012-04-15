@@ -231,46 +231,55 @@ public class SensorSucker extends Service {
 		final long[] intendedDestinations = encryptTo;
 		mediaData.put(InformaConstants.Keys.Media.MEDIA_TYPE, mediaType);
 		
+		mediaRegions = (JSONArray) new JSONTokener(regionData).nextValue();
+		
 		informaCallback = new Handler();
 		Runnable r = null;
 		
-		mediaRegions = (JSONArray) new JSONTokener(regionData).nextValue();
+		Log.d(InformaConstants.SUCKER_TAG, "all data:\n" + capturedEvents.toString());
+		final Informa informa = new Informa(getApplicationContext(), mediaType, mediaData, mediaRegions, capturedEvents, intendedDestinations);
 		
 		if(mediaType == MediaTypes.PHOTO) {
-			
-		
 			r = new Runnable() {
-				Informa informa; 
 				
 				@Override
 				public void run() {
+
+					Image[] img = informa.getImages();
+					final Intent finishingIntent = new Intent().setAction(Keys.Service.FINISH_ACTIVITY);
+					
 					try {
-						informa = new Informa(getApplicationContext(), mediaData, mediaRegions, capturedEvents, intendedDestinations);
-						Image[] img = informa.getImages();
-						
 						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
-						for(Image i : img)
-							ic.createVersionForTrustedDestination(i.getAbsolutePath(),i.getIntendedDestination());
+						for(Image i : img) {
+							Log.d(InformaConstants.TAG, i.getIntendedDestination());
+							ic.createVersionForTrustedDestination(i.getAbsolutePath(), i.getIntendedDestination());
+						}
 						
 						ic.doCleanup();
-					} catch(Exception e) {
-						Log.d(InformaConstants.SUCKER_TAG, e.toString());
+					} catch(JSONException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
+					} catch(IOException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
+					} catch (NoSuchAlgorithmException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
 					}
+					
 					
 					informaCallback.post(new Runnable() {
 						@Override
 						public void run() {
 							unlockLogs();
-							sendBroadcast(
-									new Intent()
-									.setAction(InformaConstants.Keys.Service.FINISH_ACTIVITY));
+							sendBroadcast(finishingIntent);
 						}
 					});
+
 				}
-				
 			};
-				
 		}
+		
 		new Thread(r).start();
 	}
 	

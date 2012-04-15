@@ -22,6 +22,7 @@ import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
 import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
+import org.witness.informa.utils.InformaConstants.LocationTypes;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
@@ -98,12 +99,7 @@ public class Informa {
 		String localMediaPath;
 		long dateCreated, dateAcquired;
 		
-		public Genealogy(String localMediaPath, long dateCreated) {
-			this.localMediaPath = localMediaPath;
-			this.dateCreated = dateCreated;
-			this.dateAcquired = dateCreated; 
-			// TODO: set us up the date acquired via imageeditor...
-		}
+		public Genealogy() {}
 	}
 	
 	public class Data extends InformaZipper {
@@ -118,9 +114,8 @@ public class Informa {
 		Set<ImageRegion> imageRegions;
 		Set<Event> events;
 		
-		public Data(int sourceType, Device device) {
+		public Data(int sourceType) {
 			this.sourceType = sourceType;
-			this.device = device;
 			
 			this.captureTimestamp = new HashSet<CaptureTimestamp>();
 			this.location = new HashSet<Location>();
@@ -195,11 +190,13 @@ public class Informa {
 	public class Corroboration extends InformaZipper {
 		String deviceBTAddress, deviceBTName;
 		int selfOrNeighbor;
+		long timeSeen;
 		
-		public Corroboration(String deviceBTAddress, String deviceBTName, int selfOrNeighbor) {
+		public Corroboration(String deviceBTAddress, String deviceBTName, int selfOrNeighbor, long timeSeen) {
 			this.deviceBTAddress = deviceBTAddress;
 			this.deviceBTName = deviceBTName;
 			this.selfOrNeighbor = selfOrNeighbor;
+			this.timeSeen = timeSeen;
 		}
 	}
 	
@@ -277,6 +274,9 @@ public class Informa {
 			
 			this.intendedDestination = intendedDestination;
 			Informa.this.intent = new Intent(intendedDestination);
+			
+			Log.d(InformaConstants.TAG, Informa.this.intent.zip().toString());
+			
 			this.metadataPackage = new JSONObject();
 			this.metadataPackage.put(Keys.Informa.INTENT, Informa.this.intent.zip());
 			this.metadataPackage.put(Keys.Informa.GENEALOGY, Informa.this.genealogy.zip());
@@ -334,21 +334,14 @@ public class Informa {
 	
 	public Informa(
 			Context c,
+			int mediaType,
 			JSONObject imageData, 
 			JSONArray regionData, 
 			JSONArray capturedEvents, 
-			long[] intendedDestinations) throws IllegalArgumentException, JSONException, IllegalAccessException, IOException, NoSuchAlgorithmException {
+			long[] intendedDestinations) throws JSONException, IllegalArgumentException, IllegalAccessException  {
 		
 		
 		_c = c;
-		
-		JSONObject mediaSaved = new JSONObject();
-		JSONObject mediaCaptured = new JSONObject();
-		JSONObject exifData = new JSONObject();
-		Set<ImageRegion> imageRegions = new HashSet<ImageRegion>();
-		Set<Corroboration> corroboration = new HashSet<Corroboration>();
-		Set<Location> locations = new HashSet<Location>();
-		Set<Event> events = new HashSet<Event>();
 		
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_c);
 		
@@ -358,61 +351,86 @@ public class Informa {
 		apg = Apg.getInstance();
 		apg.setSignatureKeyId((Long) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1, Long.class));
 		
-		for(int ce=0; ce<capturedEvents.length(); ce++) {
-			JSONObject rd = (JSONObject) capturedEvents.get(ce);
-						
-			if(rd.getInt(Keys.CaptureEvent.TYPE) != CaptureEvents.BLUETOOTH_DEVICE_SEEN && rd.getInt(Keys.CaptureEvent.TYPE) != CaptureEvents.DURATIONAL_LOG) {
-				JSONObject geo = rd.getJSONObject(Keys.Suckers.GEO);
-				JSONObject phone = rd.getJSONObject(Keys.Suckers.PHONE);
-				JSONObject acc = rd.getJSONObject(Keys.Suckers.ACCELEROMETER);
+		data = new Data(mediaType);
+		genealogy = new Genealogy();
+		
+		for(int e=0; e<capturedEvents.length(); e++) {
+			JSONObject ce = (JSONObject) capturedEvents.get(e);
+			
+			int captureType = (Integer) ce.remove(CaptureEvent.TYPE);
+			long timestamp = (Long) ce.remove(CaptureEvent.MATCH_TIMESTAMP);
+			
+			switch(captureType) {
+			case CaptureEvents.BLUETOOTH_DEVICE_SEEN:
+				if(data.corroboration == null)
+					data.corroboration = new HashSet<Corroboration>();
 				
-				switch(rd.getInt(Keys.CaptureEvent.TYPE)) {
-				case CaptureEvents.MEDIA_CAPTURED:
-					mediaCaptured.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
-					mediaCaptured.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
-					mediaCaptured.put(Keys.Suckers.Accelerometer.LIGHT, 
-							((JSONObject) acc.getJSONObject(Keys.Suckers.Accelerometer.LIGHT)).getInt(Keys.Suckers.Accelerometer.LIGHT_METER_VALUE));
-					mediaCaptured.put(Keys.Suckers.Accelerometer.ACC, acc.getJSONObject(Keys.Suckers.Accelerometer.ACC));
-					mediaCaptured.put(Keys.Suckers.Accelerometer.ORIENTATION, acc.getJSONObject(Keys.Suckers.Accelerometer.ORIENTATION));
-					mediaCaptured.put(Keys.Image.TIMESTAMP, rd.getLong(Keys.CaptureEvent.MATCH_TIMESTAMP));
-					mediaCaptured.put(Keys.Device.BLUETOOTH_DEVICE_ADDRESS, phone.getString(Keys.Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS));
-					mediaCaptured.put(Keys.Device.BLUETOOTH_DEVICE_NAME, phone.getString(Keys.Suckers.Phone.BLUETOOTH_DEVICE_NAME));
-					mediaCaptured.put(Keys.Device.IMEI, phone.getString(Keys.Suckers.Phone.IMEI));
-					
-					JSONObject lomc = new JSONObject();
-					lomc.put(Keys.Location.COORDINATES, mediaCaptured.getString(Keys.Suckers.Geo.GPS_COORDS));
-					lomc.put(Keys.Location.CELL_ID, mediaCaptured.getString(Keys.Suckers.Phone.CELL_ID));
-					locations.add(new Location(InformaConstants.LocationTypes.ON_MEDIA_CAPTURED, lomc));
-					break;
-				case CaptureEvents.MEDIA_SAVED:
-					mediaSaved.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
-					mediaSaved.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
-					mediaSaved.put(Keys.Image.TIMESTAMP, rd.getLong(Keys.CaptureEvent.MATCH_TIMESTAMP));
-					mediaSaved.put(Keys.Device.BLUETOOTH_DEVICE_ADDRESS, phone.getString(Keys.Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS));
-					mediaSaved.put(Keys.Device.BLUETOOTH_DEVICE_NAME, phone.getString(Keys.Suckers.Phone.BLUETOOTH_DEVICE_NAME));
-					mediaSaved.put(Keys.Device.IMEI, phone.getString(Keys.Suckers.Phone.IMEI));
-					
-					JSONObject loms = new JSONObject();
-					loms.put(Keys.Location.COORDINATES, mediaSaved.getString(Keys.Suckers.Geo.GPS_COORDS));
-					loms.put(Keys.Location.CELL_ID, mediaSaved.getString(Keys.Suckers.Phone.CELL_ID));
-					locations.add(new Location(InformaConstants.LocationTypes.ON_MEDIA_SAVED, loms));
-					break;
-				case CaptureEvents.EXIF_REPORTED:
-					exifData = rd.getJSONObject(Keys.Image.EXIF);
-					break;
-				case CaptureEvents.REGION_GENERATED:
+				data.corroboration.add(new Corroboration(
+						ce.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS),
+						ce.getString(Keys.Device.BLUETOOTH_DEVICE_NAME),
+						InformaConstants.Device.IS_NEIGHBOR,
+						timestamp
+				));
+				
+				break;
+			case CaptureEvents.MEDIA_CAPTURED:
+				if(data.captureTimestamp == null)
+					data.captureTimestamp = new HashSet<CaptureTimestamp>();
+				
+				data.captureTimestamp.add(new CaptureTimestamp(captureType,timestamp));
+				
+				if(data.location == null)
+					data.location = new HashSet<Location>();
+				data.location.add(new Location(captureType,ce));
+				
+				genealogy.dateCreated = timestamp;
+				genealogy.localMediaPath = imageData.getString(Keys.Image.LOCAL_MEDIA_PATH);
+				
+				break;
+			case CaptureEvents.MEDIA_SAVED:
+				if(data.captureTimestamp == null)
+					data.captureTimestamp = new HashSet<CaptureTimestamp>();
+				
+				data.captureTimestamp.add(new CaptureTimestamp(captureType,timestamp));
+				
+				if(data.location == null)
+					data.location = new HashSet<Location>();
+				data.location.add(new Location(captureType,ce));
+				
+				data.device = new Device(
+						(String) ce.remove(Keys.Device.IMEI),
+						new Corroboration(
+								(String) ce.remove(Keys.Device.BLUETOOTH_DEVICE_ADDRESS),
+								(String) ce.remove(Keys.Device.BLUETOOTH_DEVICE_NAME),
+								InformaConstants.Device.IS_SELF,
+								timestamp)
+				);
+				genealogy.dateAcquired = timestamp;
+				break;
+			case CaptureEvents.EXIF_REPORTED:
+				data.exif = new Exif(ce.getJSONObject(Keys.Image.EXIF));
+				break;
+			case CaptureEvents.REGION_GENERATED:
+				if(mediaType == MediaTypes.PHOTO) {
 					for(int x=0; x< regionData.length(); x++) {
 						JSONObject imageRegion = (JSONObject) regionData.get(x);
 						
-						long timestampToMatch = Long.parseLong(imageRegion.getString(Keys.ImageRegion.TIMESTAMP));
-						if(rd.getLong(Keys.CaptureEvent.MATCH_TIMESTAMP) == timestampToMatch) {
-														
-							CaptureTimestamp ct = new CaptureTimestamp(InformaConstants.CaptureTimestamps.ON_REGION_GENERATED, timestampToMatch);
+						long matchTimestamp;
+						
+						try {
+							matchTimestamp = (Long) imageRegion.get(Keys.ImageRegion.TIMESTAMP);
+						} catch(ClassCastException cce) {
+							matchTimestamp = Long.parseLong((String) imageRegion.get(Keys.ImageRegion.TIMESTAMP));
+						}
+						
+						if(timestamp == matchTimestamp) {
+							JSONObject geo = (JSONObject) ce.remove(Keys.Suckers.GEO);
+							JSONObject acc = (JSONObject) ce.remove(Keys.Suckers.ACCELEROMETER);
+							JSONObject phone = (JSONObject) ce.remove(Keys.Suckers.PHONE);
 							
-							JSONObject log = new JSONObject();
-							log.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
-							log.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
-							Location locationOnGeneration = new Location(InformaConstants.LocationTypes.ON_REGION_GENERATED, log);
+							JSONObject locationOnGeneration = new JSONObject();
+							locationOnGeneration.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
+							locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
 							
 							JSONObject regionDimensions = new JSONObject();
 							regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));
@@ -424,12 +442,12 @@ public class Informa {
 							regionCoordinates.put(Keys.ImageRegion.LEFT, Float.parseFloat(rCoords[1]));
 							
 							ImageRegion ir = new ImageRegion(
-									ct, 
-									locationOnGeneration, 
-									imageRegion.getString(Keys.ImageRegion.FILTER), 
+									new CaptureTimestamp(captureType, timestamp),
+									new Location(captureType, locationOnGeneration),
+									imageRegion.getString(Keys.ImageRegion.FILTER),
 									regionDimensions,
-									regionCoordinates);
-							
+									regionCoordinates
+							);
 							
 							if(imageRegion.has(Keys.ImageRegion.Subject.PSEUDONYM)) {
 								ir.subject = new Subject(
@@ -439,75 +457,54 @@ public class Informa {
 							} else
 								ir.subject = null;
 							
-							imageRegions.add(ir);
+							if(data.imageRegions == null)
+								data.imageRegions = new HashSet<ImageRegion>();
+							
+							data.imageRegions.add(ir);
+							
 						}
 					}
-					break;
 				}
-			} else if(rd.getInt(CaptureEvent.TYPE) == CaptureEvents.BLUETOOTH_DEVICE_SEEN || rd.getInt(CaptureEvent.TYPE) == CaptureEvents.DURATIONAL_LOG) {
-				switch(rd.getInt(CaptureEvent.TYPE)) {
-				case CaptureEvents.BLUETOOTH_DEVICE_SEEN:
-					corroboration.add(new Corroboration(rd.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS), rd.getString(Keys.Device.BLUETOOTH_DEVICE_NAME), InformaConstants.Device.IS_NEIGHBOR));
-				default:
-					JSONObject event = new JSONObject();
-					event.put(CaptureEvent.TIMESTAMP, rd.getLong(CaptureEvent.MATCH_TIMESTAMP));
-					event.put(CaptureEvent.EVENT, rd);
-					rd.remove(CaptureEvent.MATCH_TIMESTAMP);
-					events.add(new Event((Integer) rd.remove(CaptureEvent.TYPE), event));
-					break;
-				}
-			} 
-		}
-		
-		genealogy = new Genealogy(
-				imageData.getString(Keys.Image.LOCAL_MEDIA_PATH), 
-				mediaCaptured.getLong(Keys.Image.TIMESTAMP));
-		data = new Data(
-				imageData.getInt(Keys.Media.MEDIA_TYPE), 
-				new Device(
-						mediaSaved.getString(Keys.Device.IMEI), 
-						new Corroboration(
-								mediaSaved.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS),
-								mediaSaved.getString(Keys.Device.BLUETOOTH_DEVICE_NAME),
-								InformaConstants.Device.IS_SELF)));
-		
-		data.corroboration = corroboration;
-		data.location = locations;
-		
-		if(imageData.getInt(Keys.Media.MEDIA_TYPE) == MediaTypes.PHOTO) {
-			data.imageRegions = imageRegions;
-			data.imageHash = MediaHasher.hash(new File(genealogy.localMediaPath), "MD5");
-			data.exif = new Exif(exifData);
-			data.events = null;
-			
-			try {
-				images = new Image[intendedDestinations.length];
-				for(int i=0; i<intendedDestinations.length; i++) {
-					dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
-					try {
-						Cursor td = dh.getValue(
-								db, 
-								new String[] {TrustedDestinations.DISPLAY_NAME, TrustedDestinations.EMAIL},
-								TrustedDestinations.KEYRING_ID,
-								intendedDestinations[i]);
-						td.moveToFirst();
-						String displayName = td.getString(td.getColumnIndex(TrustedDestinations.DISPLAY_NAME));
-						String email = td.getString(td.getColumnIndex(TrustedDestinations.EMAIL));
-						String newPath = 
-								InformaConstants.DUMP_FOLDER + 
-								genealogy.localMediaPath.substring(genealogy.localMediaPath.lastIndexOf("/"), genealogy.localMediaPath.length() - 4) +
-								"_" + displayName.replace(" ", "-") +
-								getMimeType(data.sourceType);
-						td.close();
-						images[i] = new Image(newPath, email);
-					} catch(NullPointerException e) {
-						Log.e(InformaConstants.TAG, "fracking npe",e);
-					}
-				}
-			} catch(NullPointerException e) {
-				Log.e(InformaConstants.TAG, "there are no intended destinations",e);
+				break;
 			}
 		}
+		
+		try {
+			data.imageHash = MediaHasher.hash(new File(genealogy.localMediaPath), "SHA-1");
+		} catch (NoSuchAlgorithmException e) {}
+		catch (IOException e) {}
+		
+		Log.d(InformaConstants.TAG, "DATA DUMP:" + data.zip().toString());
+		Log.d(InformaConstants.TAG, "GENEALOGY DUMP:" + genealogy.zip().toString());
+		
+		try {
+			images = new Image[intendedDestinations.length];
+			for(int i=0; i<intendedDestinations.length; i++) {
+				dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
+				try {
+					Cursor td = dh.getValue(
+							db, 
+							new String[] {TrustedDestinations.DISPLAY_NAME, TrustedDestinations.EMAIL},
+							TrustedDestinations.KEYRING_ID,
+							intendedDestinations[i]);
+					td.moveToFirst();
+					String displayName = td.getString(td.getColumnIndex(TrustedDestinations.DISPLAY_NAME));
+					String email = td.getString(td.getColumnIndex(TrustedDestinations.EMAIL));
+					String newPath = 
+							InformaConstants.DUMP_FOLDER + 
+							genealogy.localMediaPath.substring(genealogy.localMediaPath.lastIndexOf("/"), genealogy.localMediaPath.length() - 4) +
+							"_" + displayName.replace(" ", "-") +
+							getMimeType(data.sourceType);
+					td.close();
+					images[i] = new Image(newPath, email);
+				} catch(NullPointerException e) {
+					Log.e(InformaConstants.TAG, "fracking npe",e);
+				}
+			}
+		} catch(NullPointerException e) {
+			Log.e(InformaConstants.TAG, "there are no intended destinations",e);
+		}
+		
 		
 		db.close();
 		dh.close();

@@ -250,9 +250,9 @@ public class InformaConstants {
 	}
 
 	public final static class LocationTypes {
-		public final static int ON_MEDIA_CAPTURED = 10;
-		public final static int ON_MEDIA_SAVED = 11;
-		public final static int ON_REGION_GENERATED = 12;
+		public final static int ON_MEDIA_CAPTURED = CaptureEvents.MEDIA_CAPTURED;
+		public final static int ON_MEDIA_SAVED = CaptureEvents.MEDIA_SAVED;
+		public final static int ON_REGION_GENERATED = CaptureEvents.REGION_GENERATED;
 		public final static int ON_VIDEO_START = 13;
 	}
 	
