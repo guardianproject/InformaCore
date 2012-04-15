@@ -344,7 +344,8 @@ public class SensorSucker extends Service {
 								Uploader.lineEnd
 						);
 						
-						if(http.getResponseCode() == HttpURLConnection.HTTP_OK) {
+						int res = http.getResponseCode();
+						if(res == HttpURLConnection.HTTP_OK) {
 							Log.d(InformaConstants.TAG, "this was good!");
 							
 						}
@@ -352,7 +353,9 @@ public class SensorSucker extends Service {
 						fis.close();
 						fos.flush();
 						fos.close();
-					} catch(IOException e) {}
+					} catch(IOException e) {
+						Log.d(InformaConstants.TAG, "no go on the upload: " + e.toString());
+					}
 					
 				}
 				

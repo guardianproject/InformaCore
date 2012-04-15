@@ -274,9 +274,7 @@ public class Informa {
 			
 			this.intendedDestination = intendedDestination;
 			Informa.this.intent = new Intent(intendedDestination);
-			
-			Log.d(InformaConstants.TAG, Informa.this.intent.zip().toString());
-			
+						
 			this.metadataPackage = new JSONObject();
 			this.metadataPackage.put(Keys.Informa.INTENT, Informa.this.intent.zip());
 			this.metadataPackage.put(Keys.Informa.GENEALOGY, Informa.this.genealogy.zip());
@@ -357,7 +355,13 @@ public class Informa {
 		for(int e=0; e<capturedEvents.length(); e++) {
 			JSONObject ce = (JSONObject) capturedEvents.get(e);
 			
-			int captureType = (Integer) ce.remove(CaptureEvent.TYPE);
+			int captureType = 0;
+			try {
+				captureType = (Integer) ce.remove(CaptureEvent.TYPE);
+			} catch(NullPointerException npe) {
+				Log.e(InformaConstants.TAG, "this has no capture type:\n" + ce.toString());
+			}
+			
 			long timestamp = (Long) ce.remove(CaptureEvent.MATCH_TIMESTAMP);
 			
 			switch(captureType) {
@@ -473,10 +477,7 @@ public class Informa {
 			data.imageHash = MediaHasher.hash(new File(genealogy.localMediaPath), "SHA-1");
 		} catch (NoSuchAlgorithmException e) {}
 		catch (IOException e) {}
-		
-		Log.d(InformaConstants.TAG, "DATA DUMP:" + data.zip().toString());
-		Log.d(InformaConstants.TAG, "GENEALOGY DUMP:" + genealogy.zip().toString());
-		
+				
 		try {
 			images = new Image[intendedDestinations.length];
 			for(int i=0; i<intendedDestinations.length; i++) {

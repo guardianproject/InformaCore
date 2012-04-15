@@ -4,9 +4,7 @@ import info.guardianproject.database.sqlcipher.SQLiteDatabase;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,34 +15,31 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informa.EncryptActivity;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
 import org.witness.informa.utils.InformaConstants.Keys.Image;
 import org.witness.informa.utils.InformaConstants.Keys.ImageRegion;
 import org.witness.informa.utils.InformaConstants.Keys.Informa;
-import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
-import org.witness.ssc.image.ImageEditor;
 import org.witness.ssc.image.filters.CrowdPixelizeObscure;
 import org.witness.ssc.image.filters.InformaTagger;
 import org.witness.ssc.image.filters.PixelizeObscure;
 import org.witness.ssc.image.filters.SolidObscure;
 import org.witness.ssc.utils.ObscuraConstants;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -208,6 +203,12 @@ public class ImageConstructor {
 		
 		// TODO: use APG to encrypt this based on intendedDestination!
 		String encryptedMetadata = metadataObject.toString();
+		try {
+			//apg.selectEncryptionKeys((Activity) new EncryptActivity(), intendedDestination);
+			//apg.encrypt((Activity) new EncryptActivity(), metadataObject.toString());
+		} catch(NullPointerException e) {
+			Log.d(InformaConstants.TAG, "key for " + intendedDestination + " was null (err: " + e.toString() + ")");
+		}
 		
 		// insert metadata
 		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, encryptedMetadata, metadataObject.toString().length());
