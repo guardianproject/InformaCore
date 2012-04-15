@@ -19,7 +19,7 @@ public class InformaConstants {
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
 	public final static String NOT_INCLUDED = "NOT INCLUDED IN THIS VERSION";
 	
-	public final static String FTP = "ec2-107-20-5-92.compute-1.amazonaws.com";
+	public final static String FTP = "http://ec2-50-19-192-170.compute-1.amazonaws.com/index.php";
 	// one day we will have a way of handling this
 	
 	public final static class Uploader {
