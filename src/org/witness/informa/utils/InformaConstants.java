@@ -18,6 +18,16 @@ public class InformaConstants {
 	public final static String DUMP_FOLDER = Environment.getExternalStorageDirectory() + "/InformaCam/";
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
 	public final static String NOT_INCLUDED = "NOT INCLUDED IN THIS VERSION";
+	
+	public final static String FTP = "ec2-107-20-5-92.compute-1.amazonaws.com";
+	// one day we will have a way of handling this
+	
+	public final static class Uploader {
+		public static final String BOUNDARY = "*****hYphY*****";
+		public static final String lineEnd = "\r\n";
+		public static final String twoHyphens = "--";
+		
+	}
 
 	public final static class Keys {
 		public final static String USER_CANCELED_EVENT = "userCanceledEvent";

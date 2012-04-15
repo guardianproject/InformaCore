@@ -2,10 +2,16 @@ package org.witness.informa.utils;
 
 import info.guardianproject.database.sqlcipher.SQLiteDatabase;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.SocketException;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,6 +35,7 @@ import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
 import org.witness.informa.utils.InformaConstants.Keys.Suckers;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
+import org.witness.informa.utils.InformaConstants.Uploader;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.suckers.*;
 
@@ -245,7 +252,7 @@ public class SensorSucker extends Service {
 				@Override
 				public void run() {
 
-					Image[] img = informa.getImages();
+					final Image[] img = informa.getImages();
 					final Intent finishingIntent = new Intent().setAction(Keys.Service.FINISH_ACTIVITY);
 					
 					try {
@@ -273,6 +280,7 @@ public class SensorSucker extends Service {
 						public void run() {
 							unlockLogs();
 							sendBroadcast(finishingIntent);
+							doUpload(img);
 						}
 					});
 
@@ -281,6 +289,77 @@ public class SensorSucker extends Service {
 		}
 		
 		new Thread(r).start();
+	}
+	
+	private void doUpload(Image[] img) {
+		
+		for(final Image i : img) {
+			Runnable uploader = new Runnable() {
+				
+				@Override
+				public void run() {
+					try {
+						int bytesRead, bytesAvailable, bufferSize;
+						byte[] buffer;
+						int maxBufferSize = 1*1024*1024;
+					
+						URL url = new URL("http://" + InformaConstants.FTP);
+						HttpURLConnection http = (HttpURLConnection) url.openConnection();
+						
+						http.setDoInput(true);
+						http.setDoOutput(true);
+						http.setUseCaches(false);
+						
+						http.setRequestMethod("POST");
+						http.setRequestProperty("Connection", "Keep-Alive");
+						http.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + Uploader.BOUNDARY);
+						
+						FileInputStream fis = new FileInputStream(i);
+						DataOutputStream fos = new DataOutputStream(http.getOutputStream());
+						fos.writeBytes(Uploader.twoHyphens);
+						fos.writeBytes(
+								"Content-Disposition:form-data;" +
+								"name=\"informaImage\";" +
+								"filename=\"" + i.getAbsolutePath() + "\"" + Uploader.lineEnd);
+						fos.writeBytes(Uploader.lineEnd);
+						
+						bytesAvailable = fis.available();
+						bufferSize = Math.min(bytesAvailable, maxBufferSize);
+						buffer = new byte[bufferSize];
+						
+						bytesRead = fis.read(buffer, 0, bufferSize);
+	
+						while (bytesRead > 0) {
+							fos.write(buffer, 0, bufferSize);
+							bytesAvailable = fis.available();
+							bufferSize = Math.min(bytesAvailable, maxBufferSize);
+							bytesRead = fis.read(buffer, 0, bufferSize);
+						}
+	
+						fos.writeBytes(Uploader.lineEnd);
+						fos.writeBytes(
+								Uploader.twoHyphens + 
+								Uploader.BOUNDARY + 
+								Uploader.twoHyphens + 
+								Uploader.lineEnd
+						);
+						
+						if(http.getResponseCode() == HttpURLConnection.HTTP_OK) {
+							Log.d(InformaConstants.TAG, "this was good!");
+							
+						}
+						
+						fis.close();
+						fos.flush();
+						fos.close();
+					} catch(IOException e) {}
+					
+				}
+				
+			};
+			
+			new Thread(uploader).start();
+		}
 	}
 	
 	public class Broadcaster extends BroadcastReceiver {

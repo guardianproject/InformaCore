@@ -117,7 +117,6 @@ public class ImageConstructor {
 		if(cursor != null && cursor.getCount() != 0) {
 			cursor.moveToFirst();
 			apg.setSignatureKeyId(cursor.getLong(0));
-			Log.d(InformaConstants.TAG, "the key you seek is: " + cursor.getLong(0));
 			cursor.close();
 			
 		}
