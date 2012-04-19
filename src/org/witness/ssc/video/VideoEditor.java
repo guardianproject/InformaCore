@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
@@ -133,7 +134,7 @@ public class VideoEditor extends SherlockActivity implements
 	ImageButton playPauseButton;
 	
 	private Vector<ObscureRegion> obscureRegions = new Vector<ObscureRegion>();
-	private ObscureRegion activeRegion;
+	private ObscureRegion activeRegion, regionInContext;
 	
 	boolean mAutoDetectEnabled = false;
 	
@@ -189,6 +190,7 @@ public class VideoEditor extends SherlockActivity implements
 	public static final int CORNER_LOWER_RIGHT = 4;
 	
 	private long mDuration;
+	private long firstTimestamp;
 	
 	ActionBar ab;
     Menu menu;
@@ -199,31 +201,32 @@ public class VideoEditor extends SherlockActivity implements
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		setTheme(R.style.Theme_Sherlock_Light);
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.videoeditor);
 
-		if (getIntent() != null)
-		{
+		if (getIntent() != null) {
 			// Passed in from ObscuraApp
 			originalVideoUri = getIntent().getData();
-			Log.d(InformaConstants.TAG, "fucking uri: " + originalVideoUri.toString());
-			
-			if (originalVideoUri == null)
-			{
-				if (getIntent().hasExtra(Intent.EXTRA_STREAM)) 
-				{
+			if (originalVideoUri == null) {
+				if (getIntent().hasExtra(Intent.EXTRA_STREAM)) {
 					originalVideoUri = (Uri) getIntent().getExtras().get(Intent.EXTRA_STREAM);
 				}
 			}
 			
-			if (originalVideoUri == null)
-			{
+			if (originalVideoUri == null) {
 				finish();
 				return;
 			}
 			
-			recordingFile = new File(pullPathFromUri(originalVideoUri));
+			if(originalVideoUri.getScheme().compareTo("file") == 0)
+				recordingFile = new File(ObscuraConstants.TMP_FILE_DIRECTORY, "vid" + ObscuraConstants.TMP_FILE_NAME_VIDEO);
+			else
+				recordingFile = new File(pullPathFromUri(originalVideoUri));
+			
+			if(getIntent().hasExtra(Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE))
+				firstTimestamp = getIntent().getLongExtra(Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, 0L);
 		}
 		
 		fileExternDir = new File(Environment.getExternalStorageDirectory(),getString(R.string.app_name));
@@ -238,9 +241,7 @@ public class VideoEditor extends SherlockActivity implements
 		videoView = (VideoView) this.findViewById(R.id.SurfaceView);
 		
 		surfaceHolder = videoView.getHolder();
-
 		surfaceHolder.addCallback(this);
-		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
 		mediaPlayer = new MediaPlayer();
 		mediaPlayer.setOnCompletionListener(this);
@@ -276,6 +277,7 @@ public class VideoEditor extends SherlockActivity implements
 		progressBar.setInOutPlayheadSeekBarChangeListener(this);
 		progressBar.setThumbsInactive();
 		progressBar.setOnTouchListener(this);
+		progressBar.setThumbOffset(0);
 
 		playPauseButton = (ImageButton) this.findViewById(R.id.PlayPauseImageButton);
 		playPauseButton.setOnClickListener(this);

@@ -145,8 +145,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 					passingIntent = new Intent(this, VideoEditor.class);
 				else if(mimeType == null && uriCameraImage.getPathSegments().contains("images"))
 					passingIntent = new Intent(this, ImageEditor.class);
-			}
-				
+			}	
 			
 			if(requestCode == ObscuraConstants.CAMERA_RESULT) {
 				passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
