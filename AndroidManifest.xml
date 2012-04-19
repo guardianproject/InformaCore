@@ -37,6 +37,19 @@
                  <data android:mimeType="image/*" />
              </intent-filter>        
         </activity>
+        <activity android:name="org.witness.ssc.video.VideoEditor"  android:screenOrientation="landscape">
+    	    <intent-filter>
+                 <action android:name="android.intent.action.VIEW" />
+                 <action android:name="android.intent.action.EDIT" />
+                 <action android:name="android.intent.action.SEND" />
+                 
+                 <category android:name="android.intent.category.DEFAULT" />
+                 <category android:name="android.intent.category.ALTERNATIVE" /> 
+                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" /> 
+                 
+                 <data android:mimeType="video/*" />
+             </intent-filter>
+    	</activity>
         <activity android:name="org.witness.ssc.image.ImagePreview" android:label="@string/image_preview" android:configChanges="orientation|keyboardHidden|screenSize" />
     	<activity android:name="org.witness.informa.Tagger" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />
 		<activity android:name="org.witness.informa.KeyChooser" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />
@@ -45,12 +58,6 @@
     	<activity android:name="org.witness.ssc.Preferences" android:label="@string/preferences_label" android:screenOrientation="portrait" />
     	<activity android:name="org.witness.ssc.Login" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
     	<activity android:name="org.witness.ssc.About" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-     	<activity android:name="org.witness.informa.EncryptActivity" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize">
-     	    <intent-filter>
-     	        <action android:name="org.thialfihar.android.apg.intent.ENCRYPT_FILE" />
-     	    </intent-filter>
-     	</activity>
-    	<activity android:name="org.witness.ssc.FullStop" />
     	
     	<service android:enabled="true" android:name="org.witness.informa.utils.SensorSucker" />
     </application>

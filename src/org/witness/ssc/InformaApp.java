@@ -11,6 +11,7 @@ import org.witness.ssc.Eula.OnEulaAgreedTo;
 import org.witness.ssc.InformaSettings.OnSettingsSeen;
 import org.witness.ssc.image.ImageEditor;
 import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.video.VideoEditor;
 import org.witness.ssc.R;
 
 import com.actionbarsherlock.app.ActionBar;
@@ -34,6 +35,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSettingsSeen {
@@ -123,19 +125,36 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     }
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-		if (resultCode == RESULT_OK && requestCode != ObscuraConstants.IMAGE_EDITOR)
-		{
+		if (resultCode == RESULT_OK && requestCode != ObscuraConstants.IMAGE_EDITOR) {
 			setContentView(R.layout.mainloading);
-			Intent passingIntent = new Intent(this, ImageEditor.class);
-			passingIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 			
+			Intent passingIntent = null;
 			if(requestCode == ObscuraConstants.GALLERY_RESULT)
 				uriCameraImage = intent.getData();
-			else if(requestCode == ObscuraConstants.CAMERA_RESULT)
-				passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
 			
-			if(uriCameraImage != null) {
+			String fileExtension = MimeTypeMap.getFileExtensionFromUrl(uriCameraImage.toString());
+			String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension);
+			
+			try {
+				if(mimeType.compareTo(ObscuraConstants.MIME_TYPE_MP4) == 0)
+					passingIntent = new Intent(this, VideoEditor.class);
+				else if(mimeType.compareTo(ObscuraConstants.MIME_TYPE_JPEG) == 0)
+					passingIntent = new Intent(this, ImageEditor.class);
+			} catch(NullPointerException e) {
+				if(uriCameraImage.getPathSegments().contains("video"))
+					passingIntent = new Intent(this, VideoEditor.class);
+				else if(mimeType == null && uriCameraImage.getPathSegments().contains("images"))
+					passingIntent = new Intent(this, ImageEditor.class);
+			}
+				
+			
+			if(requestCode == ObscuraConstants.CAMERA_RESULT) {
+				passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
+			}
+			
+			if(uriCameraImage != null && passingIntent != null) {
 				passingIntent.setData(uriCameraImage);
+				passingIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);				
 				startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
 			} else
 				sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
@@ -202,12 +221,38 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            .setCancelable(true).create().show();
     	        }
         		return true;
+        	case R.id.TakeVideoButton:
+        		setContentView(R.layout.mainloading);
+    			
+    	        if(storageState.equals(Environment.MEDIA_MOUNTED)) {
+    	            ContentValues values = new ContentValues();
+    	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
+    	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
+    	            
+    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
+    	            if (!tmpFileDirectory.exists())
+    	            	tmpFileDirectory.mkdirs();
+    	            
+    	            File tmpFile = new File(tmpFileDirectory,"vid" + ObscuraConstants.TMP_FILE_NAME_VIDEO);
+    	        	
+    	        	uriCameraImage = Uri.fromFile(tmpFile);
+    	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
+    	            
+    	        	Intent  intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
+    	        }   else {
+    	            new AlertDialog.Builder(InformaApp.this)
+    	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
+    	            .setCancelable(true).create().show();
+    	        }
+        		return true;
         	case R.id.ChooseGalleryButton:
         		setContentView(R.layout.mainloading);
         		
         		try {
         			Intent intent = new Intent(Intent.ACTION_PICK);
-        			intent.setType("image/*");
+        			intent.setType("video/*, images/*");
         			startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
         		} catch(Exception e) {
         			Toast.makeText(this, getString(R.string.gallery_launch_error), Toast.LENGTH_LONG).show();

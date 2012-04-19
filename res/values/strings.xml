@@ -14,6 +14,7 @@
     
     <!--  Main Menu -->
     <string name="camera">Take Photo</string>
+    <string name="video">Take Video</string>
     <string name="choose_photos">Choose from Gallery</string>
     <string name="gallery_launch_error">Unable to open Gallery app.</string>
     

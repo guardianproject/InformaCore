@@ -202,12 +202,7 @@ public class ImageConstructor {
 		
 		// TODO: use APG to encrypt this based on intendedDestination!
 		String encryptedMetadata = metadataObject.toString();
-		try {
-			//apg.selectEncryptionKeys((Activity) new EncryptActivity(), intendedDestination);
-			//apg.encrypt((Activity) new EncryptActivity(), metadataObject.toString());
-		} catch(NullPointerException e) {
-			Log.d(InformaConstants.TAG, "key for " + intendedDestination + " was null (err: " + e.toString() + ")");
-		}
+		
 		
 		// insert metadata
 		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, encryptedMetadata, metadataObject.toString().length());
