@@ -24,6 +24,7 @@ import org.witness.ssc.utils.SelectionsAdapter;
 import org.witness.ssc.R;
 
 import com.actionbarsherlock.app.SherlockActivity;
+import com.xtralogic.android.logcollector.SendLogActivity;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -109,6 +110,16 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		}
 	}
 	
+	private void sendLog() {
+		Intent intent = new Intent(this, SendLogActivity.class);
+		startActivity(intent);
+	}
+	
+	@Override
+	public void onStop() {
+		super.onStop();
+	}
+	
 	public void setMandatory(View v) {
 		((InformaButton) v).getBackground().setAlpha(100);
 		((InformaButton) v).setClickable(false);
@@ -135,70 +146,86 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	
 	@SuppressWarnings("unused")
 	private void getUserPGP() {
-		apg = Apg.getInstance();
-		if(!apg.isAvailable(getApplicationContext()))
-			ObscuraConstants.makeToast(this, getResources().getString(R.string.wizard_error_no_apg));
-		else {
-			apg.selectSecretKey(this);
+		try {
+			apg = Apg.getInstance();
+			if(!apg.isAvailable(getApplicationContext()))
+				ObscuraConstants.makeToast(this, getResources().getString(R.string.wizard_error_no_apg));
+			else {
+				apg.selectSecretKey(this);
+			}
+		} catch(Exception e) {
+			sendLog();
 		}
 	}
 	
 	@SuppressWarnings("unused")
 	private void getTrustedDestinations() {
-		apg = Apg.getInstance();
-		if(!apg.isAvailable(getApplicationContext()))
-			ObscuraConstants.makeToast(this, getResources().getString(R.string.wizard_error_no_apg));
-		else
-			apg.selectEncryptionKeys(this, null);
+		try {
+			apg = Apg.getInstance();
+			if(!apg.isAvailable(getApplicationContext()))
+				ObscuraConstants.makeToast(this, getResources().getString(R.string.wizard_error_no_apg));
+			else
+				apg.selectEncryptionKeys(this, null);
+		} catch(Exception e) {
+			sendLog();
+		}
 	}
 	
-	private void setTrustedDestinations() {		
-		dh = new DatabaseHelper(this);
-		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
-		
-		dh.setTable(db, InformaConstants.Keys.Tables.TRUSTED_DESTINATIONS);
-		for(long key : apg.getEncryptionKeys()) {
-			String userId = apg.getPublicUserId(this, key);
-			String email_ = userId.substring(userId.indexOf("<") + 1);
-			String email = email_.substring(0, email_.indexOf(">"));
-			String displayName = userId.substring(0, userId.indexOf("<"));
+	private void setTrustedDestinations() {	
+		try {
+			dh = new DatabaseHelper(this);
+			db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 			
-			if(userId.indexOf("(") != -1)
-				displayName = userId.substring(0, userId.indexOf("("));
+			dh.setTable(db, InformaConstants.Keys.Tables.TRUSTED_DESTINATIONS);
+			for(long key : apg.getEncryptionKeys()) {
+				String userId = apg.getPublicUserId(this, key);
+				String email_ = userId.substring(userId.indexOf("<") + 1);
+				String email = email_.substring(0, email_.indexOf(">"));
+				String displayName = userId.substring(0, userId.indexOf("<"));
+				
+				if(userId.indexOf("(") != -1)
+					displayName = userId.substring(0, userId.indexOf("("));
+				
+				ContentValues cv = new ContentValues();
+				cv.put(InformaConstants.Keys.TrustedDestinations.KEYRING_ID, key);
+				cv.put(InformaConstants.Keys.TrustedDestinations.EMAIL, email);
+				cv.put(InformaConstants.Keys.TrustedDestinations.DISPLAY_NAME, displayName);
+				
+				db.insert(dh.getTable(), null, cv);
+			}
+			enableAction(wizard_next);
+			db.close();
+			dh.close();
+		} catch(Exception e) {
+				sendLog();
+			}
+	}
+	
+	private void setUserPGP() {	
+		try {
+			dh = new DatabaseHelper(this);
+			db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
+			
+			dh.setTable(db, InformaConstants.Keys.Tables.SETUP);
+			
+			long localTimestamp = System.currentTimeMillis();
 			
 			ContentValues cv = new ContentValues();
-			cv.put(InformaConstants.Keys.TrustedDestinations.KEYRING_ID, key);
-			cv.put(InformaConstants.Keys.TrustedDestinations.EMAIL, email);
-			cv.put(InformaConstants.Keys.TrustedDestinations.DISPLAY_NAME, displayName);
+			cv.put(InformaConstants.Keys.Owner.SIG_KEY_ID, apg.getSignatureKeyId());
+			cv.put(InformaConstants.Keys.Owner.DEFAULT_SECURITY_LEVEL, InformaConstants.SecurityLevels.UNENCRYPTED_NOT_SHARABLE);
+			cv.put(InformaConstants.Keys.Owner.OWNERSHIP_TYPE, InformaConstants.Owner.INDIVIDUAL);
+			cv.put(InformaConstants.Keys.Device.LOCAL_TIMESTAMP, localTimestamp);
+			cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
+					
+			long insert = db.insert(dh.getTable(), null, cv);
+			if(insert != 0)
+				enableAction(wizard_next);
 			
-			db.insert(dh.getTable(), null, cv);
+			db.close();
+			dh.close();
+		} catch(Exception e) {
+			sendLog();
 		}
-		enableAction(wizard_next);
-		db.close();
-		dh.close();
-	}
-	
-	private void setUserPGP() {		
-		dh = new DatabaseHelper(this);
-		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
-		
-		dh.setTable(db, InformaConstants.Keys.Tables.SETUP);
-		
-		long localTimestamp = System.currentTimeMillis();
-		
-		ContentValues cv = new ContentValues();
-		cv.put(InformaConstants.Keys.Owner.SIG_KEY_ID, apg.getSignatureKeyId());
-		cv.put(InformaConstants.Keys.Owner.DEFAULT_SECURITY_LEVEL, InformaConstants.SecurityLevels.UNENCRYPTED_NOT_SHARABLE);
-		cv.put(InformaConstants.Keys.Owner.OWNERSHIP_TYPE, InformaConstants.Owner.INDIVIDUAL);
-		cv.put(InformaConstants.Keys.Device.LOCAL_TIMESTAMP, localTimestamp);
-		cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
-				
-		long insert = db.insert(dh.getTable(), null, cv);
-		if(insert != 0)
-			enableAction(wizard_next);
-		
-		db.close();
-		dh.close();
 	}
 	
 	private long getPublicTimestamp(long ts) {
@@ -208,22 +235,34 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	
 	@SuppressWarnings("unused")
 	private void saveDBPW(String pw) {
-		_ed.putString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, pw).commit();
+		try {
+			_ed.putString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, pw).commit();
+		} catch(Exception e) {
+			sendLog();
+		}
 	}
 	
 	@SuppressWarnings("unused")
 	private void setDBPWCache(ArrayList<Selections> cacheSelection) {
-		for(Selections s : cacheSelection) {
-			if(s.getSelected())
-				_ed.putString(InformaConstants.Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, String.valueOf(cacheSelection.indexOf(s) + 200)).commit();
+		try {
+			for(Selections s : cacheSelection) {
+				if(s.getSelected())
+					_ed.putString(InformaConstants.Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, String.valueOf(cacheSelection.indexOf(s) + 200)).commit();
+			}
+		} catch(Exception e) {
+			sendLog();
 		}
 	}
 	
 	@SuppressWarnings("unused")
 	private void setDefaultImageHandling(ArrayList<Selections> imageHandlingSelection) {
-		for(Selections s : imageHandlingSelection) {
-			if(s.getSelected())
-				_ed.putString(InformaConstants.Keys.Settings.DEFAULT_IMAGE_HANDLING, String.valueOf(imageHandlingSelection.indexOf(s) + 300)).commit();
+		try {
+			for(Selections s : imageHandlingSelection) {
+				if(s.getSelected())
+					_ed.putString(InformaConstants.Keys.Settings.DEFAULT_IMAGE_HANDLING, String.valueOf(imageHandlingSelection.indexOf(s) + 300)).commit();
+			}
+		} catch(Exception e) {
+			sendLog();
 		}
 	}
 	

@@ -19,6 +19,7 @@ import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
+import com.xtralogic.android.logcollector.SendLogActivity;
 
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -175,6 +176,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		Intent intent = new Intent(this, Preferences.class);
 		startActivity(intent);
 	}
+	
+	private void sendLog() {
+		Intent intent = new Intent(this, SendLogActivity.class);
+		startActivity(intent);
+	}
 
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -191,6 +197,9 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         		return true;
         	case R.id.menu_prefs:
         		launchPrefs();
+        		return true;
+        	case R.id.menu_send_log:
+        		sendLog();
         		return true;
         	case R.id.menu_logout:
         		doLogout();

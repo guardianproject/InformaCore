@@ -22,7 +22,10 @@
     <item android:id="@+id/menu_prefs"
         android:title="@string/menu_prefs"
         android:orderInCategory="1" />
+    <item android:id="@+id/menu_send_log"
+        android:title="@string/menu_send_log"
+        android:orderInCategory="2" />
 	<item android:id="@+id/menu_logout"
         android:title="@string/menu_logout"
-        android:orderInCategory="2" />		
+        android:orderInCategory="3" />		
 </menu>
