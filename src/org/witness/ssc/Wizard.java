@@ -5,6 +5,7 @@ import info.guardianproject.database.sqlcipher.SQLiteDatabase;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	
 	private SharedPreferences preferences;
 	private SharedPreferences.Editor _ed;
-	
+		
 	WizardForm wizardForm;
 	
 	Apg apg;
@@ -66,8 +67,6 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.wizard);
-		
-		SQLiteDatabase.loadLibs(this);
 		
 		preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		_ed = preferences.edit();
@@ -197,8 +196,9 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			db.close();
 			dh.close();
 		} catch(Exception e) {
-				sendLog();
-			}
+			Log.d(InformaConstants.TAG, "error : " + e.toString());
+			sendLog();
+		}
 	}
 	
 	private void setUserPGP() {	
@@ -224,6 +224,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			db.close();
 			dh.close();
 		} catch(Exception e) {
+			Log.d(InformaConstants.TAG, "error : " + e.toString());
 			sendLog();
 		}
 	}
@@ -324,6 +325,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				this.put(allFrames, frames);
 			} catch (IOException e) {
 				Log.e(InformaConstants.TAG, e.toString());
+				sendLog();
 			} catch (JSONException e) {
 				Log.e(InformaConstants.TAG, e.toString());
 			}			
@@ -590,7 +592,6 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	@Override
 	protected void onActivityResult(int request, int result, Intent data) {
 		super.onActivityResult(request, result, data);
-		
 		if(result == SherlockActivity.RESULT_OK) {
 			apg.onActivityResult(this, request, result, data);
 			

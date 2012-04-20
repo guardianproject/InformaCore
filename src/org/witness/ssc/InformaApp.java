@@ -1,5 +1,7 @@
 package org.witness.ssc;
 
+import info.guardianproject.database.sqlcipher.SQLiteDatabase;
+
 import java.io.File;
 
 import org.witness.informa.utils.InformaConstants;
@@ -99,6 +101,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         deleteTmpFile();
                 
         informaService = null;
+        
+        SQLiteDatabase.loadLibs(this);
         
         _sp = PreferenceManager.getDefaultSharedPreferences(this);
     	_ed = _sp.edit();
@@ -230,8 +234,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        }
         		return true;
         	case R.id.TakeVideoButton:
-    			Toast.makeText(this, "Sorry, video is not yet available for this version", Toast.LENGTH_LONG).show();
-        		/*
+    			//Toast.makeText(this, "Sorry, video is not yet available for this version", Toast.LENGTH_LONG).show();
         		setContentView(R.layout.mainloading);
     	        if(storageState.equals(Environment.MEDIA_MOUNTED)) {
     	            ContentValues values = new ContentValues();
@@ -255,15 +258,15 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
     	            .setCancelable(true).create().show();
     	        }
-    	        */
+
         		return true;
         	case R.id.ChooseGalleryButton:
         		setContentView(R.layout.mainloading);
         		
         		try {
         			Intent intent = new Intent(Intent.ACTION_PICK);
-        			intent.setType("image/*");
-        			//intent.setType("video/*, image/*");
+        			//intent.setType("image/*");
+        			intent.setType("video/*, image/*");
         			startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
         		} catch(Exception e) {
         			Toast.makeText(this, getString(R.string.gallery_launch_error), Toast.LENGTH_LONG).show();
