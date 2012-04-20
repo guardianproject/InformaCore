@@ -96,6 +96,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		}
 		query = query.substring(0, query.length() - 5);
 		db.execSQL(query);
+		Log.d(InformaConstants.TAG, query);
 	}
 	
 	public Cursor getValue(SQLiteDatabase db, String[] values, String matchKey, Object matchValue) {
@@ -127,12 +128,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	
 	public boolean setTable(SQLiteDatabase db, String whichTable) {
 		TABLE = whichTable;
-		
+		Log.d(InformaConstants.TAG, "table: " + getTable());
 		Cursor c = db.rawQuery(QueryBuilders.CHECK_IF.build()[0], null);
 		if(c != null && c.getCount() > 0) {
 			c.close();
 			return true;
 		} else {
+			Log.d(InformaConstants.TAG, "table: " + getTable());
 			c.close();
 			ArrayList<String> queries = new ArrayList<String>();
 			if(getTable().compareTo(Tables.IMAGES) == 0)

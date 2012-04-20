@@ -234,8 +234,9 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        }
         		return true;
         	case R.id.TakeVideoButton:
-    			//Toast.makeText(this, "Sorry, video is not yet available for this version", Toast.LENGTH_LONG).show();
-        		setContentView(R.layout.mainloading);
+    			Toast.makeText(this, "Sorry, video is not yet available for this version", Toast.LENGTH_LONG).show();
+        		/*
+    			setContentView(R.layout.mainloading);
     	        if(storageState.equals(Environment.MEDIA_MOUNTED)) {
     	            ContentValues values = new ContentValues();
     	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
@@ -258,6 +259,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
     	            .setCancelable(true).create().show();
     	        }
+    	        */
 
         		return true;
         	case R.id.ChooseGalleryButton:
@@ -265,8 +267,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         		
         		try {
         			Intent intent = new Intent(Intent.ACTION_PICK);
-        			//intent.setType("image/*");
-        			intent.setType("video/*, image/*");
+        			intent.setType("image/*");
+        			//intent.setType("video/*, image/*");
         			startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
         		} catch(Exception e) {
         			Toast.makeText(this, getString(R.string.gallery_launch_error), Toast.LENGTH_LONG).show();

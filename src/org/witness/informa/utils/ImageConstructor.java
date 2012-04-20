@@ -81,7 +81,7 @@ public class ImageConstructor {
 	private SQLiteDatabase db;
 	Apg apg;
 	private SharedPreferences _sp;
-	
+		
 	static {
 		System.loadLibrary("JpegRedaction");
 	}
@@ -103,17 +103,8 @@ public class ImageConstructor {
 		base = baseName.split("_")[0] + ".jpg";
 		
 		// handle original based on settings
-		handleOriginalImage();
 		
-		apg = Apg.getInstance();
-		dh.setTable(db, Tables.SETUP);
-		Cursor cursor = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
-		if(cursor != null && cursor.getCount() != 0) {
-			cursor.moveToFirst();
-			apg.setSignatureKeyId(cursor.getLong(0));
-			cursor.close();
-			
-		}
+		handleOriginalImage();
 		
 		// do redaction
 		this.imageRegions = (JSONArray) (metadataObject.getJSONObject(Keys.Informa.DATA)).getJSONArray(Keys.Data.IMAGE_REGIONS);
@@ -159,14 +150,14 @@ public class ImageConstructor {
 			}
 		}
 		
-		dh.setTable(db, Tables.IMAGE_REGIONS);
-		for(ContentValues rcv : unredactedRegions)
-			db.insert(dh.getTable(), null, rcv);
-		
 		redactedHash = getBitmapHash(clone);
 	}
 
 	public void doCleanup() {
+		dh.setTable(db, Tables.IMAGE_REGIONS);
+		for(ContentValues rcv : unredactedRegions)
+			db.insert(dh.getTable(), null, rcv);
+		
 		db.close();
 		dh.close();
 		
@@ -235,7 +226,20 @@ public class ImageConstructor {
 		return (clone.length() - irData.length);
 	}
 	
-	private void handleOriginalImage() {		
+	public void imageHandled() {
+		
+		apg = Apg.getInstance();
+		dh.setTable(db, Tables.SETUP);
+		Cursor cursor = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
+		if(cursor != null && cursor.getCount() != 0) {
+			cursor.moveToFirst();
+			apg.setSignatureKeyId(cursor.getLong(0));
+			cursor.close();
+			
+		}
+	}
+	
+	private void handleOriginalImage() {
 		switch(Integer.parseInt(_sp.getString(Keys.Settings.DEFAULT_IMAGE_HANDLING,""))) {
 		case OriginalImageHandling.ENCRYPT_ORIGINAL:
 			new Thread(new Runnable() {
@@ -243,6 +247,7 @@ public class ImageConstructor {
 				public void run() {
 					try {
 						encryptOriginal();
+						imageHandled();
 					} catch (IOException e) {}
 				}
 			}).start();
@@ -252,9 +257,12 @@ public class ImageConstructor {
 				@Override
 				public void run() {
 					copyOriginalToSDCard();
+					imageHandled();
 				}
 			}).start();
 			break;
+		default:
+			imageHandled();
 		}
 	}
 
