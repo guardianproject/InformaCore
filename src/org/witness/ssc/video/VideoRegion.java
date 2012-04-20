@@ -1,10 +1,9 @@
-package org.witness.ssc.image;
+package org.witness.ssc.video;
 
 import java.util.Enumeration;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.ssc.image.filters.CrowdPixelizeObscure;
 import org.witness.ssc.image.filters.InformaTagger;
 import org.witness.ssc.image.filters.PixelizeObscure;
 import org.witness.ssc.image.filters.RegionProcesser;
@@ -20,13 +19,12 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-public class ImageRegion {
+public class VideoRegion {
 
-	public static final String LOGTAG = "SSC.ImageRegion";
+	public static final String LOGTAG = "SSC.VideoRegion";
 	
 	// Rect for this when unscaled
 	public RectF mBounds;
-	//public RectF mTmpBounds;
 	
 	// Start point for touch events
 	PointF mStartPoint = null;
@@ -36,7 +34,7 @@ public class ImageRegion {
 	public static final int NORMAL_MODE = 0;
 	public static final int EDIT_MODE = 1;
 	
-// The current touch event mode
+	// The current touch event mode
 	public final static int NONE = 0;
 	public final static int MOVE = 1;
 	
@@ -47,8 +45,7 @@ public class ImageRegion {
 	
 	public static final int REDACT = 0; // PaintSquareObscure
 	public static final int PIXELATE = 1; // PixelizeObscure
-	public static final int BG_PIXELATE = 2; // BlurObscure
-	public static final int CONSENT = 3; // PixelizeObscure
+	public static final int CONSENT = 2; // PixelizeObscure
 	
 	boolean selected = false;
 	
@@ -61,10 +58,14 @@ public class ImageRegion {
 	public Drawable imageRegionBorder;
 	
 	// The ImageEditor object that contains us
-	ImageEditor mImageEditor;
+	VideoEditor mVideoEditor;
 	
 	// Popup menu for region 
 	// What's the license for this?
+	public long startTime = 0;
+	public long endTime = 0;
+	
+	public long mediaDuration = 0;
 	
 	RegionProcesser mRProc;
 	
@@ -80,7 +81,7 @@ public class ImageRegion {
 
 	public void setRegionProcessor(RegionProcesser rProc) {
 		mRProc = rProc;
-		mImageEditor.associateImageRegionData(this);
+		mVideoEditor.associateVideoRegionData(this);
 	}
 	
 	public JSONObject getRepresentation() throws JSONException {
@@ -95,8 +96,7 @@ public class ImageRegion {
 		return representation;
 	}
 	
-	public void setCornerMode (float x, float y)
-	{
+	public void setCornerMode (float x, float y) {
 		float[] points = {x,y};        	
     	iMatrix.mapPoints(points);
     	
@@ -145,8 +145,10 @@ public class ImageRegion {
 
 	int fingerCount = 0;
 	
-	public ImageRegion(
-			ImageEditor imageEditor, 
+	public VideoRegion(
+			VideoEditor videoEditor,
+			long duration,
+			long l, long x,
 			float left, float top, 
 			float right, float bottom, Matrix matrix) 
 	{
@@ -154,10 +156,10 @@ public class ImageRegion {
 		super();
 		
 		// Set the mImageEditor that this region belongs to to the one passed in
-		mImageEditor = imageEditor;
+		mVideoEditor = videoEditor;
 		// set the borders for tags in Non-Edit mode
-		identifiedBorder = imageEditor.getResources().getDrawable(R.drawable.border_idtag);
-		unidentifiedBorder = imageEditor.getResources().getDrawable(R.drawable.border);
+		identifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border_idtag);
+		unidentifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border);
 
 		mMatrix = matrix;
 		iMatrix = new Matrix();
@@ -173,7 +175,43 @@ public class ImageRegion {
         
         //set default processor
         this.setRegionProcessor(new PixelizeObscure());
-    }		
+    }
+	
+	public VideoRegion(
+			VideoEditor videoEditor,
+			long duration,
+			long startTime, long endTime,
+			PointF startPoint, int videoWidth, Matrix matrix) {
+		
+		float defaultSize = videoWidth/4;
+		float halfSize = defaultSize/2;
+		
+		mBounds = new RectF();
+		
+		mBounds.left = startPoint.x - halfSize;
+		mBounds.top = startPoint.y - halfSize;
+
+		mBounds.right = startPoint.x + halfSize;
+		mBounds.bottom = startPoint.y + halfSize;
+				
+		// Set the mImageEditor that this region belongs to to the one passed in
+		mVideoEditor = videoEditor;
+		// set the borders for tags in Non-Edit mode
+		identifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border_idtag);
+		unidentifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border);
+
+		mMatrix = matrix;
+		iMatrix = new Matrix();
+    	mMatrix.invert(iMatrix);
+		
+		// Calculate the minMoveDistance using the screen density
+		//float scale = this.getResources().getDisplayMetrics().density;
+	//	minMoveDistance = minMoveDistanceDP * scale + 0.5f;
+		
+        
+        //set default processor
+        this.setRegionProcessor(new PixelizeObscure());
+	}
 	
 	public void setMatrix (Matrix matrix)
 	{
@@ -240,18 +278,14 @@ public class ImageRegion {
 			
 			case MotionEvent.ACTION_DOWN:
 				
-				mImageEditor.doRealtimePreview = true;
-				mImageEditor.updateDisplayImage();
-				//mTmpBounds = new RectF(mBounds);
 				Log.d(LOGTAG, "touching down");
+				mVideoEditor.updateRegionDisplay();
 				
 				if (fingerCount == 1)
 				{
-					//float[] points = {event.getX(), event.getY()};                	
-                	//iMatrix.mapPoints(points);
-					//mStartPoint = new PointF(points[0],points[1]);
+					
 					mStartPoint = new PointF(event.getX(),event.getY());
-					//Log.v(LOGTAG,"startPoint: " + mStartPoint.x + " " + mStartPoint.y);
+					Log.v(LOGTAG,"startPoint: " + mStartPoint.x + " " + mStartPoint.y);
 				}
 				
 				moved = false;
@@ -265,8 +299,7 @@ public class ImageRegion {
 				
 			case MotionEvent.ACTION_UP:
 
-				mImageEditor.doRealtimePreview = true;
-				mImageEditor.updateDisplayImage();
+				mVideoEditor.updateRegionDisplay();
 				//mTmpBounds = null;
 
 				return moved;
@@ -333,7 +366,7 @@ public class ImageRegion {
 	            	
                 }
 
-				mImageEditor.updateDisplayImage();
+                mVideoEditor.updateRegionDisplay();
 					
 				return true;
 		}
@@ -345,26 +378,22 @@ public class ImageRegion {
 	public void updateRegionProcessor (int obscureType) {
 		
 		switch (obscureType) {
-			case ImageRegion.BG_PIXELATE:
-				Log.v(ObscuraConstants.TAG,"obscureType: BGPIXELIZE");
-				setRegionProcessor(new CrowdPixelizeObscure());
-				break;
-			case ImageRegion.REDACT:
+			case VideoRegion.REDACT:
 				Log.v(ObscuraConstants.TAG,"obscureType: SOLID");
 				setRegionProcessor(new SolidObscure());
 				break;
-			case ImageRegion.PIXELATE:
+			case VideoRegion.PIXELATE:
 				setRegionProcessor(new PixelizeObscure());
 				break;
-			case ImageRegion.CONSENT:
+			case VideoRegion.CONSENT:
 				// If the region processor is already a consent tagger, the user wants to edit.
 				// so no need to change the region processor.
 				if(!(getRegionProcessor() instanceof InformaTagger)) {
 					setRegionProcessor(new InformaTagger());
-					mImageEditor.updateDisplayImage();
+					mVideoEditor.updateRegionDisplay();
 				}
 			
-				mImageEditor.launchTagger(this);
+				mVideoEditor.launchTagger(this);
 				break;
 			default:
 				setRegionProcessor(new PixelizeObscure());
@@ -376,6 +405,19 @@ public class ImageRegion {
 		else
 			imageRegionBorder = unidentifiedBorder;
 		
-		mImageEditor.updateDisplayImage();
-	}	
+		mVideoEditor.updateRegionDisplay();
+	}
+
+	public boolean existsInTime(int time) {
+		if (time < endTime && time >= startTime) {
+			return true;
+		}
+		return false;
+	}
+	
+	public String getStringData(float sizeMult) {
+		//left, right, top, bottom, redact mode
+		//return "" + (float)startTime/(float)1000 + ',' + (float)endTime/(float)1000 + ',' + (int)(sx*sizeMult) + ',' + (int)(ex*sizeMult) + ',' + (int)(sy*sizeMult) + ',' + (int)(ey*sizeMult) + ',' + currentMode;
+		return "left, right, top, bottom, redact mode";
+	}
 }

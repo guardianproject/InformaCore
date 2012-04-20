@@ -176,7 +176,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     SharedPreferences.Editor ed;
     
     BroadcastReceiver br = new BroadcastReceiver() {
-		@SuppressWarnings("unchecked")
 		@Override
 		public void onReceive(Context c, Intent i) {
 			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {

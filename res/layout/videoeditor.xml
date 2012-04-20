@@ -39,6 +39,9 @@
 				android:indeterminateOnly="false" 
 				android:secondaryProgress="0" 
 				android:progressDrawable="@android:drawable/progress_horizontal"
+				android:thumb="@drawable/seekbar_thumb"
+				android:thumbOffset="0dip"
+				android:padding="0dip"
 				/>
 			<!-- 
 			<org.witness.sscvideoproto.RegionBarArea

@@ -77,7 +77,7 @@ public class FFMPEGWrapper {
 	}
 	
 	public void processVideo(File redactSettingsFile, 
-			Vector<ObscureRegion> obscureRegions, File inputFile, File outputFile, String format, 
+			Vector<VideoRegion> obscureRegions, File inputFile, File outputFile, String format, 
 			int width, int height, int frameRate, int kbitRate, float sizeMult, ShellCallback sc) throws Exception {
 		
 		writeRedactData(redactSettingsFile, obscureRegions, sizeMult);
@@ -118,14 +118,14 @@ public class FFMPEGWrapper {
 	    
 	}
 	
-	private void writeRedactData(File redactSettingsFile, Vector<ObscureRegion> obscureRegions, float sizeMult) throws IOException {
+	private void writeRedactData(File redactSettingsFile, Vector<VideoRegion> obscureRegions, float sizeMult) throws IOException {
 		// Write out the finger data
 					
 		FileWriter redactSettingsFileWriter = new FileWriter(redactSettingsFile);
 		PrintWriter redactSettingsPrintWriter = new PrintWriter(redactSettingsFileWriter);
 		
 		for (int i = 0; i < obscureRegions.size(); i++) {
-			ObscureRegion or = (ObscureRegion)obscureRegions.get(i);
+			VideoRegion or = (VideoRegion)obscureRegions.get(i);
 			String orData = or.getStringData(sizeMult);
 			Log.d("SSC", orData);
 			redactSettingsPrintWriter.println(orData);

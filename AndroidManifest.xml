@@ -22,7 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="org.witness.ssc.image.ImageEditor" android:configChanges="orientation|keyboardHidden|screenSize">
+        <activity android:name="org.witness.ssc.image.ImageEditor" android:screenOrientation="landscape" android:configChanges="orientation|keyboardHidden|screenSize">
 			<intent-filter>
                  <action android:name="android.intent.action.VIEW" />
                  <action android:name="android.intent.action.EDIT" />

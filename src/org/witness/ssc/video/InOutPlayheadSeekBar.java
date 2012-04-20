@@ -75,19 +75,9 @@ public class InOutPlayheadSeekBar extends SeekBar {
 			init();
 		}
 	}
-
+	
 	private void init() 
-	{
-		/*
-		if (thumbIn.getHeight() > getHeight()) {
-			getLayoutParams().height = thumbIn.getHeight();		
-		}
-
-		if (thumbOut.getHeight() > getHeight()) {
-			getLayoutParams().height = thumbOut.getHeight();		
-		}
-		*/
-		
+	{		
 		thumbInY = (getHeight() / 2) - (thumbIn.getHeight() / 2);
 		thumbOutY = (getHeight() / 2) - (thumbOut.getHeight() / 2);
 		
