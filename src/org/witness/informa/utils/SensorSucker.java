@@ -1,7 +1,5 @@
 package org.witness.informa.utils;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;

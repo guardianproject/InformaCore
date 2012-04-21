@@ -1,7 +1,5 @@
 package org.witness.ssc.image;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.json.JSONArray;
@@ -25,10 +22,6 @@ import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
-import org.witness.informa.utils.InformaConstants.Keys.Tables;
-import org.witness.informa.utils.SensorSucker.InformaEncryptor;
-import org.witness.informa.utils.io.DatabaseHelper;
-import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.image.filters.RegionProcesser;
 import org.witness.ssc.utils.ObscuraConstants;
@@ -71,7 +64,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
-import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;

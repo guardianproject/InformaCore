@@ -2,11 +2,12 @@ package org.witness.informa.utils.io;
 
 import java.util.ArrayList;
 
+import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteOpenHelper;
+
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys.*;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-import info.guardianproject.database.sqlcipher.SQLiteOpenHelper;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.BaseColumns;

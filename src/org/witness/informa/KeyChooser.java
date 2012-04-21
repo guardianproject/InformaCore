@@ -1,8 +1,8 @@
 package org.witness.informa;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-
 import java.util.ArrayList;
+
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;

@@ -1,7 +1,7 @@
 package org.witness.ssc;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-import info.guardianproject.database.sqlcipher.SQLiteException;
+import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteException;
 
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.io.DatabaseHelper;

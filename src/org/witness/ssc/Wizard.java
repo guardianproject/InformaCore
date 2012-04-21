@@ -1,6 +1,6 @@
 package org.witness.ssc;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteDatabase;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -67,6 +67,8 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.wizard);
+		
+		SQLiteDatabase.loadLibs(this);
 		
 		preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		_ed = preferences.edit();

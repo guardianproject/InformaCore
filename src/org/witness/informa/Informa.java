@@ -1,16 +1,15 @@
 package org.witness.informa;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Blob;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,23 +18,16 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
-import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
-import org.witness.informa.utils.InformaConstants.LocationTypes;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
-import org.witness.ssc.utils.Selections;
 
-import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.media.ExifInterface;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;

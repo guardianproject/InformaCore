@@ -61,11 +61,7 @@
     	<activity android:name="org.witness.ssc.About" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
     	<activity android:name="com.xtralogic.android.logcollector.SendLogActivity"
                   android:label="@string/app_name_lc"
-                  android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+                  android:theme="@style/Theme.CustomDialog">
             <intent-filter>
                 <action android:name="com.xtralogic.logcollector.intent.action.SEND_LOG" />
                 <category android:name="android.intent.category.DEFAULT" />

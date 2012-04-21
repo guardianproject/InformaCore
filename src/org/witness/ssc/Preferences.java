@@ -2,7 +2,7 @@ package org.witness.ssc;
 
 import java.util.ArrayList;
 
-import info.guardianproject.database.sqlcipher.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
