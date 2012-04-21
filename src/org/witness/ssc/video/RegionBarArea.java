@@ -28,7 +28,7 @@ public class RegionBarArea extends ImageView {
 	int width = 0;
 	int height = 0;
 	
-	Vector<ObscureRegion> obscureRegions;
+	Vector<VideoRegion> obscureRegions;
 	
 	Bitmap RBABmp;
     Canvas RBACanvas;
@@ -62,7 +62,7 @@ public class RegionBarArea extends ImageView {
         if (numRegions > 0) {
 	        int regionHeight = getHeight()/numRegions;
 	        int count = 0;
-			for (ObscureRegion region:obscureRegions) {
+			for (VideoRegion region:obscureRegions) {
 				canvas.drawRect(region.startTime/region.mediaDuration*getWidth(), 
 								count*regionHeight, 
 								region.endTime/region.mediaDuration*getWidth(), 

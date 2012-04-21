@@ -1,9 +1,7 @@
 package org.witness.informa.utils;
 
-import android.content.SharedPreferences;
 import android.media.ExifInterface;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 
 public class InformaConstants {
 	public final static String TAG = "************ INFORMA ***********";
@@ -70,6 +68,27 @@ public class InformaConstants {
 			public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
 			public final static String VIDEO_TRACK = Video.VIDEO_TRACK;
 			public final static String EVENT = Events.CAPTURE_EVENT;
+		}
+		
+		public final static class VideoRegion {
+			public final static String INDEX = ImageRegion.INDEX;
+			public final static String THUMBNAIL = ImageRegion.THUMBNAIL;
+			public static final String DATA = ImageRegion.DATA;
+			public final static String TIMESTAMP = ImageRegion.TIMESTAMP;
+			public final static String LOCATION = ImageRegion.LOCATION;
+			public final static String TAGGER_RETURN = ImageRegion.TAGGER_RETURN;
+			public final static String FILTER = ImageRegion.FILTER;
+			public final static String COORDINATES = ImageRegion.COORDINATES;
+			public final static String DURATION = "region_duration";
+			public final static String START_TIME = "region_startTime";
+			public final static String END_TIME = "region_endTime";
+			public final static String PARENT_REGION = "region_Parent";	// can be -1 (self) or id of parent
+			
+			public final static class Subject {
+				public final static String PSEUDONYM = ImageRegion.Subject.PSEUDONYM;
+				public final static String INFORMED_CONSENT_GIVEN = ImageRegion.Subject.INFORMED_CONSENT_GIVEN;
+				public final static String PERSIST_FILTER = ImageRegion.Subject.PERSIST_FILTER;
+			}
 		}
 		
 		public final static class ImageRegion {
@@ -313,6 +332,12 @@ public class InformaConstants {
 			public final static long ACC = 500L;
 			public final static long PHONE = 5000L;
 			public final static long GEO = 10000L;
+		}
+	}
+	
+	public final static class VideoRegions {
+		public final static class Parent {
+			public final static int SELF = -1;
 		}
 	}
 	

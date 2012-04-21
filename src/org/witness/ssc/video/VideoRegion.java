@@ -1,423 +1,148 @@
 package org.witness.ssc.video;
 
+import java.io.Serializable;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.ssc.image.filters.InformaTagger;
-import org.witness.ssc.image.filters.PixelizeObscure;
-import org.witness.ssc.image.filters.RegionProcesser;
-import org.witness.ssc.image.filters.SolidObscure;
+import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.VideoRegions;
 import org.witness.ssc.utils.ObscuraConstants;
-import org.witness.ssc.R;
 
-import android.graphics.Matrix;
-import android.graphics.PointF;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 
-public class VideoRegion {
+public class VideoRegion implements Serializable {
 
-	public static final String LOGTAG = "SSC.VideoRegion";
-	
-	// Rect for this when unscaled
-	public RectF mBounds;
-	
-	// Start point for touch events
-	PointF mStartPoint = null;
-	PointF mNonMappedStartPoint = null;
-	
-	// Our current mode
-	public static final int NORMAL_MODE = 0;
-	public static final int EDIT_MODE = 1;
-	
-	// The current touch event mode
-	public final static int NONE = 0;
-	public final static int MOVE = 1;
-	
+	/*
+	 * Thinking about whether or not a region should contain multiple start/end times
+	 * realizing that doing this would make editing a real pita
+	 * Of course, it would make displaying be a 1000x better though.
+	class PositionTime {
 
-	// What should be done to this region
-	public static final int NOTHING = 0;
-	public static final int OBSCURE = 1;
-	
-	public static final int REDACT = 0; // PaintSquareObscure
-	public static final int PIXELATE = 1; // PixelizeObscure
-	public static final int CONSENT = 2; // PixelizeObscure
-	
-	boolean selected = false;
-	
-	/* Add each ObscureMethod to this list and update the 
-	 * createObscuredBitmap method in ImageEditor
-	 */
-	int mObscureType = PIXELATE;
+		int sx = 0; 
+		int sy = 0; 
+		int ex = 0;
+		int ey = 0;
+		long startTime = 0; 
+		long endTime = 0;
+		
+		PositionTime(int _sx, int _sy, int _ex, int _ey, long _startTime, long _endTime) {
+			
+		}
+	}
+	*/
+	private static final long serialVersionUID = -3481867713467641360L;
 
-	public final Drawable unidentifiedBorder, identifiedBorder;
-	public Drawable imageRegionBorder;
+	public static final String LOGTAG = ObscuraConstants.TAG;
+
+	public static final String DEFAULT_MODE = "pixel";
+
 	
-	// The ImageEditor object that contains us
-	VideoEditor mVideoEditor;
+	public static final long DEFAULT_LENGTH = 10; // Seconds
 	
-	// Popup menu for region 
-	// What's the license for this?
+	public static final float DEFAULT_X_SIZE = 150;
+	public static final float DEFAULT_Y_SIZE = 150;
+		
+	public float sx = 0;
+	public float sy = 0;
+	
+	public float ex = 0;
+	public float ey = 0;
+		
 	public long startTime = 0;
 	public long endTime = 0;
 	
 	public long mediaDuration = 0;
 	
-	RegionProcesser mRProc;
+	public String currentMode = DEFAULT_MODE;
 	
-	private final static float MIN_MOVE = 5f;
-
-	private final static float CORNER_MAX = 50f;
+	public Map<String, Object> mProps;
 	
-	private int cornerMode = -1;
-	
-	public RegionProcesser getRegionProcessor() {
-		return mRProc;
-	}
-
-	public void setRegionProcessor(RegionProcesser rProc) {
-		mRProc = rProc;
-		mVideoEditor.associateVideoRegionData(this);
-	}
-	
-	public JSONObject getRepresentation() throws JSONException {
-		JSONObject representation = new JSONObject();
-		Enumeration<?> e = mRProc.getProperties().propertyNames();
+	public VideoRegion(long _duration, long _startTime, long _endTime, float _sx, float _sy, float _ex, float _ey, String _mode, String parentRegion) {
+		mediaDuration = _duration;
+		startTime = _startTime;
+		endTime = _endTime;
+		sx = _sx;
+		sy = _sy;
+		ex = _ex;
+		ey = _ey;
 		
-		while(e.hasMoreElements()) {
-			String prop = (String) e.nextElement();
-			representation.put(prop, mRProc.getProperties().get(prop));
+		if (sx < 0) { 
+			sx = 0;
+		} else if (sy < 0) {
+			sy = 0;
 		}
 		
-		return representation;
-	}
-	
-	public void setCornerMode (float x, float y) {
-		float[] points = {x,y};        	
-    	iMatrix.mapPoints(points);
-    	
-    	float cSize = CORNER_MAX;
-    	
-    	cSize = iMatrix.mapRadius(cSize);
-    	
-    	if (Math.abs(mBounds.left-points[0])<cSize
-    			&& Math.abs(mBounds.top-points[1])<cSize
-    			)
-    	{
-    		cornerMode = 1;
-    		return;
-    	}
-    	else if (Math.abs(mBounds.left-points[0])<cSize
-    			&& Math.abs(mBounds.bottom-points[1])<cSize
-    			)
-    	{
-    		cornerMode = 2;
-			return;
-		}
-    	else if (Math.abs(mBounds.right-points[0])<cSize
-    			&& Math.abs(mBounds.top-points[1])<cSize
-    			)
-    	{
-    			cornerMode = 3;
-    			return;
-		}
-    	else if (Math.abs(mBounds.right-points[0])<cSize
-        			&& Math.abs(mBounds.bottom-points[1])<cSize
-        			)
-    	{
-    		cornerMode = 4;
-    		return;
-    	}
-    	
-    	cornerMode = -1;
+		currentMode = _mode;
+
+		mProps = new HashMap<String, Object>();
+		mProps.put(Keys.VideoRegion.DURATION, mediaDuration);
+		mProps.put(Keys.VideoRegion.START_TIME, startTime);
+		mProps.put(Keys.VideoRegion.END_TIME, endTime);
+		mProps.put(Keys.VideoRegion.PARENT_REGION, parentRegion);
+		
+		Log.d(VideoEditor.LOGTAG, mProps.toString());
 	}
 
-	
-	/* For touch events, whether or not to show the menu
-	 */
-	boolean moved = false;
-				
-	Matrix mMatrix, iMatrix;
+	public VideoRegion(long _duration, long _startTime, float _sx, float _sy, float _ex, float _ey, String parentRegion) {
+		this(_duration, _startTime, _startTime+DEFAULT_LENGTH, _sx, _sy, _ex, _ey, DEFAULT_MODE, parentRegion);
+	}
 
-	int fingerCount = 0;
-	
-	public VideoRegion(
-			VideoEditor videoEditor,
-			long duration,
-			long l, long x,
-			float left, float top, 
-			float right, float bottom, Matrix matrix) 
-	{
-		//super(imageEditor);
-		super();
-		
-		// Set the mImageEditor that this region belongs to to the one passed in
-		mVideoEditor = videoEditor;
-		// set the borders for tags in Non-Edit mode
-		identifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border_idtag);
-		unidentifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border);
+	public VideoRegion(long _duration, long _startTime, long _endTime, float _sx, float _sy, String parentRegion) {
+		this(_duration, _startTime, _endTime, _sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2, DEFAULT_MODE, parentRegion);
+	}
 
-		mMatrix = matrix;
-		iMatrix = new Matrix();
-    	mMatrix.invert(iMatrix);
-		
-		// Calculate the minMoveDistance using the screen density
-		//float scale = this.getResources().getDisplayMetrics().density;
-	//	minMoveDistance = minMoveDistanceDP * scale + 0.5f;
-		
-		
-		mBounds = new RectF(left, top, right, bottom);	
-		
-        
-        //set default processor
-        this.setRegionProcessor(new PixelizeObscure());
-    }
-	
-	public VideoRegion(
-			VideoEditor videoEditor,
-			long duration,
-			long startTime, long endTime,
-			PointF startPoint, int videoWidth, Matrix matrix) {
-		
-		float defaultSize = videoWidth/4;
-		float halfSize = defaultSize/2;
-		
-		mBounds = new RectF();
-		
-		mBounds.left = startPoint.x - halfSize;
-		mBounds.top = startPoint.y - halfSize;
-
-		mBounds.right = startPoint.x + halfSize;
-		mBounds.bottom = startPoint.y + halfSize;
-				
-		// Set the mImageEditor that this region belongs to to the one passed in
-		mVideoEditor = videoEditor;
-		// set the borders for tags in Non-Edit mode
-		identifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border_idtag);
-		unidentifiedBorder = videoEditor.getResources().getDrawable(R.drawable.border);
-
-		mMatrix = matrix;
-		iMatrix = new Matrix();
-    	mMatrix.invert(iMatrix);
-		
-		// Calculate the minMoveDistance using the screen density
-		//float scale = this.getResources().getDisplayMetrics().density;
-	//	minMoveDistance = minMoveDistanceDP * scale + 0.5f;
-		
-        
-        //set default processor
-        this.setRegionProcessor(new PixelizeObscure());
+	public VideoRegion(long _duration, long _startTime, float _sx, float _sy, String parentRegion) {
+		this(_duration, _startTime, _startTime+DEFAULT_LENGTH, _sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2, DEFAULT_MODE, parentRegion);
 	}
 	
-	public void setMatrix (Matrix matrix)
-	{
-		mMatrix = matrix;
-		iMatrix = new Matrix();
-    	mMatrix.invert(iMatrix);
+	public void moveRegion(float _sx, float _sy) {
+		moveRegion(_sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2);
+	}
+	
+	public void moveRegion(float _sx, float _sy, float _ex, float _ey) {
+		sx = _sx;
+		sy = _sy;
+		ex = _ex;
+		ey = _ey;
+	}
+	
+	public RectF getRectF() {
+		return new RectF(sx, sy, ex, ey);
+	}
+	
+	public RectF getBounds() {
+		return getRectF();
 	}
 	
 	
-	boolean isSelected ()
-	{
-		return selected;
-	}
-	
-	void setSelected (boolean _selected)
-	{
-		selected = _selected;
-	}
-	
-	public void setActive(boolean _active) {
-		if(_active) {
-			
-		} else {
-			
-		}
-	}
-			
-			
-	private void updateBounds(float left, float top, float right, float bottom) 
-	{
-		Log.i(LOGTAG, "updateBounds: " + left + "," + top + "," + right + "," + bottom);
-		mBounds.set(left, top, right, bottom);
-		
-		//updateLayout();
-	}
-	
-	float scaleX, scaleY, leftOffset, topOffset;
-	
-	public void updateMatrix ()
-	{
-		float[] mValues = new float[9];
-		mMatrix.getValues(mValues);		
-    	mMatrix.invert(iMatrix);
-		scaleX = mValues[Matrix.MSCALE_X];
-		scaleY = mValues[Matrix.MSCALE_Y];
-		
-		leftOffset = mValues[Matrix.MTRANS_X];
-		topOffset = mValues[Matrix.MTRANS_Y];
-		
-	}
-	
-	public RectF getBounds ()
-	{
-		return mBounds;
-	}
-	
-	public boolean onTouch(View v, MotionEvent event) 
-	{
-		
-		fingerCount = event.getPointerCount();
-	//	Log.v(LOGTAG,"onTouch: fingers=" + fingerCount);
-		
-		switch (event.getAction() & MotionEvent.ACTION_MASK) {
-			
-			case MotionEvent.ACTION_DOWN:
-				
-				Log.d(LOGTAG, "touching down");
-				mVideoEditor.updateRegionDisplay();
-				
-				if (fingerCount == 1)
-				{
-					
-					mStartPoint = new PointF(event.getX(),event.getY());
-					Log.v(LOGTAG,"startPoint: " + mStartPoint.x + " " + mStartPoint.y);
-				}
-				
-				moved = false;
-				
-				return false;
-			case MotionEvent.ACTION_POINTER_UP:
-
-				Log.v(LOGTAG, "second finger removed - pointer up!");
-
-				return moved;
-				
-			case MotionEvent.ACTION_UP:
-
-				mVideoEditor.updateRegionDisplay();
-				//mTmpBounds = null;
-
-				return moved;
-			
-			case MotionEvent.ACTION_MOVE:
-			
-				
-                if (fingerCount > 1)
-                {
-                	
-                	float[] points = {event.getX(0), event.getY(0), event.getX(1), event.getY(1)};                	
-                	iMatrix.mapPoints(points);
-                	
-					mStartPoint = new PointF(points[0],points[1]);
-					
-                	RectF newBox = new RectF();
-                	newBox.left = Math.min(points[0],points[2]);
-                	newBox.top = Math.min(points[1],points[3]);
-                	newBox.right = Math.max(points[0],points[2]);
-                	newBox.bottom = Math.max(points[1],points[3]);
-                	
-                	moved = true;
-                	
-                	if (newBox.left != newBox.right && newBox.top != newBox.bottom)
-                	{
-                	                
-                		updateBounds(newBox.left, newBox.top, newBox.right, newBox.bottom);
-                	}
-                	
-
-                }
-                else if (fingerCount == 1)
-                {
-                	
-                	
-                	if (Math.abs(mStartPoint.x- event.getX()) > MIN_MOVE)
-                	{
-	                	moved = true;
-	                	
-	                	float[] points = {mStartPoint.x, mStartPoint.y, event.getX(), event.getY()};
-	                	
-	                	iMatrix.mapPoints(points);
-	                	
-	                	float diffX = points[0]-points[2];
-	                	float diffY = points[1]-points[3];
-	                	
-	                	if (cornerMode == -1)
-	                		updateBounds(mBounds.left-diffX,mBounds.top-diffY,mBounds.right-diffX,mBounds.bottom-diffY);
-	                	else if (cornerMode == 1)
-	                		updateBounds(mBounds.left-diffX,mBounds.top-diffY,mBounds.right,mBounds.bottom);
-	                	else if (cornerMode == 2)
-	                		updateBounds(mBounds.left-diffX,mBounds.top,mBounds.right,mBounds.bottom-diffY);
-	                	else if (cornerMode == 3)
-	                		updateBounds(mBounds.left,mBounds.top-diffY,mBounds.right-diffX,mBounds.bottom);
-	                	else if (cornerMode == 4)
-	                		updateBounds(mBounds.left,mBounds.top,mBounds.right-diffX,mBounds.bottom-diffY);
-	                		
-	                	mStartPoint = new PointF(event.getX(),event.getY());
-                	}
-                	else
-                	{
-                		moved = false;
-                	}
-	            	
-                }
-
-                mVideoEditor.updateRegionDisplay();
-					
-				return true;
-		}
-		
-		return false;
-		
-	}
-	
-	public void updateRegionProcessor (int obscureType) {
-		
-		switch (obscureType) {
-			case VideoRegion.REDACT:
-				Log.v(ObscuraConstants.TAG,"obscureType: SOLID");
-				setRegionProcessor(new SolidObscure());
-				break;
-			case VideoRegion.PIXELATE:
-				setRegionProcessor(new PixelizeObscure());
-				break;
-			case VideoRegion.CONSENT:
-				// If the region processor is already a consent tagger, the user wants to edit.
-				// so no need to change the region processor.
-				if(!(getRegionProcessor() instanceof InformaTagger)) {
-					setRegionProcessor(new InformaTagger());
-					mVideoEditor.updateRegionDisplay();
-				}
-			
-				mVideoEditor.launchTagger(this);
-				break;
-			default:
-				setRegionProcessor(new PixelizeObscure());
-				break;
-		}
-		
-		if(getRegionProcessor().getClass() == InformaTagger.class)
-			imageRegionBorder = identifiedBorder;
-		else
-			imageRegionBorder = unidentifiedBorder;
-		
-		mVideoEditor.updateRegionDisplay();
-	}
-
-	public boolean existsInTime(int time) {
+	public boolean existsInTime(long time) {
 		if (time < endTime && time >= startTime) {
 			return true;
 		}
 		return false;
 	}
-	
+
 	public String getStringData(float sizeMult) {
-		//left, right, top, bottom, redact mode
-		//return "" + (float)startTime/(float)1000 + ',' + (float)endTime/(float)1000 + ',' + (int)(sx*sizeMult) + ',' + (int)(ex*sizeMult) + ',' + (int)(sy*sizeMult) + ',' + (int)(ey*sizeMult) + ',' + currentMode;
-		return "left, right, top, bottom, redact mode";
+		//left, right, top, bottom
+		return "" + (float)startTime/(float)1000 + ',' + (float)endTime/(float)1000 + ',' + (int)(sx*sizeMult) + ',' + (int)(ex*sizeMult) + ',' + (int)(sy*sizeMult) + ',' + (int)(ey*sizeMult) + ',' + currentMode;
+	}
+	
+	public JSONObject getRepresentation() throws JSONException {
+		JSONObject representation = new JSONObject();
+		Iterator<Entry<String, Object>> i = mProps.entrySet().iterator();
+		
+		while(i.hasNext()) {
+			Entry<String, Object> e = i.next();
+			representation.put(e.getKey(), e.getValue());
+		}
+		
+		return representation;
 	}
 }

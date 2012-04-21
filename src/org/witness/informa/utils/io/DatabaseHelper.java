@@ -5,13 +5,11 @@ import java.util.ArrayList;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteOpenHelper;
 
-import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys.*;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 	private static final String DATABASE_NAME = "informa.db";
@@ -97,7 +95,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		}
 		query = query.substring(0, query.length() - 5);
 		db.execSQL(query);
-		Log.d(InformaConstants.TAG, query);
 	}
 	
 	public Cursor getValue(SQLiteDatabase db, String[] values, String matchKey, Object matchValue) {
@@ -129,13 +126,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	
 	public boolean setTable(SQLiteDatabase db, String whichTable) {
 		TABLE = whichTable;
-		Log.d(InformaConstants.TAG, "table: " + getTable());
 		Cursor c = db.rawQuery(QueryBuilders.CHECK_IF.build()[0], null);
 		if(c != null && c.getCount() > 0) {
 			c.close();
 			return true;
 		} else {
-			Log.d(InformaConstants.TAG, "table: " + getTable());
 			c.close();
 			ArrayList<String> queries = new ArrayList<String>();
 			if(getTable().compareTo(Tables.IMAGES) == 0)
