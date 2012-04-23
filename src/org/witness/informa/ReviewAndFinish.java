@@ -27,7 +27,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 
 public class ReviewAndFinish extends Activity implements OnClickListener {
-	InformaButton confirmView, confirmTakeAnother;
+	InformaButton confirmView, confirmShare, confirmTakeAnother;
 	Uri savedImageUri;
 	Handler finish;
 	Apg apg;
@@ -42,6 +42,9 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		
 		confirmView = (InformaButton) findViewById(R.id.informaConfirm_btn_view);
 		confirmView.setOnClickListener(this);
+		
+		confirmShare = (InformaButton) findViewById(R.id.informaConfirm_btn_share);
+		confirmShare.setOnClickListener(this);
 		
 		confirmTakeAnother = (InformaButton) findViewById(R.id.informaConfirm_btn_takeAnother);
 		confirmTakeAnother.setOnClickListener(this);
@@ -90,6 +93,19 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
     	return new File(originalImageFilePath);
     }
     
+    public void shareMedia() {
+    	Intent intent = new Intent(Intent.ACTION_SEND);
+    	switch(getIntent().getIntExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO)) {
+		case InformaConstants.MediaTypes.PHOTO:
+			intent.setType(ObscuraConstants.MIME_TYPE_JPEG);
+			break;
+		case InformaConstants.MediaTypes.VIDEO:
+			intent.setType(ObscuraConstants.MIME_TYPE_MP4);
+			break;
+    	}
+    	intent.putExtra(Intent.EXTRA_STREAM, savedImageUri);
+    	startActivity(Intent.createChooser(intent, getResources().getString(R.string.informaConfirm_share_prompt))); 
+    }
 
 	@Override
 	public void onClick(View v) {
@@ -102,6 +118,8 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 				viewVideo();
 				break;
 			}
+		} else if(v == confirmShare) {
+			shareMedia();
 		} else if(v == confirmTakeAnother) {
 			setResult(SherlockActivity.RESULT_OK);
 			finish();

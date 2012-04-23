@@ -30,6 +30,13 @@
    	    android:layout_height="wrap_content"
    	    android:layout_marginTop="1dip"
         android:layout_marginBottom="1dip"
+   	    android:text="@string/informaConfirm_btn_share"
+   	    android:id="@+id/informaConfirm_btn_share" />
+   	<org.witness.mods.InformaButton style="@style/Button_standard"
+   	    android:layout_width="match_parent"
+   	    android:layout_height="wrap_content"
+   	    android:layout_marginTop="1dip"
+        android:layout_marginBottom="1dip"
    	    android:text="@string/informaConfirm_btn_takeAnother"
    	    android:id="@+id/informaConfirm_btn_takeAnother" />
 </LinearLayout>

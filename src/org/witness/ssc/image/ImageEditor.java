@@ -1032,6 +1032,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
         return super.onCreateOptionsMenu(menu);
     }
 
+	//TODO: here is the menu
 	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -1056,7 +1057,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     			return false;
     		case R.id.menu_current_region_identify:
     			if(regionInContext != null) {
-    				Log.d(InformaConstants.TAG, "region is not null");
     				regionInContext.updateRegionProcessor(ImageRegion.CONSENT);
     				return true;
     			}

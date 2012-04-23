@@ -31,6 +31,13 @@ public class PixelizeObscure implements RegionProcesser {
 		mProps.put(ImageRegion.TIMESTAMP, System.currentTimeMillis());
 	}
 	
+	public PixelizeObscure(int size) {
+		mProps = new Properties();
+		mProps.put("size", size);
+		mProps.put(ImageRegion.FILTER, this.getClass().getName());
+		mProps.put(ImageRegion.TIMESTAMP, System.currentTimeMillis());
+	}
+	
 	public void processRegion(RectF rect, Canvas canvas, Bitmap bitmap) {
 	
 		originalBmp = bitmap;

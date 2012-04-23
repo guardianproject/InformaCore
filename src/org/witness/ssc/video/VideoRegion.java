@@ -1,23 +1,25 @@
 package org.witness.ssc.video;
 
-import java.io.Serializable;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.VideoRegions;
+import org.witness.ssc.image.filters.CrowdPixelizeObscure;
+import org.witness.ssc.image.filters.InformaTagger;
+import org.witness.ssc.image.filters.PixelizeObscure;
+import org.witness.ssc.image.filters.RegionProcesser;
+import org.witness.ssc.image.filters.SolidObscure;
 import org.witness.ssc.utils.ObscuraConstants;
 
 import android.graphics.RectF;
 import android.util.Log;
 
-public class VideoRegion implements Serializable {
+public class VideoRegion {
 
 	/*
 	 * Thinking about whether or not a region should contain multiple start/end times
@@ -37,8 +39,6 @@ public class VideoRegion implements Serializable {
 		}
 	}
 	*/
-	private static final long serialVersionUID = -3481867713467641360L;
-
 	public static final String LOGTAG = ObscuraConstants.TAG;
 
 	public static final String DEFAULT_MODE = "pixel";
@@ -61,10 +61,17 @@ public class VideoRegion implements Serializable {
 	public long mediaDuration = 0;
 	
 	public String currentMode = DEFAULT_MODE;
+	public static final int REDACT = 0; // PaintSquareObscure
+	public static final int PIXELATE = 1; // PixelizeObscure
+	public static final int CONSENT = 2; // PixelizeObscure
 	
+	public VideoEditor mVideoEditor;
 	public Map<String, Object> mProps;
 	
-	public VideoRegion(long _duration, long _startTime, long _endTime, float _sx, float _sy, float _ex, float _ey, String _mode, String parentRegion) {
+	RegionProcesser mRProc;
+	
+	public VideoRegion(VideoEditor videoEditor, long _duration, long _startTime, long _endTime, float _sx, float _sy, float _ex, float _ey, String _mode, VideoRegion parentRegion) {
+		mVideoEditor = videoEditor;
 		mediaDuration = _duration;
 		startTime = _startTime;
 		endTime = _endTime;
@@ -85,21 +92,27 @@ public class VideoRegion implements Serializable {
 		mProps.put(Keys.VideoRegion.DURATION, mediaDuration);
 		mProps.put(Keys.VideoRegion.START_TIME, startTime);
 		mProps.put(Keys.VideoRegion.END_TIME, endTime);
-		mProps.put(Keys.VideoRegion.PARENT_REGION, parentRegion);
 		
+		try {
+			mProps.put(Keys.VideoRegion.PARENT_REGION, parentRegion);
+		} catch(NullPointerException e) {
+			mProps.put(Keys.VideoRegion.PARENT_REGION, this);
+		}
+		
+		setRegionProcessor(new PixelizeObscure());
 		Log.d(VideoEditor.LOGTAG, mProps.toString());
 	}
 
-	public VideoRegion(long _duration, long _startTime, float _sx, float _sy, float _ex, float _ey, String parentRegion) {
-		this(_duration, _startTime, _startTime+DEFAULT_LENGTH, _sx, _sy, _ex, _ey, DEFAULT_MODE, parentRegion);
+	public VideoRegion(VideoEditor videoEditor, long _duration, long _startTime, float _sx, float _sy, float _ex, float _ey, VideoRegion parentRegion) {
+		this(videoEditor, _duration, _startTime, _startTime+DEFAULT_LENGTH, _sx, _sy, _ex, _ey, DEFAULT_MODE, parentRegion);
 	}
 
-	public VideoRegion(long _duration, long _startTime, long _endTime, float _sx, float _sy, String parentRegion) {
-		this(_duration, _startTime, _endTime, _sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2, DEFAULT_MODE, parentRegion);
+	public VideoRegion(VideoEditor videoEditor, long _duration, long _startTime, long _endTime, float _sx, float _sy, VideoRegion parentRegion) {
+		this(videoEditor, _duration, _startTime, _endTime, _sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2, DEFAULT_MODE, parentRegion);
 	}
 
-	public VideoRegion(long _duration, long _startTime, float _sx, float _sy, String parentRegion) {
-		this(_duration, _startTime, _startTime+DEFAULT_LENGTH, _sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2, DEFAULT_MODE, parentRegion);
+	public VideoRegion(VideoEditor videoEditor, long _duration, long _startTime, float _sx, float _sy, VideoRegion parentRegion) {
+		this(videoEditor, _duration, _startTime, _startTime+DEFAULT_LENGTH, _sx - DEFAULT_X_SIZE/2, _sy - DEFAULT_Y_SIZE/2, _sx + DEFAULT_X_SIZE/2, _sy + DEFAULT_Y_SIZE/2, DEFAULT_MODE, parentRegion);
 	}
 	
 	public void moveRegion(float _sx, float _sy) {
@@ -132,6 +145,45 @@ public class VideoRegion implements Serializable {
 	public String getStringData(float sizeMult) {
 		//left, right, top, bottom
 		return "" + (float)startTime/(float)1000 + ',' + (float)endTime/(float)1000 + ',' + (int)(sx*sizeMult) + ',' + (int)(ex*sizeMult) + ',' + (int)(sy*sizeMult) + ',' + (int)(ey*sizeMult) + ',' + currentMode;
+	}
+	
+	//TODO: maybe we are not using the same region processors...
+	public void setRegionProcessor(RegionProcesser rProc) {
+		mRProc = rProc;
+		mVideoEditor.associateVideoRegionData(this);
+		Log.d(LOGTAG, "new stuff done:\n" + mRProc.getProperties().toString());
+	}
+	
+	public RegionProcesser getRegionProcessor() {
+		return mRProc;
+	}
+	
+	public void updateRegionProcessor (int obscureType) {
+		
+		switch (obscureType) {
+			case REDACT:
+				Log.v(ObscuraConstants.TAG,"obscureType: SOLID");
+				setRegionProcessor(new SolidObscure());
+				break;
+			case PIXELATE:
+				setRegionProcessor(new PixelizeObscure());
+				break;
+			case CONSENT:
+				// If the region processor is already a consent tagger, the user wants to edit.
+				// so no need to change the region processor.
+				if(!(getRegionProcessor() instanceof InformaTagger)) {
+					setRegionProcessor(new InformaTagger());
+					//mVideoEditor.updateRegionDisplay();
+				}
+			
+				mVideoEditor.launchTagger(this);
+				break;
+			default:
+				setRegionProcessor(new PixelizeObscure());
+				break;
+		}
+		
+		//mVideoEditor.updateRegionDisplay();
 	}
 	
 	public JSONObject getRepresentation() throws JSONException {
