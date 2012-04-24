@@ -46,7 +46,6 @@ public class InOutPlayheadSeekBar extends SeekBar {
 	public boolean thumbsActive = false;
 	
 	public void setThumbsActive(int inThumbValue, int outThumbValue) {
-		Log.v(LOGTAG,"in value: " + inThumbValue + " out value: " + outThumbValue);
 		thumbsActive = true;
 		setThumbsValue(inThumbValue, outThumbValue);
 		invalidate();
@@ -66,9 +65,6 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		} catch(ClassCastException e) {
 			outThumbValue = mapSecondsToPixels((long) ((Integer) region.mProps.get(Keys.VideoRegion.END_TIME)), (Long) region.mProps.get(Keys.VideoRegion.DURATION));
 		}
-		
-		Log.v(LOGTAG, "REALLY, setting new thumb values:\nin= " + inThumbValue + ". out= " + outThumbValue);
-		Log.v(LOGTAG, "although the region says:\nin= " + region.startTime + ". out= " + region.endTime);
 		
 		thumbsActive = true;
 		setThumbsValue(inThumbValue, outThumbValue);
@@ -131,8 +127,10 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		if (thumbsActive) {
 			canvas.drawBitmap(thumbIn, thumbInX - thumbInHalfWidth, thumbInY, paint);
 			canvas.drawBitmap(thumbOut, thumbOutX - thumbOutHalfWidth, thumbOutY, paint);
-		} else 
+		} else {
+			//TODO: handle display when bars are inactive
 			Log.d(LOGTAG, "inactive bars!");
+		}
 	}
 
 	@Override
@@ -167,7 +165,6 @@ public class InOutPlayheadSeekBar extends SeekBar {
 			break;
 		case MotionEvent.ACTION_UP:
 			selectedThumb = NONE;
-			Log.d(LOGTAG, "1. hey new thumb vals:\nthumbIn: " + thumbInX + " thumbOut: " + thumbOutX);
 			handled = true;
 			break;
 		}
@@ -192,9 +189,8 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		invalidate();
 		
 		if (changeListener != null) {
-			Log.d(LOGTAG, "2. hey new thumb vals:\nthumbIn: " + thumbInX + " thumbOut: " + thumbOutX);
 			calculateThumbsValue();
-			changeListener.inOutValuesChanged(thumbInValue,thumbOutValue);
+			changeListener.inOutValuesChanged(thumbInX,thumbOutX);
 		}
 		
 		if (!handled) {
@@ -207,6 +203,7 @@ public class InOutPlayheadSeekBar extends SeekBar {
 	private void calculateThumbsValue(){
 		thumbInValue = (int)((100*((float)thumbInX))/((float)getWidth()));
 		thumbOutValue = (int)((100*((float)thumbOutX))/((float)getWidth()));
+		
 		Log.v(LOGTAG,"thumb in value: " + thumbInValue + " thumb out value: " + thumbOutValue);
 	}
 	
@@ -218,7 +215,7 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		Log.v(LOGTAG,"thumbInX: " + thumbInX + " thumbOutX: " + thumbOutX);
 		calculateThumbsValue();
 	}
-		
+	
 	interface InOutPlayheadSeekBarChangeListener {
 		void inOutValuesChanged(int thumbInValue,int thumbOutValue);
 	}	

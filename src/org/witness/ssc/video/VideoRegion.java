@@ -136,6 +136,18 @@ public class VideoRegion {
 	
 	
 	public boolean existsInTime(long time) {
+		try {
+			startTime = (Long) mProps.get(Keys.VideoRegion.START_TIME);
+		} catch(ClassCastException e) {
+			startTime = (long) ((Integer) mProps.get(Keys.VideoRegion.START_TIME));
+		}
+		
+		try {
+			endTime = (Long) mProps.get(Keys.VideoRegion.END_TIME);
+		} catch(ClassCastException e) {
+			endTime = (long) ((Integer) mProps.get(Keys.VideoRegion.END_TIME));
+		}
+		
 		if (time < endTime && time >= startTime) {
 			return true;
 		}
@@ -151,7 +163,6 @@ public class VideoRegion {
 	public void setRegionProcessor(RegionProcesser rProc) {
 		mRProc = rProc;
 		mVideoEditor.associateVideoRegionData(this);
-		Log.d(LOGTAG, "new stuff done:\n" + mRProc.getProperties().toString());
 	}
 	
 	public RegionProcesser getRegionProcessor() {

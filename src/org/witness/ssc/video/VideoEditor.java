@@ -845,7 +845,14 @@ public class VideoEditor extends SherlockActivity implements
 					// Calculate distance moved
 					showMenu = false;
 					
-					if (activeRegion != null && mediaPlayer.getCurrentPosition() > (Long) activeRegion.mProps.get(Keys.VideoRegion.START_TIME)) {
+					long regionStartTime;
+					try {
+						regionStartTime = (Long) activeRegion.mProps.get(Keys.VideoRegion.START_TIME);
+					} catch(ClassCastException e) {
+						regionStartTime = (long) ((Integer) activeRegion.mProps.get(Keys.VideoRegion.START_TIME));
+					}
+					
+					if (activeRegion != null && mediaPlayer.getCurrentPosition() > regionStartTime) {
 						Log.v(LOGTAG,"Moving an activeRegion");
 						
 						long previousEndTime;
@@ -888,7 +895,6 @@ public class VideoEditor extends SherlockActivity implements
 						if (activeRegion != null) {
 							// Show in and out points
 							progressBar.setThumbsActive(activeRegion);
-							Log.d(LOGTAG, "showing these thumbs for region");
 						}
 						
 					} else if (activeRegion != null) {
@@ -913,7 +919,6 @@ public class VideoEditor extends SherlockActivity implements
 						
 						// Show in and out points
 						progressBar.setThumbsActive(activeRegion);
-						Log.d(LOGTAG, "showing these thumbs for region");
 					}
 					
 					handled = true;
@@ -1262,10 +1267,16 @@ public class VideoEditor extends SherlockActivity implements
 	
 	@Override
 	public void inOutValuesChanged(int thumbInValue, int thumbOutValue) {
-		if (activeRegion != null) {
-			activeRegion.mProps.put(Keys.VideoRegion.START_TIME, thumbInValue);
-			activeRegion.mProps.put(Keys.VideoRegion.END_TIME, thumbOutValue);
-			progressBar.setThumbsActive(activeRegion);
+		// TODO: inOutValuesChanged
+		
+		if (regionInContext != null) {
+			regionInContext.mProps.put(
+					Keys.VideoRegion.START_TIME, 
+					progressBar.mapPixelsToSeconds(thumbInValue, (Long) regionInContext.mProps.get(Keys.VideoRegion.DURATION)));
+			regionInContext.mProps.put(
+					Keys.VideoRegion.END_TIME, 
+					progressBar.mapPixelsToSeconds(thumbOutValue, (Long) regionInContext.mProps.get(Keys.VideoRegion.DURATION)));
+			progressBar.setThumbsActive(regionInContext);
 		}
 	}
 	
