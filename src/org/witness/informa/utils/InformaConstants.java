@@ -83,6 +83,7 @@ public class InformaConstants {
 			public final static String START_TIME = "region_startTime";
 			public final static String END_TIME = "region_endTime";
 			public final static String PARENT_REGION = "region_Parent";	// can be -1 (self) or id of parent
+			public final static String CHILD_REGIONS = "region_children";
 			
 			public final static class Subject {
 				public final static String PSEUDONYM = ImageRegion.Subject.PSEUDONYM;

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Vector;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -92,11 +93,14 @@ public class VideoRegion {
 		mProps.put(Keys.VideoRegion.DURATION, mediaDuration);
 		mProps.put(Keys.VideoRegion.START_TIME, startTime);
 		mProps.put(Keys.VideoRegion.END_TIME, endTime);
+		mProps.put(Keys.VideoRegion.CHILD_REGIONS, new Vector<VideoRegion>());
 		
 		try {
 			mProps.put(Keys.VideoRegion.PARENT_REGION, parentRegion);
+			((Vector<VideoRegion>) parentRegion.mProps.get(Keys.VideoRegion.CHILD_REGIONS)).add(this);
+			parentRegion.mProps.put(Keys.VideoRegion.END_TIME, endTime);
 		} catch(NullPointerException e) {
-			mProps.put(Keys.VideoRegion.PARENT_REGION, this);
+			mProps.put(Keys.VideoRegion.PARENT_REGION, null);
 		}
 		
 		setRegionProcessor(new PixelizeObscure());

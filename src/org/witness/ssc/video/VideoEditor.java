@@ -622,14 +622,18 @@ public class VideoEditor extends SherlockActivity implements
 				//Log.v(LOGTAG,mediaPlayer.getCurrentPosition() + " Drawing a region: " + region.getBounds().left + " " + region.getBounds().top + " " + region.getBounds().right + " " + region.getBounds().bottom);
 				if (region != regionInContext) {
 					displayRegion(region,false);
-				}
+				} else
+					displayRegion(region, true);
 			}
 		}
 		
-		if(regionInContext != null) {
-			if(regionInContext.existsInTime(mediaPlayer.getCurrentPosition()))
-				displayRegion(regionInContext, true);
-			progressBar.setThumbsActive(regionInContext);
+		if(regionInContext != null && !mediaPlayer.isPlaying()) {
+			VideoRegion parentRegion = (VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION);
+			 if(parentRegion == null) {
+				progressBar.setThumbsActive(regionInContext);
+			} else {
+				progressBar.setThumbsActive(parentRegion);
+			}
 		} else
 			progressBar.setThumbsInactive();
 		
@@ -692,15 +696,19 @@ public class VideoEditor extends SherlockActivity implements
 	public static final int DRAG = 1;
 	//int mode = NONE;
 
-	public VideoRegion findRegion(float x, float y) 
-	{
+	public VideoRegion findRegion(float x, float y) {
+		// TODO: findRegion() sheesh!
 		VideoRegion returnRegion = null;
+		Log.d(LOGTAG, "finding region at " + x + ", " + y);
 		
 		for (VideoRegion region : obscureRegions)
 		{
+			Log.d(LOGTAG, "region: " + region.getBounds().toShortString() + "\n" + region.mProps.toString());
 			if (region.getBounds().contains(x,y))
 			{
+				Log.d(LOGTAG, "FOUND IT!");
 				returnRegion = region;
+				regionInContext = region;
 				break;
 			}
 		}			
@@ -780,18 +788,22 @@ public class VideoEditor extends SherlockActivity implements
 								regionCornerMode = getRegionCornerMode(activeRegion, x, y);
 								
 								// Show in and out points
-								progressBar.setThumbsActive(activeRegion);
-								regionInContext = activeRegion;
+								
+								//regionInContext = activeRegion;
+								//progressBar.setThumbsActive(regionInContext);
 								
 								// They are interacting with the active region
 								Log.v(LOGTAG,"Touched an active region");
+								updateRegionDisplay();
 							}
 							else
 							{
 								// They are interacting with the active region
-								regionInContext = activeRegion;
+								//regionInContext = activeRegion;
 								Log.v(LOGTAG,"Touched an existing region, make it active");
+								updateRegionDisplay();
 							}
+							
 						}
 						else 
 						{
@@ -804,9 +816,11 @@ public class VideoEditor extends SherlockActivity implements
 							Log.v(LOGTAG,"Creating a new activeRegion");
 														
 							// Show in and out points
-							progressBar.setThumbsActive(activeRegion);
+							updateRegionDisplay();
+							//progressBar.setThumbsActive(activeRegion);
 
 						}
+						
 					}
 
 					handled = true;
@@ -829,14 +843,18 @@ public class VideoEditor extends SherlockActivity implements
 					{
 						if (activeRegion != null)
 						{
-							if (mediaPlayer.isPlaying())
+							if (mediaPlayer.isPlaying()) {
 								activeRegion.mProps.put(Keys.VideoRegion.END_TIME, mediaPlayer.getCurrentPosition());
-							else
+								regionInContext.mProps.put(Keys.VideoRegion.END_TIME, mediaPlayer.getCurrentPosition());
+							} else {
 								activeRegion.mProps.put(Keys.VideoRegion.END_TIME, mDuration);
-							
+								regionInContext.mProps.put(Keys.VideoRegion.END_TIME, mDuration);
+							}
 							activeRegion = null;
+							updateRegionDisplay();
 						}
 					}
+					
 					
 					toggleRegionMenu();
 					break;
@@ -852,7 +870,7 @@ public class VideoEditor extends SherlockActivity implements
 						regionStartTime = (long) ((Integer) activeRegion.mProps.get(Keys.VideoRegion.START_TIME));
 					}
 					
-					if (activeRegion != null && mediaPlayer.getCurrentPosition() > regionStartTime) {
+					if (activeRegion != null && mediaPlayer.getCurrentPosition() > regionStartTime && mediaPlayer.isPlaying()) {
 						Log.v(LOGTAG,"Moving an activeRegion");
 						
 						long previousEndTime;
@@ -871,37 +889,34 @@ public class VideoEditor extends SherlockActivity implements
 							//moveRegion(float _sx, float _sy, float _ex, float _ey)
 							// Create new region with moved coordinates
 							if (regionCornerMode == CORNER_UPPER_LEFT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y,lastRegion.ex,lastRegion.ey, VideoRegion.DEFAULT_MODE, lastRegion);
+								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y,lastRegion.ex,lastRegion.ey, VideoRegion.DEFAULT_MODE, regionInContext);
 								obscureRegions.add(activeRegion);
 							} else if (regionCornerMode == CORNER_LOWER_LEFT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,lastRegion.sy,lastRegion.ex,y, VideoRegion.DEFAULT_MODE, lastRegion);
+								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,lastRegion.sy,lastRegion.ex,y, VideoRegion.DEFAULT_MODE, regionInContext);
 								obscureRegions.add(activeRegion);
 							} else if (regionCornerMode == CORNER_UPPER_RIGHT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,y,x,lastRegion.ey, VideoRegion.DEFAULT_MODE, lastRegion);
+								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,y,x,lastRegion.ey, VideoRegion.DEFAULT_MODE, regionInContext);
 								obscureRegions.add(activeRegion);
 							} else if (regionCornerMode == CORNER_LOWER_RIGHT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,lastRegion.sy,x,y, VideoRegion.DEFAULT_MODE, lastRegion);
+								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,lastRegion.sy,x,y, VideoRegion.DEFAULT_MODE, regionInContext);
 								obscureRegions.add(activeRegion);
 							}
 							
-							regionInContext = activeRegion;
+							
 						} else {		
 							// No Corner
-							activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y, null);
+							activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y, regionInContext);
 							obscureRegions.add(activeRegion);
-							regionInContext = activeRegion;
+							
 						}
-						
-						if (activeRegion != null) {
-							// Show in and out points
-							progressBar.setThumbsActive(activeRegion);
-						}
-						
+												
 					} else if (activeRegion != null) {
 						Log.v(LOGTAG,"Moving activeRegion start time");
+						if(activeRegion.equals(regionInContext))
+							Log.d(LOGTAG, "they are the same!!!!");
 						
 						if (regionCornerMode != CORNER_NONE) {
-							
+							 
 							// Just move region, we are at begin time
 							if (regionCornerMode == CORNER_UPPER_LEFT) {
 								activeRegion.moveRegion(x,y,activeRegion.ex,activeRegion.ey);
@@ -917,10 +932,10 @@ public class VideoEditor extends SherlockActivity implements
 							activeRegion.moveRegion(x, y);
 						}
 						
-						// Show in and out points
-						progressBar.setThumbsActive(activeRegion);
+						
 					}
 					
+					updateRegionDisplay();
 					handled = true;
 					break;
 			}
@@ -1057,7 +1072,14 @@ public class VideoEditor extends SherlockActivity implements
         		return false;
         	case R.id.menu_current_region_delete:
         		if(regionInContext != null) {
+        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null) {
+        				for(VideoRegion child : (Vector<VideoRegion>) regionInContext.mProps.get(Keys.VideoRegion.CHILD_REGIONS))
+        					obscureRegions.remove(child);
+        			}
+
         			obscureRegions.remove(regionInContext);
+        			
+        			// TODO: actually, remove all child regions from parent
         			regionInContext = null;
         			toggleRegionMenu();
         			updateRegionDisplay();

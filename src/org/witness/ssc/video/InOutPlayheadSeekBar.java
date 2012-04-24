@@ -129,7 +129,6 @@ public class InOutPlayheadSeekBar extends SeekBar {
 			canvas.drawBitmap(thumbOut, thumbOutX - thumbOutHalfWidth, thumbOutY, paint);
 		} else {
 			//TODO: handle display when bars are inactive
-			Log.d(LOGTAG, "inactive bars!");
 		}
 	}
 
