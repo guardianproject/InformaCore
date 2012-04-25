@@ -21,25 +21,6 @@ import android.graphics.RectF;
 import android.util.Log;
 
 public class VideoRegion {
-
-	/*
-	 * Thinking about whether or not a region should contain multiple start/end times
-	 * realizing that doing this would make editing a real pita
-	 * Of course, it would make displaying be a 1000x better though.
-	class PositionTime {
-
-		int sx = 0; 
-		int sy = 0; 
-		int ex = 0;
-		int ey = 0;
-		long startTime = 0; 
-		long endTime = 0;
-		
-		PositionTime(int _sx, int _sy, int _ex, int _ey, long _startTime, long _endTime) {
-			
-		}
-	}
-	*/
 	public static final String LOGTAG = ObscuraConstants.TAG;
 
 	public static final String DEFAULT_MODE = "pixel";
@@ -101,9 +82,9 @@ public class VideoRegion {
 			parentRegion.mProps.put(Keys.VideoRegion.END_TIME, endTime);
 		} catch(NullPointerException e) {
 			mProps.put(Keys.VideoRegion.PARENT_REGION, null);
+			setRegionProcessor(new PixelizeObscure());
 		}
 		
-		setRegionProcessor(new PixelizeObscure());
 		Log.d(VideoEditor.LOGTAG, mProps.toString());
 	}
 
@@ -186,10 +167,8 @@ public class VideoRegion {
 			case CONSENT:
 				// If the region processor is already a consent tagger, the user wants to edit.
 				// so no need to change the region processor.
-				if(!(getRegionProcessor() instanceof InformaTagger)) {
+				if(!(getRegionProcessor() instanceof InformaTagger))
 					setRegionProcessor(new InformaTagger());
-					//mVideoEditor.updateRegionDisplay();
-				}
 			
 				mVideoEditor.launchTagger(this);
 				break;

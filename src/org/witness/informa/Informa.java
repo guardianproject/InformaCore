@@ -426,7 +426,8 @@ public class Informa {
 							
 							JSONObject locationOnGeneration = new JSONObject();
 							locationOnGeneration.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
-							locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
+							if(phone.has(Keys.Suckers.Phone.CELL_ID))
+								locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
 							
 							JSONObject regionDimensions = new JSONObject();
 							regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));

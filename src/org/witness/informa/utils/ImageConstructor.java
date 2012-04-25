@@ -48,6 +48,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.Images;
@@ -166,20 +167,27 @@ public class ImageConstructor {
 	
 	private String getBitmapHash(File file) throws NoSuchAlgorithmException, IOException {
 		Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-		ByteBuffer buf = ByteBuffer.allocateDirect(bitmap.getByteCount());
-		bitmap.copyPixelsToBuffer(buf);
+		// FYI, getByteCount is not yet available for all devices (API 12)
+		String hash = "";
+		ByteBuffer buf;
 		
-		String hash = MediaHasher.hash(buf.array(), "SHA-1");
+		try {
+			buf = ByteBuffer.allocate(bitmap.getByteCount());		
+		} catch(NoSuchMethodError e) {
+			buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
+		}
+		
+		bitmap.copyPixelsToBuffer(buf);
+		hash = MediaHasher.hash(buf.array(), "SHA-1");
 		buf.clear();
 		buf = null;
-		
 		return hash;
 	}
 	
 	public int createVersionForTrustedDestination(String informaImageFilename, String intendedDestination) throws JSONException, NoSuchAlgorithmException, IOException {
 		int result = 0;
 		
-		Log.d(InformaConstants.TAG, "metadata passed:" + metadataObject.toString());
+		//Log.d(InformaConstants.TAG, "metadata passed:" + metadataObject.toString());
 		Log.d(InformaConstants.TAG, "metadata length = " + metadataObject.toString().length());
 		
 		// insert the unredacted and redacted media hashes

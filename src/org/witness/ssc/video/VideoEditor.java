@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.witness.informa.KeyChooser;
 import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
@@ -414,10 +415,12 @@ public class VideoEditor extends SherlockActivity implements
 	public void onSeekComplete(MediaPlayer mp) {
 		Log.v(LOGTAG, "onSeekComplete Called");
 		
+		/*
 		if (!mediaPlayer.isPlaying()) {			
 			mediaPlayer.start();
 			mediaPlayer.pause();
 		}
+		*/
 	}
 
 	public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
@@ -611,18 +614,15 @@ public class VideoEditor extends SherlockActivity implements
 	
 	public void updateRegionDisplay() {
 		//TODO: updateRegionDisplay()
-		Log.v(LOGTAG,"Position: " + mediaPlayer.getCurrentPosition());
 		
 		validateRegionView();
 		clearRects();
 				
 		for (VideoRegion region:obscureRegions) {
 			if (region.existsInTime(mediaPlayer.getCurrentPosition())) {
-				// Draw this region
-				//Log.v(LOGTAG,mediaPlayer.getCurrentPosition() + " Drawing a region: " + region.getBounds().left + " " + region.getBounds().top + " " + region.getBounds().right + " " + region.getBounds().bottom);
-				if (region != regionInContext) {
-					displayRegion(region,false);
-				} else
+				if(region != regionInContext)
+					displayRegion(region, false);
+				else
 					displayRegion(region, true);
 			}
 		}
@@ -697,18 +697,17 @@ public class VideoEditor extends SherlockActivity implements
 	//int mode = NONE;
 
 	public VideoRegion findRegion(float x, float y) {
-		// TODO: findRegion() sheesh!
 		VideoRegion returnRegion = null;
 		Log.d(LOGTAG, "finding region at " + x + ", " + y);
 		
 		for (VideoRegion region : obscureRegions)
 		{
-			Log.d(LOGTAG, "region: " + region.getBounds().toShortString() + "\n" + region.mProps.toString());
 			if (region.getBounds().contains(x,y))
 			{
 				Log.d(LOGTAG, "FOUND IT!");
 				returnRegion = region;
 				regionInContext = region;
+				Log.d(LOGTAG, "region: " + region.getBounds().toShortString() + "\n" + region.mProps.toString());
 				break;
 			}
 		}			
@@ -870,8 +869,12 @@ public class VideoEditor extends SherlockActivity implements
 						regionStartTime = (long) ((Integer) activeRegion.mProps.get(Keys.VideoRegion.START_TIME));
 					}
 					
-					if (activeRegion != null && mediaPlayer.getCurrentPosition() > regionStartTime && mediaPlayer.isPlaying()) {
+					if (activeRegion != null && mediaPlayer.getCurrentPosition() > regionStartTime) {
 						Log.v(LOGTAG,"Moving an activeRegion");
+						if(((Vector<VideoRegion>) regionInContext.mProps.get(Keys.VideoRegion.CHILD_REGIONS)).contains(activeRegion))
+							Log.d(LOGTAG, "this is a child of the context region");
+						else if(activeRegion.equals(regionInContext))
+							Log.d(LOGTAG, "this IS the context region");
 						
 						long previousEndTime;
 						try {
@@ -901,19 +904,18 @@ public class VideoEditor extends SherlockActivity implements
 								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,lastRegion.sy,x,y, VideoRegion.DEFAULT_MODE, regionInContext);
 								obscureRegions.add(activeRegion);
 							}
-							
+							updateRegionDisplay();
 							
 						} else {		
 							// No Corner
 							activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y, regionInContext);
 							obscureRegions.add(activeRegion);
-							
+							updateRegionDisplay();
 						}
 												
 					} else if (activeRegion != null) {
 						Log.v(LOGTAG,"Moving activeRegion start time");
-						if(activeRegion.equals(regionInContext))
-							Log.d(LOGTAG, "they are the same!!!!");
+						
 						
 						if (regionCornerMode != CORNER_NONE) {
 							 
@@ -931,11 +933,11 @@ public class VideoEditor extends SherlockActivity implements
 							// No Corner
 							activeRegion.moveRegion(x, y);
 						}
-						
+						updateRegionDisplay();
 						
 					}
 					
-					updateRegionDisplay();
+					
 					handled = true;
 					break;
 			}
@@ -1031,14 +1033,17 @@ public class VideoEditor extends SherlockActivity implements
 	}
 	
     
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
     	
         	case R.id.menu_save:
         		completeActionFlag = 3;
-        		processVideo();
+        		Intent keyChooser = new Intent(this, KeyChooser.class);
+				startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
+        		//TODO: processVideo();
         		return true;
         	case R.id.menu_delete_all_regions:
         		obscureRegions.clear();
@@ -1054,19 +1059,28 @@ public class VideoEditor extends SherlockActivity implements
         		return true;
         	case R.id.menu_current_region_redact:
         		if(regionInContext != null) {
-        			regionInContext.updateRegionProcessor(VideoRegion.REDACT);
+        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null)
+        				regionInContext.updateRegionProcessor(VideoRegion.REDACT);
+        			else
+        				((VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION)).updateRegionProcessor(VideoRegion.REDACT);
         			return true;
         		}
         		return false;
         	case R.id.menu_current_region_pixelate:
         		if(regionInContext != null) {
-        			regionInContext.updateRegionProcessor(VideoRegion.PIXELATE);
+        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null)
+        				regionInContext.updateRegionProcessor(VideoRegion.PIXELATE);
+        			else
+        				((VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION)).updateRegionProcessor(VideoRegion.PIXELATE);
         			return true;
         		}
         		return false;
         	case R.id.menu_current_region_identify:
         		if(regionInContext != null) {
-        			regionInContext.updateRegionProcessor(VideoRegion.CONSENT);
+        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null)
+        				regionInContext.updateRegionProcessor(VideoRegion.CONSENT);
+        			else
+        				((VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION)).updateRegionProcessor(VideoRegion.CONSENT);
         			return true;
         		}
         		return false;
@@ -1092,7 +1106,6 @@ public class VideoEditor extends SherlockActivity implements
     	}
     }
     
-    //TODO: associateVideoRegionData()
 	public void associateVideoRegionData(VideoRegion vr) {
 		sendBroadcast(new Intent()
 			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
@@ -1106,6 +1119,13 @@ public class VideoEditor extends SherlockActivity implements
          .setTitle(getString(R.string.app_name))
          .setMessage(msg)
          .create().show();
+	}
+	
+	private void saveVideo(long[] encryptList) {
+		//TODO: saveVideo();
+		Log.d(LOGTAG, "looks like we made it");
+		for(long l : encryptList)
+			Log.d(LOGTAG, "l = " + l);
 	}
     
     private void processVideo() {
@@ -1283,7 +1303,7 @@ public class VideoEditor extends SherlockActivity implements
 	
 	private void playVideo() {
     	Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
-    	intent.setDataAndType(Uri.parse(saveFile.getPath()), MIME_TYPE_MP4);    	
+    	intent.setDataAndType(Uri.parse(saveFile.getAbsolutePath()), MIME_TYPE_MP4);    	
    	 	startActivity(intent);
 	}
 	
@@ -1596,15 +1616,10 @@ public class VideoEditor extends SherlockActivity implements
     			// iterate through returned hashmap and place these new properties in it.
     			for(Map.Entry<String, Object> entry : informaReturn.entrySet())
     				mProp.setProperty(entry.getKey(), entry.getValue().toString());
-    			
-    			Log.d(LOGTAG, "returned with:\n" + mProp.toString());
-    			
+    			    			
     			regionInContext = obscureRegions.get(data.getIntExtra(Keys.VideoRegion.INDEX, 0));
     			regionInContext.getRegionProcessor().setProperties(mProp);
     			
-    			
-    			Log.d(LOGTAG, "obscureRegions:\n" + obscureRegions.size());
-    			Log.d(LOGTAG, "this video:\n" + originalVideoUri.toString());
     			try {
 					prepareMedia();
 				} catch (IllegalArgumentException e) {
@@ -1618,7 +1633,6 @@ public class VideoEditor extends SherlockActivity implements
 				}
     			    			
     		} else if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER) {
-    			//mProgressDialog = ProgressDialog.show(this, "", getResources().getString(R.string.saving), true, true);
     			mHandler.postDelayed(new Runnable() {
     				  @Override
     				  public void run() {
@@ -1626,13 +1640,8 @@ public class VideoEditor extends SherlockActivity implements
 		        		if(data.hasExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST))
 		        			encryptList = data.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST);
 		        		
-		        		/*
-		        		try {
-							saveImage(encryptList);
-						} catch (IOException e) {
-							Log.e(InformaConstants.TAG, "error saving image", e);
-						}
-						*/
+		        		saveVideo(encryptList);
+
     				  }
     				},500);
     		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
