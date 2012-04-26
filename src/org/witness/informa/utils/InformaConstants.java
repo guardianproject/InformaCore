@@ -12,6 +12,7 @@ public class InformaConstants {
 	public final static int FROM_INFORMA_WIZARD = 3;
 	public final static int FROM_INFORMA_TAGGER = 4;
 	public final static int FROM_TRUSTED_DESTINATION_CHOOSER = 5;
+	public final static int FROM_ENCRYPTION_SERVICE = 6;
 	public final static int BLOB_MAX = 1048576;
 	public final static String DUMP_FOLDER = Environment.getExternalStorageDirectory() + "/InformaCam/";
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
@@ -52,6 +53,7 @@ public class InformaConstants {
 			public final static String LOCK_LOGS = "lockLogs";
 			public final static String UNLOCK_LOGS = "unlockLogs";
 			public final static String INFLATE_VIDEO_TRACK = "inflateDataForVideoTrack";
+			public final static String ENCRYPT_METADATA = "encryptMetadata";
 		}
 		
 		public final static class Informa {

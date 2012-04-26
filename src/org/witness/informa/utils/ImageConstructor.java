@@ -1,9 +1,11 @@
 package org.witness.informa.utils;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,6 +15,9 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -22,9 +27,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informa.Informa.Image;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
-import org.witness.informa.utils.InformaConstants.Keys.Image;
 import org.witness.informa.utils.InformaConstants.Keys.ImageRegion;
 import org.witness.informa.utils.InformaConstants.Keys.Informa;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
@@ -38,7 +43,6 @@ import org.witness.ssc.image.filters.PixelizeObscure;
 import org.witness.ssc.image.filters.SolidObscure;
 import org.witness.ssc.utils.ObscuraConstants;
 
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -48,7 +52,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
-import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.Images;
@@ -82,11 +85,12 @@ public class ImageConstructor {
 	private SQLiteDatabase db;
 	Apg apg;
 	private SharedPreferences _sp;
+	
+	public ArrayList<Map<Long, String>> metadataForEncryption;
 		
 	static {
 		System.loadLibrary("JpegRedaction");
 	}
-	
 	
 	public ImageConstructor(Context c, String metadataObjectString, String baseName) throws JSONException, NoSuchAlgorithmException, IOException {
 		this.c = c;
@@ -106,6 +110,8 @@ public class ImageConstructor {
 		// handle original based on settings
 		
 		handleOriginalImage();
+		
+		metadataForEncryption = new ArrayList<Map<Long, String>>();
 		
 		// do redaction
 		this.imageRegions = (JSONArray) (metadataObject.getJSONObject(Keys.Informa.DATA)).getJSONArray(Keys.Data.IMAGE_REGIONS);
@@ -184,10 +190,7 @@ public class ImageConstructor {
 		return hash;
 	}
 	
-	public int createVersionForTrustedDestination(String informaImageFilename, String intendedDestination) throws JSONException, NoSuchAlgorithmException, IOException {
-		int result = 0;
-		
-		//Log.d(InformaConstants.TAG, "metadata passed:" + metadataObject.toString());
+	public void createVersionForTrustedDestination(Image i) throws JSONException, NoSuchAlgorithmException, IOException {
 		Log.d(InformaConstants.TAG, "metadata length = " + metadataObject.toString().length());
 		
 		// insert the unredacted and redacted media hashes
@@ -197,24 +200,32 @@ public class ImageConstructor {
 		metadataObject.getJSONObject(Keys.Informa.DATA).put(Keys.Data.MEDIA_HASH, mediaHash);
 		
 		// replace the metadata's intended destination
-		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, intendedDestination);
+		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, i.getIntendedDestination());
 		
 		// TODO: use APG to encrypt this based on intendedDestination!
-		String encryptedMetadata = metadataObject.toString();
-		
-		
+		String mdFile = i.getIntendedDestinationKeyringId() + "_" + System.currentTimeMillis() + ".txt";
+		stringToFile(metadataObject.toString(), InformaConstants.DUMP_FOLDER, mdFile);
+		Map<Long, String> mo = new HashMap<Long, String>();
+		mo.put(i.getIntendedDestinationKeyringId(), mdFile);
+		metadataForEncryption.add(mo);
+	}
+	
+	public int insertMetadata(String informaImageFilename, Map<String, String> encryptedMetadata) throws JSONException {
 		// insert metadata
-		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, encryptedMetadata, metadataObject.toString().length());
+		int result = 0;
+		Entry<String, String> em = encryptedMetadata.entrySet().iterator().next();
+		
+		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, em.getValue(), em.getValue().length());
 		if(metadataLength > 0) {
 			ContentValues cv = new ContentValues();
 			// package zipped image region bytes
-			cv.put(Image.METADATA, metadataObject.toString());
-			cv.put(Image.REDACTED_IMAGE_HASH, redactedHash);
-			cv.put(Image.LOCATION_OF_ORIGINAL, ((JSONObject) metadataObject.getJSONObject(Informa.GENEALOGY)).getString(Keys.Image.LOCAL_MEDIA_PATH));
-			cv.put(Image.LOCATION_OF_OBSCURED_VERSION, informaImageFilename);
-			cv.put(Keys.Intent.Destination.EMAIL, ((JSONObject) metadataObject.getJSONObject(Informa.INTENT)).getString(Keys.Intent.INTENDED_DESTINATION));
-			cv.put(Image.CONTAINMENT_ARRAY, containmentArray);
-			cv.put(Image.UNREDACTED_IMAGE_HASH, unredactedHash);
+			cv.put(Keys.Image.METADATA, metadataObject.toString());
+			cv.put(Keys.Image.REDACTED_IMAGE_HASH, redactedHash);
+			cv.put(Keys.Image.LOCATION_OF_ORIGINAL, ((JSONObject) metadataObject.getJSONObject(Informa.GENEALOGY)).getString(Keys.Image.LOCAL_MEDIA_PATH));
+			cv.put(Keys.Image.LOCATION_OF_OBSCURED_VERSION, informaImageFilename);
+			cv.put(Keys.Intent.Destination.EMAIL, em.getKey());
+			cv.put(Keys.Image.CONTAINMENT_ARRAY, containmentArray);
+			cv.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
 			
 			
 			dh.setTable(db, Tables.IMAGES);
@@ -223,7 +234,7 @@ public class ImageConstructor {
 			result = 1;
 			Log.d(InformaConstants.TAG, "saved metadata length is " + metadataLength + "!");
 		}
-		
+				
 		return result;
 	}
 	
@@ -347,6 +358,15 @@ public class ImageConstructor {
 			sb.append(Integer.toHexString(0xFF & b));
 		}
 		return sb.toString();
+	}
+	
+	private void stringToFile(String data, String dir, String filename) {
+		File file = new File(dir, filename);
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(file));
+			out.write(data);
+			out.close();
+		} catch(IOException e) {}
 	}
 	
 	private File bytesToFile(byte[] data, String filename) throws IOException {

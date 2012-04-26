@@ -232,6 +232,7 @@ public class SensorSucker extends Service {
 	}
 	
 	private void sealLog(String regionData, String localMediaPath, long[] encryptTo, int mediaType) throws Exception {
+				
 		mediaData.put(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, localMediaPath);
 		final long[] intendedDestinations = encryptTo;
 		mediaData.put(InformaConstants.Keys.Media.MEDIA_TYPE, mediaType);
@@ -255,12 +256,14 @@ public class SensorSucker extends Service {
 					
 					try {
 						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
-						for(Image i : img) {
-							Log.d(InformaConstants.TAG, i.getIntendedDestination());
-							ic.createVersionForTrustedDestination(i.getAbsolutePath(), i.getIntendedDestination());
-						}
+						for(Image i : img)
+							ic.createVersionForTrustedDestination(i);
 						
-						ic.doCleanup();
+						sendBroadcast(new Intent()
+							.putExtra(Keys.Service.ENCRYPT_METADATA, ic.metadataForEncryption)
+							.setAction(Keys.Service.ENCRYPT_METADATA));
+						
+						//ic.doCleanup();
 					} catch(JSONException e) {
 						Log.d(InformaConstants.TAG, e.toString());
 						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
@@ -271,96 +274,19 @@ public class SensorSucker extends Service {
 						Log.d(InformaConstants.TAG, e.toString());
 						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
 					}
-					
-					
-					informaCallback.post(new Runnable() {
-						@Override
-						public void run() {
-							unlockLogs();
-							sendBroadcast(finishingIntent);
-							doUpload(img);
-						}
-					});
 
+				}
+			};
+		} else if(mediaType == MediaTypes.VIDEO) {
+			r = new Runnable() {
+				@Override
+				public void run() {
+					
 				}
 			};
 		}
 		
 		new Thread(r).start();
-	}
-	
-	private void doUpload(Image[] img) {
-		
-		for(final Image i : img) {
-			Runnable uploader = new Runnable() {
-				
-				@Override
-				public void run() {
-					try {
-						int bytesRead, bytesAvailable, bufferSize;
-						byte[] buffer;
-						int maxBufferSize = 1*1024*1024;
-					
-						URL url = new URL("http://" + InformaConstants.FTP);
-						HttpURLConnection http = (HttpURLConnection) url.openConnection();
-						
-						http.setDoInput(true);
-						http.setDoOutput(true);
-						http.setUseCaches(false);
-						
-						http.setRequestMethod("POST");
-						http.setRequestProperty("Connection", "Keep-Alive");
-						http.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + Uploader.BOUNDARY);
-						
-						FileInputStream fis = new FileInputStream(i);
-						DataOutputStream fos = new DataOutputStream(http.getOutputStream());
-						fos.writeBytes(Uploader.twoHyphens);
-						fos.writeBytes(
-								"Content-Disposition:form-data;" +
-								"name=\"informaImage\";" +
-								"filename=\"" + i.getAbsolutePath() + "\"" + Uploader.lineEnd);
-						fos.writeBytes(Uploader.lineEnd);
-						
-						bytesAvailable = fis.available();
-						bufferSize = Math.min(bytesAvailable, maxBufferSize);
-						buffer = new byte[bufferSize];
-						
-						bytesRead = fis.read(buffer, 0, bufferSize);
-	
-						while (bytesRead > 0) {
-							fos.write(buffer, 0, bufferSize);
-							bytesAvailable = fis.available();
-							bufferSize = Math.min(bytesAvailable, maxBufferSize);
-							bytesRead = fis.read(buffer, 0, bufferSize);
-						}
-	
-						fos.writeBytes(Uploader.lineEnd);
-						fos.writeBytes(
-								Uploader.twoHyphens + 
-								Uploader.BOUNDARY + 
-								Uploader.twoHyphens + 
-								Uploader.lineEnd
-						);
-						
-						int res = http.getResponseCode();
-						if(res == HttpURLConnection.HTTP_OK) {
-							Log.d(InformaConstants.TAG, "this was good!");
-							
-						}
-						
-						fis.close();
-						fos.flush();
-						fos.close();
-					} catch(IOException e) {
-						Log.d(InformaConstants.TAG, "no go on the upload: " + e.toString());
-					}
-					
-				}
-				
-			};
-			
-			new Thread(uploader).start();
-		}
 	}
 	
 	public class Broadcaster extends BroadcastReceiver {
@@ -406,6 +332,9 @@ public class SensorSucker extends Service {
 					unlockLogs();
 				else if(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
 					inflateFromLogs(i.getLongExtra(InformaConstants.Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(InformaConstants.Keys.Video.DURATION, 0));
+				else if(InformaConstants.Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
+
+				}
 				
 			} catch (Exception e) {
 				Log.e(InformaConstants.TAG, "error",e);

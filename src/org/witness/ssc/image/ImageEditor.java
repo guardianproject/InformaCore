@@ -11,17 +11,20 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informa.EncryptActivity;
 import org.witness.informa.KeyChooser;
 import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.SensorSucker.Broadcaster;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.image.filters.RegionProcesser;
 import org.witness.ssc.utils.ObscuraConstants;
@@ -160,26 +163,14 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     // Keep track of the orientation
     private int originalImageOrientation = ExifInterface.ORIENTATION_NORMAL;
     
+    List<Broadcaster> br;
+    
     ActionBar ab;
     Menu menu;
     boolean showHints;
     
     SharedPreferences sp;
     SharedPreferences.Editor ed;
-    
-    BroadcastReceiver br = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context c, Intent i) {
-			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
-				try {
-					reviewAndFinish();
-				} catch(NullPointerException e) {
-					Toast.makeText(ImageEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
-					finish();
-				}
-			}
-		}
-    };
     
     private void reviewAndFinish() {
     	mProgressDialog.cancel();
@@ -214,6 +205,10 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		setTheme(R.style.Theme_Sherlock_Light);
 		
 		super.onCreate(savedInstanceState);
+		
+		br = new ArrayList<Broadcaster>();
+		br.add(new Broadcaster(new IntentFilter(Keys.Service.FINISH_ACTIVITY)));
+		br.add(new Broadcaster(new IntentFilter(Keys.Service.ENCRYPT_METADATA)));
 		
 		ab = getSupportActionBar();
 		ab.setDisplayShowHomeEnabled(false);
@@ -434,13 +429,17 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	@Override
 	public void onResume() {
 		super.onResume();
-		registerReceiver(br, new IntentFilter(Keys.Service.FINISH_ACTIVITY));
+		
+		for(BroadcastReceiver b : br)
+			registerReceiver(b, ((Broadcaster) b)._filter);
 	}
 	
 	@Override
 	public void onPause() {
 		super.onPause();
-		unregisterReceiver(br);
+		
+		for(BroadcastReceiver b : br)
+			unregisterReceiver(b);
 	}
 	
 	@Override
@@ -1388,6 +1387,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
     			setResult(SherlockActivity.RESULT_OK);
     			finish();
+    		} else if(requestCode == InformaConstants.FROM_ENCRYPTION_SERVICE) {
+    			sendBroadcast(new Intent().setAction(Keys.Service.ENCRYPT_METADATA));
     		}
     	}
     }
@@ -1419,5 +1420,32 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	    window.setFormat(PixelFormat.RGBA_8888);
 	    window.getDecorView().getBackground().setDither(true);
 
+	}
+	
+	public class Broadcaster extends BroadcastReceiver {
+		IntentFilter _filter;
+		
+		public Broadcaster(IntentFilter filter) {
+			_filter = filter;
+		}
+		
+		@Override
+		public void onReceive(Context c, Intent i) {
+			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
+				try {
+					reviewAndFinish();
+				} catch(NullPointerException e) {
+					Toast.makeText(ImageEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
+					finish();
+				}
+			} else if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
+				Log.d(InformaConstants.TAG, "i have been asked to start the encryption activity");
+				Intent encrypt = new Intent(ImageEditor.this, EncryptActivity.class);
+				encrypt.putExtra(Keys.Service.ENCRYPT_METADATA, i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA));
+				startActivityForResult(encrypt, InformaConstants.FROM_ENCRYPTION_SERVICE);
+			}
+			
+		}
+		
 	}
 }

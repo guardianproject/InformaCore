@@ -260,11 +260,14 @@ public class Informa {
 		private static final long serialVersionUID = 8189892791741740688L;
 		private String intendedDestination;
 		private JSONObject metadataPackage;
+		private long keyringId;
 
-		public Image(String path, String intendedDestination) throws JSONException, IllegalArgumentException, IllegalAccessException {
+		public Image(String path, String intendedDestination, long keyringId) throws JSONException, IllegalArgumentException, IllegalAccessException {
 			super(path);
 			
 			this.intendedDestination = intendedDestination;
+			this.keyringId = keyringId;
+			
 			Informa.this.intent = new Intent(intendedDestination);
 						
 			this.metadataPackage = new JSONObject();
@@ -279,6 +282,10 @@ public class Informa {
 		
 		public String getMetadataPackage() {
 			return this.metadataPackage.toString();
+		}
+		
+		public long getIntendedDestinationKeyringId() {
+			return this.keyringId;
 		}
 		
 	}
@@ -352,6 +359,7 @@ public class Informa {
 				captureType = (Integer) ce.remove(CaptureEvent.TYPE);
 			} catch(NullPointerException npe) {
 				Log.e(InformaConstants.TAG, "this has no capture type:\n" + ce.toString());
+				continue;
 			}
 			
 			long timestamp = (Long) ce.remove(CaptureEvent.MATCH_TIMESTAMP);
@@ -490,7 +498,7 @@ public class Informa {
 							"_" + displayName.replace(" ", "-") +
 							getMimeType(data.sourceType);
 					td.close();
-					images[i] = new Image(newPath, email);
+					images[i] = new Image(newPath, email, intendedDestinations[i]);
 				} catch(NullPointerException e) {
 					Log.e(InformaConstants.TAG, "fracking npe",e);
 				}
