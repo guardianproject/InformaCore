@@ -382,7 +382,7 @@ public class ImageConstructor {
 		return byteFile;
 	}
 	
-	private byte[] fileToBytes(File file) throws IOException {
+	public static byte[] fileToBytes(File file) throws IOException {
 		FileInputStream fis = new FileInputStream(file);
 		byte[] fileBytes = new byte[(int) file.length()];
 		

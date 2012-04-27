@@ -1,6 +1,7 @@
 package org.witness.informa;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.witness.informa.utils.ImageConstructor;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.secure.Apg;
@@ -59,7 +61,11 @@ public class EncryptActivity extends Activity {
 					intendedDestination = e.getValue();
 				else {
 					apg.setEncryptionKeys(new long[] {e.getKey()});
-					apg.encryptFile(this, new File(e.getValue()));
+					try {
+						apg.encrypt(this, new String(ImageConstructor.fileToBytes(new File(e.getValue()))));
+					} catch (IOException ioe) {
+						Log.e(InformaConstants.TAG, ioe.toString());
+					}
 				}
 			}
 			
@@ -69,6 +75,7 @@ public class EncryptActivity extends Activity {
 			finish();
 		}
 	}
+	
 	
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
