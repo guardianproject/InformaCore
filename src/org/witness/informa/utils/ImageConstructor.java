@@ -374,7 +374,7 @@ public class ImageConstructor {
 		
 	}
 	
-	private File bytesToFile(byte[] data, String filename) throws IOException {
+	public static File bytesToFile(byte[] data, String filename) throws IOException {
 		File byteFile = new File(InformaConstants.DUMP_FOLDER, filename);
 		FileOutputStream fos = new FileOutputStream(byteFile);
 		fos.write(data);
@@ -433,7 +433,7 @@ public class ImageConstructor {
     	
     }
     
-    private static void copyStreams(InputStream input, OutputStream output) throws IOException {
+    public static void copyStreams(InputStream input, OutputStream output) throws IOException {
         // if both are file streams, use channel IO
         if ((output instanceof FileOutputStream) && (input instanceof FileInputStream)) {
           try {
