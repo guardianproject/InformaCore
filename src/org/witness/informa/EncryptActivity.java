@@ -2,6 +2,9 @@ package org.witness.informa;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -20,6 +23,7 @@ public class EncryptActivity extends Activity {
 	InformaTextView progress;
 	String intendedDestination, metadataString;
 	ArrayList<Map<Long, String>> metadataToEncrypt;
+	List<Map<String, String>> encryptedMetadata;
 	int encrypted = 0;
 	Apg apg;
 	
@@ -33,6 +37,7 @@ public class EncryptActivity extends Activity {
 			finish();
 		
 		metadataToEncrypt = (ArrayList<Map<Long, String>>) getIntent().getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
+		encryptedMetadata = new ArrayList<Map<String, String>>();
 		
 		// email, metadatablob
 		
@@ -45,14 +50,22 @@ public class EncryptActivity extends Activity {
 	public void onResume() {
 		super.onResume();
 		
-		if(encrypted > metadataToEncrypt.size()) {
-			Entry<Long, String> e = ((Map<Long, String>) metadataToEncrypt.get(encrypted)).entrySet().iterator().next();
-			progress.setText(getResources().getString(R.string.apg_encrypting_progress) + intendedDestination + "\u2026");
-		
-			apg.setEncryptionKeys(new long[] {e.getKey()});
-			apg.encryptFile(this, new File(e.getValue()));
+		if(encrypted < metadataToEncrypt.size()) {
+			Iterator<Entry<Long, String>> i = ((Map<Long, String>) metadataToEncrypt.get(encrypted)).entrySet().iterator();
+			
+			while(i.hasNext()) {
+				Entry<Long, String> e = i.next();
+				if(e.getKey() == 0L)
+					intendedDestination = e.getValue();
+				else {
+					apg.setEncryptionKeys(new long[] {e.getKey()});
+					apg.encryptFile(this, new File(e.getValue()));
+				}
+			}
+			
+			progress.setText(getResources().getString(R.string.apg_encrypting_progress) + " " + intendedDestination + "\u2026");
 		} else {
-			setResult(Activity.RESULT_OK);
+			setResult(Activity.RESULT_OK, new Intent().putExtra(Keys.Service.ENCRYPT_METADATA, metadataToEncrypt));
 			finish();
 		}
 	}
@@ -60,14 +73,14 @@ public class EncryptActivity extends Activity {
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(resultCode == Activity.RESULT_OK) {
+			Log.d(InformaConstants.TAG, "this data was passed:\n" + data.toString());
 			
 			apg.onActivityResult(this, requestCode, resultCode, data);
 			switch(requestCode) {
 			case Apg.ENCRYPT_MESSAGE:
 				encrypted++;
 				break;
-			}
-			
+			}	
 		}
 	}
 }

@@ -208,7 +208,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		
 		br = new ArrayList<Broadcaster>();
 		br.add(new Broadcaster(new IntentFilter(Keys.Service.FINISH_ACTIVITY)));
-		br.add(new Broadcaster(new IntentFilter(Keys.Service.ENCRYPT_METADATA)));
+		br.add(new Broadcaster(new IntentFilter(Keys.Service.IMAGES_GENERATED)));
 		
 		ab = getSupportActionBar();
 		ab.setDisplayShowHomeEnabled(false);
@@ -1388,7 +1388,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     			setResult(SherlockActivity.RESULT_OK);
     			finish();
     		} else if(requestCode == InformaConstants.FROM_ENCRYPTION_SERVICE) {
-    			sendBroadcast(new Intent().setAction(Keys.Service.ENCRYPT_METADATA));
+    			sendBroadcast(new Intent()
+    			.setAction(Keys.Service.ENCRYPT_METADATA)
+    			.putExtra(Keys.Service.ENCRYPT_METADATA, data.getSerializableExtra(Keys.Service.ENCRYPT_METADATA)));
     		}
     	}
     }

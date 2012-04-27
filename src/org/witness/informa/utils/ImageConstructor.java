@@ -203,10 +203,11 @@ public class ImageConstructor {
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, i.getIntendedDestination());
 		
 		// TODO: use APG to encrypt this based on intendedDestination!
-		String mdFile = i.getIntendedDestinationKeyringId() + "_" + System.currentTimeMillis() + ".txt";
-		stringToFile(metadataObject.toString(), InformaConstants.DUMP_FOLDER, mdFile);
+		String mdFilename = i.getIntendedDestinationKeyringId() + "_" + System.currentTimeMillis() + ".txt";
+		File mdFile = stringToFile(metadataObject.toString(), InformaConstants.DUMP_FOLDER, mdFilename);
 		Map<Long, String> mo = new HashMap<Long, String>();
-		mo.put(i.getIntendedDestinationKeyringId(), mdFile);
+		mo.put(i.getIntendedDestinationKeyringId(), mdFile.getAbsolutePath());
+		mo.put(0L, i.getIntendedDestination());
 		metadataForEncryption.add(mo);
 	}
 	
@@ -360,13 +361,17 @@ public class ImageConstructor {
 		return sb.toString();
 	}
 	
-	private void stringToFile(String data, String dir, String filename) {
+	private File stringToFile(String data, String dir, String filename) {
 		File file = new File(dir, filename);
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(file));
 			out.write(data);
 			out.close();
-		} catch(IOException e) {}
+			return file;
+		} catch(IOException e) {
+			return null;
+		}
+		
 	}
 	
 	private File bytesToFile(byte[] data, String filename) throws IOException {

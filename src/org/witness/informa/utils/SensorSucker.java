@@ -64,6 +64,7 @@ public class SensorSucker extends Service {
 	Handler informaCallback;
 	
 	List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
+	ImageConstructor ic;
 
 	public class LocalBinder extends Binder {
 		public SensorSucker getService() {
@@ -255,13 +256,13 @@ public class SensorSucker extends Service {
 					final Intent finishingIntent = new Intent().setAction(Keys.Service.FINISH_ACTIVITY);
 					
 					try {
-						ImageConstructor ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
+						ic = new ImageConstructor(getApplicationContext(), img[0].getMetadataPackage(), img[0].getName());
 						for(Image i : img)
 							ic.createVersionForTrustedDestination(i);
 						
 						sendBroadcast(new Intent()
 							.putExtra(Keys.Service.ENCRYPT_METADATA, ic.metadataForEncryption)
-							.setAction(Keys.Service.ENCRYPT_METADATA));
+							.setAction(Keys.Service.IMAGES_GENERATED));
 						
 						//ic.doCleanup();
 					} catch(JSONException e) {
@@ -333,7 +334,9 @@ public class SensorSucker extends Service {
 				else if(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
 					inflateFromLogs(i.getLongExtra(InformaConstants.Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(InformaConstants.Keys.Video.DURATION, 0));
 				else if(InformaConstants.Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
-
+					List<Map<String, String>> encryptedMetadata = (List<Map<String, String>>) i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
+					// TODO: back to ic
+					
 				}
 				
 			} catch (Exception e) {
