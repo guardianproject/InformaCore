@@ -1443,7 +1443,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			} else if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
 				Log.d(InformaConstants.TAG, "i have been asked to start the encryption activity");
 				Intent encrypt = new Intent(ImageEditor.this, EncryptActivity.class);
-				encrypt.putExtra(Keys.Service.ENCRYPT_METADATA, i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA));
+				encrypt
+					.putExtra(Keys.Service.ENCRYPT_METADATA, i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA))
+					.putExtra(Keys.Service.CLONE_PATH, i.getStringExtra(Keys.Service.CLONE_PATH));
 				startActivityForResult(encrypt, InformaConstants.FROM_ENCRYPTION_SERVICE);
 			}
 			

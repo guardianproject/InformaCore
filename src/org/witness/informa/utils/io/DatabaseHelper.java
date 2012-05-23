@@ -30,7 +30,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Image.REDACTED_IMAGE_HASH + " text not null, " +
 							Image.LOCATION_OF_ORIGINAL + " text not null, " +
 							Image.LOCATION_OF_OBSCURED_VERSION + " text not null, " +
-							Intent.Destination.EMAIL + " blob not null" +
+							Intent.Destination.EMAIL + " blob not null, " +
+							Image.SHARED_SECRET + " text" +
 							")",
 					"CREATE TABLE " + Tables.CONTACTS + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
@@ -55,7 +56,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							"integer primary key autoincrement, " +
 							TrustedDestinations.EMAIL + " text not null, " +
 							TrustedDestinations.KEYRING_ID + " text not null, " +
-							TrustedDestinations.DISPLAY_NAME + " text not null" +
+							TrustedDestinations.DISPLAY_NAME + " text not null," +
+							TrustedDestinations.DESTO + " text" +
 							")",
 					"CREATE TABLE " + Tables.ENCRYPTED_IMAGES + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +

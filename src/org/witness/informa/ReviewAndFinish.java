@@ -29,8 +29,6 @@ import android.view.View.OnClickListener;
 public class ReviewAndFinish extends Activity implements OnClickListener {
 	InformaButton confirmView, confirmShare, confirmTakeAnother;
 	Uri savedImageUri;
-	Handler finish;
-	Apg apg;
 	SharedPreferences _sp;
 	
 	public void onCreate(Bundle savedInstanceState) {

@@ -18,7 +18,7 @@ public class InformaConstants {
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
 	public final static String NOT_INCLUDED = "NOT INCLUDED IN THIS VERSION";
 	
-	public final static String FTP = "http://ec2-50-17-27-253.compute-1.amazonaws.com/index.php";
+	public final static String REPO = "ec2-50-19-11-137.compute-1.amazonaws.com/?repo=";
 	// one day we will have a way of handling this
 	
 	public final static class Uploader {
@@ -54,6 +54,7 @@ public class InformaConstants {
 			public final static String UNLOCK_LOGS = "unlockLogs";
 			public final static String INFLATE_VIDEO_TRACK = "inflateDataForVideoTrack";
 			public final static String ENCRYPT_METADATA = "encryptMetadata";
+			public final static String CLONE_PATH = "clonePath";
 		}
 		
 		public final static class Informa {
@@ -164,6 +165,8 @@ public class InformaConstants {
 			public final static String EMAIL = Intent.Destination.EMAIL;
 			public final static String KEYRING_ID = "keyringId";
 			public final static String DISPLAY_NAME = Intent.Destination.DISPLAY_NAME;
+			public final static String DESTO = "tdDestination";
+			public final static String HOOKUPS = "hookups";
 		}
 		
 		public final static class Media {
@@ -181,7 +184,10 @@ public class InformaConstants {
 			public final static String TIMESTAMP = "timestamp";
 			public final static String LOCATION_OF_ORIGINAL = "source_locationOfOriginal";
 			public final static String LOCATION_OF_OBSCURED_VERSION = "source_locationOfObscuredVersion";
+			public final static String LOCATION_OF_CLONE = "source_locationOfClone";
 			public final static String EXIF = "exifData";
+			public final static String TRUSTED_DESTINATION = Intent.Destination.EMAIL;
+			public final static String SHARED_SECRET = "source_sharedSecret";
 		}
 		
 		public final static class Video {

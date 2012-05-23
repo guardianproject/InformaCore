@@ -260,8 +260,10 @@ public class SensorSucker extends Service {
 						for(Image i : img)
 							ic.createVersionForTrustedDestination(i);
 						
+						ic.doCleanup();
 						sendBroadcast(new Intent()
 							.putExtra(Keys.Service.ENCRYPT_METADATA, ic.metadataForEncryption)
+							.putExtra(Keys.Service.CLONE_PATH, ic.clone.getAbsolutePath())
 							.setAction(Keys.Service.IMAGES_GENERATED));
 					} catch(JSONException e) {
 						Log.d(InformaConstants.TAG, e.toString());
@@ -334,7 +336,6 @@ public class SensorSucker extends Service {
 				else if(InformaConstants.Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
 					List<Map<String, String>> encryptedMetadata = (List<Map<String, String>>) i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
 					// TODO: back to ic
-					ic.doCleanup();
 					sendBroadcast(new Intent().setAction(Keys.Service.FINISH_ACTIVITY));
 					
 				}

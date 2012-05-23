@@ -18,6 +18,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -27,6 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.Informa.Image;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
@@ -36,6 +42,7 @@ import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
+import org.witness.informa.utils.secure.DestoService;
 import org.witness.informa.utils.secure.MediaHasher;
 import org.witness.ssc.image.filters.CrowdPixelizeObscure;
 import org.witness.ssc.image.filters.InformaTagger;
@@ -59,7 +66,7 @@ import android.util.Base64;
 import android.util.Log;
 
 public class ImageConstructor {
-	public native int constructImage(
+	public static native int constructImage(
 			String originalImageFilename, 
 			String informaImageFilename, 
 			String metadataObjectString, 
@@ -84,8 +91,7 @@ public class ImageConstructor {
 	private DatabaseHelper dh;
 	private SQLiteDatabase db;
 	Apg apg;
-	private SharedPreferences _sp;
-	
+	private SharedPreferences _sp;	
 	public ArrayList<Map<Long, String>> metadataForEncryption;
 		
 	static {
@@ -109,7 +115,9 @@ public class ImageConstructor {
 		
 		// handle original based on settings
 		
-		handleOriginalImage();
+		if(handleOriginalImage() == -1) {
+			return;
+		}
 		
 		metadataForEncryption = new ArrayList<Map<Long, String>>();
 		
@@ -164,11 +172,6 @@ public class ImageConstructor {
 		dh.setTable(db, Tables.IMAGE_REGIONS);
 		for(ContentValues rcv : unredactedRegions)
 			db.insert(dh.getTable(), null, rcv);
-		
-		db.close();
-		dh.close();
-		
-		clone.delete();
 	}
 	
 	private String getBitmapHash(File file) throws NoSuchAlgorithmException, IOException {
@@ -191,7 +194,6 @@ public class ImageConstructor {
 	}
 	
 	public void createVersionForTrustedDestination(Image i) throws JSONException, NoSuchAlgorithmException, IOException {
-		Log.d(InformaConstants.TAG, "metadata length = " + metadataObject.toString().length());
 		
 		// insert the unredacted and redacted media hashes
 		JSONObject mediaHash = new JSONObject();
@@ -202,40 +204,28 @@ public class ImageConstructor {
 		// replace the metadata's intended destination
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, i.getIntendedDestination());
 		
-		// TODO: use APG to encrypt this based on intendedDestination!
-		String mdFilename = i.getIntendedDestinationKeyringId() + "_" + System.currentTimeMillis() + ".txt";
-		File mdFile = stringToFile(metadataObject.toString(), InformaConstants.DUMP_FOLDER, mdFilename);
+		// insert into database for later
+		ContentValues cv = new ContentValues();
+		// package zipped image region bytes
+		cv.put(Keys.Image.METADATA, metadataObject.toString());
+		cv.put(Keys.Image.REDACTED_IMAGE_HASH, redactedHash);
+		cv.put(Keys.Image.LOCATION_OF_ORIGINAL, ((JSONObject) metadataObject.getJSONObject(Informa.GENEALOGY)).getString(Keys.Image.LOCAL_MEDIA_PATH));
+		cv.put(Keys.Image.LOCATION_OF_OBSCURED_VERSION, i.getAbsolutePath());
+		cv.put(Keys.Image.TRUSTED_DESTINATION, i.getIntendedDestination());
+		cv.put(Keys.Image.CONTAINMENT_ARRAY, containmentArray);
+		cv.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
+		
+		
+		dh.setTable(db, Tables.IMAGES);
 		Map<Long, String> mo = new HashMap<Long, String>();
-		mo.put(i.getIntendedDestinationKeyringId(), mdFile.getAbsolutePath());
-		mo.put(0L, i.getIntendedDestination());
-		metadataForEncryption.add(mo);
+		mo.put(db.insert(dh.getTable(), null, cv), i.getAbsolutePath());
+		metadataForEncryption.add(mo);		
 	}
 	
-	public int insertMetadata(String informaImageFilename, Map<String, String> encryptedMetadata) throws JSONException {
-		// insert metadata
+	public static int insertMetadata(MetadataPack metadataPack) {
+		// insert metadata: filename, metadata package
 		int result = 0;
-		Entry<String, String> em = encryptedMetadata.entrySet().iterator().next();
-		
-		int metadataLength = constructImage(clone.getAbsolutePath(), informaImageFilename, em.getValue(), em.getValue().length());
-		if(metadataLength > 0) {
-			ContentValues cv = new ContentValues();
-			// package zipped image region bytes
-			cv.put(Keys.Image.METADATA, metadataObject.toString());
-			cv.put(Keys.Image.REDACTED_IMAGE_HASH, redactedHash);
-			cv.put(Keys.Image.LOCATION_OF_ORIGINAL, ((JSONObject) metadataObject.getJSONObject(Informa.GENEALOGY)).getString(Keys.Image.LOCAL_MEDIA_PATH));
-			cv.put(Keys.Image.LOCATION_OF_OBSCURED_VERSION, informaImageFilename);
-			cv.put(Keys.Intent.Destination.EMAIL, em.getKey());
-			cv.put(Keys.Image.CONTAINMENT_ARRAY, containmentArray);
-			cv.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
-			
-			
-			dh.setTable(db, Tables.IMAGES);
-			db.insert(dh.getTable(), null, cv);
-			
-			result = 1;
-			Log.d(InformaConstants.TAG, "saved metadata length is " + metadataLength + "!");
-		}
-				
+		result = constructImage(metadataPack.clonepath, metadataPack.filepath, metadataPack.metadata, metadataPack.metadata.length());
 		return result;
 	}
 	
@@ -246,6 +236,7 @@ public class ImageConstructor {
 		return (clone.length() - irData.length);
 	}
 	
+	/*
 	public void imageHandled() {
 		
 		apg = Apg.getInstance();
@@ -258,31 +249,40 @@ public class ImageConstructor {
 			
 		}
 	}
+	*/
 	
-	private void handleOriginalImage() {
+	private int handleOriginalImage() {
 		switch(Integer.parseInt(_sp.getString(Keys.Settings.DEFAULT_IMAGE_HANDLING,""))) {
 		case OriginalImageHandling.ENCRYPT_ORIGINAL:
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
+			ExecutorService ex = Executors.newFixedThreadPool(100);
+			Future<Integer> f = ex.submit(new Callable<Integer>() {
+				public Integer call() {
 					try {
-						encryptOriginal();
-						imageHandled();
-					} catch (IOException e) {}
+						return encryptOriginal();
+					} catch (IOException e) {
+						return 0;
+					}
 				}
-			}).start();
-			break;
+			});
+			try {
+				return f.get();
+			} catch (InterruptedException e) {
+				Log.d(InformaConstants.TAG, "Error encrypting original : " + e.toString());
+				return 0;
+			} catch (ExecutionException e) {
+				Log.d(InformaConstants.TAG, "Error encrypting original : " + e.toString());
+				return 0;
+			}
 		case OriginalImageHandling.LEAVE_ORIGINAL_ALONE:
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					copyOriginalToSDCard();
-					imageHandled();
 				}
 			}).start();
-			break;
+			return 1;
 		default:
-			imageHandled();
+			return 0;
 		}
 	}
 
@@ -318,7 +318,7 @@ public class ImageConstructor {
 		
 	}
 	
-	private void encryptOriginal() throws IOException {
+	private int encryptOriginal() throws IOException {
 		JSONArray containment = new JSONArray();
 		long clength = clone.length();
 		int parts = (int) Math.ceil(clength/InformaConstants.BLOB_MAX) + 1;
@@ -341,6 +341,7 @@ public class ImageConstructor {
 		}
 		
 		containmentArray = containment.toString();
+		return 1;
 		
 	}
 	
