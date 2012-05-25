@@ -215,7 +215,6 @@ public class ImageConstructor {
 		cv.put(Keys.Image.CONTAINMENT_ARRAY, containmentArray);
 		cv.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
 		
-		
 		dh.setTable(db, Tables.IMAGES);
 		Map<Long, String> mo = new HashMap<Long, String>();
 		mo.put(db.insert(dh.getTable(), null, cv), i.getAbsolutePath());

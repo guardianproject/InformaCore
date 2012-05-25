@@ -69,7 +69,7 @@
             </intent-filter>
         </activity>
     	
-    	
     	<service android:enabled="true" android:name="org.witness.informa.utils.SensorSucker" />
+    	<service android:enabled="true" android:name="org.witness.informa.utils.io.Uploader" /> 
     </application>
 </manifest> 

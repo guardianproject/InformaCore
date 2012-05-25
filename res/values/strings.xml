@@ -64,6 +64,8 @@
     <string name="apg_btn_select">Select</string>
     <string name="apg_encrypting_title">Encrypting</string>
     <string name="apg_encrypting_progress">Encrypting to</string>
+    <string name="encrypt_encrypting_to">Encrypting to</string>
+    <string name="encrypt_contacting_td">Contacting Trusted Destinations\u2026</string>
     
     <string name="unknown_crypto_signature_user_id">&lt;unknown&gt;</string>
     <string name="key_id">id: %s</string>

@@ -369,12 +369,16 @@ public class Informa {
 				if(data.corroboration == null)
 					data.corroboration = new HashSet<Corroboration>();
 				
-				data.corroboration.add(new Corroboration(
-						ce.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS),
-						ce.getString(Keys.Device.BLUETOOTH_DEVICE_NAME),
-						InformaConstants.Device.IS_NEIGHBOR,
-						timestamp
-				));
+				try {
+					data.corroboration.add(new Corroboration(
+							ce.getString(Keys.Device.BLUETOOTH_DEVICE_ADDRESS),
+							ce.getString(Keys.Device.BLUETOOTH_DEVICE_NAME),
+							InformaConstants.Device.IS_NEIGHBOR,
+							timestamp
+					));
+				} catch(JSONException je) {
+					Log.e(InformaConstants.TAG, "Capture event error: " + je.toString());
+				}
 				
 				break;
 			case CaptureEvents.MEDIA_CAPTURED:

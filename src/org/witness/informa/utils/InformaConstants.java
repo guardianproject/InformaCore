@@ -55,6 +55,7 @@ public class InformaConstants {
 			public final static String INFLATE_VIDEO_TRACK = "inflateDataForVideoTrack";
 			public final static String ENCRYPT_METADATA = "encryptMetadata";
 			public final static String CLONE_PATH = "clonePath";
+			public final static String UPLOADER_AVAILABLE = "uploaderAvailable";
 		}
 		
 		public final static class Informa {
