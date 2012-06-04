@@ -135,7 +135,7 @@ public class DestoService {
 			
 			private String queryRepo() {
 				try {
-					URL url = new URL("https://" + InformaConstants.REPO + destoQuery.toString().substring(1));
+					URL url = new URL(InformaConstants.REPO + destoQuery.toString().substring(1));
 					trustThisHost();
 					HttpsURLConnection https = (HttpsURLConnection) url.openConnection();
 					https.setHostnameVerifier(NO_VER);

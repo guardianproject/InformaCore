@@ -18,7 +18,7 @@ public class InformaConstants {
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
 	public final static String NOT_INCLUDED = "NOT INCLUDED IN THIS VERSION";
 	
-	public final static String REPO = "ec2-50-19-11-137.compute-1.amazonaws.com/?repo=";
+	public final static String REPO = "https://j3m.info/repo/?repo=";
 	// one day we will have a way of handling this
 	
 	public final static class Uploader {
