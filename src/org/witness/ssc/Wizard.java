@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,6 +28,8 @@ import org.witness.ssc.R;
 import com.actionbarsherlock.app.SherlockActivity;
 import com.xtralogic.android.logcollector.SendLogActivity;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -40,6 +43,7 @@ import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -59,7 +63,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		
 	WizardForm wizardForm;
 	
-	Apg apg;
+	//Apg apg;
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	
@@ -146,6 +150,81 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	}
 	
 	@SuppressWarnings("unused")
+	private void getUserCredentials() {
+		// launch camera to get test image
+	}
+	
+	@SuppressWarnings("unused")
+	private void setUserCredentials(byte[] testImage) {
+		// sets primary email address from account manager, saves bytes of test image
+		try {
+			dh = new DatabaseHelper(this);
+			db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
+			
+			dh.setTable(db, InformaConstants.Keys.Tables.SETUP);
+			
+			long localTimestamp = System.currentTimeMillis();
+			
+			ContentValues cv = new ContentValues();
+			cv.put(InformaConstants.Keys.Owner.PRIMARY_EMAIL, getPrimaryEmail());
+			cv.put(InformaConstants.Keys.Owner.DEFAULT_SECURITY_LEVEL, InformaConstants.SecurityLevels.UNENCRYPTED_NOT_SHARABLE);
+			cv.put(InformaConstants.Keys.Owner.OWNERSHIP_TYPE, InformaConstants.Owner.INDIVIDUAL);
+			cv.put(InformaConstants.Keys.Device.LOCAL_TIMESTAMP, localTimestamp);
+			cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
+					
+			long insert = db.insert(dh.getTable(), null, cv);
+			Log.d(InformaConstants.TAG, "USER IS: " + cv.toString());
+			if(insert != 0)
+				enableAction(wizard_next);
+			
+			db.close();
+			dh.close();
+		} catch(Exception e) {
+			Log.d(InformaConstants.TAG, "error : " + e.toString());
+			sendLog();
+		}
+	}
+	
+	private String getPrimaryEmail() {
+		Pattern ep = Patterns.EMAIL_ADDRESS;
+		String email = null;
+		Account[] accounts = AccountManager.get(getApplicationContext()).getAccounts();
+		for(Account account: accounts) {
+			if(ep.matcher(account.name).matches()) {
+				email = account.name;
+				break;
+			}
+		}
+		return email;
+	}
+	
+	@SuppressWarnings("unused")
+	private void getTrustedDestinations() {
+		// launch email address picker
+	}
+	
+	@SuppressWarnings("unused")
+	private void setTrustedDestinations(ArrayList<Integer> contactIds) {
+		// adds trusted destinations from result
+		try {
+			dh = new DatabaseHelper(this);
+			db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
+			
+			dh.setTable(db, InformaConstants.Keys.Tables.TRUSTED_DESTINATIONS);
+			
+			
+			enableAction(wizard_next);
+			db.close();
+			dh.close();
+		} catch(Exception e) {
+			db.close();
+			dh.close();
+			sendLog();
+		}
+	}
+	
+	/*
+	@SuppressWarnings("unused")
 	private void getUserPGP() {
 		try {
 			apg = Apg.getInstance();
@@ -230,6 +309,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			sendLog();
 		}
 	}
+	*/
 	
 	private long getPublicTimestamp(long ts) {
 		//TODO public timestamp?
@@ -595,16 +675,19 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	protected void onActivityResult(int request, int result, Intent data) {
 		super.onActivityResult(request, result, data);
 		if(result == SherlockActivity.RESULT_OK) {
-			apg.onActivityResult(this, request, result, data);
 			
+			/*
 			switch(request) {
 			case Apg.SELECT_SECRET_KEY:
+				apg.onActivityResult(this, request, result, data);
 				setUserPGP();
 				break;
 			case Apg.SELECT_PUBLIC_KEYS:
+				apg.onActivityResult(this, request, result, data);
 				setTrustedDestinations();
 				break;
 			}
+			*/
 		}
 			
 	}

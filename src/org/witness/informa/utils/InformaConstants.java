@@ -18,7 +18,7 @@ public class InformaConstants {
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
 	public final static String NOT_INCLUDED = "NOT INCLUDED IN THIS VERSION";
 	
-	public final static String REPO = "ec2-50-19-11-137.compute-1.amazonaws.com/?repo=";
+	public final static String REPO = "https://j3m.info/repo/?repo=";
 	// one day we will have a way of handling this
 	
 	public final static class Uploader {
@@ -164,6 +164,8 @@ public class InformaConstants {
 		
 		public final static class TrustedDestinations {
 			public final static String EMAIL = Intent.Destination.EMAIL;
+			public final static String PHONE_NUMBER = "destinationPhone";
+			public final static String CONTACT_ID = "contactId";
 			public final static String KEYRING_ID = "keyringId";
 			public final static String DISPLAY_NAME = Intent.Destination.DISPLAY_NAME;
 			public final static String DESTO = "tdDestination";
@@ -208,6 +210,7 @@ public class InformaConstants {
 			public static final String SIG_KEY_ID = "owner_sigKeyID";
 			public static final String DEFAULT_SECURITY_LEVEL = "owner_defaultSecurityLevel";
 			public static final String OWNERSHIP_TYPE = "owner_ownershipType";
+			public static final String PRIMARY_EMAIL = "owner_primaryEmail";
 		}
 		
 		public final static class Device {
@@ -216,6 +219,8 @@ public class InformaConstants {
 			public static final String IMEI = Suckers.Phone.IMEI;
 			public static final String BLUETOOTH_DEVICE_NAME = Suckers.Phone.BLUETOOTH_DEVICE_NAME;
 			public static final String BLUETOOTH_DEVICE_ADDRESS = Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS;
+			public static final String AUTH_TOKEN = "device_authToken";
+			public static final String IMAGE_FINGERPRINT = "device_imageFingerprint";
 		}
 		
 		public final static class Tables {

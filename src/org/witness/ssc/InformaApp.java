@@ -49,6 +49,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	SharedPreferences.Editor _ed;
 	boolean showHints = false;
 	
+	File tmpFileDirectory;
+	
 	SensorSucker informaService;
 	
 	private ServiceConnection sc = new ServiceConnection() {
@@ -96,6 +98,10 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     public void onCreate(Bundle savedInstanceState) {
     	setTheme(R.style.Theme_Sherlock_Light);
         super.onCreate(savedInstanceState);
+        
+        tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
+        if (!tmpFileDirectory.exists())
+        	tmpFileDirectory.mkdirs();
 
         setLayout();
         deleteTmpFile();
@@ -215,10 +221,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
     	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
     	            
-    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
-    	            if (!tmpFileDirectory.exists())
-    	            	tmpFileDirectory.mkdirs();
-    	            
     	            File tmpFile = new File(tmpFileDirectory,"cam" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
     	        	
     	        	uriCameraImage = Uri.fromFile(tmpFile);
@@ -240,10 +242,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            ContentValues values = new ContentValues();
     	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
     	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
-    	            
-    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
-    	            if (!tmpFileDirectory.exists())
-    	            	tmpFileDirectory.mkdirs();
     	            
     	            File tmpFile = new File(tmpFileDirectory,"vid" + ObscuraConstants.TMP_FILE_NAME_VIDEO);
     	        	

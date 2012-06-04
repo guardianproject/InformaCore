@@ -40,7 +40,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							")",
 					"CREATE TABLE " + Tables.SETUP + "(" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
-							Owner.SIG_KEY_ID + " text not null, " + 
+							Owner.SIG_KEY_ID + " text, " +
+							Owner.PRIMARY_EMAIL + " text not null, " +
+							Device.IMAGE_FINGERPRINT + " blob not null, " +
 							Owner.DEFAULT_SECURITY_LEVEL + " integer not null, " +
 							Device.LOCAL_TIMESTAMP + " integer not null, " +
 							Device.PUBLIC_TIMESTAMP + " integer not null, " +
@@ -55,7 +57,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 					"CREATE TABLE " + Tables.TRUSTED_DESTINATIONS + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
 							TrustedDestinations.EMAIL + " text not null, " +
-							TrustedDestinations.KEYRING_ID + " text not null, " +
+							TrustedDestinations.PHONE_NUMBER + " text, " +
+							TrustedDestinations.CONTACT_ID + " text not null, " +
+							TrustedDestinations.KEYRING_ID + " text, " +
 							TrustedDestinations.DISPLAY_NAME + " text not null," +
 							TrustedDestinations.DESTO + " text" +
 							")",
