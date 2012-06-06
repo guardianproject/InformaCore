@@ -5,7 +5,7 @@
 
 package org.witness.ssc.video;
 
-import org.witness.informa.utils.InformaConstants.Keys;
+
 import org.witness.ssc.R;
 import org.witness.ssc.utils.ObscuraConstants;
 
@@ -46,29 +46,11 @@ public class InOutPlayheadSeekBar extends SeekBar {
 	public boolean thumbsActive = false;
 	
 	public void setThumbsActive(int inThumbValue, int outThumbValue) {
+		//Log.v(LOGTAG,"in value: " + inThumbValue + " out value: " + outThumbValue);
 		thumbsActive = true;
 		setThumbsValue(inThumbValue, outThumbValue);
 		invalidate();
-	}
-	
-	public void setThumbsActive(VideoRegion region) {
-		//int inThumbValue = (int)(region.startTime/region.mediaDuration*100);
-		//int outThumbValue = (int)(region.endTime/region.mediaDuration*100);
-		int inThumbValue, outThumbValue;
-		try {
-			inThumbValue = mapSecondsToPixels((Long) region.mProps.get(Keys.VideoRegion.START_TIME), (Long) region.mProps.get(Keys.VideoRegion.DURATION));
-		} catch(ClassCastException e) {
-			inThumbValue = mapSecondsToPixels((long) ((Integer) region.mProps.get(Keys.VideoRegion.START_TIME)), (Long) region.mProps.get(Keys.VideoRegion.DURATION));
-		}
-		try {
-			outThumbValue = mapSecondsToPixels((Long) region.mProps.get(Keys.VideoRegion.END_TIME), (Long) region.mProps.get(Keys.VideoRegion.DURATION));
-		} catch(ClassCastException e) {
-			outThumbValue = mapSecondsToPixels((long) ((Integer) region.mProps.get(Keys.VideoRegion.END_TIME)), (Long) region.mProps.get(Keys.VideoRegion.DURATION));
-		}
 		
-		thumbsActive = true;
-		setThumbsValue(inThumbValue, outThumbValue);
-		invalidate();
 	}
 	
 	public void setThumbsInactive() {
@@ -87,14 +69,6 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		super(context, attrs, defStyle);
 	}
 	
-	public int mapPixelsToSeconds(int pixels, long duration) {
-		return (int) (pixels * duration/getWidth());
-	}
-	
-	public int mapSecondsToPixels(long seconds, long duration) {
-		return (int) (seconds * getWidth()/duration);
-	}
-	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -102,9 +76,19 @@ public class InOutPlayheadSeekBar extends SeekBar {
 			init();
 		}
 	}
-	
+
 	private void init() 
-	{		
+	{
+		/*
+		if (thumbIn.getHeight() > getHeight()) {
+			getLayoutParams().height = thumbIn.getHeight();		
+		}
+
+		if (thumbOut.getHeight() > getHeight()) {
+			getLayoutParams().height = thumbOut.getHeight();		
+		}
+		*/
+		
 		thumbInY = (getHeight() / 2) - (thumbIn.getHeight() / 2);
 		thumbOutY = (getHeight() / 2) - (thumbOut.getHeight() / 2);
 		
@@ -127,8 +111,6 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		if (thumbsActive) {
 			canvas.drawBitmap(thumbIn, thumbInX - thumbInHalfWidth, thumbInY, paint);
 			canvas.drawBitmap(thumbOut, thumbOutX - thumbOutHalfWidth, thumbOutY, paint);
-		} else {
-			//TODO: handle display when bars are inactive
 		}
 	}
 
@@ -141,24 +123,24 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		case MotionEvent.ACTION_DOWN:
 			if (mx >= thumbInX - thumbInHalfWidth && mx <= thumbInX + thumbInHalfWidth) {
 				selectedThumb = THUMBIN;
-				Log.i(LOGTAG,"Select thumbIn");
+			//	Log.i(LOGTAG,"Select thumbIn");
 				handled = true;
 			} else if (mx >= thumbOutX - thumbOutHalfWidth && mx <= thumbOutX + thumbOutHalfWidth) {
 				selectedThumb = THUMBOUT;
-				Log.i(LOGTAG,"Select thumbOut");
+			//	Log.i(LOGTAG,"Select thumbOut");
 				handled = true;
 			}
 			break;
 		case MotionEvent.ACTION_MOVE:
-			Log.i(LOGTAG,"Mouse Move : " + selectedThumb);
+		//	Log.i(LOGTAG,"Mouse Move : " + selectedThumb);
 
 			if (selectedThumb == THUMBIN) {
 				thumbInX = mx;
-				Log.i(LOGTAG,"Move thumbIn");
+			//	Log.i(LOGTAG,"Move thumbIn");
 				handled = true;
 			} else if (selectedThumb == THUMBOUT) {
 				thumbOutX = mx;
-				Log.i(LOGTAG,"Move thumbOut");
+		//		Log.i(LOGTAG,"Move thumbOut");
 				handled = true;
 			}
 			break;
@@ -167,7 +149,7 @@ public class InOutPlayheadSeekBar extends SeekBar {
 			handled = true;
 			break;
 		}
-		
+
 		// Some constraints
 		if (thumbInX < 0) {
 			thumbInX = 0;
@@ -189,7 +171,7 @@ public class InOutPlayheadSeekBar extends SeekBar {
 		
 		if (changeListener != null) {
 			calculateThumbsValue();
-			changeListener.inOutValuesChanged(thumbInX,thumbOutX);
+			changeListener.inOutValuesChanged(thumbInValue,thumbOutValue);
 		}
 		
 		if (!handled) {
@@ -202,19 +184,16 @@ public class InOutPlayheadSeekBar extends SeekBar {
 	private void calculateThumbsValue(){
 		thumbInValue = (int)((100*((float)thumbInX))/((float)getWidth()));
 		thumbOutValue = (int)((100*((float)thumbOutX))/((float)getWidth()));
-		
-		Log.v(LOGTAG,"thumb in value: " + thumbInValue + " thumb out value: " + thumbOutValue);
+	//	Log.v(LOGTAG,"thumb in value: " + thumbInValue + " thumb out value: " + thumbOutValue);
 	}
 	
 	private void setThumbsValue(int thumbInValue, int thumbOutValue) {
-		//thumbInX = (int)(((float)thumbInValue/(float)100)*(float)getWidth());
-		//thumbOutX = (int)(((float)thumbOutValue/(float)100)*(float)getWidth());
-		thumbInX = thumbInValue;
-		thumbOutX = thumbOutValue;
-		Log.v(LOGTAG,"thumbInX: " + thumbInX + " thumbOutX: " + thumbOutX);
+		thumbInX = (int)(((float)thumbInValue/(float)100)*(float)getWidth());
+		thumbOutX = (int)(((float)thumbOutValue/(float)100)*(float)getWidth());
+	//	Log.v(LOGTAG,"thumbInX: " + thumbInX + " thumbOutX: " + thumbOutX);
 		calculateThumbsValue();
 	}
-	
+		
 	interface InOutPlayheadSeekBarChangeListener {
 		void inOutValuesChanged(int thumbInValue,int thumbOutValue);
 	}	

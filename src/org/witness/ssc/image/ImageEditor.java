@@ -2,10 +2,14 @@ package org.witness.ssc.image;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,7 +17,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
+import java.util.Vector;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,26 +31,25 @@ import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
-import org.witness.informa.utils.SensorSucker.Broadcaster;
+import org.witness.ssc.R;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
+import org.witness.ssc.image.filters.InformaTagger;
 import org.witness.ssc.image.filters.RegionProcesser;
 import org.witness.ssc.utils.ObscuraConstants;
-import org.witness.ssc.R;
 
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
-
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -57,6 +63,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.PixelFormat;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
@@ -65,6 +72,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -72,16 +81,43 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
 import android.util.Log;
 import android.view.Display;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-public class ImageEditor extends SherlockActivity implements OnTouchListener, OnClickListener {
+public class ImageEditor extends Activity implements OnTouchListener, OnClickListener {
+
+
+	public final static String MIME_TYPE_JPEG = "image/jpeg";
+	
+	// Colors for region squares
+	
+	public final static int DRAW_COLOR = 0x00000000;
+	public final static int DETECTED_COLOR = 0x00000000;
+	public final static int OBSCURED_COLOR = 0x00000000;
+	
+	// Constants for the menu items, currently these are in an XML file (menu/image_editor_menu.xml, strings.xml)
+	public final static int ABOUT_MENU_ITEM = 0;
+	public final static int DELETE_ORIGINAL_MENU_ITEM = 1;
+	public final static int SAVE_MENU_ITEM = 2;
+	public final static int SHARE_MENU_ITEM = 3;
+	public final static int NEW_REGION_MENU_ITEM = 4;
+	
+	// Constants for Informa
+	public final static int FROM_INFORMA = 100;
+	public final static String LOG = "[Image Editor ********************]";
+	
 	// Image Matrix
 	Matrix matrix = new Matrix();
 
@@ -89,7 +125,18 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	Matrix savedMatrix = new Matrix();
 		
 	// We can be in one of these 3 states
-	int mode = ObscuraConstants.NONE;
+	static final int NONE = 0;
+	static final int DRAG = 1;
+	static final int ZOOM = 2;
+	static final int TAP = 3;
+	int mode = NONE;
+
+	
+	// Maximum zoom scale
+	static final float MAX_SCALE = 10f;
+	
+	// Constant for autodetection dialog
+	static final int DIALOG_DO_AUTODETECTION = 0;
 	
 	// For Zooming
 	float startFingerSpacing = 0f;
@@ -110,6 +157,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	
 	// ImageView for the original (scaled) image
 	ImageView imageView;
+	
 		
 	// Bitmap for the original image (scaled)
 	Bitmap imageBitmap;
@@ -130,11 +178,9 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     Bitmap bitmapCornerLL;
     Bitmap bitmapCornerLR;
     
-	// Vector to hold ImageRegions
-    ImageRegion currRegion = null;
-    ImageRegion regionInContext = null;
+	// Vector to hold ImageRegions 
 	ArrayList<ImageRegion> imageRegions = new ArrayList<ImageRegion>(); 
-	
+		
 	// The original image dimensions (not scaled)
 	int originalImageWidth;
 	int originalImageHeight;
@@ -151,8 +197,35 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	// Saved Image Uri
 	Uri savedImageUri;
 	
+	// Constant for temp filename
+	public final static String TMP_FILE_NAME = "tmp.jpg";
+	
+	public final static String TMP_FILE_DIRECTORY = "/Android/data/org.witness.sscphase1/files/";
+	
 	//handles threaded events for the UI thread
-    private Handler mHandler = new Handler();
+    private Handler mHandler = new Handler()
+    {
+
+		@Override
+		public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+			
+
+	 	   switch (msg.what) {
+           	
+           case 3: //completed
+   	    	mProgressDialog.dismiss();
+   	    	 
+   	 		//Toast autodetectedToast = Toast.makeText(ImageEditor.this, result + " face(s) detected", Toast.LENGTH_SHORT);
+   	 		//autodetectedToast.show();	        			
+           	
+           	break;
+           default:
+               super.handleMessage(msg);
+       }
+   }
+    	
+    };
 
     //UI for background threads
     ProgressDialog mProgressDialog;
@@ -161,17 +234,14 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     boolean doRealtimePreview = true;
     
     // Keep track of the orientation
-    private int originalImageOrientation = ExifInterface.ORIENTATION_NORMAL;
+    private int originalImageOrientation = ExifInterface.ORIENTATION_NORMAL;    
+
+    // for saving images
+    private final static String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     
     List<Broadcaster> br;
-    
-    ActionBar ab;
-    Menu menu;
-    boolean showHints;
-    
     SharedPreferences sp;
-    SharedPreferences.Editor ed;
-    
+
     private void reviewAndFinish() {
     	mProgressDialog.cancel();
     	Intent i = new Intent(this, ReviewAndFinish.class);
@@ -180,55 +250,38 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     	startActivityForResult(i, ObscuraConstants.REVIEW_MEDIA);
     	finish();
     }
-    
-	private class mAutoDetectTask extends AsyncTask<Integer, Integer, Long> {
-		protected Long doInBackground(Integer... params) {
-	    	  return (long)doAutoDetection();	         
-	    }
-
-	    protected void onProgressUpdate(Integer... progress) {
-	       
-	    }
-
-	    protected void onPostExecute(Long result) {
-	     
-	    	mProgressDialog.dismiss();
-	    	 
-	    	Toast autodetectedToast = Toast.makeText(ImageEditor.this, result + " face(s) detected", Toast.LENGTH_SHORT);
-	 		autodetectedToast.show();
-	    }
-	}
-    		
-	@SuppressWarnings({ "unused", "deprecation" })
+    	
+	@SuppressWarnings("unused")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		setTheme(R.style.Theme_Sherlock_Light);
-		
 		super.onCreate(savedInstanceState);
 		
 		br = new ArrayList<Broadcaster>();
 		br.add(new Broadcaster(new IntentFilter(Keys.Service.FINISH_ACTIVITY)));
 		br.add(new Broadcaster(new IntentFilter(Keys.Service.IMAGES_GENERATED)));
-		
-		ab = getSupportActionBar();
-		ab.setDisplayShowHomeEnabled(false);
-		ab.setDisplayShowTitleEnabled(false);
-		
-		Log.d(InformaConstants.TAG, "ON CREATE CALLED");
-		
-		sendBroadcast(new Intent()
+
+        String versNum = "";
+        
+        sendBroadcast(new Intent()
 			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
 			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
 			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
-		
+	
         sp = PreferenceManager.getDefaultSharedPreferences(this);
-        
+    
         if(sp.getString(Keys.Settings.HAS_DB_PASSWORD, InformaConstants.PW_EXPIRY).compareTo(InformaConstants.PW_EXPIRY) == 0)
         	finish();
         
-        ed = sp.edit();
-        showHints = sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true);
+        try {
+            String pkg = getPackageName();
+            versNum = getPackageManager().getPackageInfo(pkg, 0).versionName;
+        } catch (Exception e) {
+        	versNum = "";
+        }
+
+        setTitle(getString(R.string.app_name) + " (" + versNum + ")");
         
+     //   requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.imageviewer);
 
 		// Calculate the minimum distance
@@ -242,14 +295,12 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		zoomOut = (Button) this.findViewById(R.id.ZoomOut);
 		zoomIn.setOnClickListener(this);
 		zoomOut.setOnClickListener(this);
-
+		
 		// Instantiate the vibrator
 		vibe = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
 		// Passed in from CameraObscuraMainMenu
 		originalImageUri = getIntent().getData();
-		
-		Log.d(InformaConstants.TAG, "created file: " + originalImageUri.toString());
 		
 		// If originalImageUri is null, we are likely coming from another app via "share"
 		if (originalImageUri == null)
@@ -270,7 +321,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 
 					mProgressDialog = ProgressDialog.show(this, "", "Detecting faces...", true, true);
 					
-					new mAutoDetectTask().execute(1);
+					doAutoDetectionThread();
 					
 					
 				}
@@ -287,8 +338,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		if (originalImageUri != null) {
 			
 			// Get the orientation
-			File originalFilename = pullPathFromUri(originalImageUri);
-			Log.d(InformaConstants.TAG, "pulling path: " + originalFilename.getAbsolutePath());
+			File originalFilename = pullPathFromUri(originalImageUri);			
 			try {
 				JSONObject exif = new JSONObject();
 				ExifInterface ei = new ExifInterface(originalFilename.getAbsolutePath());
@@ -318,6 +368,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
+
+			//debug(ObscuraApp.TAG,"loading uri: " + pullPathFromUri(originalImageUri));
 
 			// Load up smaller image
 			try {
@@ -351,20 +403,14 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 				
 				// If both of the ratios are greater than 1,
 				// one of the sides of the image is greater than the screen
-				if (heightRatio > 1 && widthRatio > 1) {
-					if (heightRatio > widthRatio) {
-						// Height ratio is larger, scale according to it
-						inSampleSize = (int)heightRatio;
-					} else {
-						// Width ratio is larger, scale according to it
-						inSampleSize = (int)widthRatio;
-					}
+				if (heightRatio > widthRatio) {
+					// Height ratio is larger, scale according to it
+					inSampleSize = (int)heightRatio;
+				} else {
+					// Width ratio is larger, scale according to it
+					inSampleSize = (int)widthRatio;
 				}
-				else
-				{
-					inSampleSize = 1;
-				}
-				
+			
 				bmpFactoryOptions.inSampleSize = inSampleSize;
 		
 				// Decode it for real
@@ -404,7 +450,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 
 						mProgressDialog = ProgressDialog.show(this, "", "Detecting faces...", true, true);
 					
-						new mAutoDetectTask().execute(1);
+						doAutoDetectionThread();
 					}
 				}				
 			} catch (IOException e) {
@@ -484,6 +530,28 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		
 	}
 	
+	private void doAutoDetectionThread()
+	{
+		Thread thread = new Thread ()
+		{
+			public void run ()
+			{
+				doAutoDetection();
+				Message msg = mHandler.obtainMessage(3);
+		        mHandler.sendMessage(msg);
+			}
+		};
+		thread.start();
+	}
+	/*
+	 * Do actual auto detection and create regions
+	 * 
+	 * public void createImageRegion(int _scaledStartX, int _scaledStartY, 
+			int _scaledEndX, int _scaledEndY, 
+			int _scaledImageWidth, int _scaledImageHeight, 
+			int _imageWidth, int _imageHeight, 
+			int _backgroundColor) {
+	 */
 	
 	private int doAutoDetection() {
 		// This should be called via a pop-up/alert mechanism
@@ -603,13 +671,16 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		return bmOut;
 	}
 
+
+	ImageRegion currRegion = null;
+	
 	/*
 	 * Handles touches on ImageView
 	 */
 	@Override
 	public boolean onTouch(View v, MotionEvent event) 
 	{
-		if (currRegion != null && (mode == ObscuraConstants.DRAG || currRegion.getBounds().contains(event.getX(), event.getY())))		
+		if (currRegion != null && (mode == DRAG || currRegion.getBounds().contains(event.getX(), event.getY())))		
 			return onTouchRegion(v, event, currRegion);	
 		else
 			return onTouchImage(v,event);
@@ -649,28 +720,31 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		switch (event.getAction() & MotionEvent.ACTION_MASK) {
 			case MotionEvent.ACTION_DOWN:
 				clearImageRegionsEditMode();
-				currRegion.setSelected(true);
-				
+				currRegion.setSelected(true);	
 				currRegion.setCornerMode(event.getX(),event.getY());
-				currRegion.setActive(true);
 				
-				regionInContext = currRegion;
-				toggleRegionMenu();
-				
-				mode = ObscuraConstants.DRAG;
+				mode = DRAG;
 				handled = iRegion.onTouch(v, event);
+
 			break;
 			
 			case MotionEvent.ACTION_UP:
-				mode = ObscuraConstants.NONE;
-				handled = iRegion.onTouch(v, event);
+				mode = NONE;
+				handled = currRegion.onTouch(v, event);
 				currRegion.setSelected(false);
+				
+			break;
+			
+			case MotionEvent.ACTION_MOVE:
+				mode = DRAG;
+				handled = currRegion.onTouch(v, event);
+				//handled = iRegion.onTouch(v, event);
+				//currRegion.setSelected(false);
 			
 			break;
 			
 			default:
-				mode = ObscuraConstants.DRAG;
-				handled = iRegion.onTouch(v, event);
+				mode = NONE;
 			
 		}
 		
@@ -686,10 +760,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		switch (event.getAction() & MotionEvent.ACTION_MASK) {
 			case MotionEvent.ACTION_DOWN:
 				// Single Finger down
-				regionInContext = null;
-				toggleRegionMenu();
-				
-				mode = ObscuraConstants.TAP;				
+				mode = TAP;				
 				ImageRegion newRegion = findRegion(event);
 				
 				if (newRegion != null)
@@ -709,6 +780,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 					currRegion = null;
 
 				}
+				
 				
 				break;
 				
@@ -731,7 +803,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 				float ysum = event.getY(0) + event.getY(1);
 				startFingerSpacingMidPoint.set(xsum / 2, ysum / 2);
 				
-				mode = ObscuraConstants.ZOOM;
+				mode = ZOOM;
 				//Log.d(ObscuraApp.TAG, "mode=ZOOM");
 				
 				clearImageRegionsEditMode();
@@ -769,8 +841,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 				// If greater than minMoveDistance, it is likely a drag or zoom
 				if (distance > minMoveDistance) {
 				
-					if (mode == ObscuraConstants.TAP || mode == ObscuraConstants.DRAG) {
-						mode = ObscuraConstants.DRAG;
+					if (mode == TAP || mode == DRAG) {
+						mode = DRAG;
 						
 						matrix.postTranslate(event.getX() - startPoint.x, event.getY() - startPoint.y);
 						imageView.setImageMatrix(matrix);
@@ -782,16 +854,23 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 						
 						handled = true;
 	
-					} else if (mode == ObscuraConstants.ZOOM) {
+					} else if (mode == ZOOM) {
 						
 						// Save the current matrix so that if zoom goes to big, we can revert
 						savedMatrix.set(matrix);
 						
-						// Get the spacing of the fingers, 2 fingers
-						float ex = event.getX(0) - event.getX(1);
-						float ey = event.getY(0) - event.getY(1);
-						endFingerSpacing = (float) Math.sqrt(ex * ex + ey * ey);
-	
+						if (event.getPointerCount() > 1)
+						{
+							// Get the spacing of the fingers, 2 fingers
+							float ex = event.getX(0) - event.getX(1);
+							float ey = event.getY(0) - event.getY(1);
+							endFingerSpacing = (float) Math.sqrt(ex * ex + ey * ey);
+						}
+						else
+						{
+							endFingerSpacing = 0;
+						}
+						
 						//Log.d(ObscuraApp.TAG, "End Finger Spacing=" + endFingerSpacing);
 		
 						// If we moved far enough
@@ -806,7 +885,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 							float[] matrixValues = new float[9];
 							matrix.getValues(matrixValues);
 							
-							if (matrixValues[0] > ObscuraConstants.MAX_SCALE) {
+							if (matrixValues[0] > MAX_SCALE) {
 								matrix.set(savedMatrix);
 							}
 							imageView.setImageMatrix(matrix);
@@ -836,13 +915,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		return handled; // indicate event was handled
 	}
 	
-	
-	private void toggleRegionMenu() {
-		if(regionInContext != null)
-			menu.getItem(0).setVisible(true);
-		else
-			menu.getItem(0).setVisible(false);
-	}
 	/*
 	 * For live previews
 	 */	
@@ -853,8 +925,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		} else {
 			imageView.setImageBitmap(imageBitmap);
 		}
-		
-		toggleRegionMenu();
 	}
 	
 	/*
@@ -901,9 +971,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		
 		while (itRegions.hasNext())
 		{
-			ImageRegion ir = itRegions.next();
-			ir.setSelected(false);
-			ir.setActive(false);
+			itRegions.next().setSelected(false);
 		}
 		
 	}
@@ -912,7 +980,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	 * Create new ImageRegion
 	 */
 	public void createImageRegion(float left, float top, float right, float bottom, boolean showPopup, boolean updateNow) {
-		vibe.vibrate(100);
+		
 		clearImageRegionsEditMode();
 		
 		ImageRegion imageRegion = new ImageRegion(
@@ -935,6 +1003,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			});
 		}
 	}
+	
 	/*
 	 * Associate the current log data to the image region's properties
 	 */
@@ -975,6 +1044,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		
 		if (currRegion != null)
 		{
+			currRegion.inflatePopup(false);
 			currRegion = null;
 		}			
 		else if (v == zoomIn) 
@@ -995,8 +1065,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			imageView.setImageMatrix(matrix);
 			
 			putOnScreen();
-		} 
-		else if (mode != ObscuraConstants.DRAG && mode != ObscuraConstants.ZOOM) 
+		}
+		else if (mode != DRAG && mode != ZOOM) 
 		{
 			float defaultSize = imageView.getWidth()/4;
 			float halfSize = defaultSize/2;
@@ -1022,72 +1092,62 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	 */
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
-    	MenuInflater mi = getSupportMenuInflater();
-        mi.inflate(R.menu.image_editor_menu, menu);
-        
-        menu.getItem(0).setVisible(false);
-        this.menu = menu;
-        
-        return super.onCreateOptionsMenu(menu);
-    }
 
-	//TODO: here is the menu
+    	MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.image_editor_menu, menu);
+
+        return true;
+    }
+	
+	private void newDefaultRegion ()
+	{
+		// Set the Start point. 
+		startPoint.set(imageView.getWidth()/2, imageView.getHeight()/2);
+		
+		float defaultSize = imageView.getWidth()/4;
+		float halfSize = defaultSize/2;
+		
+		RectF newRegion = new RectF();
+		
+		newRegion.left = startPoint.x - halfSize;
+		newRegion.top = startPoint.y - halfSize;
+
+		newRegion.right =  startPoint.x + defaultSize;
+		newRegion.left =  startPoint.y + defaultSize;
+		
+		Matrix iMatrix = new Matrix();
+		matrix.invert(iMatrix);
+		iMatrix.mapRect(newRegion);
+		
+		createImageRegion(newRegion.left,newRegion.top,newRegion.right,newRegion.bottom, false, true);
+		
+	}
+    /*
+     * Normal menu item selected method.  Uses menu items defined in XML: res/menu/image_editor_menu.xml
+     */
 	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
-    		case R.id.menu_current_region_redact:
-    			if(regionInContext != null) {
-    				regionInContext.updateRegionProcessor(ImageRegion.REDACT);
-    				return true;
-    			}	
-    			return false;
-    		case R.id.menu_current_region_pixelate:
-    			if(regionInContext != null) {
-    				regionInContext.updateRegionProcessor(ImageRegion.PIXELATE);
-    				return true;
-    			}
-    			return false;
-    		case R.id.menu_current_region_crowd_pixelate:
-    			if(regionInContext != null) {
-    				regionInContext.updateRegionProcessor(ImageRegion.BG_PIXELATE);
-    				return true;
-    			}
-    			return false;
-    		case R.id.menu_current_region_identify:
-    			if(regionInContext != null) {
-    				regionInContext.updateRegionProcessor(ImageRegion.CONSENT);
-    				return true;
-    			}
-    			return false;
-    		case R.id.menu_current_region_delete:
-    			if(regionInContext != null) {
-    				deleteRegion(regionInContext);
-    				regionInContext = null;
-    				return true;
-    			}
-    			return false;
         	case R.id.menu_save:
-				Intent keyChooser = new Intent(this, KeyChooser.class);
+        		Intent keyChooser = new Intent(this, KeyChooser.class);
 				startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
         		return true;
+        		
+        	case R.id.menu_share:
+        		// Share Image
+          		shareImage();
+        		return true;       		
+        	
         	case R.id.menu_preview:
         		showPreview();
         		return true;
-        	case R.id.menu_hide_hints:
-        		if(sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true)) {
-        			ed.putBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, false).commit();
-        			showHints = false;
-        		} else {
-        			ed.putBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true).commit();
-        			showHints = true;
-        		}
         		
     		default:
     			return false;
     	}
     }
-	
+   
 	/*
 	 * Display preview image
 	 */
@@ -1103,6 +1163,24 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 			startActivity(intent);				
 		}
 	}
+	
+	/*
+	 * When the user selects the Share menu item
+	 * Uses saveTmpImage (overwriting what is already there) and uses the standard Android Share Intent
+	 */
+    private void shareImage() {
+    	Uri tmpImageUri;
+    	
+    	if ((tmpImageUri = saveTmpImage()) != null) {
+        	Intent share = new Intent(Intent.ACTION_SEND);
+        	share.setType("image/jpeg");
+        	share.putExtra(Intent.EXTRA_STREAM, tmpImageUri);
+        	startActivity(Intent.createChooser(share, "Share Image"));    	
+    	} else {
+    		Toast t = Toast.makeText(this,"Saving Temporary File Failed!", Toast.LENGTH_SHORT); 
+    		t.show();
+    	}
+    }
     
     
     /*
@@ -1129,22 +1207,22 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     	Matrix obscuredMatrix = new Matrix();    	
     	// Draw the scaled image on the new bitmap
     	obscuredCanvas.drawBitmap(imageBitmap, obscuredMatrix, obscuredPaint);
-    	
+
     	// Iterate through the regions that have been created
     	Iterator<ImageRegion> i = imageRegions.iterator();
 	    while (i.hasNext()) 
 	    {
-	    	
 	    	ImageRegion currentRegion = i.next();
-	    	
 	    	RegionProcesser om = currentRegion.getRegionProcessor();
 
             RectF regionRect = new RectF(currentRegion.getBounds());
-	    	om.processRegion(regionRect, obscuredCanvas, obscuredBmp);
+            
+	    	if (mode != DRAG)
+	    		om.processRegion(regionRect, obscuredCanvas, obscuredBmp);
 
 	    	if (showBorders)
 	    	{
-	    		if (currentRegion.isSelected() || currentRegion.equals(regionInContext))
+		    	if (currentRegion.isSelected())
 		    		obscuredPaint.setColor(Color.GREEN);
 		    	else
 		    		obscuredPaint.setColor(Color.WHITE);
@@ -1153,22 +1231,12 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		    	obscuredPaint.setStrokeWidth(10f);
 		    	obscuredCanvas.drawRect(regionRect, obscuredPaint);
 		    	
-		    	float cSize = CORNER_SIZE;
-		    	
-		    	if (currentRegion.isSelected() || currentRegion.equals(regionInContext))
-		    	{
-		    		obscuredCanvas.drawBitmap(bitmapCornerUL, regionRect.left-cSize, regionRect.top-cSize, obscuredPaint);
-		    		obscuredCanvas.drawBitmap(bitmapCornerLL, regionRect.left-cSize, regionRect.bottom-(cSize/2), obscuredPaint);
-		    		obscuredCanvas.drawBitmap(bitmapCornerUR, regionRect.right-(cSize/2), regionRect.top-cSize, obscuredPaint);
-		    		obscuredCanvas.drawBitmap(bitmapCornerLR, regionRect.right-(cSize/2), regionRect.bottom-(cSize/2), obscuredPaint);
-
-		    	}
-		    	
 	    	}
 		}
 
 	    return obscuredBmp;
     }
+    
     
     /*
      * Save a temporary image for sharing only
@@ -1189,8 +1257,8 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     	Bitmap obscuredBmp = createObscuredBitmap(w,h, false);
     	
     	// Create the Uri - This can't be "private"
-    	File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
-    	File tmpFile = new File(tmpFileDirectory, ObscuraConstants.TMP_FILE_NAME_IMAGE);
+    	File tmpFileDirectory = new File(Environment.getExternalStorageDirectory().getPath() + TMP_FILE_DIRECTORY);
+    	File tmpFile = new File(tmpFileDirectory,TMP_FILE_NAME);
     	debug(ObscuraConstants.TAG, tmpFile.getPath());
     	
 		try {
@@ -1217,7 +1285,6 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
      * The method that actually saves the altered image.  
      * This in combination with createObscuredBitmap could/should be done in another, more memory efficient manner. 
      */
-    
     private boolean saveImage(long[] encryptList) throws IOException {
     	SimpleDateFormat dateFormat = new SimpleDateFormat(ObscuraConstants.EXPORT_DATE_FORMAT);
     	Date date = new Date();
@@ -1289,6 +1356,10 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		return true;
     }
     
+    /*
+     * Yep, uncommenting it back out so we can use the original path to refresh media scanner
+     * HNH 8/23/11
+     */
     public File pullPathFromUri(Uri originalUri) {
 
     	String originalImageFilePath = null;
@@ -1309,7 +1380,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 
     	return new File(originalImageFilePath);
     }
-    
+
     /*
      * Handling screen configuration changes ourselves, we don't want the activity to restart on rotation
      */
@@ -1352,7 +1423,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
     	super.onActivityResult(requestCode, resultCode, data);
     	
-    	if(resultCode == SherlockActivity.RESULT_OK) {
+    	if(resultCode == Activity.RESULT_OK) {
     		if(requestCode == InformaConstants.FROM_INFORMA_TAGGER) {
     			// replace corresponding image region
     			@SuppressWarnings("unchecked")
@@ -1385,7 +1456,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
     				  }
     				},500);
     		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
-    			setResult(SherlockActivity.RESULT_OK);
+    			setResult(Activity.RESULT_OK);
     			finish();
     		} else if(requestCode == InformaConstants.FROM_ENCRYPTION_SERVICE) {
     			sendBroadcast(new Intent()
@@ -1398,6 +1469,7 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 	@Override
 	protected void onPostResume() {
 		super.onPostResume();
+		
 	}
 	
 	public Paint getPainter ()
@@ -1452,4 +1524,5 @@ public class ImageEditor extends SherlockActivity implements OnTouchListener, On
 		}
 		
 	}
+
 }

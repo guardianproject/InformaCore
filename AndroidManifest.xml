@@ -51,6 +51,7 @@
                  <data android:mimeType="video/*" />
              </intent-filter>
     	</activity>
+    	<activity android:name="org.witness.ssc.video.VideoPreferences" />
         <activity android:name="org.witness.ssc.image.ImagePreview" android:label="@string/image_preview" android:configChanges="orientation|keyboardHidden|screenSize" />
     	<activity android:name="org.witness.informa.Tagger" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />
 		<activity android:name="org.witness.informa.KeyChooser" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />

@@ -10,35 +10,27 @@
 
 package org.witness.ssc.video;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Vector;
 
-import org.witness.informa.KeyChooser;
-import org.witness.informa.ReviewAndFinish;
-import org.witness.informa.Tagger;
-import org.witness.informa.utils.InformaConstants;
-import org.witness.informa.utils.InformaConstants.Keys;
+import net.londatiga.android.ActionItem;
+import net.londatiga.android.QuickAction;
+import net.londatiga.android.QuickAction.OnActionItemClickListener;
+
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
 import org.witness.ssc.video.ShellUtils.ShellCallback;
 import org.witness.ssc.R;
 
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
-
+import android.R.color;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -46,6 +38,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -74,9 +68,14 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.view.Display;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
@@ -88,12 +87,12 @@ import android.widget.MediaController;
 import android.widget.Toast;
 import android.widget.VideoView;
 
-public class VideoEditor extends SherlockActivity implements
+public class VideoEditor extends Activity implements
 						OnCompletionListener, OnErrorListener, OnInfoListener,
 						OnBufferingUpdateListener, OnPreparedListener, OnSeekCompleteListener,
 						OnVideoSizeChangedListener, SurfaceHolder.Callback,
 						MediaController.MediaPlayerControl, OnTouchListener, OnClickListener,
-						InOutPlayheadSeekBarChangeListener {
+						InOutPlayheadSeekBarChangeListener, OnActionItemClickListener {
 
 	public static final String LOGTAG = ObscuraConstants.TAG;
 
@@ -102,7 +101,7 @@ public class VideoEditor extends SherlockActivity implements
     private final static float REGION_CORNER_SIZE = 26;
     
     private final static String MIME_TYPE_MP4 = "video/mp4";
-    private final static long FACE_TIME_BUFFER = 2000;
+    private final static int FACE_TIME_BUFFER = 2000;
 	
 	ProgressDialog progressDialog;
 	int completeActionFlag = -1;
@@ -139,18 +138,32 @@ public class VideoEditor extends SherlockActivity implements
 	
 	ImageButton playPauseButton;
 	
-	private Vector<VideoRegion> obscureRegions = new Vector<VideoRegion>();
-	private VideoRegion activeRegion, regionInContext;
+	private ArrayList<RegionTrail> obscureTrails = new ArrayList<RegionTrail>();
+	private RegionTrail activeRegionTrail;
+	private ObscureRegion activeRegion;
 	
 	boolean mAutoDetectEnabled = false;
 	
 	FFMPEGWrapper ffmpeg;
-	boolean freshVideo = false;
 	
 	int timeNudgeOffset = 2;
 	
 	float vRatio;
 	
+	int outFrameRate = -1;
+	int outBitRate = -1;
+	String outFormat = null;
+	String outAcodec = null;
+	String outVcodec = null;
+	int outVWidth = -1;
+	int outVHeight = -1;
+	
+	private final static String DEFAULT_OUT_FPS = "30";
+	private final static String DEFAULT_OUT_RATE = "500";
+	private final static String DEFAULT_OUT_FORMAT = "3gp";
+	private final static String DEFAULT_OUT_VCODEC = "libx264";
+	private final static String DEFAULT_OUT_ACODEC = "copy";
+
 	private Handler mHandler = new Handler()
 	{
 		 public void handleMessage(Message msg) {
@@ -175,12 +188,12 @@ public class VideoEditor extends SherlockActivity implements
 	                	
 	                case 3: //completed
 	                	progressDialog.dismiss();
-	                	reviewAndFinish();    			
+	                	askPostProcessAction();    			
 	                	
 	                	break;
 	                
 	                case 5:	                	
-	                	updateRegionDisplay();	        			
+	                	updateRegionDisplay(mediaPlayer.getCurrentPosition());	        			
 	                	break;
 	                default:
 	                    super.handleMessage(msg);
@@ -190,20 +203,21 @@ public class VideoEditor extends SherlockActivity implements
 	
 	private boolean mCancelled = false;
 	
-	ActionBar ab;
-	Menu menu;
+	QuickAction popupMenu;
+	ActionItem[] popupMenuItems;
 	
+	/*
 	public static final int CORNER_NONE = 0;
 	public static final int CORNER_UPPER_LEFT = 1;
 	public static final int CORNER_LOWER_LEFT = 2;
 	public static final int CORNER_UPPER_RIGHT = 3;
 	public static final int CORNER_LOWER_RIGHT = 4;
+	*/
 	
-	private long mDuration;
+	private int mDuration;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		setTheme(R.style.Theme_Sherlock_Light);
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.videoeditor);
@@ -223,15 +237,22 @@ public class VideoEditor extends SherlockActivity implements
 			
 			if (originalVideoUri == null)
 			{
-				finish();
-				return;
+				if (savedInstanceState.getString("path")!=null)
+				{
+					originalVideoUri = Uri.fromFile(new File(savedInstanceState.getString("path")));
+					recordingFile = new File (savedInstanceState.getString("path"));
+				}
+				else
+				{
+					finish();
+					return;
+				}
 			}
+			else
+			{
 			
-			if(originalVideoUri.getPathSegments().contains(this.getCallingPackage())) {
-				recordingFile = new File(originalVideoUri.getPath());
-				freshVideo = true;
-			} else
 				recordingFile = new File(pullPathFromUri(originalVideoUri));
+			}
 		}
 		
 		fileExternDir = new File(Environment.getExternalStorageDirectory(),getString(R.string.app_name));
@@ -248,6 +269,7 @@ public class VideoEditor extends SherlockActivity implements
 		surfaceHolder = videoView.getHolder();
 
 		surfaceHolder.addCallback(this);
+		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
 		mediaPlayer = new MediaPlayer();
 		mediaPlayer.setOnCompletionListener(this);
@@ -311,10 +333,15 @@ public class VideoEditor extends SherlockActivity implements
 	
 		mAutoDetectEnabled = true; //first time do autodetect
 		
-		ab = getSupportActionBar();
-		ab.setDisplayShowTitleEnabled(false);
-		ab.setDisplayShowHomeEnabled(false);
-		
+		setPrefs();
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+	  
+	  savedInstanceState.putString("path",recordingFile.getAbsolutePath());
+	  
+	  super.onSaveInstanceState(savedInstanceState);
 	}
 	
 	@Override
@@ -342,21 +369,29 @@ public class VideoEditor extends SherlockActivity implements
 	}
 
 	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		
+		
+		
+	}
 
 	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {}
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		//if (mediaPlayer != null)
+			//mediaPlayer.stop();
+	}
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
 		Log.i(LOGTAG, "onCompletion Called");
+		
+	
 		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
 	}
 	
 	@Override
 	public boolean onError(MediaPlayer mp, int whatError, int extra) {
 		Log.e(LOGTAG, "onError Called");
-		Log.e(LOGTAG, "error: " + whatError);
 		if (whatError == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 			Log.e(LOGTAG, "Media Error, Server Died " + extra);
 		} else if (whatError == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
@@ -386,12 +421,29 @@ public class VideoEditor extends SherlockActivity implements
 		Log.v(LOGTAG, "onPrepared Called");
 
 		updateVideoLayout ();
-		if(obscureRegions.size() > 0)
-			updateRegionDisplay();
-		mediaPlayer.start();
+		mediaPlayer.seekTo(1);
+		
+		DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+		    @Override
+		    public void onClick(DialogInterface dialog, int which) {
+		        switch (which){
+		        case DialogInterface.BUTTON_POSITIVE:
+		        	beginAutoDetect();
+		            break;
+
+		        case DialogInterface.BUTTON_NEGATIVE:
+		            start();
+		            break;
+		        }
+		    }
+		};
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage("Would you like to detect faces in this video?").setPositiveButton("Yes", dialogClickListener)
+		    .setNegativeButton("No", dialogClickListener).show();
 		
 		
-		//beginAutoDetect();
+		
 	}
 	
 	private void beginAutoDetect ()
@@ -413,14 +465,12 @@ public class VideoEditor extends SherlockActivity implements
 	}
 
 	public void onSeekComplete(MediaPlayer mp) {
-		Log.v(LOGTAG, "onSeekComplete Called");
 		
-		/*
 		if (!mediaPlayer.isPlaying()) {			
 			mediaPlayer.start();
 			mediaPlayer.pause();
+			playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
 		}
-		*/
 	}
 
 	public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
@@ -433,7 +483,17 @@ public class VideoEditor extends SherlockActivity implements
 		
 	}
 	
-	@SuppressWarnings("deprecation")
+    /*
+     * Handling screen configuration changes ourselves, we don't want the activity to restart on rotation
+     */
+    @Override
+    public void onConfigurationChanged(Configuration conf) 
+    {
+        super.onConfigurationChanged(conf);
+    
+      
+    }   
+	
 	private boolean updateVideoLayout ()
 	{
 		//Get the dimensions of the video
@@ -518,6 +578,7 @@ public class VideoEditor extends SherlockActivity implements
 		Log.v(LOGTAG,"Calling our pause method");
 		if (mediaPlayer.isPlaying()) {
 			mediaPlayer.pause();
+			playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
 		}
 	}
 
@@ -531,9 +592,12 @@ public class VideoEditor extends SherlockActivity implements
 	public void start() {
 		Log.v(LOGTAG,"Calling our start method");
 		mediaPlayer.start();
+		
 		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_pause));
 		
 		mHandler.post(updatePlayProgress);
+		
+
 	}
 	
 	private Runnable doAutoDetect = new Runnable() {
@@ -599,8 +663,9 @@ public class VideoEditor extends SherlockActivity implements
 		   {
 			   if (mediaPlayer != null && mediaPlayer.isPlaying()) {
 				   
-					   progressBar.setProgress((int)(((float)mediaPlayer.getCurrentPosition()/(float)mDuration)*100));
-					   updateRegionDisplay();
+				   int curr = mediaPlayer.getCurrentPosition();
+					   progressBar.setProgress((int)(((float)curr/(float)mDuration)*100));
+					   updateRegionDisplay(curr);
 					   mHandler.post(this);				   
 			   }
 			   
@@ -612,33 +677,35 @@ public class VideoEditor extends SherlockActivity implements
 	   }
 	};		
 	
-	public void updateRegionDisplay() {
-		//TODO: updateRegionDisplay()
+	private void updateRegionDisplay(int currentTime) {
+
+		//Log.v(LOGTAG,"Position: " + mediaPlayer.getCurrentPosition());
 		
 		validateRegionView();
 		clearRects();
-				
-		for (VideoRegion region:obscureRegions) {
-			if (region.existsInTime(mediaPlayer.getCurrentPosition())) {
-				if(region != regionInContext)
-					displayRegion(region, false);
-				else
-					displayRegion(region, true);
+		
+		for (RegionTrail regionTrail:obscureTrails)
+		{
+		
+			int currentColor = Color.WHITE;
+			boolean selected = regionTrail == activeRegionTrail;
+			
+			if (selected)
+			{
+				currentColor = Color.GREEN;
+				displayRegionTrail(regionTrail, selected, currentColor, currentTime);
 			}
+			
+			ObscureRegion region = regionTrail.getCurrentRegion(currentTime);
+			
+			if (region != null)
+				displayRegion(region, selected, currentColor);
+		
 		}
 		
-		if(regionInContext != null && !mediaPlayer.isPlaying()) {
-			VideoRegion parentRegion = (VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION);
-			 if(parentRegion == null) {
-				progressBar.setThumbsActive(regionInContext);
-			} else {
-				progressBar.setThumbsActive(parentRegion);
-			}
-		} else
-			progressBar.setThumbsInactive();
 		
 		regionsView.invalidate();
-		progressBar.invalidate();
+		//seekBar.invalidate();
 	}
 	
 	private void validateRegionView() {
@@ -649,8 +716,49 @@ public class VideoEditor extends SherlockActivity implements
 		    regionsView.setImageBitmap(obscuredBmp);			
 		}
 	}
+
+	private void displayRegionTrail(RegionTrail trail, boolean selected, int color, int currentTime) {
+
+		
+		RectF lastRect = null;
+	    
+		obscuredPaint.setStyle(Style.FILL);
+		obscuredPaint.setColor(color);
+		obscuredPaint.setStrokeWidth(10f);
+	    
+		for (Integer regionKey:trail.getRegionKeys())
+		{
+
+			ObscureRegion region = trail.getRegion(regionKey);
+			
+			int alpha = 150;//Math.min(255,Math.max(0, ((currentTime - region.timeStamp)/1000)));
+			
+			RectF nRect = new RectF();
+			nRect.set(region.getBounds());    	
+			nRect.left *= vRatio;
+			nRect.right *= vRatio;
+			nRect.top *= vRatio;
+			nRect.bottom *= vRatio;
+
+			obscuredPaint.setAlpha(alpha);
+
+			if (lastRect != null)
+			{
+				obscuredCanvas.drawLine(lastRect.centerX(), lastRect.centerY(), nRect.centerX(), nRect.centerY(), obscuredPaint);
+			}
+			
+			lastRect = nRect;
+    		//obscuredCanvas.drawRect(paintingRect, obscuredPaint);    
+
+			//obscuredCanvas.drawPoint(paintingRect.centerX(), paintingRect.centerY(), obscuredPaint);
+			//obscuredCanvas.drawLines(points,obscuredPaint);	
+		}
+		
+		
+	}
+
 	
-	private void displayRegion(VideoRegion region, boolean selected) {
+	private void displayRegion(ObscureRegion region, boolean selected, int color) {
 
 		RectF paintingRect = new RectF();
     	paintingRect.set(region.getBounds());    	
@@ -659,26 +767,18 @@ public class VideoEditor extends SherlockActivity implements
     	paintingRect.top *= vRatio;
     	paintingRect.bottom *= vRatio;
     	
+    	obscuredPaint.setStyle(Style.FILL);
+		obscuredPaint.setColor(Color.BLACK);
+		obscuredPaint.setAlpha(150);
+		obscuredCanvas.drawRect(paintingRect, obscuredPaint);    
+		
+		obscuredPaint.setStyle(Style.STROKE);	
+    	obscuredPaint.setStrokeWidth(3f);
+		obscuredPaint.setColor(color);
+    	
+		obscuredCanvas.drawRect(paintingRect, obscuredPaint);
+		
     
-    	if (selected) {
-	
-        	paintingRect.inset(10,10);
-        	
-        	obscuredPaint.setStrokeWidth(5f);
-    		obscuredPaint.setColor(Color.GREEN);
-        	
-    		obscuredCanvas.drawRect(paintingRect, obscuredPaint);
-    		
-        	obscuredCanvas.drawBitmap(bitmapCornerUL, paintingRect.left-REGION_CORNER_SIZE, paintingRect.top-REGION_CORNER_SIZE, obscuredPaint);
-    		obscuredCanvas.drawBitmap(bitmapCornerLL, paintingRect.left-REGION_CORNER_SIZE, paintingRect.bottom-(REGION_CORNER_SIZE/2), obscuredPaint);
-    		obscuredCanvas.drawBitmap(bitmapCornerUR, paintingRect.right-(REGION_CORNER_SIZE/2), paintingRect.top-REGION_CORNER_SIZE, obscuredPaint);
-    		obscuredCanvas.drawBitmap(bitmapCornerLR, paintingRect.right-(REGION_CORNER_SIZE/2), paintingRect.bottom-(REGION_CORNER_SIZE/2), obscuredPaint);
-    	    
-    	} else {
-    		obscuredPaint.setStrokeWidth(5f);
-    		obscuredPaint.setColor(Color.WHITE);
-    		obscuredCanvas.drawRect(paintingRect, obscuredPaint);    		
-    	}
 	}
 	
 	private void clearRects() {
@@ -689,28 +789,32 @@ public class VideoEditor extends SherlockActivity implements
 			obscuredCanvas.drawPaint(clearPaint);
 	}
 
-	int currentNumFingers = 0;
+	int fingerCount = 0;
 	int regionCornerMode = 0;
 	
 	public static final int NONE = 0;
 	public static final int DRAG = 1;
 	//int mode = NONE;
 
-	public VideoRegion findRegion(float x, float y) {
-		VideoRegion returnRegion = null;
-		Log.d(LOGTAG, "finding region at " + x + ", " + y);
+	public ObscureRegion findRegion(float x, float y) 
+	{
+		ObscureRegion region, returnRegion = null;
 		
-		for (VideoRegion region : obscureRegions)
+		for (RegionTrail regionTrail:obscureTrails)
 		{
-			if (region.getBounds().contains(x,y))
+		
+			for (Integer regionKey : regionTrail.getRegionKeys())
 			{
-				Log.d(LOGTAG, "FOUND IT!");
-				returnRegion = region;
-				regionInContext = region;
-				Log.d(LOGTAG, "region: " + region.getBounds().toShortString() + "\n" + region.mProps.toString());
-				break;
-			}
-		}			
+				region = regionTrail.getRegion(regionKey);
+				
+				if (region.getBounds().contains(x,y))
+				{
+					returnRegion = region;
+					break;
+				}
+			}			
+		}
+		
 		return returnRegion;
 	}
 	
@@ -720,8 +824,8 @@ public class VideoEditor extends SherlockActivity implements
 	float startY = 0;
 	*/
 
-	boolean showMenu = false;
-
+	boolean showingMenu = false;
+	
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		
@@ -729,16 +833,20 @@ public class VideoEditor extends SherlockActivity implements
 
 		if (v == progressBar) {
 			// It's the progress bar/scrubber
-			// TODO: why do this?
-			
 			if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
 			    mediaPlayer.start();
 		    } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
 		    	mediaPlayer.pause();
+		    	
 		    }
-			
-			mediaPlayer.seekTo((int)(mediaPlayer.getDuration()*(float)(event.getX()/progressBar.getWidth())));
-			updateRegionDisplay();
+			/*
+			Log.v(LOGTAG,"" + event.getX() + " " + event.getX()/progressBar.getWidth());
+			Log.v(LOGTAG,"Seeking To: " + (int)(mDuration*(float)(event.getX()/progressBar.getWidth())));
+			Log.v(LOGTAG,"MediaPlayer Position: " + mediaPlayer.getCurrentPosition());
+			*/
+			int newTime = (int)(mediaPlayer.getDuration()*(float)(event.getX()/progressBar.getWidth()));
+			mediaPlayer.seekTo(newTime);
+			updateRegionDisplay(newTime);
 			// Attempt to get the player to update it's view - NOT WORKING
 			
 			handled = false; // The progress bar doesn't get it if we have true here
@@ -751,205 +859,167 @@ public class VideoEditor extends SherlockActivity implements
 			float x = event.getX() / vRatio;
 			float y = event.getY() / vRatio;
 
+			fingerCount = event.getPointerCount();
+			
 			switch (event.getAction() & MotionEvent.ACTION_MASK) {
+			
 				case MotionEvent.ACTION_DOWN:
 
-					// Single Finger down
-					currentNumFingers = 1;
 					
-					// If we have a region in creation/editing and we touch within it
-					if (activeRegion != null && activeRegion.getRectF().contains(x, y)) {
-
-						// Should display menu, unless they move
-						showMenu = true;
-						
-						// Are we on a corner?
-						regionCornerMode = getRegionCornerMode(activeRegion, x, y);
-						
-						Log.v(LOGTAG,"Touched activeRegion");
-																		
-					} else {
+					ObscureRegion newActiveRegion = findRegion(x,y);
 					
-						showMenu = false;
+					if (newActiveRegion != null && (!mediaPlayer.isPlaying()))
+					{
+						activeRegionTrail = newActiveRegion.getRegionTrail();
 						
-						VideoRegion previouslyActiveRegion = activeRegion;
+						updateProgressBar(activeRegionTrail);
 						
-						activeRegion = findRegion(x,y);
-						
-						if (activeRegion != null)
+						if (fingerCount == 1)
 						{
-							if (previouslyActiveRegion == activeRegion)
-							{
-								// Display menu unless they move
-								showMenu = true;
-								
-								// Are we on a corner?
-								regionCornerMode = getRegionCornerMode(activeRegion, x, y);
-								
-								// Show in and out points
-								
-								//regionInContext = activeRegion;
-								//progressBar.setThumbsActive(regionInContext);
-								
-								// They are interacting with the active region
-								Log.v(LOGTAG,"Touched an active region");
-								updateRegionDisplay();
-							}
-							else
-							{
-								// They are interacting with the active region
-								//regionInContext = activeRegion;
-								Log.v(LOGTAG,"Touched an existing region, make it active");
-								updateRegionDisplay();
-							}
 							
-						}
-						else 
-						{
-							//TODO: WHAT IS THE PARENT REGION?
-							activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition()-timeNudgeOffset,mDuration,x,y, null);
-							obscureRegions.add(activeRegion);
-							
-							regionInContext = activeRegion;
-							
-							Log.v(LOGTAG,"Creating a new activeRegion");
-														
-							// Show in and out points
-							updateRegionDisplay();
-							//progressBar.setThumbsActive(activeRegion);
-
+							showingMenu = true;
+							inflatePopup(false, (int)x, (int)y);
 						}
 						
+						activeRegion = newActiveRegion;
 					}
+					else 
+					{
+						
+						if (fingerCount > 1)
+						{
+		                	float[] points = {event.getX(0)/vRatio, event.getY(0)/vRatio, event.getX(1)/vRatio, event.getY(1)/vRatio}; 
+		                	
+		                	float startX = Math.min(points[0], points[2]);
+		                	float endX = Math.max(points[0], points[2]);
+		                	float startY = Math.min(points[1], points[3]);
+		                	float endY = Math.max(points[1], points[3]);
+		                	
+		                	newActiveRegion = new ObscureRegion(mediaPlayer.getCurrentPosition(),startX,startY,endX,endY);
+					
+						}
+						else
+						{
+							newActiveRegion = new ObscureRegion(mediaPlayer.getCurrentPosition(),x,y);
+							
+							if (activeRegion != null && activeRegion.getBounds().intersect(newActiveRegion.getBounds()))
+							{
+									//newActiveRegion.ex = newActiveRegion.sx + (activeRegion.ex-activeRegion.sx);
+									//newActiveRegion.ey = newActiveRegion.sy + (activeRegion.ey-activeRegion.sy);
+									float arWidth = activeRegion.ex-activeRegion.sx;
+									float arHeight = activeRegion.ey-activeRegion.sy;
+									
+									float sx = x - arWidth/2;
+									float ex = sx + arWidth;
+									
+									float sy = y - arHeight/2;
+									float ey = sy + arHeight;
+
+									newActiveRegion = new ObscureRegion(mediaPlayer.getCurrentPosition(),sx,sy,ex,ey);
+									
+									
+							}
+								
+								
+							
+						}
+		
+						if (activeRegionTrail == null)
+						{
+							activeRegionTrail = new RegionTrail(0,mDuration);
+							obscureTrails.add(activeRegionTrail);
+						}
+						else if (activeRegion != null && (!activeRegion.getBounds().intersect(newActiveRegion.getBounds())))
+						{
+							activeRegionTrail = new RegionTrail(0,mDuration);
+							obscureTrails.add(activeRegionTrail);
+						}
+						
+					
+
+						activeRegion = newActiveRegion;
+						
+						activeRegionTrail.addRegion(activeRegion);
+						
+						updateProgressBar(activeRegionTrail);
+						
+
+					}
+					
 
 					handled = true;
 
 					break;
 					
 				case MotionEvent.ACTION_UP:
-					// Single Finger Up
-					currentNumFingers = 0;
+									
+					showingMenu = false;
 					
-										
-					if (showMenu) {
-						
-						Log.v(LOGTAG,"Touch Up: Show Menu - Really finalizing activeRegion");
-						
-						
-						showMenu = false;
-					}
-					else
-					{
-						if (activeRegion != null)
-						{
-							if (mediaPlayer.isPlaying()) {
-								activeRegion.mProps.put(Keys.VideoRegion.END_TIME, mediaPlayer.getCurrentPosition());
-								regionInContext.mProps.put(Keys.VideoRegion.END_TIME, mediaPlayer.getCurrentPosition());
-							} else {
-								activeRegion.mProps.put(Keys.VideoRegion.END_TIME, mDuration);
-								regionInContext.mProps.put(Keys.VideoRegion.END_TIME, mDuration);
-							}
-							activeRegion = null;
-							updateRegionDisplay();
-						}
-					}
-					
-					
-					toggleRegionMenu();
 					break;
 										
 				case MotionEvent.ACTION_MOVE:
 					// Calculate distance moved
-					showMenu = false;
+
 					
-					long regionStartTime;
-					try {
-						regionStartTime = (Long) activeRegion.mProps.get(Keys.VideoRegion.START_TIME);
-					} catch(ClassCastException e) {
-						regionStartTime = (long) ((Integer) activeRegion.mProps.get(Keys.VideoRegion.START_TIME));
+					if (fingerCount > 1)
+					{
+	                	float[] points = {event.getX(0)/vRatio, event.getY(0)/vRatio, event.getX(1)/vRatio, event.getY(1)/vRatio}; 
+	                	
+	                	float startX = Math.min(points[0], points[2]);
+	                	float endX = Math.max(points[0], points[2]);
+	                	float startY = Math.min(points[1], points[3]);
+	                	float endY = Math.max(points[1], points[3]);
+	                	
+						newActiveRegion = new ObscureRegion(mediaPlayer.getCurrentPosition(),startX,startY,endX,endY);
+						
 					}
+					else
+					{
 					
-					if (activeRegion != null && mediaPlayer.getCurrentPosition() > regionStartTime) {
-						Log.v(LOGTAG,"Moving an activeRegion");
-						if(((Vector<VideoRegion>) regionInContext.mProps.get(Keys.VideoRegion.CHILD_REGIONS)).contains(activeRegion))
-							Log.d(LOGTAG, "this is a child of the context region");
-						else if(activeRegion.equals(regionInContext))
-							Log.d(LOGTAG, "this IS the context region");
+						newActiveRegion = new ObscureRegion(mediaPlayer.getCurrentPosition(),x,y);
 						
-						long previousEndTime;
-						try {
-							 previousEndTime = (Long) activeRegion.mProps.get(Keys.VideoRegion.END_TIME);
-						} catch(ClassCastException e) {
-							previousEndTime = (long) ((Integer) activeRegion.mProps.get(Keys.VideoRegion.END_TIME));
+						if (activeRegion != null && activeRegion.getBounds().intersect(newActiveRegion.getBounds()))
+						{
+								float arWidth = activeRegion.ex-activeRegion.sx;
+								float arHeight = activeRegion.ey-activeRegion.sy;
+								
+								float sx = x - arWidth/2;
+								float ex = sx + arWidth;
+								
+								float sy = y - arHeight/2;
+								float ey = sy + arHeight;
+
+								newActiveRegion = new ObscureRegion(mediaPlayer.getCurrentPosition(),sx,sy,ex,ey);
+								
+								
 						}
-						activeRegion.mProps.put(Keys.VideoRegion.END_TIME, mediaPlayer.getCurrentPosition());
-						
-						VideoRegion lastRegion = activeRegion;
-						activeRegion = null;
-						
-						if (regionCornerMode != CORNER_NONE) {
-							//TODO: WHAT IS THE PARENT REGION?
-							//moveRegion(float _sx, float _sy, float _ex, float _ey)
-							// Create new region with moved coordinates
-							if (regionCornerMode == CORNER_UPPER_LEFT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y,lastRegion.ex,lastRegion.ey, VideoRegion.DEFAULT_MODE, regionInContext);
-								obscureRegions.add(activeRegion);
-							} else if (regionCornerMode == CORNER_LOWER_LEFT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,lastRegion.sy,lastRegion.ex,y, VideoRegion.DEFAULT_MODE, regionInContext);
-								obscureRegions.add(activeRegion);
-							} else if (regionCornerMode == CORNER_UPPER_RIGHT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,y,x,lastRegion.ey, VideoRegion.DEFAULT_MODE, regionInContext);
-								obscureRegions.add(activeRegion);
-							} else if (regionCornerMode == CORNER_LOWER_RIGHT) {
-								activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,lastRegion.sx,lastRegion.sy,x,y, VideoRegion.DEFAULT_MODE, regionInContext);
-								obscureRegions.add(activeRegion);
-							}
-							updateRegionDisplay();
-							
-						} else {		
-							// No Corner
-							activeRegion = new VideoRegion(this, mDuration, mediaPlayer.getCurrentPosition(),previousEndTime,x,y, regionInContext);
-							obscureRegions.add(activeRegion);
-							updateRegionDisplay();
-						}
-												
-					} else if (activeRegion != null) {
-						Log.v(LOGTAG,"Moving activeRegion start time");
-						
-						
-						if (regionCornerMode != CORNER_NONE) {
-							 
-							// Just move region, we are at begin time
-							if (regionCornerMode == CORNER_UPPER_LEFT) {
-								activeRegion.moveRegion(x,y,activeRegion.ex,activeRegion.ey);
-							} else if (regionCornerMode == CORNER_LOWER_LEFT) {
-								activeRegion.moveRegion(x,activeRegion.sy,activeRegion.ex,y);
-							} else if (regionCornerMode == CORNER_UPPER_RIGHT) {
-								activeRegion.moveRegion(activeRegion.sx,y,x,activeRegion.ey);
-							} else if (regionCornerMode == CORNER_LOWER_RIGHT) {
-								activeRegion.moveRegion(activeRegion.sx,activeRegion.sy,x,y);
-							}
-						} else {		
-							// No Corner
-							activeRegion.moveRegion(x, y);
-						}
-						updateRegionDisplay();
 						
 					}
 					
+					activeRegion = newActiveRegion;
+					
+					activeRegionTrail.addRegion(activeRegion);
 					
 					handled = true;
+					
+					
 					break;
+				
 			}
 		}
 		
-		updateRegionDisplay();
+		updateRegionDisplay(mediaPlayer.getCurrentPosition());
 		
 		return handled; // indicate event was handled	
 	}
 	
-	
-	public int getRegionCornerMode(VideoRegion region, float x, float y)
+	private void updateProgressBar (RegionTrail rTrail)
+	{
+		progressBar.setThumbsActive((int)((double)rTrail.getStartTime()/(double)mDuration*100), (int)((double)rTrail.getEndTime()/(double)mDuration*100));
+
+	}
+	/*
+	public int getRegionCornerMode(ObscureRegion region, float x, float y)
 	{    			
     	if (Math.abs(region.getBounds().left-x)<REGION_CORNER_SIZE
     			&& Math.abs(region.getBounds().top-y)<REGION_CORNER_SIZE)
@@ -979,7 +1049,7 @@ public class VideoEditor extends SherlockActivity implements
 		Log.v(LOGTAG,"CORNER_NONE");    	
     	return CORNER_NONE;
 	}
-	
+	*/
 	
 	@Override
 	public void onClick(View v) {
@@ -1024,94 +1094,105 @@ public class VideoEditor extends SherlockActivity implements
 	
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
-    	MenuInflater inflater = getSupportMenuInflater();
+    	MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.video_editor_menu, menu);
-        
-        this.menu = menu;
 
         return true;
 	}
 	
     
-    @SuppressWarnings("unchecked")
-	@Override
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
     	
+    		case R.id.menu_new_region:
+    			
+    			beginAutoDetect();
+
+    			return true;
+    			
         	case R.id.menu_save:
+
         		completeActionFlag = 3;
-        		Intent keyChooser = new Intent(this, KeyChooser.class);
-				startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
-        		//TODO: processVideo();
+        		processVideo();
+        		
+        		return true;   
+        		
+        	case R.id.menu_prefs:
+
+        		showPrefs();
+        		
+        		return true;  
+        	
+        	case R.id.menu_clear_regions:
+        		
+        		obscureTrails.clear();
+        		
+        		updateRegionDisplay(mediaPlayer.getCurrentPosition());
+        		
         		return true;
-        	case R.id.menu_delete_all_regions:
-        		obscureRegions.clear();
-        		if(regionInContext != null)
-        			regionInContext = null;
-        		toggleRegionMenu();
-        		updateRegionDisplay();
+        		
+/*
+ 			case R.id.menu_delete_original:
+        		// Delete Original Image
+        		handleDelete();
+        		
         		return true;
+*/        		
+        	case R.id.menu_about:
+        		// Pull up about screen
+        		displayAbout();
+        		
+        		return true;
+        	
         	case R.id.menu_preview:
         		playVideo();
+        		
         		return true;
-        	case R.id.menu_hide_hints:
-        		return true;
-        	case R.id.menu_current_region_redact:
-        		if(regionInContext != null) {
-        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null)
-        				regionInContext.updateRegionProcessor(VideoRegion.REDACT);
-        			else
-        				((VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION)).updateRegionProcessor(VideoRegion.REDACT);
-        			return true;
-        		}
-        		return false;
-        	case R.id.menu_current_region_pixelate:
-        		if(regionInContext != null) {
-        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null)
-        				regionInContext.updateRegionProcessor(VideoRegion.PIXELATE);
-        			else
-        				((VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION)).updateRegionProcessor(VideoRegion.PIXELATE);
-        			return true;
-        		}
-        		return false;
-        	case R.id.menu_current_region_identify:
-        		if(regionInContext != null) {
-        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null)
-        				regionInContext.updateRegionProcessor(VideoRegion.CONSENT);
-        			else
-        				((VideoRegion) regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION)).updateRegionProcessor(VideoRegion.CONSENT);
-        			return true;
-        		}
-        		return false;
-        	case R.id.menu_current_region_delete:
-        		if(regionInContext != null) {
-        			if(regionInContext.mProps.get(Keys.VideoRegion.PARENT_REGION) == null) {
-        				for(VideoRegion child : (Vector<VideoRegion>) regionInContext.mProps.get(Keys.VideoRegion.CHILD_REGIONS))
-        					obscureRegions.remove(child);
-        			}
-
-        			obscureRegions.remove(regionInContext);
-        			
-        			// TODO: actually, remove all child regions from parent
-        			regionInContext = null;
-        			toggleRegionMenu();
-        			updateRegionDisplay();
-        			return true;
-        		}
-        		return false;
         		
     		default:
     			return false;
     	}
     }
-    
-	public void associateVideoRegionData(VideoRegion vr) {
-		sendBroadcast(new Intent()
-			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
-			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, (Long) vr.mRProc.getProperties().get(Keys.VideoRegion.TIMESTAMP))
-			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.REGION_GENERATED));
+
+    /*
+	 * Display the about screen
+	 */
+	private void displayAbout() {
+		
+		StringBuffer msg = new StringBuffer();
+		
+		msg.append(getString(R.string.app_name));
+		
+        String versNum = "";
+        
+        try {
+            String pkg = getPackageName();
+            versNum = getPackageManager().getPackageInfo(pkg, 0).versionName;
+        } catch (Exception e) {
+        	versNum = "";
+        }
+        
+        msg.append(" v" + versNum);
+        msg.append('\n');
+        msg.append('\n');
+        
+        msg.append(getString(R.string.about));
+	        
+        msg.append('\n');
+        msg.append('\n');
+        
+        msg.append(getString(R.string.about2));
+        
+        msg.append('\n');
+        msg.append('\n');
+        
+        msg.append(getString(R.string.about3));
+        
+		showDialog(msg.toString());
 	}
+	
 
 	private void showDialog (String msg)
 	{
@@ -1119,13 +1200,6 @@ public class VideoEditor extends SherlockActivity implements
          .setTitle(getString(R.string.app_name))
          .setMessage(msg)
          .create().show();
-	}
-	
-	private void saveVideo(long[] encryptList) {
-		//TODO: saveVideo();
-		Log.d(LOGTAG, "looks like we made it");
-		for(long l : encryptList)
-			Log.d(LOGTAG, "l = " + l);
 	}
     
     private void processVideo() {
@@ -1167,11 +1241,7 @@ public class VideoEditor extends SherlockActivity implements
 				if (ffmpeg == null)
 					ffmpeg = new FFMPEGWrapper(VideoEditor.this.getBaseContext());
 	
-				float sizeMult = .75f;
-				int frameRate = 15;
-				int bitRate = 300;
-				String format = "mp4";
-				
+					
 				ShellUtils.ShellCallback sc = new ShellUtils.ShellCallback ()
 				{
 					int total = 0;
@@ -1182,9 +1252,12 @@ public class VideoEditor extends SherlockActivity implements
 						
 						String line = new String(shellout);
 						
+						//Log.d(LOGTAG, line);
+						
 						//progressDialog.setMessage(new String(msg));
 						//Duration: 00:00:00.99,
 						//time=00:00:00.00
+						
 						int idx1;
 						String newStatus = null;
 						int progress = 0;
@@ -1230,8 +1303,18 @@ public class VideoEditor extends SherlockActivity implements
 					
 				};
 				
+				int processVWidth = videoWidth;
+				int processVHeight = videoHeight;
+				
+				if (outVWidth != -1)
+					processVWidth = outVWidth;
+				
+				if (outVHeight != -1)
+					processVHeight = outVHeight;
+				
 				// Could make some high/low quality presets	
-				ffmpeg.processVideo(redactSettingsFile, obscureRegions, recordingFile, saveFile, format, mediaPlayer.getVideoWidth(), mediaPlayer.getVideoHeight(), frameRate, bitRate, sizeMult, sc);
+				ffmpeg.processVideo(redactSettingsFile, obscureTrails, recordingFile, saveFile, outFormat, 
+						videoWidth, videoHeight, processVWidth, processVHeight, outFrameRate, outBitRate, outVcodec, outAcodec, sc);
 			}
 			catch (Exception e)
 			{
@@ -1293,86 +1376,122 @@ public class VideoEditor extends SherlockActivity implements
 //        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
 	}
 	
-	private void reviewAndFinish() {
-		Intent i = new Intent(this, ReviewAndFinish.class);
-		i.setData(Uri.parse(saveFile.getPath()));
-    	i.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.VIDEO);
-    	startActivityForResult(i, ObscuraConstants.REVIEW_MEDIA);
-    	finish();
+	private void askPostProcessAction ()
+	{
+
+		final AlertDialog.Builder b = new AlertDialog.Builder(this);
+		b.setIcon(android.R.drawable.ic_dialog_alert);
+		b.setTitle(R.string.app_name);
+		b.setMessage("What do you want to do with the video?");
+		b.setPositiveButton(R.string.play_video, new DialogInterface.OnClickListener ()
+		{
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				playVideo();
+				
+			}
+
+			
+		});
+		b.setNegativeButton(R.string.share_video,  new DialogInterface.OnClickListener ()
+		{
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				shareVideo();
+				
+			}
+
+			
+		});
+		b.show();
+
 	}
-	
 	private void playVideo() {
+		
     	Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
-    	intent.setDataAndType(Uri.parse(saveFile.getAbsolutePath()), MIME_TYPE_MP4);    	
-   	 	startActivity(intent);
+    	intent.setDataAndType(Uri.parse(saveFile.getPath()), MIME_TYPE_MP4);    	
+   	 	startActivityForResult(intent,0);
+   	 	
 	}
 	
+	private void shareVideo() {
+    	Intent intent = new Intent(Intent.ACTION_SEND);
+    	intent.setType(MIME_TYPE_MP4);
+    	intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(saveFile.getPath()));
+    	startActivityForResult(Intent.createChooser(intent, "Share Video"),0);     
+	}
+	
+	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		super.onActivityResult(requestCode, resultCode, intent);
+		
+	}
+
 	@Override
 	public void inOutValuesChanged(int thumbInValue, int thumbOutValue) {
-		// TODO: inOutValuesChanged
-		
-		if (regionInContext != null) {
-			regionInContext.mProps.put(
-					Keys.VideoRegion.START_TIME, 
-					progressBar.mapPixelsToSeconds(thumbInValue, (Long) regionInContext.mProps.get(Keys.VideoRegion.DURATION)));
-			regionInContext.mProps.put(
-					Keys.VideoRegion.END_TIME, 
-					progressBar.mapPixelsToSeconds(thumbOutValue, (Long) regionInContext.mProps.get(Keys.VideoRegion.DURATION)));
-			progressBar.setThumbsActive(regionInContext);
+		if (activeRegionTrail != null) {
+			
+			
+			activeRegionTrail.setStartTime(thumbInValue);
+			activeRegionTrail.setStartTime(thumbOutValue);
 		}
 	}
 	
-	private void toggleRegionMenu() {
-		if(regionInContext != null)
-			menu.getItem(0).setVisible(true);
-		else
-			menu.getItem(0).setVisible(false);
-	}
-	
-	
+	public void inflatePopup(boolean showDelayed, int x, int y) {
+		if (popupMenu == null)
+			initPopup();
 
-	//Popup menu item clicked
-	/*
-	@Override
-	public void onItemClick(int pos) {
-		
-		switch (pos) {
-			case 0:
-				// set in point
-				activeRegion.startTime = mediaPlayer.getCurrentPosition();
-				break;
-			case 1:
-				// set out point
-				activeRegion.endTime = mediaPlayer.getCurrentPosition();
-				activeRegion = null;
-				
-				// Hide in and out points
-				progressBar.setThumbsInactive();
-				
-				break;
-			case 2:
-				// Remove region
-				obscureRegions.remove(activeRegion);
-				activeRegion = null;
-				break;
-		}
+		popupMenu.show(regionsView, x, y);
 	}
-	*/
+	
+	private void initPopup ()
+	{
+		popupMenu = new QuickAction(this);
+
+		popupMenuItems = new ActionItem[5];
+		
+		popupMenuItems[0] = new ActionItem();
+		popupMenuItems[0].setTitle("Set In Point");
+		popupMenuItems[0].setActionId(0);
+		
+		//popupMenuItems[0].setIcon(getResources().getDrawable(R.drawable.icon));			
+
+		popupMenuItems[1] = new ActionItem();
+		popupMenuItems[1].setActionId(1);
+		
+		popupMenuItems[1].setTitle("Set Out Point");
+				
+		popupMenuItems[2] = new ActionItem();
+		popupMenuItems[2].setActionId(2);		
+		popupMenuItems[2].setTitle("Remove Region");				
+
+		popupMenuItems[3] = new ActionItem();
+		popupMenuItems[3].setActionId(3);		
+		popupMenuItems[3].setTitle("Remove Trail");				
+
+		for (int i=0; i < popupMenuItems.length; i++) {
+			if (popupMenuItems[i] != null) {
+				popupMenu.addActionItem(popupMenuItems[i]);
+			}
+		}
+			
+		popupMenu.setOnActionItemClickListener(this);
+	}
+
 	
 	@Override
 	protected void onPause() {
 
 		super.onPause();
 		mediaPlayer.reset();
-		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
-
+		
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
 		this.mAutoDetectEnabled = false;
-		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
 	}	
 	
 	private void killVideoProcessor ()
@@ -1396,7 +1515,7 @@ public class VideoEditor extends SherlockActivity implements
 
 				@Override
 				public void shellOut(char[] msg) {
-					
+					// TODO Auto-generated method stub
 					
 				}
 				
@@ -1409,6 +1528,23 @@ public class VideoEditor extends SherlockActivity implements
 	@Override
 	protected void onResume() {
 		super.onResume();
+		setPrefs();
+		
+	}
+	
+	private void setPrefs ()
+	{
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+		
+		outFrameRate = Integer.parseInt(prefs.getString("pref_out_fps", DEFAULT_OUT_FPS).trim());
+		outBitRate = Integer.parseInt(prefs.getString("pref_out_rate", DEFAULT_OUT_RATE).trim());
+		outFormat = prefs.getString("pref_out_format", DEFAULT_OUT_FORMAT).trim();
+		outAcodec =  prefs.getString("pref_out_acodec", DEFAULT_OUT_ACODEC).trim();
+		outVcodec =  prefs.getString("pref_out_vcodec", DEFAULT_OUT_VCODEC).trim();
+
+		outVWidth =   Integer.parseInt(prefs.getString("pref_out_vwidth", "480").trim());
+		outVHeight =   Integer.parseInt(prefs.getString("pref_out_vheight", "320").trim());
 		
 	}
 	
@@ -1459,30 +1595,39 @@ public class VideoEditor extends SherlockActivity implements
 			int _backgroundColor) {
 	 */
 	
-	private int autoDetectFrame(Bitmap bmp, long cTime, long cBuffer, long cDuration) {
+	private int autoDetectFrame(Bitmap bmp, int cTime, int cBuffer, int cDuration) {
 		
 		if (bmp == null)
 			return 0;
-		
-		// This should be called via a pop-up/alert mechanism
-		Log.d(LOGTAG, "face detect bmp size: " + bmp.getWidth() + "x" + bmp.getHeight());
 		
 		RectF[] autodetectedRects = runFaceDetection(bmp);
 		for (RectF autodetectedRect : autodetectedRects)
 		{
 
-			
 			//float faceBuffer = -1 * (autodetectedRect.right-autodetectedRect.left)/15;			
 			//autodetectedRect.inset(faceBuffer, faceBuffer);
 			
-			//TODO: WHAT IS THE PARENT REGION?
-			activeRegion = new VideoRegion(this, cDuration, cTime - cBuffer,cTime + cBuffer,autodetectedRect.left,
+			ObscureRegion newRegion = new ObscureRegion(cTime,autodetectedRect.left,
 					autodetectedRect.top,
 					autodetectedRect.right,
 					autodetectedRect.bottom,
-					VideoRegion.DEFAULT_MODE, null);
-			obscureRegions.add(activeRegion);
+					ObscureRegion.DEFAULT_MODE);
 			
+			
+			if (activeRegion == null)
+			{
+				activeRegionTrail = new RegionTrail(0,mDuration);
+				obscureTrails.add(activeRegionTrail);
+			}
+			else if (!activeRegion.getRectF().intersect(newRegion.getRectF()))
+			{
+				activeRegionTrail = new RegionTrail(0,mDuration);
+				obscureTrails.add(activeRegionTrail);
+			}
+			
+			activeRegionTrail.addRegion(newRegion);
+			
+			activeRegion = newRegion;
 		}	
 
 		Message msg = mHandler.obtainMessage(5);
@@ -1501,7 +1646,7 @@ public class VideoEditor extends SherlockActivity implements
 			//Bitmap bProc = toGrayscale(bmp);
 			GoogleFaceDetection gfd = new GoogleFaceDetection(bmp);
 			int numFaces = gfd.findFaces();
-	        Log.d(LOGTAG,"Num Faces Found: " + numFaces); 
+	        Log.d(ObscuraConstants.TAG,"Num Faces Found: " + numFaces); 
 	        possibleFaceRects = gfd.getFaces();
 		} catch(NullPointerException e) {
 			possibleFaceRects = null;
@@ -1574,82 +1719,51 @@ public class VideoEditor extends SherlockActivity implements
 		// return final image
 		return bmOut;
 	}
-	
-	public void launchTagger(VideoRegion vr) {
-    	Intent informa = new Intent(this, Tagger.class);
-    	informa.putExtra(ObscuraConstants.ImageRegion.PROPERTIES, vr.getRegionProcessor().getProperties());
-    	informa.putExtra(InformaConstants.Keys.VideoRegion.INDEX, obscureRegions.indexOf(vr));
-    	
-    	vr.getRegionProcessor().processRegion(new RectF(vr.getBounds()), obscuredCanvas, obscuredBmp);
-    	
-    	if(vr.getRegionProcessor().getBitmap() != null) {
-    		Bitmap b = vr.getRegionProcessor().getBitmap();
-    		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
-    		informa.putExtra(Keys.ImageRegion.THUMBNAIL, baos.toByteArray());
-    	}
-    	
-    	startActivityForResult(informa, InformaConstants.FROM_INFORMA_TAGGER);
-    	
-    }
-	
-	private void prepareMedia() throws IllegalArgumentException, SecurityException, IllegalStateException, IOException {
-		mediaPlayer.reset();
-		mediaPlayer.setDataSource(originalVideoUri.getPath());
-		mediaPlayer.prepare();
+
+	public void showPrefs ()
+	{
+		Intent intent = new Intent(this, VideoPreferences.class);
+		startActivityForResult(intent,0);
+		
 	}
-	
+
 	@Override
-    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
-    	super.onActivityResult(requestCode, resultCode, data);
-    	
-    	if(resultCode == SherlockActivity.RESULT_OK) {
-    		if(requestCode == InformaConstants.FROM_INFORMA_TAGGER) {
-    			// replace corresponding image region
-    			@SuppressWarnings("unchecked")
-				HashMap<String, Object> informaReturn = 
-					(HashMap<String, Object>) data.getSerializableExtra(Keys.VideoRegion.TAGGER_RETURN);    			
-
-    			Properties mProp = obscureRegions.get(data.getIntExtra(Keys.VideoRegion.INDEX, 0))
-    					.getRegionProcessor().getProperties();
-    			
-    			// iterate through returned hashmap and place these new properties in it.
-    			for(Map.Entry<String, Object> entry : informaReturn.entrySet())
-    				mProp.setProperty(entry.getKey(), entry.getValue().toString());
-    			    			
-    			regionInContext = obscureRegions.get(data.getIntExtra(Keys.VideoRegion.INDEX, 0));
-    			regionInContext.getRegionProcessor().setProperties(mProp);
-    			
-    			try {
-					prepareMedia();
-				} catch (IllegalArgumentException e) {
-					Log.d(LOGTAG, "error preparing media: " + e.toString());
-				} catch (SecurityException e) {
-					Log.d(LOGTAG, "error preparing media: " + e.toString());
-				} catch (IllegalStateException e) {
-					Log.d(LOGTAG, "error preparing media: " + e.toString());
-				} catch (IOException e) {
-					Log.d(LOGTAG, "error preparing media: " + e.toString());
-				}
-    			    			
-    		} else if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER) {
-    			mHandler.postDelayed(new Runnable() {
-    				  @Override
-    				  public void run() {
-    					long[] encryptList = new long[] {0L};
-		        		if(data.hasExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST))
-		        			encryptList = data.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST);
-		        		
-		        		saveVideo(encryptList);
-
-    				  }
-    				},500);
-    		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
-    			setResult(SherlockActivity.RESULT_OK);
-    			finish();
-    		}
-    	}
-    }
-
+	public void onItemClick(QuickAction source, int pos, int actionId) {
+		
+		switch (actionId) {
+		case 0:
+			// set in point
+			activeRegionTrail.setStartTime(mediaPlayer.getCurrentPosition());
+			updateProgressBar(activeRegionTrail);
+			updateRegionDisplay(mediaPlayer.getCurrentPosition());
+			
+			
+			break;
+		case 1:
+			// set out point
+			activeRegionTrail.setEndTime(mediaPlayer.getCurrentPosition());
+			updateProgressBar(activeRegionTrail);
+			updateRegionDisplay(mediaPlayer.getCurrentPosition());
+			
+			break;
+		case 2:
+			// Remove region
+			activeRegionTrail.removeRegion(activeRegion);
+			activeRegion = null;
+			updateRegionDisplay(mediaPlayer.getCurrentPosition());
+			
+			break;
+			
+		case 3:
+			// Remove region
+			obscureTrails.remove(activeRegionTrail);
+			activeRegionTrail = null;
+			activeRegion = null;
+			updateRegionDisplay(mediaPlayer.getCurrentPosition());
+			
+			break;
+	}
+		
+	}
 
 }

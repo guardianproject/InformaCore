@@ -11,6 +11,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Vector;
 
 import org.witness.ssc.video.ShellUtils.ShellCallback;
@@ -44,7 +47,6 @@ public class FFMPEGWrapper {
 			pb.redirectErrorStream(true);
 	    	Process process = pb.start();      
 	    	
-			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 	
 			String line;
@@ -77,33 +79,42 @@ public class FFMPEGWrapper {
 	}
 	
 	public void processVideo(File redactSettingsFile, 
-			Vector<VideoRegion> obscureRegions, File inputFile, File outputFile, String format, 
-			int width, int height, int frameRate, int kbitRate, float sizeMult, ShellCallback sc) throws Exception {
+			ArrayList<RegionTrail> obscureRegionTrails, File inputFile, File outputFile, String format, 
+			int iWidth, int iHeight, int oWidth, int oHeight, int frameRate, int kbitRate, String vcodec, String acodec, ShellCallback sc) throws Exception {
 		
-		writeRedactData(redactSettingsFile, obscureRegions, sizeMult);
+		float widthMod = ((float)oWidth)/((float)iWidth);
+		float heightMod = ((float)oHeight)/((float)iHeight);
+		
+		writeRedactData(redactSettingsFile, obscureRegionTrails, widthMod, heightMod);
 		    	
+		if (vcodec == null)
+			vcodec = "copy";//"libx264"
+		
+		if (acodec == null)
+			acodec = "copy";
 		
     	String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " +ffmpegBin);
     	
-    	//ffmpeg -v 10 -y -i /sdcard/org.witness.sscvideoproto/videocapture1042744151.mp4 -vcodec libx264 -b 3000k -s 720x480 -r 30 -acodec copy -f mp4 -vf 'redact=/data/data/org.witness.sscvideoproto/redact_unsort.txt' /sdcard/org.witness.sscvideoproto/new.mp4
-    	
     	String[] ffmpegCommand = {ffmpegBin, "-v", "10", "-y", "-i", inputFile.getPath(), 
-				"-vcodec", "libx264", 
+				"-vcodec", vcodec, 
 				"-b", kbitRate+"k", 
-				"-s",  (int)(width*sizeMult) + "x" + (int)(height*sizeMult), 
+				"-s",  oWidth + "x" + oHeight, 
 				"-r", ""+frameRate,
-				"-an",
+				"-acodec", "copy",
 				"-f", format,
 				"-vf","redact=" + redactSettingsFile.getAbsolutePath(),
 				outputFile.getPath()};
+    	
+    	
+    	//ffmpeg -v 10 -y -i /sdcard/org.witness.sscvideoproto/videocapture1042744151.mp4 -vcodec libx264 -b 3000k -s 720x480 -r 30 -acodec copy -f mp4 -vf 'redact=/data/data/org.witness.sscvideoproto/redact_unsort.txt' /sdcard/org.witness.sscvideoproto/new.mp4
     	
     	//"-vf" , "redact=" + Environment.getExternalStorageDirectory().getPath() + "/" + PACKAGENAME + "/redact_unsort.txt",
 
     	
     	// Need to make sure this will create a legitimate mp4 file
     	//"-acodec", "ac3", "-ac", "1", "-ar", "16000", "-ab", "32k",
-    	//"-acodec", "copy",
+    	
 
     	/*
     	String[] ffmpegCommand = {"/data/data/"+PACKAGENAME+"/ffmpeg", "-v", "10", "-y", "-i", recordingFile.getPath(), 
@@ -118,18 +129,41 @@ public class FFMPEGWrapper {
 	    
 	}
 	
-	private void writeRedactData(File redactSettingsFile, Vector<VideoRegion> obscureRegions, float sizeMult) throws IOException {
+	private void writeRedactData(File redactSettingsFile, ArrayList<RegionTrail> regionTrails, float widthMod, float heightMod) throws IOException {
 		// Write out the finger data
 					
 		FileWriter redactSettingsFileWriter = new FileWriter(redactSettingsFile);
 		PrintWriter redactSettingsPrintWriter = new PrintWriter(redactSettingsFileWriter);
 		
-		for (int i = 0; i < obscureRegions.size(); i++) {
-			VideoRegion or = (VideoRegion)obscureRegions.get(i);
-			String orData = or.getStringData(sizeMult);
-			Log.d("SSC", orData);
-			redactSettingsPrintWriter.println(orData);
+		for (RegionTrail trail : regionTrails)
+		{
+			
+			ObscureRegion or = null, lastOr = null;
+			
+			for (Integer orKey : trail.getRegionKeys())
+			{
+				or = trail.getRegion(orKey);
+				
+				String orData = "";
+				
+				if (lastOr != null)
+				{
+					orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp-lastOr.timeStamp);
+				}
+				
+				redactSettingsPrintWriter.println(orData);
+				
+				lastOr = or;
+			}
+			
+			if (or != null)
+			{
+				String orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp-lastOr.timeStamp);
+				redactSettingsPrintWriter.println(orData);
+			}
+			
 		}
+		
 		redactSettingsPrintWriter.flush();
 		redactSettingsPrintWriter.close();
 
