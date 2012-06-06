@@ -220,6 +220,17 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
 					
 			long insert = db.insert(dh.getTable(), null, cv);
+			
+			/*
+			dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
+			
+			cv = new ContentValues();
+			
+			// generate public/private key pair for device
+			
+			insert = db.insert(dh.getTable(), null, cv);
+			*/
+			
 			if(insert != 0)
 				enableAction(wizard_next);
 			

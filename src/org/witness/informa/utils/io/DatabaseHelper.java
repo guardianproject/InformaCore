@@ -63,6 +63,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							"integer primary key autoincrement, " +
 							ImageRegion.BASE + " text not null, " +
 							ImageRegion.DATA + " blob not null" +
+							")",
+					"CREATE TABLE " + Tables.KEYRING + " (" + BaseColumns._ID + " " +
+							"integer primary key autoincrement, " +
+							Device.PUBLIC_KEY + " blob not null, " +
+							Device.PRIVATE_KEY + " blob not null, " +
+							Device.PASSPHRASE + " text not null" +
 							")"
 				};
 			}
@@ -147,6 +153,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				queries.add(QueryBuilders.INIT_INFORMA.build()[4]);
 			else if(getTable().compareTo(Tables.ENCRYPTED_IMAGES) == 0)
 				queries.add(QueryBuilders.INIT_INFORMA.build()[5]);
+			else if(getTable().compareTo(Tables.KEYRING) == 0)
+				queries.add(QueryBuilders.INIT_INFORMA.build()[6]);
 			
 			for(String q : queries)
 				db.execSQL(q);

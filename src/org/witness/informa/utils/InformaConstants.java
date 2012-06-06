@@ -216,6 +216,9 @@ public class InformaConstants {
 			public static final String IMEI = Suckers.Phone.IMEI;
 			public static final String BLUETOOTH_DEVICE_NAME = Suckers.Phone.BLUETOOTH_DEVICE_NAME;
 			public static final String BLUETOOTH_DEVICE_ADDRESS = Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS;
+			public static final String PUBLIC_KEY = "device_publicKey";
+			public static final String PRIVATE_KEY = "device_privateKey";
+			public static final String PASSPHRASE = "device_passphrase";
 		}
 		
 		public final static class Tables {
@@ -225,6 +228,7 @@ public class InformaConstants {
 			public static final String IMAGE_REGIONS = "imageRegions";
 			public static final String TRUSTED_DESTINATIONS = "trustedDestinations";
 			public static final String ENCRYPTED_IMAGES = "encryptedImages";
+			public static final String KEYRING = "privateKeyring";
 		}
 		
 		public final static class Suckers {

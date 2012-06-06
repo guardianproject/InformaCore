@@ -21,6 +21,7 @@ import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.io.Uploader;
 import org.witness.informa.utils.io.Uploader.LocalBinder;
 import org.witness.informa.utils.io.Uploader.MetadataHandler;
+import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.DestoService;
 import org.witness.mods.InformaTextView;
 import org.witness.ssc.R;
@@ -52,6 +53,7 @@ public class EncryptActivity extends Activity {
 	private DestoService destoService;
 	SharedPreferences sp;
 	int encrypted = 0;
+	Apg apg;
 	
 	Uploader uploader, _uploader;
 	private List<BroadcastReceiver> br;
@@ -136,7 +138,6 @@ public class EncryptActivity extends Activity {
 		for(BroadcastReceiver b : br)
 			registerReceiver(b, ((Broadcaster) b).intentFilter);
 		
-		Log.d(InformaConstants.TAG, "broadcast receivers set");
 	}
 	
 	@Override
@@ -176,7 +177,6 @@ public class EncryptActivity extends Activity {
 		public String tmpId, authToken, hash;
 		
 		public MetadataPack(String email, String metadata, String filepath, String hash) {
-			Log.d(InformaConstants.TAG, "BTW, the hash is " + hash);
 			this.email = email;
 			this.metadata = metadata;
 			this.filepath = filepath;
@@ -190,6 +190,8 @@ public class EncryptActivity extends Activity {
 		
 		public void doEncrypt() {
 			// TODO: once we have GPG/PGP working...
+			// until then, just sign data with the key
+			
 		}
 		
 		public int doInject() {

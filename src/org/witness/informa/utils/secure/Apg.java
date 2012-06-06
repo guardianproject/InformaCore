@@ -5,10 +5,12 @@ package org.witness.informa.utils.secure;
  */
 
 import java.io.File;
+import java.security.Security;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.ssc.R;
 
@@ -32,12 +34,18 @@ public class Apg extends CryptoProvider
     private static final int mMinRequiredVersion = 16;
 
     public static final String AUTHORITY = "org.thialfihar.android.apg.provider";
-
+    
+    public static final Uri CONTENT_URI_SECRET_KEY_RINGS =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/");
     public static final Uri CONTENT_URI_SECRET_KEY_RING_BY_KEY_ID =
             Uri.parse("content://" + AUTHORITY + "/key_rings/secret/key_id/");
     public static final Uri CONTENT_URI_SECRET_KEY_RING_BY_EMAILS =
             Uri.parse("content://" + AUTHORITY + "/key_rings/secret/emails/");
-
+    public static final Uri CONTENT_URI_DATA =
+    		Uri.parse("content://" + AUTHORITY + "/data/");
+    
+    public static final Uri CONTENT_URI_PUBLIC_KEY_RINGS =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/public/");
     public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_KEY_ID =
             Uri.parse("content://" + AUTHORITY + "/key_rings/public/key_id/");
     public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_EMAILS =
@@ -53,6 +61,11 @@ public class Apg extends CryptoProvider
         public static final String ENCRYPT_AND_RETURN = "org.thialfihar.android.apg.intent.ENCRYPT_AND_RETURN";
         public static final String SELECT_PUBLIC_KEYS = "org.thialfihar.android.apg.intent.SELECT_PUBLIC_KEYS";
         public static final String SELECT_SECRET_KEY = "org.thialfihar.android.apg.intent.SELECT_SECRET_KEY";
+        
+        /*
+         * added
+         */
+        public static final String GENERATE_SIGNATURE = "org.thialfihar.android.apg.intent.GENERATE_SIGNATURE";
     }
 
     public static final String EXTRA_TEXT = "text";

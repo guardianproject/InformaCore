@@ -10,6 +10,7 @@
 	<classpathentry kind="lib" path="libs/httpclient-cache-4.1.jar"/>
 	<classpathentry kind="lib" path="libs/httpclient-4.1.jar"/>
 	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/bcpg-jdk15on-147.jar"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="output" path="bin/classes"/>

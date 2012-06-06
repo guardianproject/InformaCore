@@ -9,6 +9,7 @@ import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.LoginCache;
 import org.witness.informa.utils.SensorSucker;
 import org.witness.informa.utils.SensorSucker.LocalBinder;
+import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.Eula.OnEulaAgreedTo;
 import org.witness.ssc.InformaSettings.OnSettingsSeen;
 import org.witness.ssc.image.ImageEditor;
@@ -31,6 +32,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -106,6 +108,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         
         _sp = PreferenceManager.getDefaultSharedPreferences(this);
     	_ed = _sp.edit();
+    	
     }
     
     @Override
@@ -261,6 +264,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 
         		return true;
         	case R.id.ChooseGalleryButton:
+        		/*
         		setContentView(R.layout.mainloading);
         		
         		try {
@@ -272,8 +276,9 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         			Toast.makeText(this, getString(R.string.gallery_launch_error), Toast.LENGTH_LONG).show();
         			Log.e(ObscuraConstants.TAG, "error loading gallery app? " + e.toString());
         		}
-        		
-        		return true;
+        		*/
+        		Toast.makeText(this, "Gallery import is not available for this version of InformaCam", Toast.LENGTH_LONG).show();
+        		return false;
         	default:
         		return false;
         }
