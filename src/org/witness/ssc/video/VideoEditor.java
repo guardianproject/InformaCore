@@ -255,78 +255,12 @@ public class VideoEditor extends Activity implements
 		regionsView = (ImageView) this.findViewById(R.id.VideoEditorImageView);
 		regionsView.setOnTouchListener(this);
 		createCleanSavePath();
-
+		
+		mAutoDetectEnabled = true; //first time do autodetect
 
 		videoView = (VideoView) this.findViewById(R.id.SurfaceView);
 		
-		surfaceHolder = videoView.getHolder();
-
-		surfaceHolder.addCallback(this);
-		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
-		mediaPlayer = new MediaPlayer();
-		mediaPlayer.setOnCompletionListener(this);
-		mediaPlayer.setOnErrorListener(this);
-		mediaPlayer.setOnInfoListener(this);
-		mediaPlayer.setOnPreparedListener(this);
-		mediaPlayer.setOnSeekCompleteListener(this);
-		mediaPlayer.setOnVideoSizeChangedListener(this);
-		mediaPlayer.setOnBufferingUpdateListener(this);
-
-		mediaPlayer.setLooping(false);
-		mediaPlayer.setScreenOnWhilePlaying(true);		
-		
-		try {
-			mediaPlayer.setDataSource(originalVideoUri.toString());
-		} catch (IllegalArgumentException e) {
-			Log.v(LOGTAG, e.getMessage());
-			finish();
-		} catch (IllegalStateException e) {
-			Log.v(LOGTAG, e.getMessage());
-			finish();
-		} catch (IOException e) {
-			Log.v(LOGTAG, e.getMessage());
-			finish();
-		}
-		
-			
-		progressBar = (InOutPlayheadSeekBar) this.findViewById(R.id.InOutPlayheadSeekBar);
-
-		progressBar.setIndeterminate(false);
-		progressBar.setSecondaryProgress(0);
-		progressBar.setProgress(0);
-		progressBar.setInOutPlayheadSeekBarChangeListener(this);
-		progressBar.setThumbsInactive();
-		progressBar.setOnTouchListener(this);
-
-		playPauseButton = (ImageButton) this.findViewById(R.id.PlayPauseImageButton);
-		playPauseButton.setOnClickListener(this);
-		
-		currentDisplay = getWindowManager().getDefaultDisplay();
-				
 		redactSettingsFile = new File(fileExternDir,"redact_unsort.txt");
-		
-		//regionBarArea = (RegionBarArea) this.findViewById(R.id.RegionBarArea);
-		//regionBarArea.obscureRegions = obscureRegions;
-		
-		obscuredPaint = new Paint();   
-        obscuredPaint.setColor(Color.WHITE);
-	    obscuredPaint.setStyle(Style.STROKE);
-	    obscuredPaint.setStrokeWidth(10f);
-	    
-	    selectedPaint = new Paint();
-	    selectedPaint.setColor(Color.GREEN);
-	    selectedPaint.setStyle(Style.STROKE);
-	    selectedPaint.setStrokeWidth(10f);
-	    
-		bitmapCornerUL = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_ul);
-		bitmapCornerUR = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_ur);
-		bitmapCornerLL = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_ll);
-		bitmapCornerLR = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_lr);
-	
-		mAutoDetectEnabled = true; //first time do autodetect
-		
-		setPrefs();
 	}
 	
 	@Override
@@ -1125,20 +1059,6 @@ public class VideoEditor extends Activity implements
         		updateRegionDisplay(mediaPlayer.getCurrentPosition());
         		
         		return true;
-        		
-/*
- 			case R.id.menu_delete_original:
-        		// Delete Original Image
-        		handleDelete();
-        		
-        		return true;
-*/        		
-        	case R.id.menu_about:
-        		// Pull up about screen
-        		displayAbout();
-        		
-        		return true;
-        	
         	case R.id.menu_preview:
         		playVideo();
         		
@@ -1149,51 +1069,6 @@ public class VideoEditor extends Activity implements
     	}
     }
 
-    /*
-	 * Display the about screen
-	 */
-	private void displayAbout() {
-		
-		StringBuffer msg = new StringBuffer();
-		
-		msg.append(getString(R.string.app_name));
-		
-        String versNum = "";
-        
-        try {
-            String pkg = getPackageName();
-            versNum = getPackageManager().getPackageInfo(pkg, 0).versionName;
-        } catch (Exception e) {
-        	versNum = "";
-        }
-        
-        msg.append(" v" + versNum);
-        msg.append('\n');
-        msg.append('\n');
-        
-        msg.append(getString(R.string.about));
-	        
-        msg.append('\n');
-        msg.append('\n');
-        
-        msg.append(getString(R.string.about2));
-        
-        msg.append('\n');
-        msg.append('\n');
-        
-        msg.append(getString(R.string.about3));
-        
-		showDialog(msg.toString());
-	}
-	
-
-	private void showDialog (String msg)
-	{
-		 new AlertDialog.Builder(this)
-         .setTitle(getString(R.string.app_name))
-         .setMessage(msg)
-         .create().show();
-	}
     
     private void processVideo() {
     	
@@ -1521,6 +1396,73 @@ public class VideoEditor extends Activity implements
 	@Override
 	protected void onResume() {
 		super.onResume();
+		
+
+		surfaceHolder = videoView.getHolder();
+
+		surfaceHolder.addCallback(this);
+		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+		mediaPlayer = new MediaPlayer();
+		mediaPlayer.setOnCompletionListener(this);
+		mediaPlayer.setOnErrorListener(this);
+		mediaPlayer.setOnInfoListener(this);
+		mediaPlayer.setOnPreparedListener(this);
+		mediaPlayer.setOnSeekCompleteListener(this);
+		mediaPlayer.setOnVideoSizeChangedListener(this);
+		mediaPlayer.setOnBufferingUpdateListener(this);
+
+		mediaPlayer.setLooping(false);
+		mediaPlayer.setScreenOnWhilePlaying(true);		
+		
+		try {
+			mediaPlayer.setDataSource(originalVideoUri.toString());
+		} catch (IllegalArgumentException e) {
+			Log.v(LOGTAG, e.getMessage());
+			finish();
+		} catch (IllegalStateException e) {
+			Log.v(LOGTAG, e.getMessage());
+			finish();
+		} catch (IOException e) {
+			Log.v(LOGTAG, e.getMessage());
+			finish();
+		}
+		
+			
+		progressBar = (InOutPlayheadSeekBar) this.findViewById(R.id.InOutPlayheadSeekBar);
+
+		progressBar.setIndeterminate(false);
+		progressBar.setSecondaryProgress(0);
+		progressBar.setProgress(0);
+		progressBar.setInOutPlayheadSeekBarChangeListener(this);
+		progressBar.setThumbsInactive();
+		progressBar.setOnTouchListener(this);
+
+		playPauseButton = (ImageButton) this.findViewById(R.id.PlayPauseImageButton);
+		playPauseButton.setOnClickListener(this);
+		
+		currentDisplay = getWindowManager().getDefaultDisplay();
+				
+		
+		
+		//regionBarArea = (RegionBarArea) this.findViewById(R.id.RegionBarArea);
+		//regionBarArea.obscureRegions = obscureRegions;
+		
+		obscuredPaint = new Paint();   
+        obscuredPaint.setColor(Color.WHITE);
+	    obscuredPaint.setStyle(Style.STROKE);
+	    obscuredPaint.setStrokeWidth(10f);
+	    
+	    selectedPaint = new Paint();
+	    selectedPaint.setColor(Color.GREEN);
+	    selectedPaint.setStyle(Style.STROKE);
+	    selectedPaint.setStrokeWidth(10f);
+	    
+		bitmapCornerUL = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_ul);
+		bitmapCornerUR = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_ur);
+		bitmapCornerLL = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_ll);
+		bitmapCornerLR = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_lr);
+		
 		setPrefs();
 		
 	}
@@ -1540,53 +1482,6 @@ public class VideoEditor extends Activity implements
 		outVHeight =   Integer.parseInt(prefs.getString("pref_out_vheight", "320").trim());
 		
 	}
-	
-	/*
-	private void doAutoDetectionThread()
-	{
-		Thread thread = new Thread ()
-		{
-			public void run ()
-			{
-				long cTime = mediaPlayer.getCurrentPosition();
-				Bitmap bmp = getVideoFrame(recordingFile.getAbsolutePath(),cTime);
-				doAutoDetection(bmp, cTime, 500);
-
-			//	Message msg = mHandler.obtainMessage(3);
-		     //   mHandler.sendMessage(msg);
-			}
-		};
-		thread.start();
-	}*/
-	
-	/*
-	public static Bitmap getVideoFrame(String videoPath,long frameTime) {
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        try {
-            retriever.setDataSource(videoPath);                   
-            return retriever.getFrameAtTime(frameTime, MediaMetadataRetriever.OPTION_CLOSEST);
-        } catch (IllegalArgumentException ex) {
-            ex.printStackTrace();
-        } catch (RuntimeException ex) {
-            ex.printStackTrace();
-        } finally {
-            try {
-                retriever.release();
-            } catch (RuntimeException ex) {
-            }
-        }
-        return null;
-    }*/
-	
-	/*
-	 * Do actual auto detection and create regions
-	 * 
-	 * public void createImageRegion(int _scaledStartX, int _scaledStartY, 
-			int _scaledEndX, int _scaledEndY, 
-			int _scaledImageWidth, int _scaledImageHeight, 
-			int _imageWidth, int _imageHeight, 
-			int _backgroundColor) {
-	 */
 	
 	private int autoDetectFrame(Bitmap bmp, int cTime, int cBuffer, int cDuration) {
 		
