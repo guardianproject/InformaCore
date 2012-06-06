@@ -13,7 +13,9 @@ import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.Eula.OnEulaAgreedTo;
 import org.witness.ssc.InformaSettings.OnSettingsSeen;
 import org.witness.ssc.image.ImageEditor;
+import org.witness.ssc.utils.InformaMediaScanner;
 import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.utils.ObscuraConstants.MediaScanner;
 import org.witness.ssc.video.VideoEditor;
 import org.witness.ssc.R;
 
@@ -25,10 +27,12 @@ import com.actionbarsherlock.view.MenuItem;
 import com.xtralogic.android.logcollector.SendLogActivity;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -52,6 +56,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	boolean showHints = false;
 	
 	SensorSucker informaService;
+	Intent passingIntent;
 	
 	private ServiceConnection sc = new ServiceConnection() {
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
@@ -63,6 +68,19 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	public void onServiceDisconnected(ComponentName cn) {
     		informaService = null;
     	}
+    };
+    
+    BroadcastReceiver br = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context c, Intent i) {
+			if(MediaScanner.SCANNED.equals(i.getAction())) {
+				Log.d(InformaConstants.TAG, "scanned. go.");
+				uriCameraImage = i.getParcelableExtra(MediaScanner.URI);
+				launchEditor();
+			}
+		}
+    	
     };
 		
 	@Override
@@ -81,6 +99,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	@Override
 	protected void onPause() {
 		super.onPause();
+		unregisterReceiver(br);
 	}
 	
 	private void deleteTmpFile ()
@@ -114,6 +133,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     @Override
 	protected void onResume() {
 		super.onResume();
+		registerReceiver(br, new IntentFilter(ObscuraConstants.MediaScanner.SCANNED));
+		
 		final SharedPreferences eula = getSharedPreferences(Eula.PREFERENCES_EULA,
                 SherlockActivity.MODE_PRIVATE);
         if (!eula.getBoolean(Eula.PREFERENCE_EULA_ACCEPTED, false)) {
@@ -136,9 +157,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		if (resultCode == RESULT_OK && requestCode != ObscuraConstants.IMAGE_EDITOR) {
 			setContentView(R.layout.mainloading);
 			
-			Intent passingIntent = null;
+			passingIntent = null;
 			if(requestCode == ObscuraConstants.GALLERY_RESULT)
 				uriCameraImage = intent.getData();
+			
+			Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
 			
 			String fileExtension = MimeTypeMap.getFileExtensionFromUrl(uriCameraImage.toString());
 			String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension);
@@ -157,14 +180,14 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			
 			if(requestCode == ObscuraConstants.CAMERA_RESULT) {
 				passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
+				// TODO: IMPORTANTE!  Right here, we are forcing the media object to go through
+				// the media scanner.  THIS MUST BE UNDONE at the end of the editing process
+				// in order to maintain security/anonymity
+				new InformaMediaScanner(this, uriCameraImage);
+				return;
 			}
 			
-			if(uriCameraImage != null && passingIntent != null) {
-				passingIntent.setData(uriCameraImage);
-				passingIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);				
-				startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
-			} else
-				sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
+			launchEditor();
 		} else {
 			if(requestCode == ObscuraConstants.IMAGE_EDITOR) {
 				launchInforma();
@@ -173,6 +196,15 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		setLayout();
 		
 	}	
+	
+	private void launchEditor() {
+		if(uriCameraImage != null && passingIntent != null) {
+			passingIntent.setData(uriCameraImage);
+			passingIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);				
+			startActivityForResult(passingIntent, ObscuraConstants.IMAGE_EDITOR);
+		} else
+			sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
+	}
 
 	private void displayAbout() {
 		Intent intent = new Intent(this, About.class);
@@ -226,9 +258,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        	
     	        	uriCameraImage = Uri.fromFile(tmpFile);
     	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
+    	        	
+    	        	Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
     	            
-    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    	        		//.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)
@@ -252,9 +286,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        	
     	        	uriCameraImage = Uri.fromFile(tmpFile);
     	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
+    	        	
+    	        	Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
     	            
-    	        	Intent  intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
-    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+    	        		//.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)
@@ -264,21 +300,19 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 
         		return true;
         	case R.id.ChooseGalleryButton:
-        		/*
         		setContentView(R.layout.mainloading);
         		
         		try {
         			Intent intent = new Intent(Intent.ACTION_PICK);
         			//intent.setType("image/*");
-        			intent.setType("video/*, image/*");
+        			intent.setType("video/*");
         			startActivityForResult(intent, ObscuraConstants.GALLERY_RESULT);
         		} catch(Exception e) {
         			Toast.makeText(this, getString(R.string.gallery_launch_error), Toast.LENGTH_LONG).show();
         			Log.e(ObscuraConstants.TAG, "error loading gallery app? " + e.toString());
         		}
-        		*/
-        		Toast.makeText(this, "Gallery import is not available for this version of InformaCam", Toast.LENGTH_LONG).show();
-        		return false;
+        		//Toast.makeText(this, "Gallery import is not available for this version of InformaCam", Toast.LENGTH_LONG).show();
+        		return true;
         	default:
         		return false;
         }

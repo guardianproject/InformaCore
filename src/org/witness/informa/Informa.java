@@ -235,13 +235,13 @@ public class Informa {
 	
 	public class Owner extends InformaZipper {
 		String sigKeyId;
-		String publicKey;
+		//String publicKey;
 		int ownershipType;
 		
 		public Owner() {
 			this.sigKeyId = getAPGEmail(apg.getSignatureKeyId());
 			this.ownershipType = (Integer) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.OWNERSHIP_TYPE}, BaseColumns._ID, 1, Integer.class);
-			this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1, String.class);
+			//this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1, String.class);
 		}
 	}
 	

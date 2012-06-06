@@ -63,6 +63,11 @@ public class ObscuraConstants {
 	
 	public final static String TMP_FILE_DIRECTORY = Environment.getExternalStorageDirectory().getPath() + "/Android/data/org.witness.ssc/files/";
 	
+	public final static class MediaScanner {
+		public final static String SCANNED = "mediaScanned";
+		public final static String URI = "scannedUri";
+	}
+	
 	// for saving images
     public final static String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public final static String OBSCURED_IMAGE_URI = "obscuredImageUri";

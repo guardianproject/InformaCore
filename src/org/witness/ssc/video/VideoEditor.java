@@ -24,6 +24,7 @@ import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.witness.informa.utils.InformaConstants;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
@@ -205,15 +206,7 @@ public class VideoEditor extends Activity implements
 	
 	QuickAction popupMenu;
 	ActionItem[] popupMenuItems;
-	
-	/*
-	public static final int CORNER_NONE = 0;
-	public static final int CORNER_UPPER_LEFT = 1;
-	public static final int CORNER_LOWER_LEFT = 2;
-	public static final int CORNER_UPPER_RIGHT = 3;
-	public static final int CORNER_LOWER_RIGHT = 4;
-	*/
-	
+		
 	private int mDuration;
 	
 	@Override
@@ -221,7 +214,7 @@ public class VideoEditor extends Activity implements
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.videoeditor);
-
+		
 		if (getIntent() != null)
 		{
 			// Passed in from ObscuraApp
