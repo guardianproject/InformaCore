@@ -84,9 +84,11 @@ public class RegionTrail {
 	}
 	
 	public void addIdentityTagger() {
-		mProps.put(VideoRegion.Subject.PSEUDONYM, "");
-		mProps.put(VideoRegion.Subject.INFORMED_CONSENT_GIVEN, "false");
-		mProps.put(VideoRegion.Subject.PERSIST_FILTER, "false");
+		if(!mProps.containsKey(VideoRegion.Subject.PSEUDONYM)) {
+			mProps.put(VideoRegion.Subject.PSEUDONYM, "");
+			mProps.put(VideoRegion.Subject.INFORMED_CONSENT_GIVEN, "false");
+			mProps.put(VideoRegion.Subject.PERSIST_FILTER, "false");
+		}
 	}
 	
 	public Iterator<ObscureRegion> getRegionsIterator ()

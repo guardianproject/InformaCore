@@ -216,11 +216,13 @@ public class VideoEditor extends Activity implements
 	 *  reinitialized when onResume is called!  (HNH 6/7/12) 
 	 */
 	private boolean mediaPlayerIsPrepared = true;
+	private boolean shouldStartPlaying = true;
 	
 	QuickAction popupMenu;
 	ActionItem[] popupMenuItems;
 		
 	private int mDuration;
+	private int currentCue = 1;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -290,7 +292,6 @@ public class VideoEditor extends Activity implements
 	
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
-	  Log.d(InformaConstants.TAG, "SAVING INSTANCE STATE!");
 	  savedInstanceState.putString("path",recordingFile.getAbsolutePath());
 	  
 	  super.onSaveInstanceState(savedInstanceState);
@@ -364,7 +365,7 @@ public class VideoEditor extends Activity implements
 		Log.v(LOGTAG, "onPrepared Called");
 
 		updateVideoLayout ();
-		mediaPlayer.seekTo(1);
+		mediaPlayer.seekTo(currentCue);
 		
 		DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
 		    @Override
@@ -376,16 +377,25 @@ public class VideoEditor extends Activity implements
 
 		        case DialogInterface.BUTTON_NEGATIVE:
 		        	mAutoDetectEnabled = false;
-		            start();
+		        	if(shouldStartPlaying)
+		        		start();
+		        	else
+		        		mediaPlayer.seekTo(currentCue);
 		            break;
 		        }
 		    }
 		};
-
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage("Would you like to detect faces in this video?").setPositiveButton("Yes", dialogClickListener)
-		    .setNegativeButton("No", dialogClickListener).show();
 		
+		if(mAutoDetectEnabled) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setMessage("Would you like to detect faces in this video?").setPositiveButton("Yes", dialogClickListener)
+		    	.setNegativeButton("No", dialogClickListener).show();
+		} else {
+			if(shouldStartPlaying)
+				start();
+			else
+				mediaPlayer.seekTo(currentCue);
+		}
 		
 		
 	}
@@ -415,6 +425,8 @@ public class VideoEditor extends Activity implements
 			mediaPlayer.pause();
 			playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
 		}
+		
+		currentCue = mediaPlayer.getCurrentPosition();
 	}
 
 	public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
@@ -535,6 +547,7 @@ public class VideoEditor extends Activity implements
 	@Override
 	public void start() {
 		Log.v(LOGTAG,"Calling our start method");
+		mediaPlayer.seekTo(currentCue);
 		mediaPlayer.start();
 		
 		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_pause));
@@ -1019,7 +1032,6 @@ public class VideoEditor extends Activity implements
     	switch (item.getItemId()) {
     	
     		case R.id.menu_new_region:
-    			mAutoDetectEnabled = true;
     			beginAutoDetect();
 
     			return true;
@@ -1390,7 +1402,6 @@ public class VideoEditor extends Activity implements
 	}
 	
 	private void setSurface() {
-		// TODO: setSurface()
 		Log.d(LOGTAG, "SETTING SURFACE?");
 		
 		surfaceHolder.addCallback(this);
@@ -1418,13 +1429,13 @@ public class VideoEditor extends Activity implements
 			}
 		} catch (IllegalArgumentException e) {
 			Log.v(LOGTAG, e.getMessage());
-			//finish();
+			finish();
 		} catch (IllegalStateException e) {
 			Log.v(LOGTAG, e.getMessage());
-			//finish();
+			finish();
 		} catch (IOException e) {
 			Log.v(LOGTAG, e.getMessage());
-			//finish();
+			finish();
 		}
 			
 		progressBar = (InOutPlayheadSeekBar) this.findViewById(R.id.InOutPlayheadSeekBar);
@@ -1657,15 +1668,17 @@ public class VideoEditor extends Activity implements
 		
     	Intent informa = new Intent(this, Tagger.class);
     	informa.putExtra(ObscuraConstants.VideoRegion.PROPERTIES, rt.getProperties());
-    	informa.putExtra(InformaConstants.Keys.ImageRegion.INDEX, obscureTrails.indexOf(rt));
+    	informa.putExtra(Keys.VideoRegion.INDEX, obscureTrails.indexOf(rt));
     	
     	MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 	    retriever.setDataSource(recordingFile.getAbsolutePath());
     	
     	Bitmap b = retriever.getFrameAtTime(mediaPlayer.getCurrentPosition(), MediaMetadataRetriever.OPTION_CLOSEST);
+    	// TODO: crop to region bounds!
+    	
     	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
-		informa.putExtra(InformaConstants.Keys.ImageRegion.THUMBNAIL, baos.toByteArray());
+		informa.putExtra(Keys.ImageRegion.THUMBNAIL, baos.toByteArray());
     	
     	mediaPlayerIsPrepared = false;
     	startActivityForResult(informa, InformaConstants.FROM_INFORMA_TAGGER);
