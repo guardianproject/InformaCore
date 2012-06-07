@@ -12,18 +12,12 @@ package org.witness.ssc.video;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Vector;
 
 import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
@@ -33,18 +27,15 @@ import org.witness.informa.KeyChooser;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
-import org.witness.ssc.image.ImageRegion;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
 import org.witness.ssc.video.ShellUtils.ShellCallback;
 import org.witness.ssc.R;
 
-import android.R.color;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -80,7 +71,6 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -94,7 +84,6 @@ import android.view.View.OnTouchListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.MediaController;
-import android.widget.Toast;
 import android.widget.VideoView;
 
 public class VideoEditor extends Activity implements
@@ -217,6 +206,17 @@ public class VideoEditor extends Activity implements
 	
 	private boolean mCancelled = false;
 	
+	/*
+	 *  NB: this was added because, while returning from preferences will preserve
+	 *  the state of the media player, returning from other activities
+	 *  (calling onActivityResult) wipes the media player.
+	 *  
+	 *  so, media player must be re-attached to holder and re-prepared.
+	 *  this flag keeps track of whether the media player must be
+	 *  reinitialized when onResume is called!  (HNH 6/7/12) 
+	 */
+	private boolean mediaPlayerIsPrepared = true;
+	
 	QuickAction popupMenu;
 	ActionItem[] popupMenuItems;
 		
@@ -272,6 +272,7 @@ public class VideoEditor extends Activity implements
 		mAutoDetectEnabled = true; //first time do autodetect
 
 		videoView = (VideoView) this.findViewById(R.id.SurfaceView);
+		surfaceHolder = videoView.getHolder();
 		
 		try {
 			ffmpeg = new FFMPEGWrapper(VideoEditor.this.getBaseContext());
@@ -289,7 +290,7 @@ public class VideoEditor extends Activity implements
 	
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
-	  
+	  Log.d(InformaConstants.TAG, "SAVING INSTANCE STATE!");
 	  savedInstanceState.putString("path",recordingFile.getAbsolutePath());
 	  
 	  super.onSaveInstanceState(savedInstanceState);
@@ -306,31 +307,22 @@ public class VideoEditor extends Activity implements
 			try {
 				mediaPlayer.prepare();
 				mDuration = mediaPlayer.getDuration();
-	
 			} catch (Exception e) {
 				Log.v(LOGTAG, "IllegalStateException " + e.getMessage());
 				finish();
 			}
 			 
 			
-			 updateVideoLayout ();
-			
+			updateVideoLayout ();
 		}
 	
 	}
 
 	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-		
-		
-		
-	}
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 
 	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		//if (mediaPlayer != null)
-			//mediaPlayer.stop();
-	}
+	public void surfaceDestroyed(SurfaceHolder holder) {}
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
@@ -383,6 +375,7 @@ public class VideoEditor extends Activity implements
 		            break;
 
 		        case DialogInterface.BUTTON_NEGATIVE:
+		        	mAutoDetectEnabled = false;
 		            start();
 		            break;
 		        }
@@ -969,38 +962,6 @@ public class VideoEditor extends Activity implements
 		progressBar.setThumbsActive((int)((double)rTrail.getStartTime()/(double)mDuration*100), (int)((double)rTrail.getEndTime()/(double)mDuration*100));
 
 	}
-	/*
-	public int getRegionCornerMode(ObscureRegion region, float x, float y)
-	{    			
-    	if (Math.abs(region.getBounds().left-x)<REGION_CORNER_SIZE
-    			&& Math.abs(region.getBounds().top-y)<REGION_CORNER_SIZE)
-    	{
-    		Log.v(LOGTAG,"CORNER_UPPER_LEFT");
-    		return CORNER_UPPER_LEFT;
-    	}
-    	else if (Math.abs(region.getBounds().left-x)<REGION_CORNER_SIZE
-    			&& Math.abs(region.getBounds().bottom-y)<REGION_CORNER_SIZE)
-    	{
-    		Log.v(LOGTAG,"CORNER_LOWER_LEFT");
-    		return CORNER_LOWER_LEFT;
-		}
-    	else if (Math.abs(region.getBounds().right-x)<REGION_CORNER_SIZE
-    			&& Math.abs(region.getBounds().top-y)<REGION_CORNER_SIZE)
-    	{
-        		Log.v(LOGTAG,"CORNER_UPPER_RIGHT");
-    			return CORNER_UPPER_RIGHT;
-		}
-    	else if (Math.abs(region.getBounds().right-x)<REGION_CORNER_SIZE
-        			&& Math.abs(region.getBounds().bottom-y)<REGION_CORNER_SIZE)
-    	{
-    		Log.v(LOGTAG,"CORNER_LOWER_RIGHT");
-    		return CORNER_LOWER_RIGHT;
-    	}
-    	
-		Log.v(LOGTAG,"CORNER_NONE");    	
-    	return CORNER_NONE;
-	}
-	*/
 	
 	@Override
 	public void onClick(View v) {
@@ -1058,7 +1019,7 @@ public class VideoEditor extends Activity implements
     	switch (item.getItemId()) {
     	
     		case R.id.menu_new_region:
-    			
+    			mAutoDetectEnabled = true;
     			beginAutoDetect();
 
     			return true;
@@ -1077,7 +1038,7 @@ public class VideoEditor extends Activity implements
         		return true;   
         		
         	case R.id.menu_prefs:
-
+        		mediaPlayerIsPrepared = true;
         		showPrefs();
         		
         		return true;  
@@ -1412,7 +1373,7 @@ public class VideoEditor extends Activity implements
 
 				@Override
 				public void shellOut(char[] msg) {
-					// TODO Auto-generated method stub
+					
 					
 				}
 				
@@ -1424,14 +1385,19 @@ public class VideoEditor extends Activity implements
 
 	@Override
 	public void onResume() {
+		setSurface();		
 		super.onResume();
+	}
+	
+	private void setSurface() {
+		// TODO: setSurface()
+		Log.d(LOGTAG, "SETTING SURFACE?");
 		
-
-		surfaceHolder = videoView.getHolder();
-
 		surfaceHolder.addCallback(this);
+		surfaceHolder.getSurface();
 		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
+		Log.v(LOGTAG, "we did some shit to the surface holder?");
+		
 		mediaPlayer = new MediaPlayer();
 		mediaPlayer.setOnCompletionListener(this);
 		mediaPlayer.setOnErrorListener(this);
@@ -1442,22 +1408,24 @@ public class VideoEditor extends Activity implements
 		mediaPlayer.setOnBufferingUpdateListener(this);
 
 		mediaPlayer.setLooping(false);
-		mediaPlayer.setScreenOnWhilePlaying(true);		
+		mediaPlayer.setScreenOnWhilePlaying(true);
 		
 		try {
 			mediaPlayer.setDataSource(originalVideoUri.toString());
-			
+			if(!mediaPlayerIsPrepared) {
+				mediaPlayer.setDisplay(surfaceHolder);
+				mediaPlayer.prepare();
+			}
 		} catch (IllegalArgumentException e) {
 			Log.v(LOGTAG, e.getMessage());
-			finish();
+			//finish();
 		} catch (IllegalStateException e) {
 			Log.v(LOGTAG, e.getMessage());
-			finish();
+			//finish();
 		} catch (IOException e) {
 			Log.v(LOGTAG, e.getMessage());
-			finish();
+			//finish();
 		}
-		
 			
 		progressBar = (InOutPlayheadSeekBar) this.findViewById(R.id.InOutPlayheadSeekBar);
 
@@ -1492,7 +1460,6 @@ public class VideoEditor extends Activity implements
 		bitmapCornerLR = BitmapFactory.decodeResource(getResources(), R.drawable.edit_region_corner_lr);
 		
 		setPrefs();
-		
 	}
 	
 	private void setPrefs ()
@@ -1692,13 +1659,15 @@ public class VideoEditor extends Activity implements
     	informa.putExtra(ObscuraConstants.VideoRegion.PROPERTIES, rt.getProperties());
     	informa.putExtra(InformaConstants.Keys.ImageRegion.INDEX, obscureTrails.indexOf(rt));
     	
-    	if(rt.getBitmap(ffmpeg, mediaPlayer.getCurrentPosition()) != null) {
-    		Bitmap b = rt.getBitmap(ffmpeg, mediaPlayer.getCurrentPosition());
-    		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
-    		informa.putExtra(InformaConstants.Keys.ImageRegion.THUMBNAIL, baos.toByteArray());
-    	}
+    	MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+	    retriever.setDataSource(recordingFile.getAbsolutePath());
     	
+    	Bitmap b = retriever.getFrameAtTime(mediaPlayer.getCurrentPosition(), MediaMetadataRetriever.OPTION_CLOSEST);
+    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+		informa.putExtra(InformaConstants.Keys.ImageRegion.THUMBNAIL, baos.toByteArray());
+    	
+    	mediaPlayerIsPrepared = false;
     	startActivityForResult(informa, InformaConstants.FROM_INFORMA_TAGGER);
     }
     
@@ -1711,15 +1680,15 @@ public class VideoEditor extends Activity implements
     			// replace corresponding image region
     			@SuppressWarnings("unchecked")
 				HashMap<String, Object> informaReturn = 
-					(HashMap<String, Object>) data.getSerializableExtra(InformaConstants.Keys.ImageRegion.TAGGER_RETURN);    			
-    			Properties mProp = obscureTrails.get(data.getIntExtra(InformaConstants.Keys.ImageRegion.INDEX, 0))
+					(HashMap<String, Object>) data.getSerializableExtra(Keys.VideoRegion.TAGGER_RETURN);    			
+    			Properties mProp = obscureTrails.get(data.getIntExtra(Keys.VideoRegion.INDEX, 0))
     					.getProperties();
     			
     			// iterate through returned hashmap and place these new properties in it.
     			for(Map.Entry<String, Object> entry : informaReturn.entrySet())
     				mProp.setProperty(entry.getKey(), entry.getValue().toString());
     			
-    			obscureTrails.get(data.getIntExtra(InformaConstants.Keys.ImageRegion.INDEX, 0))
+    			obscureTrails.get(data.getIntExtra(Keys.VideoRegion.INDEX, 0))
     				.setProperties(mProp);
     			    			
     		} else if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER) {

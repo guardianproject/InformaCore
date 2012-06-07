@@ -164,7 +164,7 @@
     <string name="preferences_language_label">Language</string>
     <string name="preferences_language_text">What language should the app use?</string>
     <string name="preferences_encrypt_metadata_label">Encrypt Metadata</string>
-    <string name="preferences_encrypt_metadata_text">Sign and encrypt metadata to Trusted Destinations?  If yes, you will be prompted to choose Trusted Destinations upon save.</string>
+    <string name="preferences_encrypt_metadata_text">Sign and encrypt metadata to Trusted Destinations?</string>
     
     <!--  VIDEO related -->
     <string name="welcomeSubMsg">now with video!</string>

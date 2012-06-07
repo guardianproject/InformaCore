@@ -7,11 +7,6 @@
 		android:entries="@array/default_language"
 		android:entryValues="@array/default_language_values"
 		android:key="obscura.language" />
-	<CheckBoxPreference
-	    android:title="@string/preferences_show_hints_label"
-	    android:summary="@string/preferences_show_hints_text"
-	    android:defaultValue="true"
-	    android:key="obscura.showHints" />
 	<ListPreference
 		android:title="@string/preferences_cache_label"
 		android:summary="@string/preferences_cache_text"

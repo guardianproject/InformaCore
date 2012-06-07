@@ -280,10 +280,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
         } catch (Exception e) {
         	versNum = "";
         }
-
-        setTitle(getString(R.string.app_name) + " (" + versNum + ")");
         
-     //   requestWindowFeature(Window.FEATURE_NO_TITLE);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.imageviewer);
 
 		// Calculate the minimum distance

@@ -135,10 +135,6 @@ public class RegionTrail {
 			return null;
 	}
 	
-	public Bitmap getBitmap(FFMPEGWrapper ffmpeg, int time) {
-		return ffmpeg.getFrame(getCurrentRegion(time), time);
-	}
-	
 	public JSONObject getRepresentation() throws JSONException {
 		JSONObject representation = new JSONObject();
 		Enumeration<?> e = getProperties().propertyNames();
