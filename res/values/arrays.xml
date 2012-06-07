@@ -24,6 +24,16 @@
 		<item>302</item>
 	</string-array>
 	
+	<string-array name="enable_encryption">
+	    <item>Yes, enable metadata encryption</item>
+	    <item>No, I don\'t need metadata encryption at this time.</item>
+	</string-array>
+	
+	<string-array name="enable_encryption_values">
+	    <item>true</item>
+	    <item>false</item>
+	</string-array>
+	
 	<string-array name="default_language">
 		<item>English</item>
 		<item>French</item>

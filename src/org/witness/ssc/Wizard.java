@@ -281,13 +281,36 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	}
 	
 	@SuppressWarnings("unused")
+	private void setEncryptionValues(ArrayList<Selections> encryptionSelection) {
+		String[] encryptionValues = getResources().getStringArray(R.array.enable_encryption_values);
+		try {
+			for(Selections s: encryptionSelection) {
+				if(s.getSelected()) {
+					_ed.putBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, Boolean.parseBoolean(encryptionValues[encryptionSelection.indexOf(s)])).commit();
+					if(encryptionSelection.indexOf(s) != 0)
+						current += 2;
+				}
+			}
+		} catch(Exception e) {
+			sendLog();
+		}
+	}
+	
+	@SuppressWarnings("unused")
 	private String[] getDefaultImageHandlingOptions() {
+		if(!preferences.getBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, false))
+			current -=2;
 		return getResources().getStringArray(R.array.default_image_handling);
 	}
 	
 	@SuppressWarnings("unused")
 	private String[] getDBPWCacheValues() {
 		return getResources().getStringArray(R.array.password_cache);
+	}
+	
+	@SuppressWarnings("unused")
+	private String[] getEncryptionValues() {
+		return getResources().getStringArray(R.array.enable_encryption);
 	}
 	
 	private class WizardForm extends JSONObject {

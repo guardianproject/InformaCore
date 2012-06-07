@@ -1,0 +1,3 @@
+InformaCam can give you the option of signing and encrypting your metadata to Trusted Destinations.  Would you like to enable this feature?
+If you choose "no," you can take advantage of this feature at any time in the app's preferences.
+{$ value=enable_encryption; type=select_one; values=#getEncryptionValues; callback=setEncryptionValues;}
