@@ -159,10 +159,12 @@
     <string name="preferences_show_hints_text">Show handy hints as you use the app.</string>
     <string name="preferences_cache_label">Login Options</string>
     <string name="preferences_cache_text">How long should you stay logged in to the app?  If you choose "always," you must manually log out of the app (through the main menu.)</string>
-    <string name="preferences_image_handling_label">Image Handling</string>
-    <string name="preferences_image_handling_text">What should the app do with your original images?</string>
+    <string name="preferences_image_handling_label">Media Handling</string>
+    <string name="preferences_image_handling_text">What should the app do with your original media?</string>
     <string name="preferences_language_label">Language</string>
     <string name="preferences_language_text">What language should the app use?</string>
+    <string name="preferences_encrypt_metadata_label">Encrypt Metadata</string>
+    <string name="preferences_encrypt_metadata_text">Sign and encrypt metadata to Trusted Destinations?  If yes, you will be prompted to choose Trusted Destinations upon save.</string>
     
     <!--  VIDEO related -->
     <string name="welcomeSubMsg">now with video!</string>

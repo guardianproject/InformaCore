@@ -10,21 +10,30 @@
 
 package org.witness.ssc.video;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Vector;
 
 import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.witness.informa.KeyChooser;
+import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.ssc.image.ImageRegion;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
@@ -164,6 +173,9 @@ public class VideoEditor extends Activity implements
 	private final static String DEFAULT_OUT_FORMAT = "3gp";
 	private final static String DEFAULT_OUT_VCODEC = "libx264";
 	private final static String DEFAULT_OUT_ACODEC = "copy";
+	
+	private long[] encryptList = new long[] {0L};
+	private SharedPreferences sp;
 
 	private Handler mHandler = new Handler()
 	{
@@ -189,7 +201,8 @@ public class VideoEditor extends Activity implements
 	                	
 	                case 3: //completed
 	                	progressDialog.dismiss();
-	                	askPostProcessAction();    			
+	                	//askPostProcessAction();
+	                	//TODO: start encryption now!
 	                	
 	                	break;
 	                
@@ -260,7 +273,18 @@ public class VideoEditor extends Activity implements
 
 		videoView = (VideoView) this.findViewById(R.id.SurfaceView);
 		
+		try {
+			ffmpeg = new FFMPEGWrapper(VideoEditor.this.getBaseContext());
+		} catch (FileNotFoundException e) {
+			Log.d(InformaConstants.VIDEO_LOG, "ffmpeg error: " + e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.d(InformaConstants.VIDEO_LOG, "ffmpeg error: " + e.toString());
+			e.printStackTrace();
+		}
+		
 		redactSettingsFile = new File(fileExternDir,"redact_unsort.txt");
+		sp = PreferenceManager.getDefaultSharedPreferences(this);
 	}
 	
 	@Override
@@ -1041,8 +1065,14 @@ public class VideoEditor extends Activity implements
     			
         	case R.id.menu_save:
 
-        		completeActionFlag = 3;
-        		processVideo();
+        		//TODO saving happens here
+        		if(sp.getBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, false)) {
+        			Intent keyChooser = new Intent(this, KeyChooser.class);
+    				startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
+        		} else {
+        			completeActionFlag = 3;
+            		processVideo();
+        		}
         		
         		return true;   
         		
@@ -1290,11 +1320,6 @@ public class VideoEditor extends Activity implements
     	intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(saveFile.getPath()));
     	startActivityForResult(Intent.createChooser(intent, "Share Video"),0);     
 	}
-	
-	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-		super.onActivityResult(requestCode, resultCode, intent);
-		
-	}
 
 	@Override
 	public void inOutValuesChanged(int thumbInValue, int thumbOutValue) {
@@ -1320,23 +1345,27 @@ public class VideoEditor extends Activity implements
 		popupMenuItems = new ActionItem[5];
 		
 		popupMenuItems[0] = new ActionItem();
-		popupMenuItems[0].setTitle("Set In Point");
+		popupMenuItems[0].setTitle(getString(R.string.menu_region_identify));
 		popupMenuItems[0].setActionId(0);
+		
+		popupMenuItems[1] = new ActionItem();
+		popupMenuItems[1].setTitle("Set In Point");
+		popupMenuItems[1].setActionId(1);
 		
 		//popupMenuItems[0].setIcon(getResources().getDrawable(R.drawable.icon));			
 
-		popupMenuItems[1] = new ActionItem();
-		popupMenuItems[1].setActionId(1);
-		
-		popupMenuItems[1].setTitle("Set Out Point");
-				
 		popupMenuItems[2] = new ActionItem();
-		popupMenuItems[2].setActionId(2);		
-		popupMenuItems[2].setTitle("Remove Region");				
-
+		popupMenuItems[2].setActionId(2);
+		
+		popupMenuItems[2].setTitle("Set Out Point");
+				
 		popupMenuItems[3] = new ActionItem();
 		popupMenuItems[3].setActionId(3);		
-		popupMenuItems[3].setTitle("Remove Trail");				
+		popupMenuItems[3].setTitle("Remove Region");				
+
+		popupMenuItems[4] = new ActionItem();
+		popupMenuItems[4].setActionId(4);		
+		popupMenuItems[4].setTitle("Remove Trail");				
 
 		for (int i=0; i < popupMenuItems.length; i++) {
 			if (popupMenuItems[i] != null) {
@@ -1394,7 +1423,7 @@ public class VideoEditor extends Activity implements
 	}
 
 	@Override
-	protected void onResume() {
+	public void onResume() {
 		super.onResume();
 		
 
@@ -1417,6 +1446,7 @@ public class VideoEditor extends Activity implements
 		
 		try {
 			mediaPlayer.setDataSource(originalVideoUri.toString());
+			
 		} catch (IllegalArgumentException e) {
 			Log.v(LOGTAG, e.getMessage());
 			finish();
@@ -1442,8 +1472,6 @@ public class VideoEditor extends Activity implements
 		playPauseButton.setOnClickListener(this);
 		
 		currentDisplay = getWindowManager().getDefaultDisplay();
-				
-		
 		
 		//regionBarArea = (RegionBarArea) this.findViewById(R.id.RegionBarArea);
 		//regionBarArea.obscureRegions = obscureRegions;
@@ -1620,6 +1648,9 @@ public class VideoEditor extends Activity implements
 		
 		switch (actionId) {
 		case 0:
+			launchTagger(activeRegionTrail);
+			break;
+		case 1:
 			// set in point
 			activeRegionTrail.setStartTime(mediaPlayer.getCurrentPosition());
 			updateProgressBar(activeRegionTrail);
@@ -1627,14 +1658,14 @@ public class VideoEditor extends Activity implements
 			
 			
 			break;
-		case 1:
+		case 2:
 			// set out point
 			activeRegionTrail.setEndTime(mediaPlayer.getCurrentPosition());
 			updateProgressBar(activeRegionTrail);
 			updateRegionDisplay(mediaPlayer.getCurrentPosition());
 			
 			break;
-		case 2:
+		case 3:
 			// Remove region
 			activeRegionTrail.removeRegion(activeRegion);
 			activeRegion = null;
@@ -1642,7 +1673,7 @@ public class VideoEditor extends Activity implements
 			
 			break;
 			
-		case 3:
+		case 4:
 			// Remove region
 			obscureTrails.remove(activeRegionTrail);
 			activeRegionTrail = null;
@@ -1650,8 +1681,63 @@ public class VideoEditor extends Activity implements
 			updateRegionDisplay(mediaPlayer.getCurrentPosition());
 			
 			break;
-	}
+		}
 		
 	}
+	
+	public void launchTagger(RegionTrail rt) {
+		rt.addIdentityTagger();
+		
+    	Intent informa = new Intent(this, Tagger.class);
+    	informa.putExtra(ObscuraConstants.VideoRegion.PROPERTIES, rt.getProperties());
+    	informa.putExtra(InformaConstants.Keys.ImageRegion.INDEX, obscureTrails.indexOf(rt));
+    	
+    	if(rt.getBitmap(ffmpeg, mediaPlayer.getCurrentPosition()) != null) {
+    		Bitmap b = rt.getBitmap(ffmpeg, mediaPlayer.getCurrentPosition());
+    		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+    		informa.putExtra(InformaConstants.Keys.ImageRegion.THUMBNAIL, baos.toByteArray());
+    	}
+    	
+    	startActivityForResult(informa, InformaConstants.FROM_INFORMA_TAGGER);
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
+    	super.onActivityResult(requestCode, resultCode, data);
+    	
+    	if(resultCode == Activity.RESULT_OK) {
+    		if(requestCode == InformaConstants.FROM_INFORMA_TAGGER) {
+    			// replace corresponding image region
+    			@SuppressWarnings("unchecked")
+				HashMap<String, Object> informaReturn = 
+					(HashMap<String, Object>) data.getSerializableExtra(InformaConstants.Keys.ImageRegion.TAGGER_RETURN);    			
+    			Properties mProp = obscureTrails.get(data.getIntExtra(InformaConstants.Keys.ImageRegion.INDEX, 0))
+    					.getProperties();
+    			
+    			// iterate through returned hashmap and place these new properties in it.
+    			for(Map.Entry<String, Object> entry : informaReturn.entrySet())
+    				mProp.setProperty(entry.getKey(), entry.getValue().toString());
+    			
+    			obscureTrails.get(data.getIntExtra(InformaConstants.Keys.ImageRegion.INDEX, 0))
+    				.setProperties(mProp);
+    			    			
+    		} else if(requestCode == InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER) {
+    			completeActionFlag = 3;
+        		processVideo();
+        		
+        		if(data.hasExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST))
+        			encryptList = data.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST);
+    			
+    		} else if(requestCode == ObscuraConstants.REVIEW_MEDIA) {
+    			setResult(Activity.RESULT_OK);
+    			finish();
+    		} else if(requestCode == InformaConstants.FROM_ENCRYPTION_SERVICE) {
+    			sendBroadcast(new Intent()
+    			.setAction(Keys.Service.ENCRYPT_METADATA)
+    			.putExtra(Keys.Service.ENCRYPT_METADATA, data.getSerializableExtra(Keys.Service.ENCRYPT_METADATA)));
+    		}
+    	}
+    }
 
 }

@@ -19,6 +19,7 @@ import java.util.Vector;
 import org.witness.ssc.video.ShellUtils.ShellCallback;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 public class FFMPEGWrapper {
@@ -76,6 +77,15 @@ public class FFMPEGWrapper {
 		public static final String ARG_FRAMERATE = "-r";
 		public static final String ARG_FORMAT = "-f";
 		
+	}
+	
+	public Bitmap getFrame(ObscureRegion or, int time) {
+		Bitmap b = null;
+		// TODO: get frame
+		
+		// crop to bounds (or.rectF())
+		
+		return b;
 	}
 	
 	public void processVideo(File redactSettingsFile, 

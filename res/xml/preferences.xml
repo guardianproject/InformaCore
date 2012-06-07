@@ -26,6 +26,11 @@
 		android:entries="@array/default_image_handling"
 		android:entryValues="@array/default_image_handling_values"
 		android:key="informa.DefaultImageHandling" />
+	<CheckBoxPreference
+	    android:title="@string/preferences_encrypt_metadata_label"
+	    android:summary="@string/preferences_encrypt_metadata_text"
+	    android:defaultValue="true"
+	    android:key="informa.EncryptMetadata" />
 	<PreferenceCategory
 		android:title="@string/informaPrefs_trustedDestinations_title"
 		android:key="informa.trustedDestinations_holder" />

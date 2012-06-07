@@ -39,6 +39,7 @@ public class InformaConstants {
 			public static final String DB_PASSWORD_CACHE_TIMEOUT = "informa.PasswordCacheTimeout";
 			public static final String DEFAULT_IMAGE_HANDLING = "informa.DefaultImageHandling";
 			public static final String EULA_ACCEPTED = "informa.EulaAccepted";
+			public static final String WITH_ENCRYPTION = "informa.EncryptMetadata";
 		}
 		
 		public final static class Service {
@@ -76,8 +77,6 @@ public class InformaConstants {
 		
 		public final static class VideoRegion {
 			public final static String INDEX = ImageRegion.INDEX;
-			public final static String THUMBNAIL = ImageRegion.THUMBNAIL;
-			public static final String DATA = ImageRegion.DATA;
 			public final static String TIMESTAMP = ImageRegion.TIMESTAMP;
 			public final static String LOCATION = ImageRegion.LOCATION;
 			public final static String TAGGER_RETURN = ImageRegion.TAGGER_RETURN;
@@ -86,14 +85,22 @@ public class InformaConstants {
 			public final static String DURATION = "region_duration";
 			public final static String START_TIME = "region_startTime";
 			public final static String END_TIME = "region_endTime";
-			public final static String PARENT_REGION = "region_Parent";	// can be -1 (self) or id of parent
 			public final static String CHILD_REGIONS = "region_children";
-			public final static String CURRENT = "currentDisplayRegion";
+			public final static String TRAIL = "video_regionTrail";
 			
 			public final static class Subject {
 				public final static String PSEUDONYM = ImageRegion.Subject.PSEUDONYM;
 				public final static String INFORMED_CONSENT_GIVEN = ImageRegion.Subject.INFORMED_CONSENT_GIVEN;
 				public final static String PERSIST_FILTER = ImageRegion.Subject.PERSIST_FILTER;
+			}
+			
+			public final static class Child {
+				public final static String COORDINATES = "regionCoordinates";
+				public final static String DIMENSIONS = "regionDimensions";
+				public final static String WIDTH = "region_width";
+				public final static String HEIGHT = "region_height";
+				public final static String TOP = "region_top";
+				public final static String LEFT = "region_left";
 			}
 		}
 		

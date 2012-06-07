@@ -84,6 +84,7 @@ public class ObscuraConstants {
 	}
 	
 	public final static class VideoRegion {
+		public final static String PROPERTIES = ImageRegion.PROPERTIES;
 		public static final int CORNER_NONE = 0;
 		public static final int CORNER_UPPER_LEFT = 1;
 		public static final int CORNER_LOWER_LEFT = 2;

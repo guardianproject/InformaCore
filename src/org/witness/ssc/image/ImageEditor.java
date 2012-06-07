@@ -202,6 +202,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	
 	public final static String TMP_FILE_DIRECTORY = "/Android/data/org.witness.sscphase1/files/";
 	
+	private long[] encryptList = new long[] {0L};
+	
 	//handles threaded events for the UI thread
     private Handler mHandler = new Handler()
     {
@@ -1445,7 +1447,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     				  @Override
     				  public void run() {
     				    // this will be done in the Pipeline Thread
-    					long[] encryptList = new long[] {0L};
 		        		if(data.hasExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST))
 		        			encryptList = data.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST);
 		        		try {

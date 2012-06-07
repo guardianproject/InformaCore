@@ -1,17 +1,26 @@
 package org.witness.ssc.video;
 
-import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.Properties;
 import java.util.TreeSet;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.Keys.VideoRegion;
+import org.witness.ssc.image.ImageRegion;
+
+import android.graphics.Bitmap;
+import android.util.Log;
 
 public class RegionTrail {
 
 	
 	private HashMap<Integer,ObscureRegion> regionMap = new HashMap<Integer,ObscureRegion>();
+	private Properties mProps;
 	
 	private int startTime = 0;
 	private int endTime = 0;
@@ -20,6 +29,10 @@ public class RegionTrail {
 	{
 		this.startTime = startTime;
 		this.endTime = endTime;
+		
+		mProps = new Properties();
+		mProps.put(VideoRegion.FILTER, this.getClass().getName());
+		mProps.put(VideoRegion.TIMESTAMP, System.currentTimeMillis());
 	}
 	
 	public int getStartTime() {
@@ -28,6 +41,7 @@ public class RegionTrail {
 
 	public void setStartTime(int startTime) {
 		this.startTime = startTime;
+		mProps.put(VideoRegion.START_TIME, startTime);
 	}
 
 	public int getEndTime() {
@@ -36,17 +50,43 @@ public class RegionTrail {
 
 	public void setEndTime(int endTime) {
 		this.endTime = endTime;
+		mProps.put(VideoRegion.END_TIME, endTime);
 	}
 
 	public void addRegion (ObscureRegion or)
 	{
 		regionMap.put(or.timeStamp,or);
 		or.setRegionTrail(this);
+		mProps.put(VideoRegion.FILTER, or.currentMode);
 	}
 	
 	public void removeRegion (ObscureRegion or)
 	{
 		regionMap.remove(or.timeStamp);
+		mProps.put(VideoRegion.CHILD_REGIONS, regionMap.size());
+	}
+	
+	private void updateChildMetadata() throws JSONException {
+		JSONArray childMetadata = new JSONArray();
+		Iterator<ObscureRegion> it = getRegionsIterator();
+		while(it.hasNext()) {
+			ObscureRegion or = it.next();
+			JSONObject metadata = new JSONObject();
+			metadata.put(VideoRegion.Child.COORDINATES, "[" + or.getBounds().top + "," + or.getBounds().left + "]");
+			metadata.put(VideoRegion.Child.WIDTH, Integer.toString((int) Math.abs(or.getBounds().left - or.getBounds().right)));
+			metadata.put(VideoRegion.Child.HEIGHT, Integer.toString((int) Math.abs(or.getBounds().top - or.getBounds().bottom)));
+			childMetadata.put(metadata);
+			Log.d(InformaConstants.TAG, or.toString());
+		}
+		
+		
+		mProps.put(VideoRegion.TRAIL, childMetadata.toString());
+	}
+	
+	public void addIdentityTagger() {
+		mProps.put(VideoRegion.Subject.PSEUDONYM, "");
+		mProps.put(VideoRegion.Subject.INFORMED_CONSENT_GIVEN, "false");
+		mProps.put(VideoRegion.Subject.PERSIST_FILTER, "false");
 	}
 	
 	public Iterator<ObscureRegion> getRegionsIterator ()
@@ -93,5 +133,34 @@ public class RegionTrail {
 		}
 		else
 			return null;
+	}
+	
+	public Bitmap getBitmap(FFMPEGWrapper ffmpeg, int time) {
+		return ffmpeg.getFrame(getCurrentRegion(time), time);
+	}
+	
+	public JSONObject getRepresentation() throws JSONException {
+		JSONObject representation = new JSONObject();
+		Enumeration<?> e = getProperties().propertyNames();
+		
+		while(e.hasMoreElements()) {
+			String prop = (String) e.nextElement();
+			representation.put(prop, getProperties().get(prop));
+		}
+		
+		return representation;
+	}
+	
+	public Properties getProperties() {
+		try {
+			updateChildMetadata();
+		} catch(JSONException e) {
+			Log.d(InformaConstants.TAG, "region trail error: " + e.toString());
+		}
+		return mProps;
+	}
+	
+	public void setProperties(Properties mProps) {
+		this.mProps = mProps;
 	}
 }
