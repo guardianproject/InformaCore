@@ -282,6 +282,7 @@ public class InformaConstants {
 			public final static String ISO = ExifInterface.TAG_ISO;
 			public final static String ORIENTATION = ExifInterface.TAG_ORIENTATION;
 			public final static String WHITE_BALANCE = ExifInterface.TAG_WHITE_BALANCE;
+			public final static String TIMESTAMP = ExifInterface.TAG_DATETIME;
 		}
 		
 		

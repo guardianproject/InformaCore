@@ -1,6 +1,10 @@
 package org.witness.ssc;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -57,6 +61,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	
 	SensorSucker informaService;
 	Intent passingIntent;
+	File cameraImage;
 	
 	private ServiceConnection sc = new ServiceConnection() {
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
@@ -128,6 +133,10 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         _sp = PreferenceManager.getDefaultSharedPreferences(this);
     	_ed = _sp.edit();
     	
+    	File tmpFileDirectory = new File(InformaConstants.DUMP_FOLDER);
+        if (!tmpFileDirectory.exists())
+        	tmpFileDirectory.mkdirs();
+    	
     }
     
     @Override
@@ -158,10 +167,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			setContentView(R.layout.mainloading);
 			
 			passingIntent = null;
-			if(requestCode == ObscuraConstants.GALLERY_RESULT)
-				uriCameraImage = intent.getData();
-			
-			Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
+			uriCameraImage = intent.getData();
+			Log.d(InformaConstants.TAG, "RETURNED URI FROM CAMERA RESULT: " + uriCameraImage.toString());
 			
 			String fileExtension = MimeTypeMap.getFileExtensionFromUrl(uriCameraImage.toString());
 			String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension);
@@ -179,11 +186,31 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			}	
 			
 			if(requestCode == ObscuraConstants.CAMERA_RESULT) {
+				
 				passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
 				// TODO: IMPORTANTE!  Right here, we are forcing the media object to go through
 				// the media scanner.  THIS MUST BE UNDONE at the end of the editing process
 				// in order to maintain security/anonymity
-				new InformaMediaScanner(this, uriCameraImage);
+				
+				// write input stream to file
+				FileOutputStream fos;
+				try {
+					fos = new FileOutputStream(cameraImage);
+					InputStream media = getContentResolver().openInputStream(uriCameraImage);
+					byte buf[] = new byte[1024];
+					int len;
+					while((len = media.read(buf)) > 0)
+						fos.write(buf, 0, len);
+					fos.close();
+					media.close();
+					
+					new InformaMediaScanner(this, cameraImage);
+				} catch (FileNotFoundException e) {
+					Log.e(InformaConstants.TAG, e.toString());
+				} catch (IOException e) {
+					Log.e(InformaConstants.TAG, e.toString());
+				}
+				
 				return;
 			}
 			
@@ -250,19 +277,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
     	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
     	            
-    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
-    	            if (!tmpFileDirectory.exists())
-    	            	tmpFileDirectory.mkdirs();
     	            
-    	            File tmpFile = new File(tmpFileDirectory,"cam" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
-    	        	
-    	        	uriCameraImage = Uri.fromFile(tmpFile);
+    	            cameraImage = new File(InformaConstants.DUMP_FOLDER, "cam" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
     	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
-    	        	
-    	        	Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
-    	            
-    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    	        		
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)
@@ -278,19 +297,10 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMCORDER_TMP_FILE);
     	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
     	            
-    	            File tmpFileDirectory = new File(ObscuraConstants.TMP_FILE_DIRECTORY);
-    	            if (!tmpFileDirectory.exists())
-    	            	tmpFileDirectory.mkdirs();
-    	            
-    	            File tmpFile = new File(tmpFileDirectory,"vid" + ObscuraConstants.TMP_FILE_NAME_VIDEO);
-    	        	
-    	        	uriCameraImage = Uri.fromFile(tmpFile);
+    	            cameraImage = new File(InformaConstants.DUMP_FOLDER, "vid" + ObscuraConstants.TMP_FILE_NAME_VIDEO);
     	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
     	        	
-    	        	Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
-    	            
-    	        	Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
-    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)

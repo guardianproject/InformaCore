@@ -1,4 +1,4 @@
-package org.witness.ssc.video;
+package org.witness.informa.utils;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -16,19 +16,21 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.witness.ssc.video.BinaryInstaller;
+import org.witness.ssc.video.ObscureRegion;
+import org.witness.ssc.video.RegionTrail;
 import org.witness.ssc.video.ShellUtils.ShellCallback;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.util.Log;
 
-public class FFMPEGWrapper {
+public class VideoConstructor {
 
 	String[] libraryAssets = {"ffmpeg"};
 	File fileBinDir;
 	Context context;
 
-	public FFMPEGWrapper(Context _context) throws FileNotFoundException, IOException {
+	public VideoConstructor(Context _context) throws FileNotFoundException, IOException {
 		context = _context;
 		fileBinDir = context.getDir("bin",0);
 
@@ -79,23 +81,14 @@ public class FFMPEGWrapper {
 		
 	}
 	
-	public Bitmap getFrame(ObscureRegion or, int time) {
-		Bitmap b = null;
-		// TODO: get frame
-		
-		// crop to bounds (or.rectF())
-		
-		return b;
-	}
-	
 	public void processVideo(File redactSettingsFile, 
-			ArrayList<RegionTrail> obscureRegionTrails, File inputFile, File outputFile, String format, 
+			ArrayList<RegionTrail> obscureRegionTrails, File inputFile, File outputFile, String format, int mDuration,
 			int iWidth, int iHeight, int oWidth, int oHeight, int frameRate, int kbitRate, String vcodec, String acodec, ShellCallback sc) throws Exception {
 		
 		float widthMod = ((float)oWidth)/((float)iWidth);
 		float heightMod = ((float)oHeight)/((float)iHeight);
 		
-		writeRedactData(redactSettingsFile, obscureRegionTrails, widthMod, heightMod);
+		writeRedactData(redactSettingsFile, obscureRegionTrails, widthMod, heightMod, mDuration);
 		    	
 		if (vcodec == null)
 			vcodec = "copy";//"libx264"
@@ -139,42 +132,60 @@ public class FFMPEGWrapper {
 	    
 	}
 	
-	private void writeRedactData(File redactSettingsFile, ArrayList<RegionTrail> regionTrails, float widthMod, float heightMod) throws IOException {
+	private void writeRedactData(File redactSettingsFile, ArrayList<RegionTrail> regionTrails, float widthMod, float heightMod, int mDuration) throws IOException {
 		// Write out the finger data
 					
 		FileWriter redactSettingsFileWriter = new FileWriter(redactSettingsFile);
 		PrintWriter redactSettingsPrintWriter = new PrintWriter(redactSettingsFileWriter);
+		ObscureRegion or = null, lastOr = null;
+		String orData = "";
 		
 		for (RegionTrail trail : regionTrails)
 		{
 			
-			ObscureRegion or = null, lastOr = null;
-			
-			for (Integer orKey : trail.getRegionKeys())
+			if (trail.isDoTweening())
 			{
-				or = trail.getRegion(orKey);
+				int timeInc = 100;
 				
-				String orData = "";
-				
-				if (lastOr != null)
+				for (int i = 0; i < mDuration; i = i+timeInc)
 				{
-					orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp-lastOr.timeStamp);
+					or = trail.getCurrentRegion(i, trail.isDoTweening());
+					if (or != null)
+					{
+						orData = or.getStringData(widthMod, heightMod,i,timeInc, trail.getObscureMode());
+						redactSettingsPrintWriter.println(orData);
+					}
 				}
 				
-				redactSettingsPrintWriter.println(orData);
-				
-				lastOr = or;
 			}
-			
-			if (or != null)
+			else
 			{
-				String orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp-lastOr.timeStamp);
-				redactSettingsPrintWriter.println(orData);
+				
+				for (Integer orKey : trail.getRegionKeys())
+				{
+					or = trail.getRegion(orKey);
+					
+					if (lastOr != null)
+					{
+						
+						orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp,or.timeStamp-lastOr.timeStamp, trail.getObscureMode());
+					}
+					
+					redactSettingsPrintWriter.println(orData);
+					
+					lastOr = or;
+				}
+				
+				if (or != null)
+				{
+					orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp,or.timeStamp-lastOr.timeStamp, trail.getObscureMode());
+					redactSettingsPrintWriter.println(orData);
+				}
 			}
-			
 		}
 		
 		redactSettingsPrintWriter.flush();
+		
 		redactSettingsPrintWriter.close();
 
 				
@@ -206,5 +217,3 @@ public class FFMPEGWrapper {
 	}
 
 }
-
-

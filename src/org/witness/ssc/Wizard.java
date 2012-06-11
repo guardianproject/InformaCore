@@ -3,8 +3,10 @@ package org.witness.ssc;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -90,22 +92,13 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	Apg apg;
 	DatabaseHelper dh;
 	SQLiteDatabase db;
-	
-	Uri baseImage;
-	
+		
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.wizard);
 		
 		SQLiteDatabase.loadLibs(this);
-		
-		File tmpFileDirectory = new File(InformaConstants.DUMP_FOLDER);
-        if (!tmpFileDirectory.exists())
-        	tmpFileDirectory.mkdirs();
-        
-        File tmpFile = new File(tmpFileDirectory,"baseImage" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
-        baseImage = Uri.fromFile(tmpFile);
 		
 		preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		_ed = preferences.edit();
@@ -328,15 +321,23 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		}
 	}
 	
-	private void setDeviceId() throws IOException {
+	private void setDeviceId(Uri baseImage) throws IOException {
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 		
 		dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
-		byte[] b = ImageConstructor.fileToBytes(new File(baseImage.getPath()));
+		ByteArrayOutputStream b = new ByteArrayOutputStream();
+		
+		int len;
+		byte[] buf = new byte[1024];
+		InputStream img = getContentResolver().openInputStream(baseImage);
+		
+		while((len = img.read(buf)) > 0)
+			b.write(buf, 0, len);
 		
 		ContentValues cv = new ContentValues();
-		cv.put(Device.BASE_IMAGE, b);
+		cv.put(Device.BASE_IMAGE, b.toByteArray());
+		b.flush();
 		
 		long insert = db.insert(dh.getTable(), null, cv);
 		db.close();
@@ -465,9 +466,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	@SuppressWarnings("unused")
 	private void getDeviceId() {
         Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		intent.putExtra(MediaStore.EXTRA_SIZE_LIMIT, 60000L);
-		intent.putExtra(MediaStore.EXTRA_OUTPUT, baseImage);
-		
+		intent.putExtra(MediaStore.EXTRA_SIZE_LIMIT, 60000L);		
 		startActivityForResult(intent, InformaConstants.FROM_REGISTRATION_IMAGE);
 	}
 	
@@ -851,7 +850,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				break;
 			case InformaConstants.FROM_REGISTRATION_IMAGE:
 				try {
-					setDeviceId();
+					setDeviceId(data.getData());
 				} catch (IOException e) {
 					Log.d(InformaConstants.TAG, e.toString());
 				}

@@ -484,7 +484,8 @@ public class Informa {
 			data.imageHash = MediaHasher.hash(new File(genealogy.localMediaPath), "SHA-1");
 		} catch (NoSuchAlgorithmException e) {}
 		catch (IOException e) {}
-				
+		
+		
 		try {
 			images = new Image[intendedDestinations.length];
 			for(int i=0; i<intendedDestinations.length; i++) {

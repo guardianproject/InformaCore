@@ -111,6 +111,7 @@ public class SensorSucker extends Service {
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.LOCK_LOGS)));
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.UNLOCK_LOGS)));
 		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK)));
+		br.add(new Broadcaster(new IntentFilter(InformaConstants.Keys.Service.SET_EXIF)));
 		
 		for(BroadcastReceiver b : br)
 			registerReceiver(b, ((Broadcaster) b)._filter);
@@ -207,6 +208,7 @@ public class SensorSucker extends Service {
 	}
 	
 	private void handleExif(String exif) throws JSONException {
+		Log.d(InformaConstants.TAG, "WE SEE EXIF!");
 		JSONObject captureEventData = new JSONObject();
 		
 		captureEventData.put(CaptureEvent.TYPE, InformaConstants.CaptureEvents.EXIF_REPORTED);

@@ -345,6 +345,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				
 				originalImageOrientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 				
+				exif.put(Keys.Exif.TIMESTAMP, ei.getAttribute(Keys.Exif.TIMESTAMP));
 				exif.put(Keys.Exif.APERTURE, ei.getAttribute(Keys.Exif.APERTURE));
 				exif.put(Keys.Exif.EXPOSURE, ei.getAttribute(Keys.Exif.EXPOSURE));
 				exif.put(Keys.Exif.FLASH, ei.getAttributeInt(Keys.Exif.FLASH, InformaConstants.NOT_REPORTED));
@@ -358,8 +359,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				exif.put(Keys.Exif.WHITE_BALANCE, ei.getAttributeInt(Keys.Exif.WHITE_BALANCE, InformaConstants.NOT_REPORTED));
 				
 				sendBroadcast(new Intent()
-				.setAction(InformaConstants.Keys.Service.SET_EXIF)
-				.putExtra(Keys.Image.EXIF, exif.toString()));
+					.setAction(InformaConstants.Keys.Service.SET_EXIF)
+					.putExtra(Keys.Image.EXIF, exif.toString()));
 				
 				debug(ObscuraConstants.TAG,"EXIF: " + exif.toString());
 			} catch (IOException e1) {
