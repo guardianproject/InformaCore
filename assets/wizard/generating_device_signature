@@ -1,0 +1,3 @@
+Please wait while we generate your device's signature.
+This may take up to 30 seconds to complete...
+{$ type=spinner; callback=registerDeviceKeys;}

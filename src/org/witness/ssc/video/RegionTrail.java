@@ -138,6 +138,7 @@ public class RegionTrail {
 	}
 	
 	public JSONObject getRepresentation() throws JSONException {
+		updateChildMetadata();
 		JSONObject representation = new JSONObject();
 		Enumeration<?> e = getProperties().propertyNames();
 		

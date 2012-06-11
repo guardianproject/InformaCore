@@ -9,11 +9,11 @@ import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.LoginCache;
 import org.witness.informa.utils.SensorSucker;
 import org.witness.informa.utils.SensorSucker.LocalBinder;
+import org.witness.informa.utils.io.InformaMediaScanner;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.Eula.OnEulaAgreedTo;
 import org.witness.ssc.InformaSettings.OnSettingsSeen;
 import org.witness.ssc.image.ImageEditor;
-import org.witness.ssc.utils.InformaMediaScanner;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.utils.ObscuraConstants.MediaScanner;
 import org.witness.ssc.video.VideoEditor;
@@ -261,8 +261,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        	
     	        	Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
     	            
-    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-    	        		//.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)
@@ -289,8 +289,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        	
     	        	Log.d(InformaConstants.TAG, "RETURNED URI: " + uriCameraImage.toString());
     	            
-    	        	Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-    	        		//.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
+    	        	Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+    	        		.putExtra( MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        }   else {
     	            new AlertDialog.Builder(InformaApp.this)

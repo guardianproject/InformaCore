@@ -20,6 +20,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
+import android.preference.Preference;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
@@ -29,7 +32,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 
-public class Preferences extends PreferenceActivity implements OnClickListener {
+public class Preferences extends PreferenceActivity implements OnClickListener, OnPreferenceClickListener {
 	PreferenceCategory pc;
 	SharedPreferences _sp;
 	DatabaseHelper dh;
@@ -38,6 +41,7 @@ public class Preferences extends PreferenceActivity implements OnClickListener {
 	ArrayList<Selections> trustedDestinations;
 	ArrayList<Long> cleanUpDeadContacts;
 	
+	CheckBoxPreference selectEncryption;
 	Button addNew;
 	ListView tdmanager_holder;
 	org.witness.ssc.utils.EditorsAdapter editorsAdapter;
@@ -63,6 +67,9 @@ public class Preferences extends PreferenceActivity implements OnClickListener {
 		
 		addNew = (Button) findViewById(R.id.tdmanager_addNew);
 		addNew.setOnClickListener(this);
+		
+		selectEncryption = (CheckBoxPreference) findPreference("informa.EncryptMetadata");
+		selectEncryption.setOnPreferenceClickListener(this);
 		
 		tdmanager_holder = (ListView) findViewById(R.id.tdmanager_holder);
 		tdmanager_holder.setAdapter(editorsAdapter);
@@ -186,6 +193,23 @@ public class Preferences extends PreferenceActivity implements OnClickListener {
 				
 			}
 		}
+	}
+
+	@Override
+	public boolean onPreferenceClick(Preference preference) {
+		if(((CheckBoxPreference) preference).isChecked()) {
+			// if checked, check to see if we have the user's device key.
+			Cursor c = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
+			if(c == null || c.getCount() != 1) {
+				Intent i = new Intent(this, Wizard.class);
+				i.putExtra("wizardRoot", "encrypt_routine.wizard");
+				startActivity(i);
+			}
+				
+			
+			// if not, launch the wizard part where this happens!
+		}
+		return true;
 	}
 
 }

@@ -3,21 +3,45 @@ package org.witness.ssc;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.util.ArrayList;
+import java.util.Date;
 
+import org.bouncycastle.bcpg.CompressionAlgorithmTags;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informa.utils.ImageConstructor;
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Device;
+import org.witness.informa.utils.InformaConstants.Keys.Owner;
+import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.mods.InformaButton;
 import org.witness.mods.InformaEditText;
+import org.witness.mods.InformaSpinner;
 import org.witness.mods.InformaTextView;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.utils.Selections;
@@ -31,24 +55,28 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.drawable.Drawable;
+import android.database.Cursor;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
 public class Wizard extends SherlockActivity implements OnClickListener {
 	int current;
+	String orderFile;
 		
 	LinearLayout frame_content, navigation_holder;
 	TextView frame_title, progress;
@@ -63,6 +91,8 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	
+	Uri baseImage;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -70,11 +100,24 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		
 		SQLiteDatabase.loadLibs(this);
 		
+		File tmpFileDirectory = new File(InformaConstants.DUMP_FOLDER);
+        if (!tmpFileDirectory.exists())
+        	tmpFileDirectory.mkdirs();
+        
+        File tmpFile = new File(tmpFileDirectory,"baseImage" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
+        baseImage = Uri.fromFile(tmpFile);
+		
 		preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		_ed = preferences.edit();
 		
 		current = getIntent().getIntExtra("current", 0);
-		wizardForm = new WizardForm(this);
+		
+		if(getIntent().hasExtra("wizardRoot"))
+			orderFile = getIntent().getStringExtra("wizardRoot");
+		else
+			orderFile = "order.wizard";
+		
+		wizardForm = new WizardForm(this, orderFile);
 		
 		frame_title = (TextView) findViewById(R.id.wizard_frame_title);
 		
@@ -220,17 +263,6 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
 					
 			long insert = db.insert(dh.getTable(), null, cv);
-			
-			/*
-			dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
-			
-			cv = new ContentValues();
-			
-			// generate public/private key pair for device
-			
-			insert = db.insert(dh.getTable(), null, cv);
-			*/
-			
 			if(insert != 0)
 				enableAction(wizard_next);
 			
@@ -288,7 +320,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				if(s.getSelected()) {
 					_ed.putBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, Boolean.parseBoolean(encryptionValues[encryptionSelection.indexOf(s)])).commit();
 					if(encryptionSelection.indexOf(s) != 0)
-						current += 2;
+						current += 4;
 				}
 			}
 		} catch(Exception e) {
@@ -296,10 +328,127 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		}
 	}
 	
+	private void setDeviceId() throws IOException {
+		dh = new DatabaseHelper(this);
+		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
+		
+		dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
+		byte[] b = ImageConstructor.fileToBytes(new File(baseImage.getPath()));
+		
+		ContentValues cv = new ContentValues();
+		cv.put(Device.BASE_IMAGE, b);
+		
+		long insert = db.insert(dh.getTable(), null, cv);
+		db.close();
+		dh.close();
+		
+		if(insert > 0)
+			passThrough();
+	}
+	
+	@SuppressWarnings({ "deprecation", "unused" })
+	private void registerDeviceKeys() {
+		dh = new DatabaseHelper(this);
+		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
+		
+		Security.addProvider(new BouncyCastleProvider());
+		KeyPairGenerator kpg;
+		
+		dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
+		Cursor c = dh.getValue(db, new String[] {Keys.Device.BASE_IMAGE}, BaseColumns._ID, 1);
+		if(c != null && c.getCount() > 0) {
+			c.moveToFirst();
+			byte[] baseImage = c.getBlob(c.getColumnIndex(Keys.Device.BASE_IMAGE));
+			c.close();
+			
+			// init keypair
+			
+			try {
+				String pwd = generatePassword(baseImage);
+				kpg = KeyPairGenerator.getInstance("RSA","BC");
+				kpg.initialize(4096);
+				KeyPair keyPair = kpg.generateKeyPair();
+				
+				PGPSignatureSubpacketGenerator hashedGen = new PGPSignatureSubpacketGenerator();
+				hashedGen.setKeyFlags(true, KeyFlags.ENCRYPT_STORAGE);
+				hashedGen.setPreferredCompressionAlgorithms(false, new int[] {
+					CompressionAlgorithmTags.ZLIB,
+					CompressionAlgorithmTags.ZIP
+				});
+				hashedGen.setPreferredHashAlgorithms(false, new int[] {
+					HashAlgorithmTags.SHA256,
+					HashAlgorithmTags.SHA384,
+					HashAlgorithmTags.SHA512
+				});
+				hashedGen.setPreferredSymmetricAlgorithms(false, new int[] {
+					SymmetricKeyAlgorithmTags.AES_256,
+					SymmetricKeyAlgorithmTags.AES_192,
+					SymmetricKeyAlgorithmTags.AES_128,
+					SymmetricKeyAlgorithmTags.CAST5,
+					SymmetricKeyAlgorithmTags.DES
+				});
+				
+				PGPSecretKey secret = new PGPSecretKey(
+						PGPSignature.DEFAULT_CERTIFICATION,
+						PublicKeyAlgorithmTags.RSA_GENERAL,
+						keyPair.getPublic(),
+						keyPair.getPrivate(),
+						new Date(),
+						"InformaCam OpenPGP Key",
+						SymmetricKeyAlgorithmTags.AES_256,
+						pwd.toCharArray(),
+						hashedGen.generate(),
+						null,
+						new SecureRandom(),
+						"BC");
+				
+				ContentValues cv = new ContentValues();
+				cv.put(Device.PRIVATE_KEY, secret.getEncoded());
+				cv.put(Device.PASSPHRASE, pwd);
+				cv.put(Device.PUBLIC_KEY, secret.getPublicKey().getEncoded());
+				
+				// update cv with new key
+				db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Integer.toString(1)});
+				_ed.putBoolean(Keys.Settings.WITH_ENCRYPTION, true).commit();
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(InformaConstants.TAG, "key error: " + e.toString());
+			} catch (NoSuchProviderException e) {
+				Log.e(InformaConstants.TAG, "key error: " + e.toString());
+			} catch (PGPException e) {
+				Log.e(InformaConstants.TAG, "key error: " + e.toString());
+			} catch (IOException e) {
+				Log.e(InformaConstants.TAG, "key error: " + e.toString());
+			}
+			
+		}
+		
+		db.close();
+		dh.close();
+		
+		passThrough();
+	}
+	
+	private String generatePassword(byte[] baseImage) throws NoSuchAlgorithmException {
+		// initialize random bytes
+		byte[] randomBytes = new byte[baseImage.length];
+		SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
+		sr.nextBytes(randomBytes);
+		
+		// xor by baseImage
+		byte[] product = new byte[baseImage.length];
+		for(int b = 0; b < baseImage.length; b++) {
+			product[b] = (byte) (baseImage[b] ^ randomBytes[b]);
+		}
+		
+		// digest to SHA1 string, voila password.
+		MessageDigest md = MessageDigest.getInstance("SHA-1");
+		return Base64.encodeToString(md.digest(product), Base64.DEFAULT);
+	}
+	
 	@SuppressWarnings("unused")
 	private String[] getDefaultImageHandlingOptions() {
 		if(!preferences.getBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, false))
-			current -=2;
+			current -=4;
 		return getResources().getStringArray(R.array.default_image_handling);
 	}
 	
@@ -311,6 +460,15 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	@SuppressWarnings("unused")
 	private String[] getEncryptionValues() {
 		return getResources().getStringArray(R.array.enable_encryption);
+	}
+	
+	@SuppressWarnings("unused")
+	private void getDeviceId() {
+        Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+		intent.putExtra(MediaStore.EXTRA_SIZE_LIMIT, 60000L);
+		intent.putExtra(MediaStore.EXTRA_OUTPUT, baseImage);
+		
+		startActivityForResult(intent, InformaConstants.FROM_REGISTRATION_IMAGE);
 	}
 	
 	private class WizardForm extends JSONObject {
@@ -325,7 +483,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		public final static String frameOrder = "frameOrder";
 		public final static String allFrames = "frames";
 		
-		public WizardForm(Context c) {
+		public WizardForm(Context c, String orderFile) {
 			_c = c;
 			frames = new JSONArray();
 			order = new JSONArray();
@@ -343,9 +501,11 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 						sb.append(line).append('\n');
 					
 					// if the file is not "order.json"
-					if(f.compareTo("order.wizard") == 0) {
-						for(String s : sb.toString().split(",")) {
-							order.put(s);
+					//if(f.compareTo("order.wizard") == 0) {
+					if(f.contains(".wizard")) {
+						if(f.equals(orderFile)) {
+							for(String s : sb.toString().split(","))
+								order.put(s);
 						}
 					} else {
 						JSONObject frame = new JSONObject();
@@ -446,6 +606,34 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 						});
 						views.add(button);
 						
+					} else if(type.compareTo("spinner") == 0) {
+						InformaSpinner spinner = new InformaSpinner(_c);
+						
+						String[] args = parseArguments(findKey(s, "args"));
+						final Callback spinnerCall = new Callback(callback, args);
+						
+						disableAction(wizard_next);
+						disableAction(wizard_back);
+						
+						new Thread(new Runnable() {
+
+							@Override
+							public void run() {
+								try {
+									spinnerCall.doCallback();
+								} catch (IllegalAccessException e) {
+									Log.d(InformaConstants.TAG, "wizard error", e);
+								} catch (NoSuchMethodException e) {
+									Log.d(InformaConstants.TAG, "wizard error", e);
+								} catch (InvocationTargetException e) {
+									Log.d(InformaConstants.TAG, "wizard error", e);
+								}
+								
+							}
+						}).start();
+						
+						
+						views.add(spinner);
 					} else if(type.compareTo("input") == 0) {
 						InformaEditText edittext = new InformaEditText(_c);
 						
@@ -526,6 +714,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 						lv.setAdapter(new SelectionsAdapter(_c, selections, type));
 						views.add(lv);
 					}
+					
 				} else {
 					InformaTextView tv = new InformaTextView(_c);
 					tv.setText(s);
@@ -585,6 +774,21 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	@Override
 	public void onPause() {
 		super.onPause();
+		if(db != null) {
+			db.close();
+			dh.close();
+		}
+			
+	}
+	
+	private void passThrough() {
+		Intent i = new Intent(this, Wizard.class);
+		i.putExtra("current", current + 1);
+		if(!orderFile.equals("order.wizard"))
+			i.putExtra("wizardRoot", orderFile);
+		
+		startActivity(i);
+		finish();
 	}
 	
 	@Override
@@ -593,6 +797,9 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			if(current > 0) {
 				Intent i = new Intent(this,Wizard.class);
 				i.putExtra("current", current - 1);
+				if(!orderFile.equals("order.wizard"))
+					i.putExtra("wizardRoot", orderFile);
+					
 				startActivity(i);
 				finish();
 			}
@@ -613,6 +820,9 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				
 				Intent i = new Intent(this,Wizard.class);
 				i.putExtra("current", current + 1);
+				if(!orderFile.equals("order.wizard"))
+					i.putExtra("wizardRoot", orderFile);
+				
 				startActivity(i);
 				finish();
 			}
@@ -629,7 +839,8 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	protected void onActivityResult(int request, int result, Intent data) {
 		super.onActivityResult(request, result, data);
 		if(result == SherlockActivity.RESULT_OK) {
-			apg.onActivityResult(this, request, result, data);
+			if(request != InformaConstants.FROM_REGISTRATION_IMAGE)
+				apg.onActivityResult(this, request, result, data);
 			
 			switch(request) {
 			case Apg.SELECT_SECRET_KEY:
@@ -637,6 +848,13 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				break;
 			case Apg.SELECT_PUBLIC_KEYS:
 				setTrustedDestinations();
+				break;
+			case InformaConstants.FROM_REGISTRATION_IMAGE:
+				try {
+					setDeviceId();
+				} catch (IOException e) {
+					Log.d(InformaConstants.TAG, e.toString());
+				}
 				break;
 			}
 		}

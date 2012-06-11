@@ -13,6 +13,7 @@ public class InformaConstants {
 	public final static int FROM_INFORMA_TAGGER = 4;
 	public final static int FROM_TRUSTED_DESTINATION_CHOOSER = 5;
 	public final static int FROM_ENCRYPTION_SERVICE = 6;
+	public final static int FROM_REGISTRATION_IMAGE = 7;
 	public final static int BLOB_MAX = 1048576;
 	public final static String DUMP_FOLDER = Environment.getExternalStorageDirectory() + "/InformaCam/";
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
@@ -223,6 +224,7 @@ public class InformaConstants {
 			public static final String IMEI = Suckers.Phone.IMEI;
 			public static final String BLUETOOTH_DEVICE_NAME = Suckers.Phone.BLUETOOTH_DEVICE_NAME;
 			public static final String BLUETOOTH_DEVICE_ADDRESS = Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS;
+			public static final String BASE_IMAGE = "device_baseImage";
 			public static final String PUBLIC_KEY = "device_publicKey";
 			public static final String PRIVATE_KEY = "device_privateKey";
 			public static final String PASSPHRASE = "device_passphrase";

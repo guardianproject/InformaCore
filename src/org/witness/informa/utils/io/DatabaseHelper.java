@@ -66,9 +66,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							")",
 					"CREATE TABLE " + Tables.KEYRING + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
-							Device.PUBLIC_KEY + " blob not null, " +
-							Device.PRIVATE_KEY + " blob not null, " +
-							Device.PASSPHRASE + " text not null" +
+							Device.BASE_IMAGE + " blob, " +
+							Device.PUBLIC_KEY + " blob, " +
+							Device.PRIVATE_KEY + " blob, " +
+							Device.PASSPHRASE + " text" +
 							")"
 				};
 			}

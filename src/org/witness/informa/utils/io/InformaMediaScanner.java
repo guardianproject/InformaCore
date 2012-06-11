@@ -1,4 +1,4 @@
-package org.witness.ssc.utils;
+package org.witness.informa.utils.io;
 
 import java.io.File;
 
