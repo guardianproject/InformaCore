@@ -25,15 +25,22 @@ import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informa.EncryptActivity;
 import org.witness.informa.KeyChooser;
+import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Genealogy;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.VideoConstructor;
+import org.witness.ssc.image.ImageEditor;
+import org.witness.ssc.image.ImageRegion;
+import org.witness.ssc.image.ImageEditor.Broadcaster;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
 import org.witness.ssc.image.filters.PixelizeObscure;
 import org.witness.ssc.utils.ObscuraConstants;
@@ -44,10 +51,12 @@ import org.witness.ssc.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -94,6 +103,7 @@ import android.view.View.OnTouchListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.MediaController;
+import android.widget.Toast;
 import android.widget.VideoView;
 
 public class VideoEditor extends Activity implements
@@ -246,6 +256,7 @@ public class VideoEditor extends Activity implements
 	private long[] encryptList = new long[] {0L};
 	int mediaOrigin;
 	private boolean metadataScraped = false;
+	ArrayList<Broadcaster> br;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -310,6 +321,15 @@ public class VideoEditor extends Activity implements
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
 		mediaOrigin = getIntent().getIntExtra(Keys.Genealogy.MEDIA_ORIGIN, Genealogy.MediaOrigin.IMPORT);
+		
+		sendBroadcast(new Intent()
+			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
+			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
+			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
+		
+		br = new ArrayList<Broadcaster>();
+		br.add(new Broadcaster(new IntentFilter(Keys.Service.FINISH_ACTIVITY)));
+		br.add(new Broadcaster(new IntentFilter(Keys.Service.IMAGES_GENERATED)));
 		
 	}
 	
@@ -1327,9 +1347,36 @@ public class VideoEditor extends Activity implements
 	private void askPostProcessAction ()
 	{
 
-		// TODO: launch encryptionActivity!
+		sendBroadcast(new Intent()
+			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
+			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
+			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_SAVED));
 
+		JSONArray imageRegionObject = new JSONArray();
+		try {
+			for(RegionTrail rt : obscureTrails) {
+				imageRegionObject.put(rt.getRepresentation());
+				Log.d(InformaConstants.TAG, "IR: " + rt.getRepresentation().toString());
+			}
+		} catch (JSONException e) {
+			Log.e(InformaConstants.TAG, "problem: " + e.toString());
+		}
+	
+		Intent informa = new Intent()
+			.setAction(InformaConstants.Keys.Service.SEAL_LOG)
+			.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.VIDEO)
+			.putExtra(InformaConstants.Keys.ImageRegion.DATA, imageRegionObject.toString())
+			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, saveFile.getAbsolutePath())
+			.putExtra(InformaConstants.Keys.Genealogy.MEDIA_ORIGIN, mediaOrigin);
+	
+		for(long l : encryptList)
+			Log.d(InformaConstants.TAG, "to key: " + l);
+		if(encryptList[0] != 0)
+			informa.putExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST, encryptList);
+	
+		sendBroadcast(informa);
 	}
+	
 	private void playVideo() {
 		
     	Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
@@ -1432,6 +1479,9 @@ public class VideoEditor extends Activity implements
 		super.onPause();
 		mediaPlayer.reset();
 		
+		for(BroadcastReceiver b : br)
+			unregisterReceiver(b);
+		
 	}
 
 	@Override
@@ -1476,6 +1526,8 @@ public class VideoEditor extends Activity implements
 	protected void onResume() {
 		super.onResume();
 
+		for(BroadcastReceiver b : br)
+			registerReceiver(b, ((Broadcaster) b)._filter);
 
 		videoView = (VideoView) this.findViewById(R.id.SurfaceView);
 		
@@ -1532,7 +1584,8 @@ public class VideoEditor extends Activity implements
 			}
 		}
 		
-		
+		if(shouldStartPlaying)
+			start();
 		
 	}
 	
@@ -1982,6 +2035,43 @@ public class VideoEditor extends Activity implements
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void reviewAndFinish() {
+    	Intent i = new Intent(this, ReviewAndFinish.class);
+    	i.setData(Uri.fromFile(saveFile));
+    	i.putExtra(Keys.Media.MEDIA_TYPE, MediaTypes.VIDEO);
+    	startActivityForResult(i, ObscuraConstants.REVIEW_MEDIA);
+    	finish();
+    }
+	
+	public class Broadcaster extends BroadcastReceiver {
+		IntentFilter _filter;
+		
+		public Broadcaster(IntentFilter filter) {
+			_filter = filter;
+		}
+		
+		@Override
+		public void onReceive(Context c, Intent i) {
+			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
+				try {
+					reviewAndFinish();
+				} catch(NullPointerException e) {
+					Toast.makeText(VideoEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
+					finish();
+				}
+			} else if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
+				Log.d(InformaConstants.TAG, "i have been asked to start the encryption activity");
+				Intent encrypt = new Intent(VideoEditor.this, EncryptActivity.class);
+				encrypt
+					.putExtra(Keys.Service.ENCRYPT_METADATA, i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA))
+					.putExtra(Keys.Service.CLONE_PATH, i.getStringExtra(Keys.Service.CLONE_PATH));
+				startActivityForResult(encrypt, InformaConstants.FROM_ENCRYPTION_SERVICE);
+			}
+			
+		}
+		
 	}
 
 }

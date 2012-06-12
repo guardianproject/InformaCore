@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.Informa;
 import org.witness.informa.Informa.Image;
+import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
@@ -67,6 +68,7 @@ public class SensorSucker extends Service {
 	
 	List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
 	ImageConstructor ic;
+	VideoConstructor vc;
 
 	public class LocalBinder extends Binder {
 		public SensorSucker getService() {
@@ -288,6 +290,9 @@ public class SensorSucker extends Service {
 			r = new Runnable() {
 				@Override
 				public void run() {
+					final Video[] vid = informa.getVideos();
+					final Intent finishingIntent = new Intent().setAction(Keys.Service.FINISH_ACTIVITY);
+					
 					
 				}
 			};
@@ -320,10 +325,13 @@ public class SensorSucker extends Service {
 					handleBluetooth((BluetoothDevice) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
 				} else if(InformaConstants.Keys.Service.SEAL_LOG.equals(i.getAction())) {
 					Log.d(InformaConstants.TAG, "REGION DATA: " + i.getStringExtra(Keys.ImageRegion.DATA));
+					long[] encryptTo = new long[] {0};
+					if(i.hasExtra(Keys.Intent.ENCRYPT_LIST))
+						encryptTo = i.getLongArrayExtra(Keys.Intent.ENCRYPT_LIST);
 					sealLog(
 						i.getStringExtra(Keys.ImageRegion.DATA), 
 						i.getStringExtra(Keys.Image.LOCAL_MEDIA_PATH), 
-						i.getLongArrayExtra(Keys.Intent.ENCRYPT_LIST),
+						encryptTo,
 						i.getIntExtra(Keys.Media.MEDIA_TYPE, MediaTypes.PHOTO),
 						i.getIntExtra(Keys.Genealogy.MEDIA_ORIGIN, Genealogy.MediaOrigin.IMPORT));
 				} else if(Keys.Service.SET_CURRENT.equals(i.getAction())) {					

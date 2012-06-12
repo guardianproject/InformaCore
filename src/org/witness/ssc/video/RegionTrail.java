@@ -103,11 +103,11 @@ public class RegionTrail {
 			metadata.put(VideoRegion.Child.WIDTH, Integer.toString((int) Math.abs(or.getBounds().left - or.getBounds().right)));
 			metadata.put(VideoRegion.Child.HEIGHT, Integer.toString((int) Math.abs(or.getBounds().top - or.getBounds().bottom)));
 			childMetadata.put(metadata);
-			Log.d(InformaConstants.TAG, or.toString());
+			Log.d(InformaConstants.TAG, metadata.toString());
 		}
 		
 		
-		mProps.put(VideoRegion.TRAIL, childMetadata.toString());
+		mProps.put(VideoRegion.TRAIL, childMetadata);
 	}
 	
 	public void addIdentityTagger() {

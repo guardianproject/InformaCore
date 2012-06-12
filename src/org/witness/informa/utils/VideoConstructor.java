@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.witness.informa.Informa.Video;
 import org.witness.ssc.video.BinaryInstaller;
 import org.witness.ssc.video.ObscureRegion;
 import org.witness.ssc.video.RegionTrail;
@@ -214,6 +215,15 @@ public class VideoConstructor {
 			destinationOut.flush();
 			destinationOut.close();
 		}
+	}
+	
+	public void createVersionForTrustedDestination(Video v) {
+		
+	}
+	
+	public static int insertMetadata() {
+		return 0;
+		
 	}
 
 }

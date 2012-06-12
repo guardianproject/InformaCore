@@ -5,15 +5,18 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
@@ -25,6 +28,8 @@ import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.MediaHasher;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -32,6 +37,7 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
+import android.util.Patterns;
 
 public class Informa {
 	public Intent intent;
@@ -42,6 +48,7 @@ public class Informa {
 	private DatabaseHelper dh;
 	private Apg apg;
 	private Image[] images;
+	private Video[] videos;
 	
 	private Context _c;
 	
@@ -107,6 +114,7 @@ public class Informa {
 		Set<Location> location;
 		Set<Corroboration> corroboration;
 		Set<ImageRegion> imageRegions;
+		Set<VideoRegion> videoRegions;
 		Set<Event> events;
 		
 		public Data(int sourceType) {
@@ -117,6 +125,8 @@ public class Informa {
 			this.corroboration = new HashSet<Corroboration>();
 			if(sourceType == InformaConstants.MediaTypes.PHOTO) {
 				this.imageRegions = new HashSet<ImageRegion>();
+			} else if(sourceType == MediaTypes.VIDEO) {
+				this.videoRegions = new HashSet<VideoRegion>();
 			}
 		}
 	}
@@ -236,6 +246,27 @@ public class Informa {
 		}
 	}
 	
+	public class VideoRegion extends InformaZipper {
+		CaptureTimestamp captureTimestamp;
+		Location location;
+		long startTime, endTime;
+		
+		public String obfuscationType;
+		JSONObject trail;
+		
+		
+		Subject subject;
+		
+		public VideoRegion(CaptureTimestamp captureTimestamp, Location location, String obfuscationType, long startTime, long endTime, String trail) throws JSONException  {
+			this.captureTimestamp = captureTimestamp;
+			this.location = location;
+			this.obfuscationType = obfuscationType;
+			this.startTime = startTime;
+			this.endTime = endTime;
+			this.trail = (JSONObject) new JSONTokener(trail).nextValue();
+		}
+	}
+	
 	public class Owner extends InformaZipper {
 		String sigKeyId;
 		//String publicKey;
@@ -259,6 +290,39 @@ public class Informa {
 			break;
 		}
 		return mime;
+	}
+	
+	public class Video extends File implements Serializable {
+		private static final long serialVersionUID = -3770435615363239546L;
+		private String intendedDestination;
+		private JSONObject metadataPackage;
+		private long keyringId;
+		
+		public Video(String path, String intendedDestination, long keyringId) throws JSONException, IllegalArgumentException, IllegalAccessException {
+			super(path);
+			
+			this.intendedDestination = intendedDestination;
+			this.keyringId = keyringId;
+			
+			Informa.this.intent = new Intent(intendedDestination);
+			
+			this.metadataPackage = new JSONObject();
+			this.metadataPackage.put(Keys.Informa.INTENT, Informa.this.intent.zip());
+			this.metadataPackage.put(Keys.Informa.GENEALOGY, Informa.this.genealogy.zip());
+			this.metadataPackage.put(Keys.Informa.DATA, Informa.this.data.zip());
+		}
+		
+		public String getIntendedDestination() {
+			return this.intendedDestination;
+		}
+		
+		public String getMetadataPackage() {
+			return this.metadataPackage.toString();
+		}
+		
+		public long getIntendedDestinationKeyringId() {
+			return this.keyringId;
+		}
 	}
 	
 	public class Image extends File implements Serializable {
@@ -332,6 +396,10 @@ public class Informa {
 	
 	public Image[] getImages() {
 		return images;
+	}
+	
+	public Video[] getVideos() {
+		return videos;
 	}
 	
 	public Informa(
@@ -451,35 +519,57 @@ public class Informa {
 									locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
 							}
 							
-							JSONObject regionDimensions = new JSONObject();
-							regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));
-							regionDimensions.put(Keys.ImageRegion.HEIGHT, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.HEIGHT)));
+							if(data.sourceType == MediaTypes.PHOTO) {
+								JSONObject regionDimensions = new JSONObject();
+								regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));
+								regionDimensions.put(Keys.ImageRegion.HEIGHT, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.HEIGHT)));
 							
-							String[] rCoords = imageRegion.getString(Keys.ImageRegion.COORDINATES).substring(1, imageRegion.getString(Keys.ImageRegion.COORDINATES).length() -1).split(",");
-							JSONObject regionCoordinates = new JSONObject();
-							regionCoordinates.put(Keys.ImageRegion.TOP, Float.parseFloat(rCoords[0]));
-							regionCoordinates.put(Keys.ImageRegion.LEFT, Float.parseFloat(rCoords[1]));
+								String[] rCoords = imageRegion.getString(Keys.ImageRegion.COORDINATES).substring(1, imageRegion.getString(Keys.ImageRegion.COORDINATES).length() -1).split(",");
+								JSONObject regionCoordinates = new JSONObject();
+								regionCoordinates.put(Keys.ImageRegion.TOP, Float.parseFloat(rCoords[0]));
+								regionCoordinates.put(Keys.ImageRegion.LEFT, Float.parseFloat(rCoords[1]));
 							
-							ImageRegion ir = new ImageRegion(
-									new CaptureTimestamp(captureType, timestamp),
-									new Location(captureType, locationOnGeneration),
-									imageRegion.getString(Keys.ImageRegion.FILTER),
-									regionDimensions,
-									regionCoordinates
-							);
+								ImageRegion ir = new ImageRegion(
+										new CaptureTimestamp(captureType, timestamp),
+										new Location(captureType, locationOnGeneration),
+										imageRegion.getString(Keys.ImageRegion.FILTER),
+										regionDimensions,
+										regionCoordinates);
 							
-							if(imageRegion.has(Keys.ImageRegion.Subject.PSEUDONYM)) {
-								ir.subject = new Subject(
-									imageRegion.getString(Keys.ImageRegion.Subject.PSEUDONYM),
-									Boolean.parseBoolean(imageRegion.getString(Keys.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
-									"[" + InformaConstants.Consent.GENERAL + "]");
-							} else
-								ir.subject = null;
-							
-							if(data.imageRegions == null)
-								data.imageRegions = new HashSet<ImageRegion>();
-							
-							data.imageRegions.add(ir);
+								if(imageRegion.has(Keys.ImageRegion.Subject.PSEUDONYM)) {
+									ir.subject = new Subject(
+										imageRegion.getString(Keys.ImageRegion.Subject.PSEUDONYM),
+										Boolean.parseBoolean(imageRegion.getString(Keys.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
+										"[" + InformaConstants.Consent.GENERAL + "]");
+								} else
+									ir.subject = null;
+								
+								if(data.imageRegions == null)
+									data.imageRegions = new HashSet<ImageRegion>();
+								
+								data.imageRegions.add(ir);
+							} else if(data.sourceType == MediaTypes.VIDEO) {
+								VideoRegion vr = new VideoRegion(
+										new CaptureTimestamp(captureType, timestamp),
+										new Location(captureType, locationOnGeneration),
+										imageRegion.getString(Keys.VideoRegion.FILTER),
+										imageRegion.getInt(Keys.VideoRegion.START_TIME),
+										imageRegion.getInt(Keys.VideoRegion.END_TIME),
+										imageRegion.getString(Keys.VideoRegion.TRAIL));
+								
+								if(imageRegion.has(Keys.VideoRegion.Subject.PSEUDONYM)) {
+									vr.subject = new Subject(
+											imageRegion.getString(Keys.ImageRegion.Subject.PSEUDONYM),
+											Boolean.parseBoolean(imageRegion.getString(Keys.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
+											"[" + InformaConstants.Consent.GENERAL + "]");
+								} else
+									vr.subject = null;
+								
+								if(data.videoRegions == null)
+									data.videoRegions = new HashSet<VideoRegion> ();
+								
+								data.videoRegions.add(vr);
+							}
 							
 						}
 					}
@@ -493,37 +583,76 @@ public class Informa {
 		} catch (NoSuchAlgorithmException e) {}
 		catch (IOException e) {}
 		
-		
-		try {
+		if(data.sourceType == MediaTypes.PHOTO) {
 			images = new Image[intendedDestinations.length];
-			for(int i=0; i<intendedDestinations.length; i++) {
-				dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
-				try {
-					Cursor td = dh.getValue(
-							db, 
-							new String[] {TrustedDestinations.DISPLAY_NAME, TrustedDestinations.EMAIL},
-							TrustedDestinations.KEYRING_ID,
-							intendedDestinations[i]);
-					td.moveToFirst();
-					String displayName = td.getString(td.getColumnIndex(TrustedDestinations.DISPLAY_NAME));
-					String email = td.getString(td.getColumnIndex(TrustedDestinations.EMAIL));
-					String newPath = 
-							InformaConstants.DUMP_FOLDER + 
-							genealogy.localMediaPath.substring(genealogy.localMediaPath.lastIndexOf("/"), genealogy.localMediaPath.length() - 4) +
-							"_" + displayName.replace(" ", "-") +
-							getMimeType(data.sourceType);
-					td.close();
-					images[i] = new Image(newPath, email, intendedDestinations[i]);
-				} catch(NullPointerException e) {
-					Log.e(InformaConstants.TAG, "fracking npe",e);
-				}
+			int i = 0;
+			for(JSONObject mapping : mediaMapping(intendedDestinations)) {
+				images[i] = new Image(mapping.getString("newPath"), mapping.getString(TrustedDestinations.EMAIL), intendedDestinations[i]);
+				i++;
 			}
-		} catch(NullPointerException e) {
-			Log.e(InformaConstants.TAG, "there are no intended destinations",e);
+		} else if(data.sourceType == MediaTypes.VIDEO) {
+			videos = new Video[intendedDestinations.length];
+			int i = 0;
+			for(JSONObject mapping : mediaMapping(intendedDestinations)) {
+				videos[i] = new Video(mapping.getString("newPath"), mapping.getString(TrustedDestinations.EMAIL), intendedDestinations[i]);
+				i++;
+			}
 		}
 		
 		
 		db.close();
 		dh.close();
+	}
+	
+	private ArrayList<JSONObject> mediaMapping(long[] intendedDestinations) {
+		ArrayList<JSONObject> mapping = new ArrayList<JSONObject>();
+		dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
+		
+		for(long id : intendedDestinations) {
+			try {
+				String displayName = "unencrypted_metadata";
+				String email = null;
+				
+				if(id != 0) {
+					Cursor td = dh.getValue(
+							db, 
+							new String[] {TrustedDestinations.DISPLAY_NAME, TrustedDestinations.EMAIL},
+							TrustedDestinations.KEYRING_ID,
+							id);
+					td.moveToFirst();
+					displayName = td.getString(td.getColumnIndex(TrustedDestinations.DISPLAY_NAME));
+					email = td.getString(td.getColumnIndex(TrustedDestinations.EMAIL));
+					td.close();
+				} else {
+					Pattern ep = Patterns.EMAIL_ADDRESS;
+					Account[] accounts = AccountManager.get(_c).getAccountsByType("com.google");
+					for(Account a : accounts) {
+						if(ep.matcher(a.name).matches()) {
+							email = a.name;
+							break;
+						}
+							
+					}
+				}
+				
+				String newPath = 
+						InformaConstants.DUMP_FOLDER + 
+						genealogy.localMediaPath.substring(genealogy.localMediaPath.lastIndexOf("/"), genealogy.localMediaPath.length() - 4) +
+						"_" + displayName.replace(" ", "-") +
+						getMimeType(data.sourceType);
+				
+				JSONObject map = new JSONObject();
+				map.put(TrustedDestinations.DISPLAY_NAME, displayName);
+				map.put(TrustedDestinations.EMAIL, email);
+				map.put("newPath", newPath);
+				mapping.add(map);
+			} catch(NullPointerException e) {
+				Log.e(InformaConstants.TAG, "fracking npe",e);
+			} catch (JSONException e) {
+				Log.e(InformaConstants.TAG, "fracking npe",e);
+			}
+		}
+		
+		return mapping;
 	}
 }
