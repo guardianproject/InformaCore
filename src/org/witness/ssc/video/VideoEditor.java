@@ -236,7 +236,7 @@ public class VideoEditor extends Activity implements
 	// TODO: my additions to global vars
 	private SharedPreferences sp;
 	private boolean mediaPlayerIsPrepared = true;
-	private boolean shouldStartPlaying = true;
+	private boolean shouldStartPlaying = false;
 	private int currentCue = 1;
 	private long[] encryptList = new long[] {0L};
 	
@@ -304,6 +304,7 @@ public class VideoEditor extends Activity implements
 		
 	}
 	
+	// TODO: loadMedia()
 	private void loadMedia ()
 	{
 
@@ -317,18 +318,21 @@ public class VideoEditor extends Activity implements
 		mediaPlayer.setOnBufferingUpdateListener(this);
 
 		mediaPlayer.setLooping(false);
-		mediaPlayer.setScreenOnWhilePlaying(true);		
+		mediaPlayer.setScreenOnWhilePlaying(true);
+		
+		Log.d(LOGTAG, "attempting to load: " + originalVideoUri.toString());
 		
 		try {
 			mediaPlayer.setDataSource(originalVideoUri.toString());
+			Log.d(LOGTAG, "setData done.");
 		} catch (IllegalArgumentException e) {
-			Log.v(LOGTAG, e.getMessage());
+			Log.v(LOGTAG, "setDataSource error: " + e.getMessage());
 			finish();
 		} catch (IllegalStateException e) {
-			Log.v(LOGTAG, e.getMessage());
+			Log.v(LOGTAG, "setDataSource error: " + e.getMessage());
 			finish();
 		} catch (IOException e) {
-			Log.v(LOGTAG, e.getMessage());
+			Log.v(LOGTAG, "setDataSource error: " + e.getMessage());
 			finish();
 		}
 		
@@ -363,6 +367,7 @@ public class VideoEditor extends Activity implements
 			 
 			
 			 updateVideoLayout ();
+			 mediaPlayer.seekTo(currentCue);
 			
 		}
 	
@@ -411,12 +416,10 @@ public class VideoEditor extends Activity implements
 	}
 
 	public void onPrepared(MediaPlayer mp) {
-	//	Log.v(LOGTAG, "onPrepared Called");
+		Log.v(LOGTAG, "onPrepared Called");
 
 		updateVideoLayout ();
 		mediaPlayer.seekTo(currentCue);
-		
-		
 	}
 	
 	private void showAutoDetectDialog ()
@@ -440,6 +443,8 @@ public class VideoEditor extends Activity implements
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage("Would you like to detect faces in this video?").setPositiveButton("Yes", dialogClickListener)
 		    .setNegativeButton("No", dialogClickListener).show();
+		
+		shouldStartPlaying = true;
 		
 	}
 	
@@ -1446,7 +1451,7 @@ public class VideoEditor extends Activity implements
 
 				@Override
 				public void shellOut(char[] msg) {
-					// TODO Auto-generated method stub
+					
 					
 				}
 				
@@ -1456,6 +1461,7 @@ public class VideoEditor extends Activity implements
 		}
 	}
 
+	// TODO: onResume()
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -1502,19 +1508,21 @@ public class VideoEditor extends Activity implements
 		loadMedia();
 		
 		if(!mediaPlayerIsPrepared) {
+			Log.d(LOGTAG, "media is NOT prepared!");
 			try {
 				mediaPlayer.setDisplay(surfaceHolder);
 				mediaPlayer.prepare();
+				mediaPlayer.seekTo(currentCue);
 			} catch (IllegalStateException e) {
-				Log.e(LOGTAG, e.getMessage());
+				Log.e(LOGTAG, "player prepare: " + e.getMessage());
 				finish();
 			} catch (IOException e) {
-				Log.v(LOGTAG, e.getMessage());
+				Log.v(LOGTAG, "player prepare: " + e.getMessage());
 				finish();
 			}
 		}
 		
-		mediaPlayer.seekTo(currentCue);
+		
 		
 	}
 	

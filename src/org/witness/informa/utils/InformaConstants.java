@@ -146,6 +146,7 @@ public class InformaConstants {
 		public final static class Genealogy {
 			public final static String LOCAL_MEDIA_PATH = "localMediaPath";
 			public final static String DATE_CREATED = "dateCreated";
+			public final static String MEDIA_ORIGIN = "mediaOrigin";
 		}
 		
 		public final static class Location {

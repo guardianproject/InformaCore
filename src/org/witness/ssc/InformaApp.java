@@ -277,16 +277,15 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            values.put(MediaStore.Images.Media.TITLE, ObscuraConstants.CAMERA_TMP_FILE);
     	            values.put(MediaStore.Images.Media.DESCRIPTION,"ssctmp");
     	            
-    	            
     	            cameraImage = new File(InformaConstants.DUMP_FOLDER, "cam" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
     	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
-    	        	Intent  intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-    	        		
+    	        	
+    	        	Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
-    	        }   else {
-    	            new AlertDialog.Builder(InformaApp.this)
-    	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
-    	            .setCancelable(true).create().show();
+    	        } else {
+    	        	new AlertDialog.Builder(InformaApp.this)
+    	            	.setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
+    	            	.setCancelable(true).create().show();
     	        }
         		return true;
         	case R.id.TakeVideoButton:
@@ -302,10 +301,10 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	        	
     	        	Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
-    	        }   else {
-    	            new AlertDialog.Builder(InformaApp.this)
-    	            .setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
-    	            .setCancelable(true).create().show();
+    	        } else {
+    	        	new AlertDialog.Builder(InformaApp.this)
+    	            	.setMessage("External Storeage (SD Card) is required.\n\nCurrent state: " + storageState)
+    	            	.setCancelable(true).create().show();
     	        }
 
         		return true;

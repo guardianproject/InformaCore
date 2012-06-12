@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -58,6 +60,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -321,23 +324,25 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		}
 	}
 	
-	private void setDeviceId(Uri baseImage) throws IOException {
+	private void setDeviceId(Bitmap baseImage) throws IOException {
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 		
 		dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
-		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		
-		int len;
-		byte[] buf = new byte[1024];
-		InputStream img = getContentResolver().openInputStream(baseImage);
+		ByteBuffer b = ByteBuffer.allocate(baseImage.getRowBytes() * baseImage.getHeight());
+		baseImage.copyPixelsToBuffer(b);
 		
-		while((len = img.read(buf)) > 0)
-			b.write(buf, 0, len);
+		byte[] imageBytes = new byte[b.capacity()];
+		try {
+			b.get(imageBytes, 0, imageBytes.length);
+		} catch(BufferUnderflowException e) {
+			Log.d(InformaConstants.TAG, "buffer underflow!" + e.toString());
+		}
+		
 		
 		ContentValues cv = new ContentValues();
-		cv.put(Device.BASE_IMAGE, b.toByteArray());
-		b.flush();
+		cv.put(Device.BASE_IMAGE, imageBytes);
 		
 		long insert = db.insert(dh.getTable(), null, cv);
 		db.close();
@@ -850,7 +855,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				break;
 			case InformaConstants.FROM_REGISTRATION_IMAGE:
 				try {
-					setDeviceId(data.getData());
+					setDeviceId((Bitmap) data.getExtras().get("data"));
 				} catch (IOException e) {
 					Log.d(InformaConstants.TAG, e.toString());
 				}

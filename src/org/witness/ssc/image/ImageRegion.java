@@ -194,6 +194,7 @@ public class ImageRegion implements OnActionItemClickListener
         
         //set default processor
         this.setRegionProcessor(new PixelizeObscure());
+        mImageEditor.associateImageRegionData(this);
     }		
 	
 	public void setMatrix (Matrix matrix)

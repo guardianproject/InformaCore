@@ -337,7 +337,6 @@ public class SensorSucker extends Service {
 					inflateFromLogs(i.getLongExtra(InformaConstants.Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(InformaConstants.Keys.Video.DURATION, 0));
 				else if(InformaConstants.Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
 					List<Map<String, String>> encryptedMetadata = (List<Map<String, String>>) i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
-					// TODO: back to ic
 					sendBroadcast(new Intent().setAction(Keys.Service.FINISH_ACTIVITY));
 					
 				}

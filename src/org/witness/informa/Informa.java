@@ -90,6 +90,7 @@ public class Informa {
 	public class Genealogy extends InformaZipper {
 		String localMediaPath;
 		long dateCreated, dateAcquired;
+		int mediaOrigin;
 		
 		public Genealogy() {}
 	}
