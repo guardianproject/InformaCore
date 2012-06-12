@@ -92,7 +92,9 @@ public class Informa {
 		long dateCreated, dateAcquired;
 		int mediaOrigin;
 		
-		public Genealogy() {}
+		public Genealogy(int mediaOrigin) {
+			this.mediaOrigin = mediaOrigin;
+		}
 	}
 	
 	public class Data extends InformaZipper {
@@ -348,11 +350,13 @@ public class Informa {
 		dh = new DatabaseHelper(c);
 		db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
 		
-		apg = Apg.getInstance();
-		apg.setSignatureKeyId((Long) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1, Long.class));
+		if(sp.getBoolean(Keys.Settings.WITH_ENCRYPTION, false)) {
+			apg = Apg.getInstance();
+			apg.setSignatureKeyId((Long) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1, Long.class));
+		}
 		
 		data = new Data(mediaType);
-		genealogy = new Genealogy();
+		genealogy = new Genealogy((Integer) imageData.get(Keys.Genealogy.MEDIA_ORIGIN));
 		
 		for(int e=0; e<capturedEvents.length(); e++) {
 			JSONObject ce = (JSONObject) capturedEvents.get(e);
@@ -394,7 +398,6 @@ public class Informa {
 					data.location = new HashSet<Location>();
 				data.location.add(new Location(captureType,ce));
 				
-				genealogy.dateCreated = timestamp;
 				genealogy.localMediaPath = imageData.getString(Keys.Image.LOCAL_MEDIA_PATH);
 				
 				break;
@@ -419,7 +422,9 @@ public class Informa {
 				genealogy.dateAcquired = timestamp;
 				break;
 			case CaptureEvents.EXIF_REPORTED:
-				data.exif = new Exif(ce.getJSONObject(Keys.Image.EXIF));
+				JSONObject exifData = ce.getJSONObject(Keys.Image.EXIF);
+				genealogy.dateCreated = timestamp;
+				data.exif = new Exif(exifData);
 				break;
 			case CaptureEvents.REGION_GENERATED:
 				if(mediaType == MediaTypes.PHOTO) {
@@ -440,9 +445,11 @@ public class Informa {
 							JSONObject phone = (JSONObject) ce.remove(Keys.Suckers.PHONE);
 							
 							JSONObject locationOnGeneration = new JSONObject();
-							locationOnGeneration.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
-							if(phone.has(Keys.Suckers.Phone.CELL_ID))
-								locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
+							if(geo != null) {
+								locationOnGeneration.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
+								if(phone.has(Keys.Suckers.Phone.CELL_ID))
+									locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
+							}
 							
 							JSONObject regionDimensions = new JSONObject();
 							regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));

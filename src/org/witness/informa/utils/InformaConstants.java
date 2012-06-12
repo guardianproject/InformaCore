@@ -1,5 +1,10 @@
 package org.witness.informa.utils;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import android.media.ExifInterface;
 import android.os.Environment;
 
@@ -361,6 +366,13 @@ public class InformaConstants {
 		}
 	}
 	
+	public final static class Genealogy {
+		public final static class MediaOrigin {
+			public final static int IMPORT = 400;
+			public final static int FROM_INFORMA = 401;
+		}
+	}
+	
 	public final static class VideoRegions {
 		public final static class Parent {
 			public final static int SELF = -1;
@@ -368,5 +380,14 @@ public class InformaConstants {
 	}
 	
 	public final static int NOT_REPORTED = -1;
+	
+	@SuppressWarnings("deprecation")
+	public final static long TimestampToMillis(String ts) throws ParseException {
+		//2012:06:12 10:42:04
+		DateFormat df = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss");
+		
+		Date d = (Date) df.parse(ts);
+		return d.getTime();
+	}
 }
 

@@ -28,7 +28,6 @@ public class PixelizeObscure implements RegionProcesser {
 		mProps = new Properties ();
 		mProps.put("size", "10");
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
-		mProps.put(ImageRegion.TIMESTAMP, System.currentTimeMillis());
 	}
 	
 	public PixelizeObscure(int size) {

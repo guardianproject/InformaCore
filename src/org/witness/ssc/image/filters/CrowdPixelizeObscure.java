@@ -25,7 +25,6 @@ public class CrowdPixelizeObscure implements RegionProcesser {
 	public CrowdPixelizeObscure() {
 		mProps = new Properties();
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
-		mProps.put(ImageRegion.TIMESTAMP, System.currentTimeMillis());
 	}
 	
 	public void processRegion(RectF rect, Canvas canvas,  Bitmap bitmap) {

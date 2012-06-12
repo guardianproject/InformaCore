@@ -1,6 +1,7 @@
 package org.witness.ssc.image;
 
 import java.util.Enumeration;
+import java.util.Properties;
 
 import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
@@ -8,6 +9,7 @@ import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informa.utils.InformaConstants;
 import org.witness.ssc.image.filters.InformaTagger;
 import org.witness.ssc.image.filters.CrowdPixelizeObscure;
 import org.witness.ssc.image.filters.SolidObscure;
@@ -22,17 +24,9 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Message;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
-import android.view.View.OnTouchListener;
-import android.widget.FrameLayout;
-import android.widget.PopupWindow.OnDismissListener;
-import android.widget.RelativeLayout;
 
 public class ImageRegion implements OnActionItemClickListener 
 {
@@ -101,6 +95,7 @@ public class ImageRegion implements OnActionItemClickListener
 	private final static float CORNER_MAX = 50f;
 	
 	private int cornerMode = -1;
+	private long timestampOnGeneration;
 	
 	public RegionProcesser getRegionProcessor() {
 		return mRProc;
@@ -108,6 +103,9 @@ public class ImageRegion implements OnActionItemClickListener
 
 	public void setRegionProcessor(RegionProcesser rProc) {
 		mRProc = rProc;
+		Properties prop = mRProc.getProperties();
+		prop.put(InformaConstants.Keys.ImageRegion.TIMESTAMP, timestampOnGeneration);
+		mRProc.setProperties(prop);
 	}
 	
 	public JSONObject getRepresentation() throws JSONException {
@@ -190,7 +188,9 @@ public class ImageRegion implements OnActionItemClickListener
 		iMatrix = new Matrix();
     	mMatrix.invert(iMatrix);
 		
-		mBounds = new RectF(left, top, right, bottom);	
+		mBounds = new RectF(left, top, right, bottom);
+		
+		timestampOnGeneration = System.currentTimeMillis();
         
         //set default processor
         this.setRegionProcessor(new PixelizeObscure());

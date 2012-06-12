@@ -20,7 +20,6 @@ public class InformaTagger implements RegionProcesser
 		mProps.put(ImageRegion.Subject.INFORMED_CONSENT_GIVEN, "false");
 		mProps.put(ImageRegion.Subject.PERSIST_FILTER, "false");
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
-		mProps.put(ImageRegion.TIMESTAMP, System.currentTimeMillis());
 	}
 	
 	@Override

@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.CaptureEvent;
 import org.witness.informa.utils.InformaConstants.Keys.Suckers;
+import org.witness.informa.utils.InformaConstants.Genealogy;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.InformaConstants.Uploader;
@@ -207,12 +209,13 @@ public class SensorSucker extends Service {
 		capturedEvents.put(captureEventData);
 	}
 	
-	private void handleExif(String exif) throws JSONException {
-		Log.d(InformaConstants.TAG, "WE SEE EXIF!");
+	private void handleExif(String exif) throws JSONException, ParseException {
 		JSONObject captureEventData = new JSONObject();
+		JSONObject exifData = (JSONObject) new JSONTokener(exif).nextValue();
 		
 		captureEventData.put(CaptureEvent.TYPE, InformaConstants.CaptureEvents.EXIF_REPORTED);
-		captureEventData.put(Keys.Image.EXIF, (JSONObject) new JSONTokener(exif).nextValue());
+		captureEventData.put(Keys.Image.EXIF, exifData);
+		captureEventData.put(CaptureEvent.MATCH_TIMESTAMP, InformaConstants.TimestampToMillis((String) exifData.get(Keys.Exif.TIMESTAMP)));
 		
 		capturedEvents.put(captureEventData);
 	}
@@ -234,11 +237,12 @@ public class SensorSucker extends Service {
 		capturedEvents.put(captureEventData);
 	}
 	
-	private void sealLog(String regionData, String localMediaPath, long[] encryptTo, int mediaType) throws Exception {
+	private void sealLog(String regionData, String localMediaPath, long[] encryptTo, int mediaType, int mediaOrigin) throws Exception {
 				
 		mediaData.put(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, localMediaPath);
 		final long[] intendedDestinations = encryptTo;
 		mediaData.put(InformaConstants.Keys.Media.MEDIA_TYPE, mediaType);
+		mediaData.put(InformaConstants.Keys.Genealogy.MEDIA_ORIGIN, mediaOrigin);
 		
 		mediaRegions = (JSONArray) new JSONTokener(regionData).nextValue();
 		
@@ -315,27 +319,28 @@ public class SensorSucker extends Service {
 				} else if(BluetoothDevice.ACTION_FOUND.equals(i.getAction())) {
 					handleBluetooth((BluetoothDevice) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
 				} else if(InformaConstants.Keys.Service.SEAL_LOG.equals(i.getAction())) {
+					Log.d(InformaConstants.TAG, "REGION DATA: " + i.getStringExtra(Keys.ImageRegion.DATA));
 					sealLog(
-						i.getStringExtra(InformaConstants.Keys.ImageRegion.DATA), 
-						i.getStringExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH), 
-						i.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST),
-						i.getIntExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO));
-				} else if(InformaConstants.Keys.Service.SET_CURRENT.equals(i.getAction())) {
-					Log.d(InformaConstants.SUCKER_TAG, "setting an event: ");
+						i.getStringExtra(Keys.ImageRegion.DATA), 
+						i.getStringExtra(Keys.Image.LOCAL_MEDIA_PATH), 
+						i.getLongArrayExtra(Keys.Intent.ENCRYPT_LIST),
+						i.getIntExtra(Keys.Media.MEDIA_TYPE, MediaTypes.PHOTO),
+						i.getIntExtra(Keys.Genealogy.MEDIA_ORIGIN, Genealogy.MediaOrigin.IMPORT));
+				} else if(Keys.Service.SET_CURRENT.equals(i.getAction())) {					
 					captureEventData(
-						i.getLongExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, 0L),
-						i.getIntExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.REGION_GENERATED));
-				} else if(InformaConstants.Keys.Service.SET_EXIF.equals(i.getAction())) {
-					handleExif(i.getStringExtra(InformaConstants.Keys.Image.EXIF));
-				} else if(InformaConstants.Keys.Service.START_SERVICE.equals(i.getAction())) {
+						i.getLongExtra(Keys.CaptureEvent.MATCH_TIMESTAMP, 0L),
+						i.getIntExtra(Keys.CaptureEvent.TYPE, CaptureEvents.REGION_GENERATED));
+				} else if(Keys.Service.SET_EXIF.equals(i.getAction())) {
+					handleExif(i.getStringExtra(Keys.Image.EXIF));
+				} else if(Keys.Service.START_SERVICE.equals(i.getAction())) {
 					startUpService();
-				} else if(InformaConstants.Keys.Service.LOCK_LOGS.equals(i.getAction()))
+				} else if(Keys.Service.LOCK_LOGS.equals(i.getAction()))
 					lockLogs();
-				else if(InformaConstants.Keys.Service.UNLOCK_LOGS.equals(i.getAction()))
+				else if(Keys.Service.UNLOCK_LOGS.equals(i.getAction()))
 					unlockLogs();
-				else if(InformaConstants.Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
-					inflateFromLogs(i.getLongExtra(InformaConstants.Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(InformaConstants.Keys.Video.DURATION, 0));
-				else if(InformaConstants.Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
+				else if(Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
+					inflateFromLogs(i.getLongExtra(Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(Keys.Video.DURATION, 0));
+				else if(Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
 					List<Map<String, String>> encryptedMetadata = (List<Map<String, String>>) i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
 					sendBroadcast(new Intent().setAction(Keys.Service.FINISH_ACTIVITY));
 					

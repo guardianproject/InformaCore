@@ -167,7 +167,13 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			setContentView(R.layout.mainloading);
 			
 			passingIntent = null;
-			uriCameraImage = intent.getData();
+			try {
+				uriCameraImage = intent.getData();
+			} catch(NullPointerException e) {
+				// The getData param is null.
+				// probably because it is a camera thing.
+				Log.e(InformaConstants.TAG, "the getData param is null.  uriCameraImage is unchanged");
+			}
 			Log.d(InformaConstants.TAG, "RETURNED URI FROM CAMERA RESULT: " + uriCameraImage.toString());
 			
 			String fileExtension = MimeTypeMap.getFileExtensionFromUrl(uriCameraImage.toString());
@@ -183,36 +189,43 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 					passingIntent = new Intent(this, VideoEditor.class);
 				else if(mimeType == null && uriCameraImage.getPathSegments().contains("images"))
 					passingIntent = new Intent(this, ImageEditor.class);
-			}	
+			}
 			
 			if(requestCode == ObscuraConstants.CAMERA_RESULT) {
 				
-				passingIntent.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis());
+				passingIntent
+					.putExtra(InformaConstants.Keys.CaptureEvent.MEDIA_CAPTURE_COMPLETE, System.currentTimeMillis())
+					.putExtra(InformaConstants.Keys.Genealogy.MEDIA_ORIGIN, InformaConstants.Genealogy.MediaOrigin.FROM_INFORMA);
 				// TODO: IMPORTANTE!  Right here, we are forcing the media object to go through
 				// the media scanner.  THIS MUST BE UNDONE at the end of the editing process
 				// in order to maintain security/anonymity
 				
-				// write input stream to file
-				FileOutputStream fos;
-				try {
-					fos = new FileOutputStream(cameraImage);
-					InputStream media = getContentResolver().openInputStream(uriCameraImage);
-					byte buf[] = new byte[1024];
-					int len;
-					while((len = media.read(buf)) > 0)
-						fos.write(buf, 0, len);
-					fos.close();
-					media.close();
+				if(mimeType.equals(ObscuraConstants.MIME_TYPE_MP4)) {
+					// write input stream to file
+					FileOutputStream fos;
+					try {
+						fos = new FileOutputStream(cameraImage);
+						InputStream media = getContentResolver().openInputStream(uriCameraImage);
+						byte buf[] = new byte[1024];
+						int len;
+						while((len = media.read(buf)) > 0)
+							fos.write(buf, 0, len);
+						fos.close();
+						media.close();
+					} catch (FileNotFoundException e) {
+						Log.e(InformaConstants.TAG, e.toString());
+					} catch (IOException e) {
+						Log.e(InformaConstants.TAG, e.toString());
+					}
 					
-					new InformaMediaScanner(this, cameraImage);
-				} catch (FileNotFoundException e) {
-					Log.e(InformaConstants.TAG, e.toString());
-				} catch (IOException e) {
-					Log.e(InformaConstants.TAG, e.toString());
 				}
 				
+				new InformaMediaScanner(this, cameraImage);
 				return;
-			}
+				
+				
+			} else
+				passingIntent.putExtra(InformaConstants.Keys.Genealogy.MEDIA_ORIGIN, InformaConstants.Genealogy.MediaOrigin.IMPORT);
 			
 			launchEditor();
 		} else {
@@ -280,7 +293,9 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	            cameraImage = new File(InformaConstants.DUMP_FOLDER, "cam" + ObscuraConstants.TMP_FILE_NAME_IMAGE);
     	        	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.LOCK_LOGS));
     	        	
-    	        	Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    	        	uriCameraImage = Uri.fromFile(cameraImage);
+    	        	
+    	        	Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, uriCameraImage);
     	            startActivityForResult(intent, ObscuraConstants.CAMERA_RESULT);
     	        } else {
     	        	new AlertDialog.Builder(InformaApp.this)

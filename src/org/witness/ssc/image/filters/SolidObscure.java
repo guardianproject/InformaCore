@@ -30,7 +30,6 @@ public class SolidObscure implements RegionProcesser {
         
         mProps = new Properties();
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
-		mProps.put(ImageRegion.TIMESTAMP, System.currentTimeMillis());
 	}
  	
 	public void processRegion(RectF rect, Canvas canvas,  Bitmap bitmap) {

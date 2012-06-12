@@ -30,6 +30,8 @@ import org.witness.informa.KeyChooser;
 import org.witness.informa.ReviewAndFinish;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.CaptureEvents;
+import org.witness.informa.utils.InformaConstants.Genealogy;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.ssc.R;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
@@ -243,6 +245,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     
     List<Broadcaster> br;
     SharedPreferences sp;
+    int mediaOrigin;
 
     private void reviewAndFinish() {
     	mProgressDialog.cancel();
@@ -301,6 +304,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		// Passed in from CameraObscuraMainMenu
 		originalImageUri = getIntent().getData();
+		mediaOrigin = getIntent().getIntExtra(Keys.Genealogy.MEDIA_ORIGIN, Genealogy.MediaOrigin.IMPORT);
 		
 		// If originalImageUri is null, we are likely coming from another app via "share"
 		if (originalImageUri == null)
@@ -1010,9 +1014,9 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	 */
 	public void associateImageRegionData(ImageRegion ir) {
 		sendBroadcast(new Intent()
-			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
-			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, (Long) ir.mRProc.getProperties().get(InformaConstants.Keys.ImageRegion.TIMESTAMP))
-			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.REGION_GENERATED));
+			.setAction(Keys.Service.SET_CURRENT)
+			.putExtra(Keys.CaptureEvent.MATCH_TIMESTAMP, (Long) ir.mRProc.getProperties().get(Keys.ImageRegion.TIMESTAMP))
+			.putExtra(Keys.CaptureEvent.TYPE, CaptureEvents.REGION_GENERATED));
 	}
 	
 	/*
@@ -1335,8 +1339,10 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	
 		JSONArray imageRegionObject = new JSONArray();
 		try {
-			for(ImageRegion ir : imageRegions)
+			for(ImageRegion ir : imageRegions) {
 				imageRegionObject.put(ir.getRepresentation());
+				Log.d(InformaConstants.TAG, "IR: " + ir.getRepresentation().toString());
+			}
 		} catch (JSONException e) {
 			Log.e(InformaConstants.TAG, "problem: " + e.toString());
 			return false;
@@ -1346,7 +1352,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			.setAction(InformaConstants.Keys.Service.SEAL_LOG)
 			.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO)
 			.putExtra(InformaConstants.Keys.ImageRegion.DATA, imageRegionObject.toString())
-			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, pullPathFromUri(savedImageUri).getAbsolutePath());
+			.putExtra(InformaConstants.Keys.Image.LOCAL_MEDIA_PATH, pullPathFromUri(savedImageUri).getAbsolutePath())
+			.putExtra(InformaConstants.Keys.Genealogy.MEDIA_ORIGIN, mediaOrigin);
 		
     	for(long l : encryptList)
     		Log.d(InformaConstants.TAG, "to key: " + l);
