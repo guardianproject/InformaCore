@@ -4,9 +4,11 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import android.media.ExifInterface;
 import android.os.Environment;
+import android.util.Log;
 
 public class InformaConstants {
 	public final static String TAG = "************ INFORMA ***********";
@@ -89,10 +91,10 @@ public class InformaConstants {
 			public final static String FILTER = ImageRegion.FILTER;
 			public final static String COORDINATES = ImageRegion.COORDINATES;
 			public final static String DURATION = "region_duration";
-			public final static String START_TIME = "region_startTime";
-			public final static String END_TIME = "region_endTime";
+			public final static String START_TIME = "startTime";
+			public final static String END_TIME = "endTime";
 			public final static String CHILD_REGIONS = "region_children";
-			public final static String TRAIL = "video_regionTrail";
+			public final static String TRAIL = "trail";
 			
 			public final static class Subject {
 				public final static String PSEUDONYM = ImageRegion.Subject.PSEUDONYM;
@@ -146,6 +148,10 @@ public class InformaConstants {
 			public final static String VIDEO_REGIONS = "videoRegions";
 			public final static String EVENTS = "events";
 			public final static String MEDIA_HASH = "mediaHash";
+			public final static String EXIF = "exif";
+			public final static String LOCATIONS = "location";
+			public final static String CORROBORATION = "corroboration";
+			public final static String CAPTURE_TIMESTAMPS = "captureTimestamp";
 		}
 		
 		public final static class Genealogy {
@@ -155,9 +161,14 @@ public class InformaConstants {
 		}
 		
 		public final static class Location {
-			public final static String TYPE = "location_type";
+			public final static String TYPE = "locationType";
+			public final static String DATA = "locationData";
 			public final static String COORDINATES = "location_gpsCoordinates";
 			public final static String CELL_ID = Suckers.Phone.CELL_ID;
+		}
+		
+		public final static class CaptureTimestamp {
+			public final static String TYPE = "timestampType";
 		}
 		
 		public final static class Intent {
@@ -200,18 +211,19 @@ public class InformaConstants {
 			public final static String LOCATION_OF_ORIGINAL = "source_locationOfOriginal";
 			public final static String LOCATION_OF_OBSCURED_VERSION = "source_locationOfObscuredVersion";
 			public final static String LOCATION_OF_CLONE = "source_locationOfClone";
-			public final static String EXIF = "exifData";
+			public final static String EXIF = Data.EXIF;
 			public final static String TRUSTED_DESTINATION = Intent.Destination.EMAIL;
 			public final static String SHARED_SECRET = "source_sharedSecret";
 		}
 		
 		public final static class Video {
 			public final static String FIRST_TIMESTAMP = CaptureEvent.ON_VIDEO_START;
-			public final static String DURATION = "videoDuration";
+			public final static String DURATION = Exif.DURATION;
 			public final static String VIDEO_TRACK = "videoTrack";
 		}
 		
 		public final static class Ass {
+			public final static String TEMP = "ass.ass";
 			public final static String VROOT = "%vroot";
 			public final static String BLOCK_START = "%blockstart";
 			public final static String BLOCK_END = "%blockend";
@@ -234,6 +246,7 @@ public class InformaConstants {
 			public static final String PUBLIC_KEY = "device_publicKey";
 			public static final String PRIVATE_KEY = "device_privateKey";
 			public static final String PASSPHRASE = "device_passphrase";
+			public static final String TIME_SEEN = "timeSeen";
 		}
 		
 		public final static class Tables {
@@ -289,6 +302,7 @@ public class InformaConstants {
 			public final static String ORIENTATION = ExifInterface.TAG_ORIENTATION;
 			public final static String WHITE_BALANCE = ExifInterface.TAG_WHITE_BALANCE;
 			public final static String TIMESTAMP = ExifInterface.TAG_DATETIME;
+			public final static String DURATION = "duration";
 		}
 		
 		
@@ -382,16 +396,36 @@ public class InformaConstants {
 	public final static int NOT_REPORTED = -1;
 	
 	@SuppressWarnings("deprecation")
-	public final static long TimestampToMillis(String ts) throws ParseException {
+	public final static long timestampToMillis(String ts) throws ParseException {
 		//2012:06:12 10:42:04
 		try {
-			DateFormat df = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss");
+			DateFormat df = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss", Locale.getDefault());
 		
 			Date d = (Date) df.parse(ts);
 			return d.getTime();
 		} catch(ParseException e) {
 			return Long.parseLong(ts);
 		}
+	}
+	
+	public final static String millisecondsToTimestamp(long ms, long max) {
+		if(ms > max)
+			return millisecondsToTimestamp(max);
+		else
+			return millisecondsToTimestamp(ms);
+	}
+	
+	public final static String millisecondsToTimestamp(long ms) {
+		int s = (int) (ms/1000);
+		int hours = s/3600;
+		int remainder = s%3600;
+		int min = remainder/60;
+		int sec = remainder%60;
+		
+		String ts = ((hours < 10 ? "0" : "") + hours + ":" + (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec);
+		if(ts.contains("-"))
+			ts = ts.replace("-","0.");
+		return ts;
 	}
 }
 

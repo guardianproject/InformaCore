@@ -35,9 +35,11 @@ import org.json.JSONTokener;
 import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.Informa.Image;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
 import org.witness.informa.utils.InformaConstants.Keys.ImageRegion;
 import org.witness.informa.utils.InformaConstants.Keys.Informa;
+import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
@@ -214,6 +216,7 @@ public class ImageConstructor {
 		cv.put(Keys.Image.TRUSTED_DESTINATION, i.getIntendedDestination());
 		cv.put(Keys.Image.CONTAINMENT_ARRAY, containmentArray);
 		cv.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
+		cv.put(Keys.Media.MEDIA_TYPE, MediaTypes.PHOTO);
 		
 		dh.setTable(db, Tables.IMAGES);
 		Map<Long, String> mo = new HashMap<Long, String>();

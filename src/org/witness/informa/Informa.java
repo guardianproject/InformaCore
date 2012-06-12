@@ -132,7 +132,7 @@ public class Informa {
 	}
 	
 	public class Exif extends InformaZipper {
-		int sdk, orientation, imageLength, imageWidth, whiteBalance, flash, focalLength;
+		int sdk, orientation, imageLength, imageWidth, whiteBalance, flash, focalLength, duration;
 		String make, model, iso, exposureTime, aperture;
 		
 		public Exif(JSONObject exif) throws JSONException {
@@ -159,6 +159,8 @@ public class Informa {
 				this.focalLength = exif.getInt(Keys.Exif.FOCAL_LENGTH);
 			if(exif.has(Keys.Exif.APERTURE))
 				this.aperture = exif.getString(Keys.Exif.APERTURE);
+			if(exif.has(Keys.Exif.DURATION))
+				this.duration = exif.getInt(Keys.Exif.DURATION);
 		}
 	}
 	
@@ -252,18 +254,18 @@ public class Informa {
 		long startTime, endTime;
 		
 		public String obfuscationType;
-		JSONObject trail;
+		JSONArray trail;
 		
 		
 		Subject subject;
 		
-		public VideoRegion(CaptureTimestamp captureTimestamp, Location location, String obfuscationType, long startTime, long endTime, String trail) throws JSONException  {
+		public VideoRegion(CaptureTimestamp captureTimestamp, Location location, String obfuscationType, long startTime, long endTime, JSONArray trail) throws JSONException  {
 			this.captureTimestamp = captureTimestamp;
 			this.location = location;
 			this.obfuscationType = obfuscationType;
 			this.startTime = startTime;
 			this.endTime = endTime;
-			this.trail = (JSONObject) new JSONTokener(trail).nextValue();
+			this.trail = trail;
 		}
 	}
 	
@@ -493,87 +495,87 @@ public class Informa {
 				JSONObject exifData = ce.getJSONObject(Keys.Image.EXIF);
 				genealogy.dateCreated = timestamp;
 				data.exif = new Exif(exifData);
+				Log.d(InformaConstants.TAG, exifData.toString());
 				break;
 			case CaptureEvents.REGION_GENERATED:
-				if(mediaType == MediaTypes.PHOTO) {
-					for(int x=0; x< regionData.length(); x++) {
-						JSONObject imageRegion = (JSONObject) regionData.get(x);
+				for(int x=0; x< regionData.length(); x++) {
+					JSONObject imageRegion = (JSONObject) regionData.get(x);
+					
+					long matchTimestamp;
+					
+					try {
+						matchTimestamp = (Long) imageRegion.get(Keys.ImageRegion.TIMESTAMP);
+					} catch(ClassCastException cce) {
+						matchTimestamp = Long.parseLong((String) imageRegion.get(Keys.ImageRegion.TIMESTAMP));
+					}
+					
+					if(timestamp == matchTimestamp) {
+						JSONObject geo = (JSONObject) ce.remove(Keys.Suckers.GEO);
+						JSONObject acc = (JSONObject) ce.remove(Keys.Suckers.ACCELEROMETER);
+						JSONObject phone = (JSONObject) ce.remove(Keys.Suckers.PHONE);
 						
-						long matchTimestamp;
-						
-						try {
-							matchTimestamp = (Long) imageRegion.get(Keys.ImageRegion.TIMESTAMP);
-						} catch(ClassCastException cce) {
-							matchTimestamp = Long.parseLong((String) imageRegion.get(Keys.ImageRegion.TIMESTAMP));
+						JSONObject locationOnGeneration = new JSONObject();
+						if(geo != null) {
+							locationOnGeneration.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
+							if(phone.has(Keys.Suckers.Phone.CELL_ID))
+								locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
 						}
 						
-						if(timestamp == matchTimestamp) {
-							JSONObject geo = (JSONObject) ce.remove(Keys.Suckers.GEO);
-							JSONObject acc = (JSONObject) ce.remove(Keys.Suckers.ACCELEROMETER);
-							JSONObject phone = (JSONObject) ce.remove(Keys.Suckers.PHONE);
+						if(data.sourceType == MediaTypes.PHOTO) {
+							JSONObject regionDimensions = new JSONObject();
+							regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));
+							regionDimensions.put(Keys.ImageRegion.HEIGHT, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.HEIGHT)));
+						
+							String[] rCoords = imageRegion.getString(Keys.ImageRegion.COORDINATES).substring(1, imageRegion.getString(Keys.ImageRegion.COORDINATES).length() -1).split(",");
+							JSONObject regionCoordinates = new JSONObject();
+							regionCoordinates.put(Keys.ImageRegion.TOP, Float.parseFloat(rCoords[0]));
+							regionCoordinates.put(Keys.ImageRegion.LEFT, Float.parseFloat(rCoords[1]));
+						
+							ImageRegion ir = new ImageRegion(
+									new CaptureTimestamp(captureType, timestamp),
+									new Location(captureType, locationOnGeneration),
+									imageRegion.getString(Keys.ImageRegion.FILTER),
+									regionDimensions,
+									regionCoordinates);
+						
+							if(imageRegion.has(Keys.ImageRegion.Subject.PSEUDONYM)) {
+								ir.subject = new Subject(
+									imageRegion.getString(Keys.ImageRegion.Subject.PSEUDONYM),
+									Boolean.parseBoolean(imageRegion.getString(Keys.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
+									"[" + InformaConstants.Consent.GENERAL + "]");
+							} else
+								ir.subject = null;
 							
-							JSONObject locationOnGeneration = new JSONObject();
-							if(geo != null) {
-								locationOnGeneration.put(Keys.Location.COORDINATES, geo.getString(Keys.Suckers.Geo.GPS_COORDS));
-								if(phone.has(Keys.Suckers.Phone.CELL_ID))
-									locationOnGeneration.put(Keys.Location.CELL_ID, phone.getString(Keys.Suckers.Phone.CELL_ID));
-							}
+							if(data.imageRegions == null)
+								data.imageRegions = new HashSet<ImageRegion>();
 							
-							if(data.sourceType == MediaTypes.PHOTO) {
-								JSONObject regionDimensions = new JSONObject();
-								regionDimensions.put(Keys.ImageRegion.WIDTH, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.WIDTH)));
-								regionDimensions.put(Keys.ImageRegion.HEIGHT, Float.parseFloat(imageRegion.getString(Keys.ImageRegion.HEIGHT)));
+							data.imageRegions.add(ir);
+						} else if(data.sourceType == MediaTypes.VIDEO) {
+							VideoRegion vr = new VideoRegion(
+									new CaptureTimestamp(captureType, timestamp),
+									new Location(captureType, locationOnGeneration),
+									imageRegion.getString(Keys.VideoRegion.FILTER),
+									imageRegion.getInt(Keys.VideoRegion.START_TIME),
+									imageRegion.getInt(Keys.VideoRegion.END_TIME),
+									imageRegion.getJSONArray(Keys.VideoRegion.TRAIL));
 							
-								String[] rCoords = imageRegion.getString(Keys.ImageRegion.COORDINATES).substring(1, imageRegion.getString(Keys.ImageRegion.COORDINATES).length() -1).split(",");
-								JSONObject regionCoordinates = new JSONObject();
-								regionCoordinates.put(Keys.ImageRegion.TOP, Float.parseFloat(rCoords[0]));
-								regionCoordinates.put(Keys.ImageRegion.LEFT, Float.parseFloat(rCoords[1]));
-							
-								ImageRegion ir = new ImageRegion(
-										new CaptureTimestamp(captureType, timestamp),
-										new Location(captureType, locationOnGeneration),
-										imageRegion.getString(Keys.ImageRegion.FILTER),
-										regionDimensions,
-										regionCoordinates);
-							
-								if(imageRegion.has(Keys.ImageRegion.Subject.PSEUDONYM)) {
-									ir.subject = new Subject(
+							if(imageRegion.has(Keys.VideoRegion.Subject.PSEUDONYM)) {
+								vr.subject = new Subject(
 										imageRegion.getString(Keys.ImageRegion.Subject.PSEUDONYM),
 										Boolean.parseBoolean(imageRegion.getString(Keys.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
 										"[" + InformaConstants.Consent.GENERAL + "]");
-								} else
-									ir.subject = null;
-								
-								if(data.imageRegions == null)
-									data.imageRegions = new HashSet<ImageRegion>();
-								
-								data.imageRegions.add(ir);
-							} else if(data.sourceType == MediaTypes.VIDEO) {
-								VideoRegion vr = new VideoRegion(
-										new CaptureTimestamp(captureType, timestamp),
-										new Location(captureType, locationOnGeneration),
-										imageRegion.getString(Keys.VideoRegion.FILTER),
-										imageRegion.getInt(Keys.VideoRegion.START_TIME),
-										imageRegion.getInt(Keys.VideoRegion.END_TIME),
-										imageRegion.getString(Keys.VideoRegion.TRAIL));
-								
-								if(imageRegion.has(Keys.VideoRegion.Subject.PSEUDONYM)) {
-									vr.subject = new Subject(
-											imageRegion.getString(Keys.ImageRegion.Subject.PSEUDONYM),
-											Boolean.parseBoolean(imageRegion.getString(Keys.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
-											"[" + InformaConstants.Consent.GENERAL + "]");
-								} else
-									vr.subject = null;
-								
-								if(data.videoRegions == null)
-									data.videoRegions = new HashSet<VideoRegion> ();
-								
-								data.videoRegions.add(vr);
-							}
+							} else
+								vr.subject = null;
 							
+							if(data.videoRegions == null)
+								data.videoRegions = new HashSet<VideoRegion>();
+														
+							data.videoRegions.add(vr);
 						}
+						
 					}
 				}
+				
 				break;
 			}
 		}

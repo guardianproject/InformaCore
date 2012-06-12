@@ -31,6 +31,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Image.LOCATION_OF_ORIGINAL + " text not null, " +
 							Image.LOCATION_OF_OBSCURED_VERSION + " text not null, " +
 							Intent.Destination.EMAIL + " blob not null, " +
+							Media.MEDIA_TYPE + " integer not null, " +
 							Image.SHARED_SECRET + " text" +
 							")",
 					"CREATE TABLE " + Tables.CONTACTS + " (" + BaseColumns._ID + " " +

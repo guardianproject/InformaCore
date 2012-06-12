@@ -217,7 +217,7 @@ public class SensorSucker extends Service {
 		
 		captureEventData.put(CaptureEvent.TYPE, InformaConstants.CaptureEvents.EXIF_REPORTED);
 		captureEventData.put(Keys.Image.EXIF, exifData);
-		captureEventData.put(CaptureEvent.MATCH_TIMESTAMP, InformaConstants.TimestampToMillis((String) exifData.get(Keys.Exif.TIMESTAMP)));
+		captureEventData.put(CaptureEvent.MATCH_TIMESTAMP, InformaConstants.timestampToMillis((String) exifData.get(Keys.Exif.TIMESTAMP)));
 		
 		capturedEvents.put(captureEventData);
 	}
@@ -293,7 +293,36 @@ public class SensorSucker extends Service {
 					final Video[] vid = informa.getVideos();
 					final Intent finishingIntent = new Intent().setAction(Keys.Service.FINISH_ACTIVITY);
 					
+					/*
+					try {
+						vc = new VideoConstructor(getApplicationContext(), vid[0].getMetadataPackage());
+					} catch(IOException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
+					}
+					*/
 					
+					try {
+						
+						vc = new VideoConstructor(getApplicationContext(), vid[0].getMetadataPackage());
+						for(Video v : vid)
+							vc.createVersionForTrustedDestination(v);
+						
+						vc.doCleanup();
+						sendBroadcast(new Intent()
+							.putExtra(Keys.Service.ENCRYPT_METADATA, vc.metadataForEncryption)
+							.putExtra(Keys.Service.CLONE_PATH, vc.clone.getAbsolutePath())
+							.setAction(Keys.Service.IMAGES_GENERATED));
+					} catch(JSONException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
+					} catch(IOException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
+					} catch (NoSuchAlgorithmException e) {
+						Log.d(InformaConstants.TAG, e.toString());
+						finishingIntent.putExtra(Keys.Service.FINISH_ACTIVITY, -1);
+					}
 				}
 			};
 		}

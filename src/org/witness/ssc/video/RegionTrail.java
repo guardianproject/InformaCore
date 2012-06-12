@@ -59,6 +59,8 @@ public class RegionTrail {
 		mProps = new Properties();
 		mProps.put(VideoRegion.FILTER, this.getClass().getName());
 		mProps.put(VideoRegion.TIMESTAMP, System.currentTimeMillis());
+		mProps.put(VideoRegion.START_TIME, startTime);
+		mProps.put(VideoRegion.END_TIME, endTime);
 		videoEditor.associateVideoRegionData(this);
 	}
 	
@@ -103,7 +105,6 @@ public class RegionTrail {
 			metadata.put(VideoRegion.Child.WIDTH, Integer.toString((int) Math.abs(or.getBounds().left - or.getBounds().right)));
 			metadata.put(VideoRegion.Child.HEIGHT, Integer.toString((int) Math.abs(or.getBounds().top - or.getBounds().bottom)));
 			childMetadata.put(metadata);
-			Log.d(InformaConstants.TAG, metadata.toString());
 		}
 		
 		
@@ -225,11 +226,6 @@ public class RegionTrail {
 	}
 	
 	public Properties getProperties() {
-		try {
-			updateChildMetadata();
-		} catch(JSONException e) {
-			Log.d(InformaConstants.TAG, "region trail error: " + e.toString());
-		}
 		return mProps;
 	}
 	

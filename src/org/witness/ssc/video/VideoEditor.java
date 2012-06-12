@@ -2017,6 +2017,7 @@ public class VideoEditor extends Activity implements
 						
 			exif.put(Keys.Exif.IMAGE_LENGTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
 			exif.put(Keys.Exif.IMAGE_WIDTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+			exif.put(Keys.Exif.DURATION, mDuration);
 			
 			sendBroadcast(new Intent()
 				.setAction(InformaConstants.Keys.Service.SET_EXIF)
@@ -2037,14 +2038,6 @@ public class VideoEditor extends Activity implements
 		}
 	}
 	
-	private void reviewAndFinish() {
-    	Intent i = new Intent(this, ReviewAndFinish.class);
-    	i.setData(Uri.fromFile(saveFile));
-    	i.putExtra(Keys.Media.MEDIA_TYPE, MediaTypes.VIDEO);
-    	startActivityForResult(i, ObscuraConstants.REVIEW_MEDIA);
-    	finish();
-    }
-	
 	public class Broadcaster extends BroadcastReceiver {
 		IntentFilter _filter;
 		
@@ -2054,20 +2047,14 @@ public class VideoEditor extends Activity implements
 		
 		@Override
 		public void onReceive(Context c, Intent i) {
-			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
-				try {
-					reviewAndFinish();
-				} catch(NullPointerException e) {
-					Toast.makeText(VideoEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
-					finish();
-				}
-			} else if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
+			if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
 				Log.d(InformaConstants.TAG, "i have been asked to start the encryption activity");
 				Intent encrypt = new Intent(VideoEditor.this, EncryptActivity.class);
 				encrypt
 					.putExtra(Keys.Service.ENCRYPT_METADATA, i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA))
 					.putExtra(Keys.Service.CLONE_PATH, i.getStringExtra(Keys.Service.CLONE_PATH));
-				startActivityForResult(encrypt, InformaConstants.FROM_ENCRYPTION_SERVICE);
+				startActivity(encrypt);
+				finish();
 			}
 			
 		}

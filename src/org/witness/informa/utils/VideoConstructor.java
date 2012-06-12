@@ -2,6 +2,7 @@ package org.witness.informa.utils;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -11,27 +12,64 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 
+import net.sqlcipher.database.SQLiteDatabase;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informa.Informa.Video;
+import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
+import org.witness.informa.utils.InformaConstants.Keys.Ass;
+import org.witness.informa.utils.InformaConstants.Keys.Data;
+import org.witness.informa.utils.InformaConstants.Keys.Exif;
+import org.witness.informa.utils.InformaConstants.Keys.Informa;
+import org.witness.informa.utils.InformaConstants.Keys.Media;
+import org.witness.informa.utils.InformaConstants.Keys.Tables;
+import org.witness.informa.utils.InformaConstants.Keys.VideoRegion;
+import org.witness.informa.utils.io.DatabaseHelper;
+import org.witness.informa.utils.secure.MediaHasher;
 import org.witness.ssc.video.BinaryInstaller;
 import org.witness.ssc.video.ObscureRegion;
 import org.witness.ssc.video.RegionTrail;
 import org.witness.ssc.video.ShellUtils.ShellCallback;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class VideoConstructor {
 
-	String[] libraryAssets = {"ffmpeg"};
-	File fileBinDir;
+	static String[] libraryAssets = {"ffmpeg"};
+	static File fileBinDir;
 	Context context;
+	
+	JSONObject metadataObject;
+	ArrayList<Map<Long, String>> metadataForEncryption;
+	final static String LOGTAG = InformaConstants.TAG;
+	DatabaseHelper dh;
+	SQLiteDatabase db;
+	SharedPreferences sp;
+	
+	File clone;
 
 	public VideoConstructor(Context _context) throws FileNotFoundException, IOException {
+		this(_context, null);
+	}
+	
+	public VideoConstructor(Context _context, String metadataObjectString) throws FileNotFoundException, IOException {
 		context = _context;
 		fileBinDir = context.getDir("bin",0);
 
@@ -40,11 +78,21 @@ public class VideoConstructor {
 			BinaryInstaller bi = new BinaryInstaller(context,fileBinDir);
 			bi.installFromRaw();
 		}
+		
+		if(metadataObjectString != null) {
+			try {
+				metadataObject = (JSONObject) new JSONTokener(metadataObjectString).nextValue();
+				clone = new File(metadataObject.getJSONObject(Keys.Informa.GENEALOGY).getString(Keys.Genealogy.LOCAL_MEDIA_PATH));
+				Log.d(LOGTAG, "CLONE: " + clone.getAbsolutePath());
+			} catch (JSONException e) {
+				Log.d(LOGTAG, "metadata object is not valid: " + e.toString());
+			}
+		}
 	}
 	
 	
 	
-	private void execProcess(String[] cmds, ShellCallback sc) throws Exception {		
+	private static void execProcess(String[] cmds, ShellCallback sc) throws Exception {		
         
 		
 			ProcessBuilder pb = new ProcessBuilder(cmds);
@@ -217,12 +265,161 @@ public class VideoConstructor {
 		}
 	}
 	
-	public void createVersionForTrustedDestination(Video v) {
+	public void createVersionForTrustedDestination(Video v) throws JSONException, NoSuchAlgorithmException, IOException {
+		JSONObject mediaHash = new JSONObject();
+		String unredactedHash = MediaHasher.hash(clone, "SHA-1");
+		
+		metadataForEncryption = new ArrayList<Map<Long, String>>();
+		
+		sp = PreferenceManager.getDefaultSharedPreferences(context);
+		
+		dh = new DatabaseHelper(context);
+		db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
+		
+		mediaHash.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
+		//mediaHash.put(Keys.Image.REDACTED_IMAGE_HASH, redactedHash);
+		metadataObject.getJSONObject(Keys.Informa.DATA).put(Keys.Data.MEDIA_HASH, mediaHash);
+		
+		// replace the metadata's intended destination
+		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, v.getIntendedDestination());
+		
+		// insert into database for later
+		ContentValues cv = new ContentValues();
+		// package zipped image region bytes
+		cv.put(Keys.Image.METADATA, metadataObject.toString());
+		cv.put(Keys.Image.REDACTED_IMAGE_HASH, "null");
+		cv.put(Keys.Image.LOCATION_OF_ORIGINAL, ((JSONObject) metadataObject.getJSONObject(Informa.GENEALOGY)).getString(Keys.Image.LOCAL_MEDIA_PATH));
+		cv.put(Keys.Image.LOCATION_OF_OBSCURED_VERSION, v.getAbsolutePath());
+		cv.put(Keys.Image.TRUSTED_DESTINATION, v.getIntendedDestination());
+		cv.put(Keys.Image.CONTAINMENT_ARRAY, "null");
+		cv.put(Keys.Image.UNREDACTED_IMAGE_HASH, unredactedHash);
+		cv.put(Keys.Media.MEDIA_TYPE, MediaTypes.VIDEO);
+		
+		dh.setTable(db, Tables.IMAGES);
+		Map<Long, String> mo = new HashMap<Long, String>();
+		mo.put(db.insert(dh.getTable(), null, cv), v.getAbsolutePath());
+		metadataForEncryption.add(mo);
+	}
+	
+	public void doCleanup() {
+		db.close();
+		dh.close();
+	}
+	
+	public static int constructVideo(Context c, String clonepath, String filepath, String metadata, ShellCallback sc) throws IOException, JSONException {
+		fileBinDir = c.getDir("bin",0);
+
+		if (!new File(fileBinDir,libraryAssets[0]).exists())
+		{
+			BinaryInstaller bi = new BinaryInstaller(c, fileBinDir);
+			bi.installFromRaw();
+		}
+		
+		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
+		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
+		
+		JSONObject metadataObject = (JSONObject) new JSONTokener(metadata).nextValue();
+		long rootTime = ((JSONObject) metadataObject.get(Informa.GENEALOGY)).getLong(Genealogy.DATE_CREATED);
+		int duration = ((JSONObject) ((JSONObject) metadataObject.get(Informa.DATA)).get(Keys.Data.EXIF)).getInt(Keys.Exif.DURATION);
+		
+		JSONArray timedData = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.VIDEO_REGIONS);
+		JSONArray locations = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.LOCATIONS);
+		JSONArray captureTimestamps = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CAPTURE_TIMESTAMPS);
+		JSONArray corroboration = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CORROBORATION);
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(c.getAssets().open("informa.ass")));
+		String line;
+		//Dialogue: 0,0:00:27.04,0:00:28.21,Main,,0000,0000,0000,,{\be1}Um...
+		String cloneLine = null;
+		StringBuilder sb = new StringBuilder();
+		while((line = br.readLine()) != null) {
+			if(line.contains(Ass.VROOT))
+				line = line.replace(Ass.VROOT, filepath);
+			if(line.contains("Dialog")) {
+				cloneLine = line;
+				line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(1L));
+				line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp((long) duration));
+				line = line.replace(Ass.BLOCK_DATA, metadataObject.toString());
+			}
+			sb.append(line).append('\n');
+		}
+		br.close();
+		
+		// replace the first line in the ass file with the remainder of the metadataObject
+		for(int t=0; t<timedData.length(); t++) {
+			// group the rest by timestamp and format for ass file
+			JSONObject td = timedData.getJSONObject(t);
+			line = cloneLine;
+			line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp((long) td.getInt(Keys.VideoRegion.START_TIME)));
+			line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp((long) td.getInt(VideoRegion.END_TIME)));
+			line = line.replace(Ass.BLOCK_DATA, td.toString());
+			
+			sb.append(line).append('\n');
+		}
+		
+		for(int t=0; t<corroboration.length(); t++) {
+			JSONObject cd = corroboration.getJSONObject(t);
+			long timeSeen = rootTime - cd.getLong(Keys.Device.TIME_SEEN);
+			line = cloneLine;
+			
+			line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(timeSeen, duration));
+			line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp(timeSeen + 1000, duration));
+			line = line.replace(Ass.BLOCK_DATA, cd.toString());
+			
+			sb.append(line).append('\n');
+		}
+		
+		for(int t=0; t<captureTimestamps.length(); t++) {
+			JSONObject ctd = captureTimestamps.getJSONObject(t);
+			long timeSeen = rootTime - ctd.getLong(Keys.CaptureEvent.TIMESTAMP);
+			for(int l=0; l<locations.length(); l++) {
+				JSONObject ld = locations.getJSONObject(l);
+				if(ld.getInt(Keys.Location.TYPE) == ctd.getInt(Keys.CaptureTimestamp.TYPE))
+					line = line.replace(Ass.BLOCK_DATA, ld.toString());
+			}
+			line = cloneLine;
+			line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(timeSeen, duration));
+			line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp(timeSeen + 1000, duration));
+			
+			sb.append(line).append('\n');
+		}
+		
+		File mdfile = stringToFile(sb.toString(), InformaConstants.DUMP_FOLDER, Ass.TEMP);
+		
+		String[] ffmpegCommand = new String[] {
+			ffmpegBin, "-i", clonepath,
+			"-i", mdfile.getAbsolutePath(),
+			"-scodec", "copy",
+			"-vcodec", "copy",
+			"-acodec", "copy",
+			filepath
+		};
+		
+		StringBuffer fcom = new StringBuffer();
+		for(String f : ffmpegCommand)
+			fcom.append(f + " ");
+		Log.d(LOGTAG, fcom.toString());
+		
+		try {
+			execProcess(ffmpegCommand, sc);
+		} catch (Exception e) {
+			Log.e(LOGTAG, e.toString());
+		}
+		
+		return 0;
 		
 	}
 	
-	public static int insertMetadata() {
-		return 0;
+	private static File stringToFile(String data, String dir, String filename) {
+		File file = new File(dir, filename);
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(file));
+			out.write(data);
+			out.close();
+			return file;
+		} catch(IOException e) {
+			return null;
+		}
 		
 	}
 
