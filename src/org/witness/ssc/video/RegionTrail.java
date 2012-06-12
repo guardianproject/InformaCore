@@ -32,6 +32,8 @@ public class RegionTrail {
 	
 	private boolean doTweening = false;
 	
+	private VideoEditor videoEditor;
+	
 	public boolean isDoTweening() {
 		return doTweening;
 	}
@@ -48,14 +50,16 @@ public class RegionTrail {
 		this.obscureMode = obscureMode;
 	}
 	
-	public RegionTrail (int startTime, int endTime)
+	public RegionTrail (int startTime, int endTime, VideoEditor videoEditor)
 	{
 		this.startTime = startTime;
 		this.endTime = endTime;
+		this.videoEditor = videoEditor;
 		
 		mProps = new Properties();
 		mProps.put(VideoRegion.FILTER, this.getClass().getName());
 		mProps.put(VideoRegion.TIMESTAMP, System.currentTimeMillis());
+		videoEditor.associateVideoRegionData(this);
 	}
 	
 	public int getStartTime() {

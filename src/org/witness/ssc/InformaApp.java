@@ -185,10 +185,13 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 				else if(mimeType.compareTo(ObscuraConstants.MIME_TYPE_JPEG) == 0)
 					passingIntent = new Intent(this, ImageEditor.class);
 			} catch(NullPointerException e) {
-				if(uriCameraImage.getPathSegments().contains("video"))
+				if(uriCameraImage.getPathSegments().contains("video")) {
 					passingIntent = new Intent(this, VideoEditor.class);
-				else if(mimeType == null && uriCameraImage.getPathSegments().contains("images"))
+					mimeType = ObscuraConstants.MIME_TYPE_MP4;
+				} else if(mimeType == null && uriCameraImage.getPathSegments().contains("images")) {
 					passingIntent = new Intent(this, ImageEditor.class);
+					mimeType = ObscuraConstants.MIME_TYPE_JPEG;
+				}
 			}
 			
 			if(requestCode == ObscuraConstants.CAMERA_RESULT) {

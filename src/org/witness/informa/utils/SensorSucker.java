@@ -130,9 +130,9 @@ public class SensorSucker extends Service {
 		// 1. get the parts of from the log that concern us here
 		ArrayList<JSONObject> logs = new ArrayList<JSONObject>();
 		
-		logs.addAll(truncateLog(_acc.getLog(), startFrom, (startFrom + duration)));
-		logs.addAll(truncateLog(_geo.getLog(), startFrom, (startFrom + duration)));
-		logs.addAll(truncateLog(_phone.getLog(), startFrom, (startFrom + duration)));
+		logs.addAll(truncateLog(_acc.getLog(), startFrom, (startFrom + (duration * 1000))));
+		logs.addAll(truncateLog(_geo.getLog(), startFrom, (startFrom + (duration * 1000))));
+		logs.addAll(truncateLog(_phone.getLog(), startFrom, (startFrom + (duration * 1000))));
 		
 				
 		Map<Long, JSONObject> videoLog = new ConcurrentHashMap<Long, JSONObject>();
@@ -339,7 +339,7 @@ public class SensorSucker extends Service {
 				else if(Keys.Service.UNLOCK_LOGS.equals(i.getAction()))
 					unlockLogs();
 				else if(Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
-					inflateFromLogs(i.getLongExtra(Keys.Video.FIRST_TIMESTAMP, 0), i.getLongExtra(Keys.Video.DURATION, 0));
+					inflateFromLogs(i.getLongExtra(Keys.Video.FIRST_TIMESTAMP, 0), i.getIntExtra(Keys.Video.DURATION, 0));
 				else if(Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
 					List<Map<String, String>> encryptedMetadata = (List<Map<String, String>>) i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
 					sendBroadcast(new Intent().setAction(Keys.Service.FINISH_ACTIVITY));

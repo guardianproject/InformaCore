@@ -384,10 +384,14 @@ public class InformaConstants {
 	@SuppressWarnings("deprecation")
 	public final static long TimestampToMillis(String ts) throws ParseException {
 		//2012:06:12 10:42:04
-		DateFormat df = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss");
+		try {
+			DateFormat df = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss");
 		
-		Date d = (Date) df.parse(ts);
-		return d.getTime();
+			Date d = (Date) df.parse(ts);
+			return d.getTime();
+		} catch(ParseException e) {
+			return Long.parseLong(ts);
+		}
 	}
 }
 

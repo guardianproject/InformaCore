@@ -25,9 +25,13 @@ import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informa.KeyChooser;
 import org.witness.informa.Tagger;
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.CaptureEvents;
+import org.witness.informa.utils.InformaConstants.Genealogy;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.VideoConstructor;
 import org.witness.ssc.image.detect.GoogleFaceDetection;
@@ -58,6 +62,7 @@ import android.graphics.Paint.Style;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaScannerConnection;
@@ -239,6 +244,8 @@ public class VideoEditor extends Activity implements
 	private boolean shouldStartPlaying = false;
 	private int currentCue = 1;
 	private long[] encryptList = new long[] {0L};
+	int mediaOrigin;
+	private boolean metadataScraped = false;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -302,6 +309,8 @@ public class VideoEditor extends Activity implements
 		// TODO: my additions to onCreate()
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
+		mediaOrigin = getIntent().getIntExtra(Keys.Genealogy.MEDIA_ORIGIN, Genealogy.MediaOrigin.IMPORT);
+		
 	}
 	
 	// TODO: loadMedia()
@@ -357,6 +366,9 @@ public class VideoEditor extends Activity implements
 			try {
 				mediaPlayer.prepare();
 				mDuration = mediaPlayer.getDuration();
+				
+				if(!metadataScraped)
+					getMetadata();
 				
 				progressBar.setMax(mDuration);
 	
@@ -443,8 +455,6 @@ public class VideoEditor extends Activity implements
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage("Would you like to detect faces in this video?").setPositiveButton("Yes", dialogClickListener)
 		    .setNegativeButton("No", dialogClickListener).show();
-		
-		shouldStartPlaying = true;
 		
 	}
 	
@@ -926,7 +936,7 @@ public class VideoEditor extends Activity implements
 	
 							if (activeRegionTrail == null)
 							{
-								activeRegionTrail = new RegionTrail(0,mDuration);
+								activeRegionTrail = new RegionTrail(0,mDuration,this);
 								obscureTrails.add(activeRegionTrail);
 							}
 							
@@ -1084,7 +1094,7 @@ public class VideoEditor extends Activity implements
     			
     			//beginAutoDetect();
     			ObscureRegion region = makeNewRegion(mediaPlayer.getCurrentPosition(),(float)videoWidth/2,(float)videoHeight/2,null,0);
-    			activeRegionTrail = new RegionTrail(0,mDuration);
+    			activeRegionTrail = new RegionTrail(0,mDuration,this);
 				obscureTrails.add(activeRegionTrail);
 				activeRegionTrail.addRegion(region);
 				updateRegionDisplay(mediaPlayer.getCurrentPosition());
@@ -1621,7 +1631,7 @@ public class VideoEditor extends Activity implements
 		
 			if (!foundTrail)
 			{
-				activeRegionTrail = new RegionTrail(cTime,mDuration);
+				activeRegionTrail = new RegionTrail(cTime,mDuration,this);
 				obscureTrails.add(activeRegionTrail);
 
 				activeRegionTrail.addRegion(newRegion);
@@ -1830,7 +1840,6 @@ public class VideoEditor extends Activity implements
     	informa.putExtra(ObscuraConstants.VideoRegion.PROPERTIES, rt.getProperties());
     	informa.putExtra(Keys.VideoRegion.INDEX, obscureTrails.indexOf(rt));
     	
-    	MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 	    retriever.setDataSource(recordingFile.getAbsolutePath());
     	
     	Bitmap b = retriever.getFrameAtTime(mediaPlayer.getCurrentPosition(), MediaMetadataRetriever.OPTION_CLOSEST);
@@ -1934,5 +1943,45 @@ public class VideoEditor extends Activity implements
     	}
     }
 	
+	public void associateVideoRegionData(RegionTrail rt) {
+		sendBroadcast(new Intent()
+			.setAction(Keys.Service.SET_CURRENT)
+			.putExtra(Keys.CaptureEvent.MATCH_TIMESTAMP, (Long) rt.getProperties().get(Keys.VideoRegion.TIMESTAMP))
+			.putExtra(Keys.CaptureEvent.TYPE, CaptureEvents.REGION_GENERATED));
+	}
+	
+	private void getMetadata() {
+		try {
+			JSONObject exif = new JSONObject();
+			
+			String[] columnsToSelect = { MediaStore.Video.Media.DATE_TAKEN };
+	    	Cursor videoCursor = getContentResolver().query(originalVideoUri, columnsToSelect, null, null, null );
+	    	if (videoCursor != null && videoCursor.getCount() == 1 ) {
+		        videoCursor.moveToFirst();
+		        exif.put(Keys.Exif.TIMESTAMP, videoCursor.getString(videoCursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN)));
+	    	}
+	    	videoCursor.close();
+						
+			exif.put(Keys.Exif.IMAGE_LENGTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+			exif.put(Keys.Exif.IMAGE_WIDTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+			
+			sendBroadcast(new Intent()
+				.setAction(InformaConstants.Keys.Service.SET_EXIF)
+				.putExtra(Keys.Image.EXIF, exif.toString()));
+			
+			Log.d(ObscuraConstants.TAG,"EXIF: " + exif.toString());
+			
+			if(mediaOrigin == Genealogy.MediaOrigin.FROM_INFORMA) {
+				sendBroadcast(new Intent()
+					.setAction(Keys.Service.INFLATE_VIDEO_TRACK)
+					.putExtra(Keys.Video.FIRST_TIMESTAMP, exif.getLong(Keys.Exif.TIMESTAMP))
+					.putExtra(Keys.Video.DURATION, mDuration));
+			}
+			
+			metadataScraped = true;
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+	}
 
 }
