@@ -224,11 +224,13 @@ public class ImageConstructor {
 		metadataForEncryption.add(mo);		
 	}
 	
-	public static int insertMetadata(MetadataPack metadataPack) {
+	public static long constructImage(MetadataPack metadataPack) throws JSONException {
 		// insert metadata: filename, metadata package
-		int result = 0;
-		result = constructImage(metadataPack.clonepath, metadataPack.filepath, metadataPack.metadata, metadataPack.metadata.length());
-		return result;
+		JSONObject metadata = (JSONObject) new JSONTokener(metadataPack.metadata).nextValue();
+		if(constructImage(metadataPack.clonepath, metadataPack.filepath, metadataPack.metadata, metadataPack.metadata.length()) > 0)
+			return ((JSONObject) metadata.getJSONObject(Informa.GENEALOGY)).getLong(Keys.Genealogy.DATE_CREATED);
+		else
+			return 0L;
 	}
 	
 	private long appendImageRegion(byte[] irData) throws IOException {

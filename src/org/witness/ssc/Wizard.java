@@ -81,6 +81,8 @@ import android.widget.TextView;
 
 public class Wizard extends SherlockActivity implements OnClickListener {
 	int current;
+	int backOffset = 1;
+	int nextOffset = 1;
 	String orderFile;
 		
 	LinearLayout frame_content, navigation_holder;
@@ -306,6 +308,9 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		} catch(Exception e) {
 			sendLog();
 		}
+		
+		if(!preferences.getBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, false))
+			backOffset += 3;
 	}
 	
 	@SuppressWarnings("unused")
@@ -316,7 +321,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				if(s.getSelected()) {
 					_ed.putBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, Boolean.parseBoolean(encryptionValues[encryptionSelection.indexOf(s)])).commit();
 					if(encryptionSelection.indexOf(s) != 0)
-						current += 2;
+						nextOffset += 2;
 				}
 			}
 		} catch(Exception e) {
@@ -453,8 +458,6 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	
 	@SuppressWarnings("unused")
 	private String[] getDefaultImageHandlingOptions() {
-		if(!preferences.getBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, false))
-			current -=2;
 		return getResources().getStringArray(R.array.default_image_handling);
 	}
 	
@@ -800,7 +803,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		if(v == wizard_back) {
 			if(current > 0) {
 				Intent i = new Intent(this,Wizard.class);
-				i.putExtra("current", current - 1);
+				i.putExtra("current", current - backOffset);
 				if(!orderFile.equals("order.wizard"))
 					i.putExtra("wizardRoot", orderFile);
 					
@@ -823,7 +826,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				}
 				
 				Intent i = new Intent(this,Wizard.class);
-				i.putExtra("current", current + 1);
+				i.putExtra("current", current + nextOffset);
 				if(!orderFile.equals("order.wizard"))
 					i.putExtra("wizardRoot", orderFile);
 				

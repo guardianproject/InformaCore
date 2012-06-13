@@ -35,7 +35,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 public class Uploader extends Service {
@@ -77,16 +76,21 @@ public class Uploader extends Service {
 	}
 	
 	private void getTicket(MetadataPack mp) {
-		TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		
 		String url = "https://" + mp.tdDestination +
-					"/?device_pgp=" + mp.keyHash + 
-					"&bytes_expected=" + new File(mp.filepath).length() +
-					"&unredacted_data_hash=" + mp.hash;
+					"/?user_pgp=" + mp.keyHash +
+					"&timestamp_created=" + mp.timestampCreated +
+					"&media_type=" + mp.mediaType;
 		
 		Log.d(InformaConstants.TAG, "TICKET URL:\n" + url);
+	}
+	
+	private void scheduleUpload(MetadataPack mp) {
+		String url = "https://" + mp.tdDestination +
+					"/?user_pgp=" + mp.keyHash +
+					"&auth_token=" + mp.authToken +
+					"&bytes_expected=" + new File(mp.filepath).length();
 		
-		
+		Log.d(InformaConstants.TAG, "SCHEDULE URL:\n" + url);
 	}
 	
 	private void uploadMedia(MetadataPack mp) {
@@ -97,8 +101,7 @@ public class Uploader extends Service {
 		Log.d(InformaConstants.TAG, "STARTING UPLOADING!");
 		for(MetadataPack mp : queue) {
 			if(mp.tdDestination != null) {
-				if(mp.authToken == null)
-					getTicket(mp);
+				
 			}
 		}
 	}

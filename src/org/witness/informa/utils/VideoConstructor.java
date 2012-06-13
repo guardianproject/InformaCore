@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
@@ -306,7 +307,7 @@ public class VideoConstructor {
 		dh.close();
 	}
 	
-	public static int constructVideo(Context c, String clonepath, String filepath, String metadata, ShellCallback sc) throws IOException, JSONException {
+	public static long constructVideo(Context c, MetadataPack metadataPack, ShellCallback sc) throws IOException, JSONException {
 		fileBinDir = c.getDir("bin",0);
 
 		if (!new File(fileBinDir,libraryAssets[0]).exists())
@@ -318,7 +319,7 @@ public class VideoConstructor {
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 		
-		JSONObject metadataObject = (JSONObject) new JSONTokener(metadata).nextValue();
+		JSONObject metadataObject = (JSONObject) new JSONTokener(metadataPack.metadata).nextValue();
 		long rootTime = ((JSONObject) metadataObject.get(Informa.GENEALOGY)).getLong(Genealogy.DATE_CREATED);
 		int duration = ((JSONObject) ((JSONObject) metadataObject.get(Informa.DATA)).get(Keys.Data.EXIF)).getInt(Keys.Exif.DURATION);
 		
@@ -334,7 +335,7 @@ public class VideoConstructor {
 		StringBuilder sb = new StringBuilder();
 		while((line = br.readLine()) != null) {
 			if(line.contains(Ass.VROOT))
-				line = line.replace(Ass.VROOT, filepath);
+				line = line.replace(Ass.VROOT, metadataPack.filepath);
 			if(line.contains("Dialog")) {
 				cloneLine = line;
 				line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(1L));
@@ -387,20 +388,20 @@ public class VideoConstructor {
 		File mdfile = stringToFile(sb.toString(), InformaConstants.DUMP_FOLDER, Ass.TEMP);
 		
 		String[] ffmpegCommand = new String[] {
-			ffmpegBin, "-i", clonepath,
+			ffmpegBin, "-i", metadataPack.clonepath,
 			"-i", mdfile.getAbsolutePath(),
 			"-scodec", "copy",
 			"-vcodec", "copy",
 			"-acodec", "copy",
-			filepath
+			metadataPack.filepath
 		};
 		
 		try {
 			execProcess(ffmpegCommand, sc);
-			return 1;
+			return rootTime;
 		} catch (Exception e) {
 			Log.e(LOGTAG, e.toString());
-			return 0;
+			return 0L;
 		}
 	}
 	

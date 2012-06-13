@@ -1,7 +1,6 @@
 package org.witness.informa;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +19,10 @@ import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
-import org.witness.informa.utils.SensorSucker.Broadcaster;
 import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.io.Uploader;
 import org.witness.informa.utils.io.Uploader.LocalBinder;
-import org.witness.informa.utils.io.Uploader.MetadataHandler;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.DestoService;
 import org.witness.informa.utils.secure.MediaHasher;
@@ -79,7 +76,7 @@ public class EncryptActivity extends Activity {
     	}
     };
 	
-	@SuppressWarnings({ "unchecked", "static-access" })
+	@SuppressWarnings({ "unchecked"})
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -90,12 +87,24 @@ public class EncryptActivity extends Activity {
 
 		// long id of metadatablob, filename
 		metadataToEncrypt = (ArrayList<Map<Long, String>>) getIntent().getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
-		String keyHash = null;
 		
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(sp.getString(Settings.HAS_DB_PASSWORD, ""));
 		
+		br = new ArrayList<BroadcastReceiver>();
+		br.add(new Broadcaster(new IntentFilter(Service.UPLOADER_AVAILABLE)));
+		
+		metadataPacks = new ArrayList<MetadataPack>();
+		
+		progress = (InformaTextView) findViewById(R.id.encrypting_progress);
+		
+		Intent startUploader = new Intent(this, Uploader.class);
+		bindService(startUploader, sc, Context.BIND_AUTO_CREATE);
+	}
+	
+	public String getKeyHash() {
 		dh.setTable(db, Tables.KEYRING);
+		String keyHash = null;
 		Cursor kh = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
 		if(kh != null && kh.getCount() == 1) {
 			kh.moveToFirst();
@@ -108,20 +117,12 @@ public class EncryptActivity extends Activity {
 			}
 			kh.close();
 		}
-		
+		return keyHash;
+	}
+	
+	private void init() {
 		dh.setTable(db, Tables.IMAGES);
-		
-		br = new ArrayList<BroadcastReceiver>();
-		br.add(new Broadcaster(new IntentFilter(Service.UPLOADER_AVAILABLE)));
-		
 		final ArrayList<String> destos = new ArrayList<String>();
-		metadataPacks = new ArrayList<MetadataPack>();
-		
-		progress = (InformaTextView) findViewById(R.id.encrypting_progress);
-		
-		Intent startUploader = new Intent(this, Uploader.class);
-		bindService(startUploader, sc, Context.BIND_AUTO_CREATE);
-		
 		for(Map<Long, String> mo : metadataToEncrypt) {
 			Entry<Long, String> e = mo.entrySet().iterator().next();
 			Cursor img = dh.getValue(db, new String[] {Image.METADATA, Image.UNREDACTED_IMAGE_HASH, Image.TRUSTED_DESTINATION, Media.MEDIA_TYPE}, BaseColumns._ID, (Long) e.getKey());
@@ -130,7 +131,7 @@ public class EncryptActivity extends Activity {
 				for(String s : img.getColumnNames())
 					Log.d(InformaConstants.TAG, s + " : " + img.getString(img.getColumnIndex(s)));
 				Log.d(InformaConstants.TAG, img.toString());
-				metadataPacks.add(new MetadataPack(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), keyHash));
+				metadataPacks.add(new MetadataPack(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), getKeyHash()));
 				destos.add(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)));
 				img.close();
 			}
@@ -168,9 +169,6 @@ public class EncryptActivity extends Activity {
 			}
 			
 		}).start();
-		
-		
-		
 	}
 	
 	@Override
@@ -208,6 +206,7 @@ public class EncryptActivity extends Activity {
 		public void onReceive(Context context, Intent intent) {
 			if(Service.UPLOADER_AVAILABLE.equals(intent.getAction())) {
 				_uploader = Uploader.getUploader();
+				init();
 			}
 		}
 	}
@@ -217,8 +216,11 @@ public class EncryptActivity extends Activity {
 		public String tdDestination = null;
 		public String tmpId, authToken, hash;
 		public int mediaType;
+		public long timestampCreated;
 		
-		public MetadataPack(String email, String metadata, String filepath, String hash, int mediaType, String keyHash) {
+		public MetadataPack(
+				String email, String metadata, String filepath, 
+				String hash, int mediaType, String keyHash) {
 			this.email = email;
 			this.metadata = metadata;
 			this.filepath = filepath;
@@ -240,9 +242,9 @@ public class EncryptActivity extends Activity {
 		
 		public void doInject() throws IOException, JSONException {
 			if(mediaType == MediaTypes.PHOTO)
-				ImageConstructor.constructImage(clonepath, filepath, metadata, metadata.length());
+				timestampCreated = ImageConstructor.constructImage(this);
 			else if(mediaType == MediaTypes.VIDEO)
-				VideoConstructor.constructVideo(EncryptActivity.this, clonepath, filepath, metadata, new ShellUtils.ShellCallback() {
+				timestampCreated = VideoConstructor.constructVideo(EncryptActivity.this, this, new ShellUtils.ShellCallback() {
 					
 					@Override
 					public void shellOut(char[] msg) {
