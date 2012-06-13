@@ -1,5 +1,6 @@
 package org.witness.ssc;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import net.sqlcipher.database.SQLiteDatabase;
@@ -151,7 +152,7 @@ public class MediaManager extends Activity implements OnClickListener {
 	
 	private void viewMedia() throws JSONException {
 		Intent iView = new Intent(Intent.ACTION_VIEW);
-		Uri viewMediaUri = Uri.parse(mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION));
+		Uri viewMediaUri = Uri.fromFile(new File(mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION)));
 		switch(mediaObjectInContext.getInt(Media.MEDIA_TYPE)) {
 		case MediaTypes.PHOTO:
 			iView.setType(ObscuraConstants.MIME_TYPE_JPEG);
@@ -177,13 +178,18 @@ public class MediaManager extends Activity implements OnClickListener {
 			intent.setType(ObscuraConstants.MIME_TYPE_MP4);
 			break;
     	}
-    	intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION)));
+    	intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION))));
     	startActivity(Intent.createChooser(intent, getResources().getString(R.string.informaMediaManager_sharePrompt)));
     	finish();
     }
 	
 	private void getInfo() {
-		
+		try {
+			Log.d(TAG, "HEY: " + mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Override

@@ -418,6 +418,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				cv.put(Device.PASSPHRASE, pwd);
 				cv.put(Device.PUBLIC_KEY, secret.getPublicKey().getEncoded());
 				
+				Log.d(InformaConstants.TAG, "key id: " + secret.getKeyID());				
 				// update cv with new key
 				db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Integer.toString(1)});
 				_ed.putBoolean(Keys.Settings.WITH_ENCRYPTION, true).commit();
