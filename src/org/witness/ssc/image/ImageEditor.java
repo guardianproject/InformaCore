@@ -1126,8 +1126,16 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
     	switch (item.getItemId()) {
         	case R.id.menu_save:
-        		Intent keyChooser = new Intent(this, KeyChooser.class);
-				startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
+        		if(sp.getBoolean(Keys.Settings.WITH_ENCRYPTION, false)) {
+        			Intent keyChooser = new Intent(this, KeyChooser.class);
+        			startActivityForResult(keyChooser, InformaConstants.FROM_TRUSTED_DESTINATION_CHOOSER);
+        		} else {
+        			try {
+						saveImage();
+					} catch (IOException e) {
+						Log.d(InformaConstants.TAG, "IO Error: " + e.toString());
+					}
+        		}
         		return true;
         		
         	case R.id.menu_share:
@@ -1281,7 +1289,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
      * The method that actually saves the altered image.  
      * This in combination with createObscuredBitmap could/should be done in another, more memory efficient manner. 
      */
-    private boolean saveImage(long[] encryptList) throws IOException {
+    private boolean saveImage() throws IOException {
     	SimpleDateFormat dateFormat = new SimpleDateFormat(ObscuraConstants.EXPORT_DATE_FORMAT);
     	Date date = new Date();
     	String dateString = dateFormat.format(date);
@@ -1447,7 +1455,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		        		if(data.hasExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST))
 		        			encryptList = data.getLongArrayExtra(InformaConstants.Keys.Intent.ENCRYPT_LIST);
 		        		try {
-							saveImage(encryptList);
+							saveImage();
 						} catch (IOException e) {
 							Log.e(InformaConstants.TAG, "error saving image", e);
 						}
