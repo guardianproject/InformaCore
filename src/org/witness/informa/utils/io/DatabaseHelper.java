@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteOpenHelper;
 
+import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys.*;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 	private static final String DATABASE_NAME = "informa.db";
@@ -32,7 +34,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Image.LOCATION_OF_OBSCURED_VERSION + " text not null, " +
 							Intent.Destination.EMAIL + " blob not null, " +
 							Media.MEDIA_TYPE + " integer not null, " +
-							Image.SHARED_SECRET + " text" +
+							Media.SHARE_VECTOR + " integer, " +
+							Media.STATUS + " integer" +
 							")",
 					"CREATE TABLE " + Tables.CONTACTS + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
@@ -105,6 +108,71 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		}
 		query = query.substring(0, query.length() - 5);
 		db.execSQL(query);
+	}
+	
+	public Cursor getValue(SQLiteDatabase db, String[] values, String matchKey, Object matchValue, Object[] matchRange) {
+		String select = "*";
+		
+		if(values != null) {
+			StringBuffer sb = new StringBuffer();
+			for(String v : values)
+				sb.append(v + ",");
+			select = sb.toString().substring(0, sb.toString().length() - 1);
+		}
+		
+		String query = "SELECT " + select + " FROM " + getTable();
+		
+		if(matchKey != null) {
+			if(matchValue.getClass().equals(String.class))
+				matchValue = "\"" + matchValue + "\"";
+		
+			query += " WHERE " + matchKey + " = " + matchValue;
+		}
+		
+		if(matchRange != null) {
+			query += " BETWEEN " + matchRange[0] + " AND " + matchRange[1];
+		}
+		
+		Cursor c = db.rawQuery(query, null);
+		
+		if(c != null && c.getCount() > 0) {
+			return c;
+		} else
+			return null;
+	}
+	
+	public Cursor getMultiple(SQLiteDatabase db, String[] values, String matchKey, Object[] matchValue) {
+		String select = "*";
+		
+		if(values != null) {
+			StringBuffer sb = new StringBuffer();
+			for(String v : values)
+				sb.append(v + ",");
+			select = sb.toString().substring(0, sb.toString().length() - 1);
+		}
+		
+		String query = "SELECT " + select + " FROM " + getTable();
+		
+		if(matchKey != null) {
+			StringBuffer sb = new StringBuffer();
+			String pattern = " OR " + matchKey + "=";
+			for(Object o : matchValue) {
+				if(o.getClass().equals(String.class))
+					sb.append("\"" + o + "\"");
+				else
+					sb.append(o);
+				sb.append(pattern);
+			}
+		
+			query += " WHERE " + matchKey + " = " + sb.toString().substring(0, (sb.length() - pattern.length()));
+		}
+				
+		Cursor c = db.rawQuery(query, null);
+		
+		if(c != null && c.getCount() > 0) {
+			return c;
+		} else
+			return null;
 	}
 	
 	public Cursor getValue(SQLiteDatabase db, String[] values, String matchKey, Object matchValue) {

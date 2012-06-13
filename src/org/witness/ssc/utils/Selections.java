@@ -8,9 +8,7 @@ public class Selections {
 	private JSONObject _extras;
 	
 	public Selections(String optionValue, boolean selectDefault) {
-		_optionValue = optionValue;
-		_selected = selectDefault;
-		_extras = null;
+		this(optionValue, selectDefault, null);
 	}
 	
 	public Selections(String optionValue, boolean selectDefault, JSONObject extras) {

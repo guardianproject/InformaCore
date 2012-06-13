@@ -3,6 +3,7 @@ package org.witness.informa;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +19,8 @@ import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
+import org.witness.informa.utils.InformaConstants.Media.ShareVector;
+import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
@@ -56,9 +59,9 @@ public class EncryptActivity extends Activity {
 	private DatabaseHelper dh;
 	private SQLiteDatabase db;
 	private DestoService destoService;
+	private String keyHash;
 	SharedPreferences sp;
 	int encrypted = 0;
-	Apg apg;
 	
 	Uploader uploader, _uploader;
 	private List<BroadcastReceiver> br;
@@ -84,12 +87,13 @@ public class EncryptActivity extends Activity {
 		
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		clonePath = getIntent().getStringExtra(Keys.Service.CLONE_PATH);
-
+		
 		// long id of metadatablob, filename
 		metadataToEncrypt = (ArrayList<Map<Long, String>>) getIntent().getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
 		
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(sp.getString(Settings.HAS_DB_PASSWORD, ""));
+		keyHash = getKeyHash();
 		
 		br = new ArrayList<BroadcastReceiver>();
 		br.add(new Broadcaster(new IntentFilter(Service.UPLOADER_AVAILABLE)));
@@ -102,7 +106,7 @@ public class EncryptActivity extends Activity {
 		bindService(startUploader, sc, Context.BIND_AUTO_CREATE);
 	}
 	
-	public String getKeyHash() {
+	private String getKeyHash() {
 		dh.setTable(db, Tables.KEYRING);
 		String keyHash = null;
 		Cursor kh = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
@@ -120,9 +124,38 @@ public class EncryptActivity extends Activity {
 		return keyHash;
 	}
 	
+	private void reviewAndFinish() {
+		db.close();
+		dh.close();
+		
+		/* there are 3 cases
+		 * 1: unencrypted image: intent to share immediately
+		 * 2: encrypted to several parties, all of which are in upload queue
+		 * 3: encrypted to several parties, not in upload queue but should be shared somehow?
+		 * 
+		 * solutions:
+		 * 1: share intent just launches that intent
+		 * 2 & 3: go to "view in media manager", where you can audit those images 
+		 */
+		Intent intent = new Intent(this, ReviewAndFinish.class);
+		intent.putExtra(Keys.Media.Manager.VIEW_IMAGE_URI, metadataPacks.get(0).clonepath);
+		if(metadataPacks.get(0).shareVector == ShareVector.UNENCRYPTED_NOT_UPLOADED) {
+			//share however
+			intent.putExtra(Keys.Media.Manager.SHARE_IMAGE_URI, metadataPacks.get(0).filepath);
+		} else {
+			long[] shareBase = new long[metadataPacks.size()];
+			for(int s=0; s<metadataPacks.size(); s++)
+				shareBase[s] = metadataPacks.get(s).id;
+			
+			intent.putExtra(Keys.Media.Manager.SHARE_BASE, shareBase);
+		}
+		startActivity(intent);
+		finish();
+	}
+	
 	private void init() {
 		dh.setTable(db, Tables.IMAGES);
-		final ArrayList<String> destos = new ArrayList<String>();
+		final ArrayList<Map<String, Long>> destos = new ArrayList<Map<String, Long>>();
 		for(Map<Long, String> mo : metadataToEncrypt) {
 			Entry<Long, String> e = mo.entrySet().iterator().next();
 			Cursor img = dh.getValue(db, new String[] {Image.METADATA, Image.UNREDACTED_IMAGE_HASH, Image.TRUSTED_DESTINATION, Media.MEDIA_TYPE}, BaseColumns._ID, (Long) e.getKey());
@@ -131,8 +164,10 @@ public class EncryptActivity extends Activity {
 				for(String s : img.getColumnNames())
 					Log.d(InformaConstants.TAG, s + " : " + img.getString(img.getColumnIndex(s)));
 				Log.d(InformaConstants.TAG, img.toString());
-				metadataPacks.add(new MetadataPack(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), getKeyHash()));
-				destos.add(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)));
+				metadataPacks.add(new MetadataPack((Long) e.getKey(), img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), keyHash));
+				Map<String, Long> mediaRecord = new HashMap<String, Long>();
+				mediaRecord.put(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), (Long) e.getKey());
+				destos.add(mediaRecord);
 				img.close();
 			}
 		}
@@ -147,8 +182,10 @@ public class EncryptActivity extends Activity {
 				try {
 					for(Map<String, String> desto : destoService.getDestos(destos)) {
 						for(MetadataPack mp : metadataPacks) {
-							if(desto.containsKey(mp.email))
+							if(desto.containsKey(mp.email)) {
 								mp.setTDDestination(desto.get(mp.email));
+								mp.setShareVector(ShareVector.UNENCRYPTED_UPLOAD_QUEUE);
+							}
 						}
 					}
 					
@@ -159,6 +196,7 @@ public class EncryptActivity extends Activity {
 					}
 					
 					_uploader.addToQueue(metadataPacks);
+					reviewAndFinish();
 					
 				} catch (JSONException e) {
 					Log.e(InformaConstants.TAG, "Error getting destos: " + e.toString());
@@ -188,13 +226,6 @@ public class EncryptActivity extends Activity {
 			unregisterReceiver(b);
 	}
 	
-	@Override
-	public void onStop() {
-		super.onStop();
-		db.close();
-		dh.close();
-	}
-	
 	private class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
 		
@@ -215,12 +246,13 @@ public class EncryptActivity extends Activity {
 		public String email, metadata, filepath, clonepath, keyHash;
 		public String tdDestination = null;
 		public String tmpId, authToken, hash;
-		public int mediaType;
-		public long timestampCreated;
+		public int mediaType, shareVector, status;
+		public long timestampCreated, id;
 		
 		public MetadataPack(
-				String email, String metadata, String filepath, 
+				long id, String email, String metadata, String filepath, 
 				String hash, int mediaType, String keyHash) {
+			this.id = id;
 			this.email = email;
 			this.metadata = metadata;
 			this.filepath = filepath;
@@ -228,16 +260,26 @@ public class EncryptActivity extends Activity {
 			this.hash = hash;
 			this.mediaType = mediaType;
 			this.keyHash = keyHash;
+			this.shareVector = ShareVector.UNENCRYPTED_NOT_UPLOADED;
+			this.status = Status.NEVER_SCHEDULED_FOR_UPLOAD;
 		}
 		
 		public void setTDDestination(String tdDestination) {
 			this.tdDestination = tdDestination;
+			this.status = Status.UPLOADING;
 		}
 		
 		public void doEncrypt() {
 			// TODO: once we have GPG/PGP working...
 			// until then, just sign data with the key
-			
+			if(tdDestination != null)
+				setShareVector(ShareVector.ENCRYPTED_UPLOAD_QUEUE);
+			else
+				setShareVector(ShareVector.ENCRYPTED_BUT_NOT_UPLOADED);
+		}
+		
+		public void setShareVector(int shareVector) {
+			this.shareVector = shareVector;
 		}
 		
 		public void doInject() throws IOException, JSONException {

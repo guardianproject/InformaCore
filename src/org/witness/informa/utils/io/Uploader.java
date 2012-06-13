@@ -68,7 +68,8 @@ public class Uploader extends Service {
 	
 	@Override
 	public void onDestroy() {
-		
+		super.onDestroy();
+		Log.d(InformaConstants.TAG, "UPLOADER SERVICE ENDED.");
 	}
 	
 	public interface MetadataHandler {

@@ -63,6 +63,7 @@
     	<activity android:name="org.witness.ssc.Login" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
     	<activity android:name="org.witness.ssc.About" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
     	<activity android:name="org.witness.informa.EncryptActivity" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
+    	<activity android:name="org.witness.ssc.MediaManager" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
     	<activity android:name="com.xtralogic.android.logcollector.SendLogActivity"
                   android:label="@string/app_name_lc"
                   android:theme="@style/Theme.CustomDialog">

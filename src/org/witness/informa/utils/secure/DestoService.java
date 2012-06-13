@@ -32,12 +32,17 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
+import org.witness.informa.utils.InformaConstants.Media.ShareVector;
+import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.informa.utils.io.DatabaseHelper;
 
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.provider.BaseColumns;
 import android.util.Log;
 
 /*
@@ -53,17 +58,18 @@ public class DestoService {
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	private ArrayList<Map<String, String>> destoResults;
+	ArrayList<Map<String, Long>> destos;
 	
 	public DestoService(DatabaseHelper dh, SQLiteDatabase db) {
 		this.dh = dh;
 		this.db = db;
 		
-		dh.setTable(this.db, Tables.TRUSTED_DESTINATIONS);
 		destoResults = new ArrayList<Map<String, String>>();
 		destoQuery = new StringBuffer();
 	}
 	
 	private boolean isLocallyAvailable(String email) {
+		dh.setTable(this.db, Tables.TRUSTED_DESTINATIONS);
 		Cursor td = dh.getValue(db, new String[] {TrustedDestinations.DESTO}, TrustedDestinations.EMAIL, email);
 		if(td != null && td.getCount() == 1) {
 			td.moveToFirst();
@@ -83,10 +89,13 @@ public class DestoService {
 		}
 	}
 		
-	public ArrayList<Map<String, String>> getDestos(ArrayList<String> destos) throws JSONException {		
-		for(String desto : destos)
-			if(!isLocallyAvailable(desto))
-				destoQuery.append("," + desto);
+	public ArrayList<Map<String, String>> getDestos(ArrayList<Map<String, Long>> destos) throws JSONException {
+		this.destos = destos;
+		for(Map<String, Long> d : this.destos) {
+			Entry<String, Long> desto = d.entrySet().iterator().next();
+			if(!isLocallyAvailable(desto.getKey()))
+				destoQuery.append("," + desto.getKey());
+		}
 		
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<String> f = ex.submit(new Callable<String>() {
@@ -172,7 +181,6 @@ public class DestoService {
 				String destoResponse = f.get();
 				Log.d(InformaConstants.TAG, "DESTO SERVICE: destoResponse: " + destoResponse);
 				JSONArray jsond = (JSONArray) ((JSONObject) new JSONTokener(destoResponse).nextValue()).get(TrustedDestinations.HOOKUPS);
-				dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
 				for(int i=0; i<jsond.length(); i++) {
 					Map<String, String> desto = new HashMap<String, String>();
 					JSONObject destoj = (JSONObject) jsond.get(i);
@@ -188,13 +196,31 @@ public class DestoService {
 				Log.e(InformaConstants.TAG, "https error in getDestos(): " + e.toString());
 			}
 		}
+		
+		for(Map<String, Long> d : this.destos) {
+			Entry<String, Long> desto = d.entrySet().iterator().next();
+			if(!isLocallyAvailable(desto.getKey()))
+				setShareVector(desto.getValue(), ShareVector.ENCRYPTED_BUT_NOT_UPLOADED, Status.NEVER_SCHEDULED_FOR_UPLOAD);
+			else
+				setShareVector(desto.getValue(), ShareVector.ENCRYPTED_UPLOAD_QUEUE, Status.UPLOADING);
+		}
+		
 		return destoResults;
 	}
 	
+	private void setShareVector(long record, int shareVector, int status) {
+		dh.setTable(db, Tables.IMAGES);
+		ContentValues cv = new ContentValues();
+		cv.put(Keys.Media.SHARE_VECTOR, shareVector);
+		cv.put(Keys.Media.STATUS, status);
+		db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(record)});
+	}
+	
 	private void updateTrustedDestination(Map<String, String> desto) {
+		dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
 		Entry<String, String> e = desto.entrySet().iterator().next();
 		ContentValues cv = new ContentValues();
-		cv.put(TrustedDestinations.DESTO, e.getValue());
+		cv.put(TrustedDestinations.DESTO, e.getValue());	
 		db.update(dh.getTable(), cv, TrustedDestinations.EMAIL + " = ?", new String[] {e.getKey()});
 	}
 }

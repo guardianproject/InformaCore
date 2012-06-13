@@ -247,15 +247,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     SharedPreferences sp;
     int mediaOrigin;
 
-    private void reviewAndFinish() {
-    	mProgressDialog.cancel();
-    	Intent i = new Intent(this, ReviewAndFinish.class);
-    	i.setData(savedImageUri);
-    	i.putExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO);
-    	startActivityForResult(i, ObscuraConstants.REVIEW_MEDIA);
-    	finish();
-    }
-    	
 	@SuppressWarnings("unused")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -1512,20 +1503,14 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		@Override
 		public void onReceive(Context c, Intent i) {
-			if(InformaConstants.Keys.Service.FINISH_ACTIVITY.equals(i.getAction())) {
-				try {
-					reviewAndFinish();
-				} catch(NullPointerException e) {
-					Toast.makeText(ImageEditor.this, "There was an error creating your image.  Please try again.", Toast.LENGTH_LONG).show();
-					finish();
-				}
-			} else if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
+			if(InformaConstants.Keys.Service.IMAGES_GENERATED.equals(i.getAction())) {			
 				Log.d(InformaConstants.TAG, "i have been asked to start the encryption activity");
 				Intent encrypt = new Intent(ImageEditor.this, EncryptActivity.class);
 				encrypt
 					.putExtra(Keys.Service.ENCRYPT_METADATA, i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA))
 					.putExtra(Keys.Service.CLONE_PATH, i.getStringExtra(Keys.Service.CLONE_PATH));
-				startActivityForResult(encrypt, InformaConstants.FROM_ENCRYPTION_SERVICE);
+				startActivity(encrypt);
+				finish();
 			}
 			
 		}

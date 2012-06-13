@@ -5,9 +5,8 @@ import java.io.File;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.LoginCache;
-import org.witness.informa.utils.secure.Apg;
 import org.witness.mods.InformaButton;
-import org.witness.ssc.InformaApp;
+import org.witness.ssc.MediaManager;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.R;
 
@@ -16,25 +15,30 @@ import com.actionbarsherlock.app.SherlockActivity;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 
 public class ReviewAndFinish extends Activity implements OnClickListener {
 	InformaButton confirmView, confirmShare, confirmTakeAnother;
-	Uri savedImageUri;
+	Uri shareImageUri, viewImageUri;
 	SharedPreferences _sp;
+	boolean canShare = true;
+	long[] shareBase;
 	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.reviewandfinish);
-		savedImageUri = getIntent().getData();
+		viewImageUri = Uri.parse(getIntent().getStringExtra(Keys.Media.Manager.VIEW_IMAGE_URI));
+		if(getIntent().hasExtra(Keys.Media.Manager.SHARE_BASE)) {
+			canShare = false;
+			shareBase = getIntent().getLongArrayExtra(Keys.Media.Manager.SHARE_BASE);
+		} else {
+			shareImageUri = Uri.parse(getIntent().getStringExtra(Keys.Media.Manager.SHARE_IMAGE_URI));
+		}
 		
 		_sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
@@ -42,7 +46,12 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 		confirmView.setOnClickListener(this);
 		
 		confirmShare = (InformaButton) findViewById(R.id.informaConfirm_btn_share);
+		if(canShare)
+			confirmShare.setText(R.string.informaConfirm_btn_share);
+		else
+			confirmShare.setText(R.string.informaConfirm_btn_goToManager);
 		confirmShare.setOnClickListener(this);
+		
 		
 		confirmTakeAnother = (InformaButton) findViewById(R.id.informaConfirm_btn_takeAnother);
 		confirmTakeAnother.setOnClickListener(this);
@@ -55,8 +64,8 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
     	
     	Intent iView = new Intent(Intent.ACTION_VIEW);
     	iView.setType(ObscuraConstants.MIME_TYPE_JPEG);
-    	iView.putExtra(Intent.EXTRA_STREAM, savedImageUri);
-    	iView.setDataAndType(savedImageUri, ObscuraConstants.MIME_TYPE_JPEG);
+    	iView.putExtra(Intent.EXTRA_STREAM, viewImageUri);
+    	iView.setDataAndType(viewImageUri, ObscuraConstants.MIME_TYPE_JPEG);
 
     	startActivity(Intent.createChooser(iView, "View Image"));
     	finish();
@@ -64,34 +73,13 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
     }
     
     private void viewVideo() {
-    	Intent intent = new Intent(android.content.Intent.ACTION_VIEW);
-    	intent.setDataAndType(savedImageUri, ObscuraConstants.MIME_TYPE_MP4);    	
+    	Intent intent = new Intent(Intent.ACTION_VIEW);
+    	intent.setDataAndType(viewImageUri, ObscuraConstants.MIME_TYPE_MP4);    	
    	 	startActivity(intent);
    	 	finish();
     }
     
-    public File pullPathFromUri(Uri uri) {
-
-    	String originalImageFilePath = null;
-
-    	if (uri.getScheme() != null && uri.getScheme().equals("file"))
-    	{
-    		originalImageFilePath = uri.toString();
-    	}
-    	else
-    	{
-	    	String[] columnsToSelect = { MediaStore.Images.Media.DATA };
-	    	Cursor imageCursor = getContentResolver().query(uri, columnsToSelect, null, null, null );
-	    	if ( imageCursor != null && imageCursor.getCount() == 1 ) {
-		        imageCursor.moveToFirst();
-		        originalImageFilePath = imageCursor.getString(imageCursor.getColumnIndex(MediaStore.Images.Media.DATA));
-	    	}
-    	}
-
-    	return new File(originalImageFilePath);
-    }
-    
-    public void shareMedia() {
+    private void shareMedia() {
     	Intent intent = new Intent(Intent.ACTION_SEND);
     	switch(getIntent().getIntExtra(InformaConstants.Keys.Media.MEDIA_TYPE, InformaConstants.MediaTypes.PHOTO)) {
 		case InformaConstants.MediaTypes.PHOTO:
@@ -101,8 +89,15 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 			intent.setType(ObscuraConstants.MIME_TYPE_MP4);
 			break;
     	}
-    	intent.putExtra(Intent.EXTRA_STREAM, savedImageUri);
+    	intent.putExtra(Intent.EXTRA_STREAM, shareImageUri);
     	startActivity(Intent.createChooser(intent, getResources().getString(R.string.informaConfirm_share_prompt))); 
+    }
+    
+    private void launchManager() {
+    	Intent intent = new Intent(this, MediaManager.class);
+    	intent.putExtra(Keys.Media.Manager.SHARE_BASE, shareBase);
+    	startActivity(intent);
+    	finish();
     }
 
 	@Override
@@ -117,7 +112,10 @@ public class ReviewAndFinish extends Activity implements OnClickListener {
 				break;
 			}
 		} else if(v == confirmShare) {
-			shareMedia();
+			if(canShare)
+				shareMedia();
+			else
+				launchManager();
 		} else if(v == confirmTakeAnother) {
 			setResult(SherlockActivity.RESULT_OK);
 			finish();

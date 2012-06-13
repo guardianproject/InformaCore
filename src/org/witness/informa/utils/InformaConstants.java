@@ -199,6 +199,16 @@ public class InformaConstants {
 			public final static String MEDIA_TYPE = "source_type";
 			public final static String UNREDACTED_HASH = Image.UNREDACTED_IMAGE_HASH;
 			public final static String REDACTED_HASH = Image.REDACTED_IMAGE_HASH;
+			public final static String SHARE_VECTOR = "shareVector";
+			
+			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
+			public final static String STATUS = "status";
+			
+			public final static class Manager {
+				public final static String SHARE_BASE = "shareBase";
+				public final static String VIEW_IMAGE_URI = "viewImageUri";
+				public final static String SHARE_IMAGE_URI = "shareImageUri";
+			}
 		}
 		
 		public final static class Image {
@@ -306,6 +316,22 @@ public class InformaConstants {
 		}
 		
 		
+	}
+	
+	public final static class Media {
+		public final static class ShareVector {
+			public final static int ENCRYPTED_UPLOAD_QUEUE = 1020;
+			public final static int ENCRYPTED_BUT_NOT_UPLOADED = 1021;
+			public final static int UNENCRYPTED_NOT_UPLOADED = 1022;
+			public final static int UNENCRYPTED_UPLOAD_QUEUE = 1023;
+		}
+		
+		public final static class Status {
+			public final static int UPLOADING = 1030;
+			public final static int UPLOAD_COMPLETE = 1031;
+			public final static int UPLOAD_FAILED = 1032;
+			public final static int NEVER_SCHEDULED_FOR_UPLOAD = 1033;
+		}
 	}
 	
 	public final static class MediaTypes {
