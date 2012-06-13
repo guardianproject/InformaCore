@@ -4,10 +4,14 @@ import java.util.ArrayList;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Media;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.ssc.R;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,6 +53,14 @@ public class MediaManagerAdapter extends BaseAdapter {
 		mediaText.setText(selections.get(position)._optionValue);
 		
 		ImageView mediaType = (ImageView) convertView.findViewById(R.id.mediaType);
+		try {
+			if(selectionExtras.getInt(Media.MEDIA_TYPE) == MediaTypes.PHOTO)
+				mediaType.setImageResource(R.drawable.ic_picture);
+			else
+				mediaType.setImageResource(R.drawable.ic_vid);
+		} catch (JSONException e) {
+			Log.d(InformaConstants.TAG, "json error: " + e.toString());
+		}
 		return convertView;
 	}
 }

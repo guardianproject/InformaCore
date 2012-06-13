@@ -11,9 +11,20 @@
 	    android:layout_height="wrap_content"
 	    android:text="@string/apg_encrypting_title" />
 	</LinearLayout>
-	<org.witness.mods.InformaTextView style="@style/P"
-	    android:layout_width="fill_parent"
+	<LinearLayout
+	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content"
-	    android:layout_margin="6dip"
-	    android:id="@+id/encrypting_progress" />
+	    android:weightSum="1.0">
+	    <org.witness.mods.InformaTextView style="@style/P"
+	   		android:layout_width="0dip"
+	    	android:layout_height="wrap_content"
+	    	android:layout_weight="0.75"
+	    	android:layout_margin="6dip"
+	    	android:id="@+id/encrypting_progress" />
+	    <ProgressBar
+	        android:layout_width="0dip"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="0.25" />
+	</LinearLayout>
+	
 </LinearLayout>

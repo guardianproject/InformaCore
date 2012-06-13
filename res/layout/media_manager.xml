@@ -1,19 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    style="@style/OverlayActivity" >
     <LinearLayout style="@style/H1Holder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:id="@+id/mediaHeader">
     	<org.witness.mods.InformaHeaderTextView style="@style/H1"
         	android:layout_width="fill_parent"
         	android:layout_height="wrap_content"
         	android:text="@string/informaMediaManager_title" />
     </LinearLayout>
+
     <ListView
+        android:id="@+id/mediaList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/mediaList" />
-</LinearLayout>
+        android:layout_above="@+id/mediaNavigation"
+        android:layout_below="@+id/mediaHeader" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="1.0"
+        android:id="@+id/mediaNavigation"
+        android:layout_alignParentBottom="true">
+
+    	<ImageButton style="@style/Button_standard"
+    	    android:id="@+id/mediaLevelUp"
+    	    android:layout_width="0dip"
+    	    android:layout_height="match_parent"
+    	    android:layout_weight="0.15" />
+
+        <org.witness.mods.InformaButton style="@style/Button_standard"
+   	        android:id="@+id/mediaCheckMessages"
+   	        android:layout_width="0dip"
+   	        android:layout_height="wrap_content"
+   	        android:text="@string/informaMediaManager_messages"
+   	        android:layout_weight="0.5" />
+        <org.witness.mods.InformaButton style="@style/Button_standard"
+   	        android:id="@+id/mediaQuit"
+   	        android:layout_width="0dip"
+   	        android:layout_height="wrap_content"
+   	        android:text="@string/informaMediaManager_quit"
+   	        android:layout_weight="0.35" />
+    </LinearLayout>
+</RelativeLayout>

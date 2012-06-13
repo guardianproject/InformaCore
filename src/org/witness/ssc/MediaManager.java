@@ -8,31 +8,46 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
+import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.io.DatabaseHelper;
+import org.witness.mods.InformaButton;
 import org.witness.ssc.utils.MediaManagerAdapter;
+import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.utils.Selections;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.ImageButton;
 import android.widget.ListView;
 
-public class MediaManager extends Activity implements OnItemLongClickListener {
+public class MediaManager extends Activity implements OnClickListener {
 	SharedPreferences sp;
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	
 	ListView mediaList;
 	ArrayList<Selections> media;
-	boolean isTopLevel = true;
+	int level = 0;
+	
+	ImageButton levelUp;
+	InformaButton checkMessages, quit;
+	JSONObject mediaObjectInContext = null;
 	
 	private static final String TAG = InformaConstants.TAG;
 	
@@ -55,13 +70,24 @@ public class MediaManager extends Activity implements OnItemLongClickListener {
 			} catch (JSONException e) {
 				Log.d(TAG, e.toString());
 			}
-			isTopLevel = false;
-		} else
+			level = 1;
+		} else {
 			try {
 				getList();
 			} catch (JSONException e) {
 				Log.d(TAG, e.toString());
 			}
+		}
+		
+		levelUp = (ImageButton) findViewById(R.id.mediaLevelUp);
+		levelUp.setImageResource(R.drawable.ic_level_up_inactive);
+		levelUp.setOnClickListener(this);
+		
+		checkMessages = (InformaButton) findViewById(R.id.mediaCheckMessages);
+		checkMessages.setOnClickListener(this);
+		
+		quit = (InformaButton) findViewById(R.id.mediaQuit);
+		quit.setOnClickListener(this);
 	}
 	
 	@Override
@@ -96,7 +122,7 @@ public class MediaManager extends Activity implements OnItemLongClickListener {
 				Keys.Image.LOCATION_OF_OBSCURED_VERSION,
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
-				Keys.Media.SHARE_VECTOR}, BaseColumns._ID, null);
+				Keys.Media.SHARE_VECTOR}, null, null);
 		if(c != null && c.getCount() > 0) {
 			populateList(c);
 		}
@@ -120,27 +146,116 @@ public class MediaManager extends Activity implements OnItemLongClickListener {
 		c.close();
 		
 		mediaList.setAdapter(new MediaManagerAdapter(this, media));
-		mediaList.setOnItemLongClickListener(this);
+		registerForContextMenu(mediaList);
+	}
+	
+	private void viewMedia() throws JSONException {
+		Intent iView = new Intent(Intent.ACTION_VIEW);
+		Uri viewMediaUri = Uri.parse(mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION));
+		switch(mediaObjectInContext.getInt(Media.MEDIA_TYPE)) {
+		case MediaTypes.PHOTO:
+			iView.setType(ObscuraConstants.MIME_TYPE_JPEG);
+			iView.putExtra(Intent.EXTRA_STREAM, viewMediaUri);
+			iView.setDataAndType(viewMediaUri, ObscuraConstants.MIME_TYPE_JPEG);
+			break;
+		case MediaTypes.VIDEO:
+			iView.setDataAndType(viewMediaUri, ObscuraConstants.MIME_TYPE_MP4);
+			break;
+		}
+		startActivity(iView);
+    	finish();
+    }
+    
+    
+    private void shareMedia() throws JSONException {
+    	Intent intent = new Intent(Intent.ACTION_SEND);
+    	switch(mediaObjectInContext.getInt(Media.MEDIA_TYPE)) {
+		case InformaConstants.MediaTypes.PHOTO:
+			intent.setType(ObscuraConstants.MIME_TYPE_JPEG);
+			break;
+		case InformaConstants.MediaTypes.VIDEO:
+			intent.setType(ObscuraConstants.MIME_TYPE_MP4);
+			break;
+    	}
+    	intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION)));
+    	startActivity(Intent.createChooser(intent, getResources().getString(R.string.informaMediaManager_sharePrompt)));
+    	finish();
+    }
+	
+	private void getInfo() {
+		
+	}
+	
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		String[] menuItems = getResources().getStringArray(R.array.media_manager_context_menu);
+		
+		int i = 0;
+		for(String s : menuItems) {
+			menu.add(menu.NONE, i, i, s);
+			i++;
+		}
+	}
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem mi) {
+		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) mi.getMenuInfo();
+		mediaObjectInContext = media.get(info.position).getExtras();
+		
+		switch(mi.getItemId()) {
+		case 0:
+			try {
+				shareMedia();
+			} catch (JSONException e) {
+				Log.d(TAG, e.toString());
+			}
+			return true;
+		case 1:
+			try {
+				viewMedia();
+			} catch (JSONException e) {
+				Log.d(TAG, e.toString());
+			}
+			return true;
+		case 2:
+			getInfo();
+			return true;
+		default:
+			mediaObjectInContext = null;
+			return false;
+		}
+	}
+	
+	private void levelUp() {
+		level -= 0;
+		if(level == 0)
+			levelUp.setImageResource(R.drawable.ic_level_up_inactive);
+		else
+			levelUp.setImageResource(R.drawable.ic_level_up);
+	}
+	
+	private void checkMessages() {
+		
 	}
 	
 	@Override
 	public void onBackPressed() {
-		if(isTopLevel)
+		if(level == 0)
 			finish();
-		else {
-			isTopLevel = true;
-			try {
-				getList();
-			} catch (JSONException e) {
-				Log.d(TAG, e.toString());
-			}
-		}
+		else
+			levelUp();
 	}
 
 	@Override
-	public boolean onItemLongClick(AdapterView<?> av, View v, int which, long id) {
+	public void onClick(View v) {
+		if(v == levelUp && level != 0) {
+			levelUp();
+		} else if(v == checkMessages) {
+			checkMessages();
+		} else if(v == quit) {
+			finish();
+		}
 		
-		return false;
 	}
-
 }

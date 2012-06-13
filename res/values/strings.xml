@@ -17,7 +17,7 @@
     <string name="video">Take Video</string>
     <string name="choose_photos">Choose from Gallery</string>
     <string name="gallery_launch_error">Unable to open Gallery app.</string>
-    
+    <string name="menu_go_to_media_manager">Media Manager</string>
     <string name="menu_new_media">New\u2026</string>
     <string name="menu_import_media">Import\u2026</string>
     
@@ -125,6 +125,10 @@
 	
 	<!--  INFORMA MEDIA MANAGER -->
 	<string name="informaMediaManager_title">Media Manager</string>
+	<string name="informaMediaManager_checkingMessages">Checking for Messages</string>
+	<string name="informaMediaManager_messages">Messages</string>
+	<string name="informaMediaManager_quit">Quit</string>
+	<string name="informaMediaManager_sharePrompt">Share Encrypted Version/u2026</string>
 	
 	<!--  EULA related -->
     <string name="eula_title">You agree to:</string>

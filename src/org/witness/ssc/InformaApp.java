@@ -340,6 +340,10 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         		}
         		//Toast.makeText(this, "Gallery import is not available for this version of InformaCam", Toast.LENGTH_LONG).show();
         		return true;
+        	case R.id.MediaManagerButton:
+        		Intent intent = new Intent(this, MediaManager.class);
+        		startActivity(intent);
+        		return true;
         	default:
         		return false;
         }
