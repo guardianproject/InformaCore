@@ -79,7 +79,6 @@ public class DestoService {
 				return true;
 			}
 		} else {
-			td.close();
 			return false;
 		}
 	}

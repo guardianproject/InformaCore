@@ -2,6 +2,7 @@ package org.witness.informa;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.witness.informa.utils.io.Uploader.LocalBinder;
 import org.witness.informa.utils.io.Uploader.MetadataHandler;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.DestoService;
+import org.witness.informa.utils.secure.MediaHasher;
 import org.witness.mods.InformaTextView;
 import org.witness.ssc.R;
 import org.witness.ssc.video.ShellUtils;
@@ -88,9 +90,25 @@ public class EncryptActivity extends Activity {
 
 		// long id of metadatablob, filename
 		metadataToEncrypt = (ArrayList<Map<Long, String>>) getIntent().getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
+		String keyHash = null;
 		
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(sp.getString(Settings.HAS_DB_PASSWORD, ""));
+		
+		dh.setTable(db, Tables.KEYRING);
+		Cursor kh = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
+		if(kh != null && kh.getCount() == 1) {
+			kh.moveToFirst();
+			try {
+				keyHash = MediaHasher.hash(kh.getBlob(kh.getColumnIndex(Keys.Device.PUBLIC_KEY)), "SHA-1");
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(InformaConstants.TAG, e.toString());
+			} catch (IOException e) {
+				Log.e(InformaConstants.TAG, e.toString());
+			}
+			kh.close();
+		}
+		
 		dh.setTable(db, Tables.IMAGES);
 		
 		br = new ArrayList<BroadcastReceiver>();
@@ -112,10 +130,10 @@ public class EncryptActivity extends Activity {
 				for(String s : img.getColumnNames())
 					Log.d(InformaConstants.TAG, s + " : " + img.getString(img.getColumnIndex(s)));
 				Log.d(InformaConstants.TAG, img.toString());
-				metadataPacks.add(new MetadataPack(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE))));
+				metadataPacks.add(new MetadataPack(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), keyHash));
 				destos.add(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)));
+				img.close();
 			}
-			img.close();
 		}
 		
 		progress.setText(getString(R.string.encrypt_contacting_td));
@@ -134,7 +152,8 @@ public class EncryptActivity extends Activity {
 					}
 					
 					for(final MetadataPack mp : metadataPacks) {
-						mp.doEncrypt();
+						if(sp.getBoolean(Keys.Settings.WITH_ENCRYPTION, false))
+							mp.doEncrypt();
 						mp.doInject();
 					}
 					
@@ -189,24 +208,24 @@ public class EncryptActivity extends Activity {
 		public void onReceive(Context context, Intent intent) {
 			if(Service.UPLOADER_AVAILABLE.equals(intent.getAction())) {
 				_uploader = Uploader.getUploader();
-				//_uploader.addToQueue(metadataPacks);
 			}
 		}
 	}
 	
 	public class MetadataPack {
-		public String email, metadata, filepath, clonepath;
+		public String email, metadata, filepath, clonepath, keyHash;
 		public String tdDestination = null;
 		public String tmpId, authToken, hash;
 		public int mediaType;
 		
-		public MetadataPack(String email, String metadata, String filepath, String hash, int mediaType) {
+		public MetadataPack(String email, String metadata, String filepath, String hash, int mediaType, String keyHash) {
 			this.email = email;
 			this.metadata = metadata;
 			this.filepath = filepath;
 			this.clonepath = EncryptActivity.this.clonePath;
 			this.hash = hash;
 			this.mediaType = mediaType;
+			this.keyHash = keyHash;
 		}
 		
 		public void setTDDestination(String tdDestination) {

@@ -316,7 +316,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				if(s.getSelected()) {
 					_ed.putBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, Boolean.parseBoolean(encryptionValues[encryptionSelection.indexOf(s)])).commit();
 					if(encryptionSelection.indexOf(s) != 0)
-						current += 4;
+						current += 2;
 				}
 			}
 		} catch(Exception e) {
@@ -454,7 +454,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 	@SuppressWarnings("unused")
 	private String[] getDefaultImageHandlingOptions() {
 		if(!preferences.getBoolean(InformaConstants.Keys.Settings.WITH_ENCRYPTION, false))
-			current -=4;
+			current -=2;
 		return getResources().getStringArray(R.array.default_image_handling);
 	}
 	

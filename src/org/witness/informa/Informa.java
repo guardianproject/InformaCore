@@ -51,6 +51,7 @@ public class Informa {
 	private Video[] videos;
 	
 	private Context _c;
+	private SharedPreferences sp;
 	
 	private class InformaZipper extends JSONObject {
 		Field[] fields;
@@ -275,9 +276,16 @@ public class Informa {
 		int ownershipType;
 		
 		public Owner() {
-			this.sigKeyId = getAPGEmail(apg.getSignatureKeyId());
-			this.ownershipType = (Integer) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.OWNERSHIP_TYPE}, BaseColumns._ID, 1, Integer.class);
-			//this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1, String.class);
+			if(sp.getBoolean(Keys.Settings.WITH_ENCRYPTION, false)) {
+				this.sigKeyId = getAPGEmail(apg.getSignatureKeyId());
+				this.ownershipType = (Integer) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.OWNERSHIP_TYPE}, BaseColumns._ID, 1, Integer.class);
+				//this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1, String.class);
+			} else {
+				this.sigKeyId = getAccountEmail();
+				this.ownershipType = InformaConstants.Owner.INDIVIDUAL;
+			}
+			
+			
 		}
 	}
 	
@@ -396,6 +404,17 @@ public class Informa {
 		return apg.getPublicUserId(_c, keyId);
 	}
 	
+	private String getAccountEmail() {
+		Pattern ep = Patterns.EMAIL_ADDRESS;
+		Account[] accounts = AccountManager.get(_c).getAccountsByType("com.google");
+		for(Account a : accounts) {
+			if(ep.matcher(a.name).matches()) {
+				return a.name;
+			}	
+		}
+		return "<unknown>";
+	}
+	
 	public Image[] getImages() {
 		return images;
 	}
@@ -404,6 +423,7 @@ public class Informa {
 		return videos;
 	}
 	
+	@SuppressWarnings("unused")
 	public Informa(
 			Context c,
 			int mediaType,
@@ -415,7 +435,7 @@ public class Informa {
 		
 		_c = c;
 		
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_c);
+		sp = PreferenceManager.getDefaultSharedPreferences(_c);
 		
 		dh = new DatabaseHelper(c);
 		db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
@@ -626,15 +646,7 @@ public class Informa {
 					email = td.getString(td.getColumnIndex(TrustedDestinations.EMAIL));
 					td.close();
 				} else {
-					Pattern ep = Patterns.EMAIL_ADDRESS;
-					Account[] accounts = AccountManager.get(_c).getAccountsByType("com.google");
-					for(Account a : accounts) {
-						if(ep.matcher(a.name).matches()) {
-							email = a.name;
-							break;
-						}
-							
-					}
+					email = getAccountEmail();
 				}
 				
 				String newPath = 

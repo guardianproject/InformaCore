@@ -395,19 +395,13 @@ public class VideoConstructor {
 			filepath
 		};
 		
-		StringBuffer fcom = new StringBuffer();
-		for(String f : ffmpegCommand)
-			fcom.append(f + " ");
-		Log.d(LOGTAG, fcom.toString());
-		
 		try {
 			execProcess(ffmpegCommand, sc);
+			return 1;
 		} catch (Exception e) {
 			Log.e(LOGTAG, e.toString());
+			return 0;
 		}
-		
-		return 0;
-		
 	}
 	
 	private static File stringToFile(String data, String dir, String filename) {

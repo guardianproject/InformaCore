@@ -43,7 +43,7 @@ public class Uploader extends Service {
 	private List<MetadataPack> queue;
 	boolean isCurrentlyUploading = false;
 	public static Uploader uploader;
-
+	
 	public class LocalBinder extends Binder {
 		public Uploader getService() {
 			return Uploader.this;
@@ -80,7 +80,7 @@ public class Uploader extends Service {
 		TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		
 		String url = "https://" + mp.tdDestination +
-					"/?device_pgp=" + tm.getDeviceId() + 
+					"/?device_pgp=" + mp.keyHash + 
 					"&bytes_expected=" + new File(mp.filepath).length() +
 					"&unredacted_data_hash=" + mp.hash;
 		
@@ -96,10 +96,10 @@ public class Uploader extends Service {
 	private void startUploading() {
 		Log.d(InformaConstants.TAG, "STARTING UPLOADING!");
 		for(MetadataPack mp : queue) {
-			if(mp.authToken == null)
-				getTicket(mp);
-			
-			Log.d(InformaConstants.TAG, mp.toString());
+			if(mp.tdDestination != null) {
+				if(mp.authToken == null)
+					getTicket(mp);
+			}
 		}
 	}
 	
