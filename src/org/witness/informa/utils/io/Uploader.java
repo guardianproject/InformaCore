@@ -1,40 +1,89 @@
 package org.witness.informa.utils.io;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.witness.informa.EncryptActivity;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Media;
+import org.witness.informa.utils.InformaConstants.Keys.Settings;
+import org.witness.informa.utils.InformaConstants.Keys.Tables;
+import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
+import org.witness.informa.utils.io.CustomMultipartEntity.ProgressListener;
+import org.witness.ssc.MediaManager;
+import org.witness.ssc.R;
 
+import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.util.Log;
 
 public class Uploader extends Service {
@@ -42,6 +91,18 @@ public class Uploader extends Service {
 	private List<MetadataPack> queue;
 	boolean isCurrentlyUploading = false;
 	public static Uploader uploader;
+	Intent uploadStatus;
+	NotificationManager nm;
+	DatabaseHelper dh;
+	SQLiteDatabase db; 
+	SharedPreferences sp;
+	
+	SSLContext ssl;
+	InformaTrustManager itm;
+	
+	Handler h;
+	
+	public final String TAG = InformaConstants.TAG.replace("INFORMA", "INFORMA UPLOADER SERVICE");
 	
 	public class LocalBinder extends Binder {
 		public Uploader getService() {
@@ -55,127 +116,516 @@ public class Uploader extends Service {
 	}
 	
 	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_STICKY;
+	}
+	
+	@Override
 	public void onCreate() {
 		Log.d(InformaConstants.TAG, "UPLOADER SERVICE STARTED!");
 		queue = new ArrayList<MetadataPack>();
 		uploader = this;
 		sendBroadcast(new Intent().setAction(Keys.Service.UPLOADER_AVAILABLE));
+		uploadStatus = new Intent(this, MediaManager.class);
+		nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		
+		sp = PreferenceManager.getDefaultSharedPreferences(this);
+		dh = new DatabaseHelper(this);
+		db = dh.getWritableDatabase(sp.getString(Settings.HAS_DB_PASSWORD, ""));
 	}
 	
 	public static Uploader getUploader() {
 		return uploader;
 	}
 	
+	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		updateQueue();
+		db.close();
+		dh.close();
 		Log.d(InformaConstants.TAG, "UPLOADER SERVICE ENDED.");
 	}
 	
-	public interface MetadataHandler {
-		public ArrayList<MetadataPack> setMetadata();
-	}
-	
-	private void getTicket(MetadataPack mp) {
-		String url = "https://" + mp.tdDestination +
-					"/?user_pgp=" + mp.keyHash +
-					"&timestamp_created=" + mp.timestampCreated +
-					"&media_type=" + mp.mediaType;
-		
-		Log.d(InformaConstants.TAG, "TICKET URL:\n" + url);
-	}
-	
-	private void scheduleUpload(MetadataPack mp) {
-		String url = "https://" + mp.tdDestination +
-					"/?user_pgp=" + mp.keyHash +
-					"&auth_token=" + mp.authToken +
-					"&bytes_expected=" + new File(mp.filepath).length();
-		
-		Log.d(InformaConstants.TAG, "SCHEDULE URL:\n" + url);
-	}
-	
-	private void uploadMedia(MetadataPack mp) {
-		
-	}
-	
-	private void startUploading() {
-		Log.d(InformaConstants.TAG, "STARTING UPLOADING!");
+	private void updateQueue() {
+		dh.setTable(db, Tables.IMAGES);
 		for(MetadataPack mp : queue) {
+			ContentValues cv = new ContentValues();
+			if(mp.authToken != null)
+				cv.put(Keys.Uploader.AUTH_TOKEN, mp.authToken);
+			cv.put(Media.STATUS, mp.status);
+			db.update(dh.getTable(), cv, BaseColumns._ID, new String[] {Long.toString(mp.id)});
+		}
+	}
+	
+	private int parseResult(JSONObject res) throws JSONException {
+		Log.d(TAG, res.toString());
+		if(res.getString("result").equals(Keys.Uploader.A_OK))
+			return Activity.RESULT_OK;
+		else
+			return Activity.RESULT_CANCELED;
+			
+	}
+	
+	private JSONObject scheduleUpload(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
+		nvp.put(Keys.Uploader.Entities.AUTH_TOKEN, mp.authToken);
+		nvp.put(Keys.Uploader.Entities.BYTES_EXPECTED, new File(mp.filepath).length());
+		
+		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
+		return connection.executePost(nvp);
+	}
+	
+	private JSONObject getUploadTicket(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException  {
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
+		nvp.put(Keys.Uploader.Entities.TIMESTAMP_CREATED, mp.timestampCreated);
+		nvp.put(Keys.Uploader.Entities.MEDIA_TYPE, mp.mediaType);
+		
+		Log.d(TAG, nvp.toString());
+		
+		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
+		return connection.executePost(nvp);
+		
+	}
+	
+	private JSONObject uploadMedia(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
+		nvp.put(Keys.Uploader.Entities.AUTH_TOKEN, mp.authToken);
+		
+		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
+		return connection.executePost(nvp, new File(mp.filepath));
+	}
+	
+	public void testPing() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, ClientProtocolException, KeyStoreException, IOException {
+		Log.d(InformaConstants.TAG, "STARTING UPLOADING!");
+		InformaConnectionFactory icf = new InformaConnectionFactory("rgr4us5kmgxombaf.onion");
+		
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put("user_pgp", "blahblahbblah");
+		nvp.put("test", "OH SHIT");
+		Log.d(TAG, "OMG:\n" + icf.executePost(nvp));
+	}
+	
+	private void uploadImage(MetadataPack mp) {
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put("user_pgp", mp.keyHash);
+		nvp.put("auth_token", mp.authToken);
+		nvp.put("image_upload", new File(mp.filepath));
+	}
+	
+	private void uploadVideo(MetadataPack mp) {
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put("user_pgp", mp.keyHash);
+		nvp.put("auth_token", mp.authToken);
+		nvp.put("video_upload", new File(mp.filepath));
+	}
+	
+	private void startUploading() throws NoSuchAlgorithmException, KeyManagementException {
+		for(final MetadataPack mp : queue) {
 			if(mp.tdDestination != null) {
-				
+				// in a thread...
+				new Thread(new Runnable() {
+					private static final int THREADS = 10;
+					
+					@Override
+					public void run() {
+						Log.d(TAG, "HEY WE ARE STARTING THIS PROCESS!");
+						JSONObject res;
+						try {
+							ExecutorService ex = Executors.newFixedThreadPool(THREADS);
+							if(mp.authToken == null) {
+								Future<JSONObject> getUploadTicket = ex.submit(new Callable<JSONObject>() {
+
+									@Override
+									public JSONObject call() throws Exception {
+										return getUploadTicket(mp);
+									}
+									
+								});
+								res = getUploadTicket.get();
+								if(parseResult(res) == Activity.RESULT_OK) {
+									// HANDLE RESULT
+								} else
+									run();
+								
+							}
+							
+							Future<JSONObject> scheduleUpload = ex.submit(new Callable<JSONObject>() {
+								@Override
+								public JSONObject call() throws Exception {
+									return scheduleUpload(mp);
+								}
+							});
+							res = scheduleUpload.get();
+							if(parseResult(res) == Activity.RESULT_OK) {
+								// HANDLE RESULT
+							} else
+								run();
+							
+							Future<JSONObject> uploadMedia = ex.submit(new Callable<JSONObject>() {
+								@Override
+								public JSONObject call() throws Exception {
+									return uploadMedia(mp);
+								}
+							});
+							res = uploadMedia.get();
+							if(parseResult(res) == Activity.RESULT_OK) {
+								// FINISH ACTIVITY.
+							} else
+								run();
+							
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						} catch (ExecutionException e) {
+							e.printStackTrace();
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+					}
+				}).start();
 			}
 		}
 	}
 	
-	public void addToQueue(MetadataPack mp) {
+	public void addToQueue(MetadataPack mp) throws KeyManagementException, NoSuchAlgorithmException {
 		queue.add(mp);
 		if(!isCurrentlyUploading)
 			startUploading();
 	}
 	
-	public void addToQueue(ArrayList<MetadataPack> mp) {
+	public void addToQueue(ArrayList<MetadataPack> mp) throws KeyManagementException, NoSuchAlgorithmException {
 		queue.addAll(mp);
 		if(!isCurrentlyUploading)
 			startUploading();
 	}
 	
-	private class ConnectionFactory {
-		HttpClient httpclient;
-		HttpHost proxy;
-		String url;
+	@SuppressWarnings("deprecation")
+	public void showNotification() {
+		Notification n = new Notification(
+				R.drawable.ic_ssc,
+				getString(R.string.informaUploader_title),
+				System.currentTimeMillis());
 		
-		private final HostnameVerifier NO_VER = new HostnameVerifier() {
-			public boolean verify(String host, SSLSession session) {
-				return true;
-			}
-		};
+		PendingIntent pi = PendingIntent.getActivity(
+				this, 
+				InformaConstants.Uploader.FROM_NOTIFICATION_BAR, 
+				uploadStatus, 
+				PendingIntent.FLAG_UPDATE_CURRENT);
 		
-		public ConnectionFactory(String url) {
-			httpclient = new DefaultHttpClient();
-			proxy = new HttpHost(url, 8118);
-			httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-			this.url = url;
-		}
+		n.setLatestEventInfo(this, "uploader!", "hiya!", pi);
 		
-		private void trustThisHost() {
-			TrustManager[] trustThisCert = new TrustManager[] {
-				new X509TrustManager() {
-
-					@Override
-					public void checkClientTrusted(X509Certificate[] chain,
-							String authType) throws CertificateException {}
-
-					@Override
-					public void checkServerTrusted(X509Certificate[] chain,
-							String authType) throws CertificateException {}
-
-					@Override
-					public X509Certificate[] getAcceptedIssuers() {
-						return new java.security.cert.X509Certificate[] {};
-					}
-					
-				}
-			};
-			
-			try {
-				SSLContext sc = SSLContext.getInstance("TLS");
-				sc.init(null, trustThisCert, new java.security.SecureRandom());
-				HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-			} catch(Exception e) {
-				Log.e(InformaConstants.TAG, "cannot init ssl context: " + e.getMessage());
-			}
-		}
-		
-		public HttpResponse executeGet() throws ClientProtocolException, IOException {
-			HttpGet httpget = new HttpGet(url);
-    		return httpclient.execute(httpget);
-		}
-		
-		public HttpResponse executePost(List<NameValuePair> nameValuePair) throws ClientProtocolException, IOException {
-			HttpPost httppost = new HttpPost(url);
-			httppost.setEntity(new UrlEncodedFormEntity(nameValuePair));
-			return httpclient.execute(httppost);
-		}
+		nm.notify(R.string.informaUploader_id, n);
 	}
 	
+	private class InformaTrustManager implements X509TrustManager {
+		private KeyStore keyStore;
+		private X509TrustManager defaultTrustManager;
+		private X509TrustManager appTrustManager;
+		
+		byte[] keyStored = null;
+		String pwd;
+		long lastUpdate;
+		
+		public InformaTrustManager() {
+			dh.setTable(db, Tables.KEYRING);
+			Cursor c = dh.getValue(db, new String[] {Keys.Device.PASSPHRASE, Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
+			if(c != null && c.getCount() > 0) {
+				c.moveToFirst();
+				pwd = c.getString(c.getColumnIndex(Keys.Device.PASSPHRASE));
+				c.close();
+			}
+			
+			dh.setTable(db, Tables.KEYSTORE);
+			Cursor d = dh.getValue(db, new String[] {
+					BaseColumns._ID,
+					Keys.TrustedDestinations.CERT, 
+					Keys.TrustedDestinations.DATE_UPDATED
+				}, BaseColumns._ID, 1);
+			if(d != null && d.getCount() > 0) {
+				d.moveToFirst();
+				keyStored = d.getBlob(d.getColumnIndex(Keys.TrustedDestinations.CERT));
+				lastUpdate = d.getLong(d.getColumnIndex(Keys.TrustedDestinations.DATE_UPDATED));
+				d.close();
+			}
+			
+			loadKeyStore();
+			defaultTrustManager = getTrustManager(false);
+			appTrustManager = getTrustManager(true);
+		}
+		
+		private X509TrustManager getTrustManager(boolean withKeystore) {
+			try {
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+				if(withKeystore)
+					tmf.init(keyStore);
+				else
+					tmf.init((KeyStore) null);
+				for(TrustManager t : tmf.getTrustManagers())
+					if(t instanceof X509TrustManager)
+						return (X509TrustManager) t;
+			} catch (KeyStoreException e) {
+				Log.e(TAG, "key store exception: " + e.toString());
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(TAG, "no such algo exception: " + e.toString());
+			}
+			return null;
+		}
+		
+		private void loadKeyStore() {
+			try {
+				keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+			} catch(KeyStoreException e) {
+				Log.e(TAG, "key store exception: " + e.toString());
+			}
+			
+			try {
+				keyStore.load(null, null);
+				if(keyStored != null)
+					keyStore.load(new ByteArrayInputStream(keyStored), pwd.toCharArray());
+			} catch(CertificateException e) {
+				Log.e(TAG, "certificate exception: " + e.toString());
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(TAG, "no such algo exception: " + e.toString());
+			} catch (IOException e) {
+				Log.e(TAG, "IOException: " + e.toString());
+			}
+		}
+		
+		private void storeCertificate(X509Certificate[] chain) {
+			try {
+				for(X509Certificate cert : chain)
+					keyStore.setCertificateEntry(cert.getSubjectDN().toString(), cert);
+			} catch(KeyStoreException e) {
+				Log.e(TAG, "keystore exception: " + e.toString());
+			}
+			
+			appTrustManager = getTrustManager(true);
+			try {
+				//File f = new File(InformaConstants.DUMP_FOLDER, "keys.bks");
+				//FileOutputStream fos = new FileOutputStream(f);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				keyStore.store(baos, pwd.toCharArray());
+				updateKeyStore(baos.toByteArray());
+			} catch(KeyStoreException e) {
+				Log.e(TAG, "keystore exception: " + e.toString());	
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(TAG, "no such algo exception: " + e.toString());
+			} catch (IOException e) {
+				Log.e(TAG, "IOException: " + e.toString());
+			} catch (CertificateException e) {
+				Log.e(TAG, "Certificate Exception: " + e.toString());
+			}
+		}
+		
+		private void updateKeyStore(byte[] newKey) {
+			boolean firstKey = true;
+			Log.d(TAG, "key is: " + newKey.length);
+			if(keyStored != null) {
+				byte[] concat = new byte[keyStored.length + newKey.length];
+				System.arraycopy(keyStored, 0, concat, 0, keyStored.length);
+				System.arraycopy(newKey, 0, concat, keyStored.length, newKey.length);
+				keyStored = concat;
+				firstKey = false;
+			} else
+				keyStored = newKey;
+			lastUpdate = System.currentTimeMillis();
+			
+			dh.setTable(db, Tables.KEYSTORE);
+			ContentValues cv = new ContentValues();
+			cv.put(TrustedDestinations.CERT, keyStored);
+			cv.put(TrustedDestinations.DATE_UPDATED, lastUpdate);
+			
+			if(firstKey)
+				db.insert(dh.getTable(), null, cv);
+			else
+				db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(1)});
+		}
+		
+		private boolean isCertKnown(X509Certificate cert) {
+			try {
+				return keyStore.getCertificateAlias(cert) != null;
+			} catch(KeyStoreException e) {
+				return false;
+			}
+		}
+		
+		private boolean isExpiredException(Throwable e) {
+			do {
+				if(e instanceof CertificateExpiredException)
+					return true;
+				e = e.getCause();
+			} while(e != null);
+			return false;
+		}
+		
+		private void checkCertificateTrusted(X509Certificate[] chain, String authType, boolean isServer) throws CertificateException {
+			try {
+				if(isServer)
+					appTrustManager.checkServerTrusted(chain, authType);
+				else
+					appTrustManager.checkClientTrusted(chain, authType);
+			} catch(CertificateException e) {
+				if(isExpiredException(e))
+					return;
+				if(isCertKnown(chain[0]))
+					return;
+				
+				try {
+					if(isServer)
+						defaultTrustManager.checkServerTrusted(chain, authType);
+					else
+						defaultTrustManager.checkClientTrusted(chain, authType);
+				} catch(CertificateException ce) {
+					storeCertificate(chain);
+				}
+			}
+		}
+
+		@Override
+		public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+			checkCertificateTrusted(chain, authType, false);
+		}
+
+		@Override
+		public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+			checkCertificateTrusted(chain, authType, true);
+		}
+
+		@Override
+		public X509Certificate[] getAcceptedIssuers() {
+			return defaultTrustManager.getAcceptedIssuers();
+		}
+		
+		public KeyStore getKeyStore() {
+			return keyStore;
+		}
+		
+	}
+	
+	private class InformaConnectionFactory {
+		private HttpsURLConnection connection;
+		private URL url;
+		private HostnameVerifier hnv;
+		private Proxy proxy;
+		private DataOutputStream dos;
+		
+		private int percentUploaded = 0;
+		private int totalLength = 0;
+		
+		
+		public InformaConnectionFactory(final String urlString) throws IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+			this.url = new URL("https://" + urlString);
+			
+			hnv = new HostnameVerifier() {
+				@Override
+				public boolean verify(String hostname, SSLSession session) {
+					if(hostname.equals(urlString))
+						return true;
+					else
+						return false;
+				}
+				
+			};
+			
+			itm = new InformaTrustManager();
+			ssl = SSLContext.getInstance("TLS");
+			ssl.init(null, new TrustManager[] { itm }, new SecureRandom());
+						
+			HttpsURLConnection.setDefaultSSLSocketFactory(ssl.getSocketFactory());
+			HttpsURLConnection.setDefaultHostnameVerifier(hnv);
+			proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
+			
+				//URL url = new URL("https://j3m.info/repo/?repo=harlo.holmes@gmail.com"); 
+		}
+		
+		public JSONObject executePost(Map<String, Object> nvp, File file)  throws ClientProtocolException, IOException {
+			Iterator<Entry<String, Object>> it = nvp.entrySet().iterator();
+			StringBuffer sb = new StringBuffer();
+			
+			while(it.hasNext()) {
+				Entry<String, Object> e = it.next();
+				try {
+					sb.append("&" + e.getKey() + "=" + URLEncoder.encode((String) e.getValue(), "UTF-8"));
+				} catch(ClassCastException cce) {
+					sb.append("&" + e.getKey() + "=" + e.getValue());
+				}
+			}
+			
+			if(file != null) {
+				connection  = (HttpsURLConnection) url.openConnection(proxy);
+				connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; boundary=" + Keys.Uploader.BOUNDARY);
+				connection.setRequestMethod("POST");
+				connection.setUseCaches(false);
+				connection.setDoInput(true);
+				connection.setDoOutput(true);
+				connection.setRequestProperty("Connection","Keep-Alive");
+				
+				dos = new DataOutputStream(connection.getOutputStream());
+				dos.writeBytes(Keys.Uploader.HYPHENS + Keys.Uploader.BOUNDARY + Keys.Uploader.LINE_END);
+				dos.writeBytes("Content-Disposition: post-data; name=" + Keys.Uploader.Entities.MEDIA_UPLOAD + ";filename=" + file.getName() + Keys.Uploader.LINE_END);
+				dos.writeBytes(Keys.Uploader.LINE_END);
+				
+				FileInputStream fis = new FileInputStream(file);
+				int totalBytes = fis.available();
+				int bufSize = 1000;
+				byte[] buf = new byte[bufSize];
+				
+				int read = fis.read(buf, 0, totalBytes);
+				while(read > 0) {
+					dos.write(buf, 0, totalBytes);
+					totalBytes = fis.available();
+					totalBytes = Math.min(totalBytes, bufSize);
+					read = fis.read(buf, 0, totalBytes);
+				}
+				
+				dos.writeBytes(Keys.Uploader.LINE_END);
+				dos.writeBytes(Keys.Uploader.HYPHENS + Keys.Uploader.BOUNDARY + Keys.Uploader.HYPHENS + Keys.Uploader.LINE_END);
+				fis.close();
+				
+				
+				// ...blah blah blah
+			} else {
+				connection  = (HttpsURLConnection) url.openConnection(proxy);
+				connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+				connection.setRequestMethod("POST");
+				connection.setUseCaches(false);
+				connection.setDoInput(true);
+				connection.setDoOutput(true);
+				connection.setRequestProperty("Connection","Keep-Alive");
+				dos = new DataOutputStream(connection.getOutputStream());
+			}
+			
+			Log.d(TAG, "posting: " + sb.toString().substring(1));
+			dos.writeBytes(sb.toString().substring(1));
+			dos.flush();
+			dos.close();
+			
+			try {
+				InputStream is = connection.getInputStream();
+				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				String line;
+				sb = new StringBuffer();
+				while((line = br.readLine()) != null)
+					sb.append(line);
+				
+				br.close();
+				connection.disconnect();
+				
+				return (JSONObject) new JSONTokener(sb.toString()).nextValue();
+			} catch(NullPointerException e) {
+				return null;
+			} catch (JSONException e) {
+				return null;
+			}
+			
+		}
+		
+		public JSONObject executePost(Map<String, Object> nvp) throws ClientProtocolException, IOException {
+			return executePost(nvp, null);
+		}
+	}
 }

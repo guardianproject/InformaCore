@@ -123,6 +123,10 @@
 	<string name="informaConfirm_btn_share">Share Redacted Version</string>
 	<string name="informaConfirm_share_prompt">Share Redacted Version\u2026</string>
 	
+	<!--  INFORMA UPLOADER -->
+	<string name="informaUploader_id">Hey this is the Id for the upload service!</string>
+	<string name="informaUploader_title">Uploading\u2026</string>
+	
 	<!--  INFORMA MEDIA MANAGER -->
 	<string name="informaMediaManager_title">Media Manager</string>
 	<string name="informaMediaManager_checkingMessages">Checking for Messages</string>

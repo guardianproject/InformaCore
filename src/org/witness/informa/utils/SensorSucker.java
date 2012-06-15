@@ -36,7 +36,6 @@ import org.witness.informa.utils.InformaConstants.Keys.Suckers;
 import org.witness.informa.utils.InformaConstants.Genealogy;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
-import org.witness.informa.utils.InformaConstants.Uploader;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.suckers.*;
 

@@ -28,13 +28,6 @@ public class InformaConstants {
 	
 	public final static String REPO = "https://j3m.info/repo/?repo=";
 	// one day we will have a way of handling this
-	
-	public final static class Uploader {
-		public static final String BOUNDARY = "*****hYphY*****";
-		public static final String lineEnd = "\r\n";
-		public static final String twoHyphens = "--";
-		
-	}
 
 	public final static class Keys {
 		public final static String USER_CANCELED_EVENT = "userCanceledEvent";
@@ -48,6 +41,25 @@ public class InformaConstants {
 			public static final String DEFAULT_IMAGE_HANDLING = "informa.DefaultImageHandling";
 			public static final String EULA_ACCEPTED = "informa.EulaAccepted";
 			public static final String WITH_ENCRYPTION = "informa.EncryptMetadata";
+		}
+		
+		public final static class Uploader {
+			public static final String AUTH_TOKEN = "authToken";
+			public static final String A_OK = "A_OK";
+			public static final String FAIL = "FAIL";
+			public static final String BOUNDARY = "---------------------------InformaCamv1***924sggo2jbs924qabasfbwrthw9g4";
+			public static final String LINE_END = "\r\n";
+			public static final String HYPHENS = "--";
+			
+			public static final class Entities {
+				public static final String USER_PGP = "user_pgp";
+				public static final String AUTH_TOKEN = Keys.Uploader.AUTH_TOKEN;
+				public static final String BYTES_EXPECTED = "bytes_expected";
+				public static final String MEDIA_TYPE = "media_type";
+				public static final String TIMESTAMP_CREATED = "timestamp_created";
+				public static final String MEDIA_UPLOAD = "media_upload";
+			}
+			
 		}
 		
 		public final static class Service {
@@ -64,6 +76,7 @@ public class InformaConstants {
 			public final static String INFLATE_VIDEO_TRACK = "inflateDataForVideoTrack";
 			public final static String ENCRYPT_METADATA = "encryptMetadata";
 			public final static String CLONE_PATH = "clonePath";
+			public final static String START_UPLOADER = "startUploaderService";
 			public final static String UPLOADER_AVAILABLE = "uploaderAvailable";
 		}
 		
@@ -193,6 +206,8 @@ public class InformaConstants {
 			public final static String DISPLAY_NAME = Intent.Destination.DISPLAY_NAME;
 			public final static String DESTO = "tdDestination";
 			public final static String HOOKUPS = "hookups";
+			public final static String CERT = "cert";
+			public final static String DATE_UPDATED = "dateUpdated";
 		}
 		
 		public final static class Media {
@@ -267,6 +282,7 @@ public class InformaConstants {
 			public static final String TRUSTED_DESTINATIONS = "trustedDestinations";
 			public static final String ENCRYPTED_IMAGES = "encryptedImages";
 			public static final String KEYRING = "privateKeyring";
+			public static final String KEYSTORE = "tofupopKeystore";
 		}
 		
 		public final static class Suckers {
@@ -331,7 +347,14 @@ public class InformaConstants {
 			public final static int UPLOAD_COMPLETE = 1031;
 			public final static int UPLOAD_FAILED = 1032;
 			public final static int NEVER_SCHEDULED_FOR_UPLOAD = 1033;
+			public final static int BASE_IMAGE_REQUIRED = 1034;
 		}
+	}
+	
+	public final static class Uploader {
+		public final static int FROM_NOTIFICATION_BAR = 30;
+		
+		
 	}
 	
 	public final static class MediaTypes {

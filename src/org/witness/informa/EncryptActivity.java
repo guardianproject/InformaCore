@@ -1,6 +1,7 @@
 package org.witness.informa;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,7 +17,6 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Image;
 import org.witness.informa.utils.InformaConstants.Keys.Media;
-import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Media.ShareVector;
@@ -25,8 +25,6 @@ import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.io.Uploader;
-import org.witness.informa.utils.io.Uploader.LocalBinder;
-import org.witness.informa.utils.secure.Apg;
 import org.witness.informa.utils.secure.DestoService;
 import org.witness.informa.utils.secure.MediaHasher;
 import org.witness.mods.InformaTextView;
@@ -35,16 +33,13 @@ import org.witness.ssc.video.ShellUtils;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
@@ -63,21 +58,9 @@ public class EncryptActivity extends Activity {
 	SharedPreferences sp;
 	int encrypted = 0;
 	
-	Uploader uploader, _uploader;
+	Uploader uploader;
 	private List<BroadcastReceiver> br;
 	Handler h;
-	
-	private ServiceConnection sc = new ServiceConnection() {
-    	public void onServiceConnected(ComponentName cn, IBinder binder) {
-    		LocalBinder lb = (LocalBinder) binder;
-    		uploader = lb.getService();
-    	}
-    	
-    	public void onServiceDisconnected(ComponentName cn) {
-    		uploader = null;
-    		_uploader = null;
-    	}
-    };
 	
 	@SuppressWarnings({ "unchecked"})
 	@Override
@@ -96,14 +79,12 @@ public class EncryptActivity extends Activity {
 		keyHash = getKeyHash();
 		
 		br = new ArrayList<BroadcastReceiver>();
-		br.add(new Broadcaster(new IntentFilter(Service.UPLOADER_AVAILABLE)));
 		
 		metadataPacks = new ArrayList<MetadataPack>();
+		uploader = Uploader.getUploader();
 		
 		progress = (InformaTextView) findViewById(R.id.encrypting_progress);
-		
-		Intent startUploader = new Intent(this, Uploader.class);
-		bindService(startUploader, sc, Context.BIND_AUTO_CREATE);
+		init();
 	}
 	
 	private String getKeyHash() {
@@ -125,9 +106,6 @@ public class EncryptActivity extends Activity {
 	}
 	
 	private void reviewAndFinish() {
-		db.close();
-		dh.close();
-		
 		/* there are 3 cases
 		 * 1: unencrypted image: intent to share immediately
 		 * 2: encrypted to several parties, all of which are in upload queue
@@ -161,9 +139,6 @@ public class EncryptActivity extends Activity {
 			Cursor img = dh.getValue(db, new String[] {Image.METADATA, Image.UNREDACTED_IMAGE_HASH, Image.TRUSTED_DESTINATION, Media.MEDIA_TYPE}, BaseColumns._ID, (Long) e.getKey());
 			if(img != null && img.getCount() == 1) {
 				img.moveToFirst();
-				for(String s : img.getColumnNames())
-					Log.d(InformaConstants.TAG, s + " : " + img.getString(img.getColumnIndex(s)));
-				Log.d(InformaConstants.TAG, img.toString());
 				metadataPacks.add(new MetadataPack((Long) e.getKey(), img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), keyHash));
 				Map<String, Long> mediaRecord = new HashMap<String, Long>();
 				mediaRecord.put(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), (Long) e.getKey());
@@ -178,7 +153,7 @@ public class EncryptActivity extends Activity {
 
 			@Override
 			public void run() {
-				destoService = new DestoService(dh, db);
+				destoService = new DestoService(EncryptActivity.this);
 				try {
 					for(Map<String, String> desto : destoService.getDestos(destos)) {
 						for(MetadataPack mp : metadataPacks) {
@@ -195,13 +170,18 @@ public class EncryptActivity extends Activity {
 						mp.doInject();
 					}
 					
-					_uploader.addToQueue(metadataPacks);
+					uploader.addToQueue(metadataPacks);
+					uploader.showNotification();
 					reviewAndFinish();
 					
 				} catch (JSONException e) {
 					Log.e(InformaConstants.TAG, "Error getting destos: " + e.toString());
 				} catch (IOException e) {
 					Log.e(InformaConstants.TAG, "Error getting destos: " + e.toString());
+				} catch (KeyManagementException e) {
+					Log.e(InformaConstants.TAG, "Error initing ssl connection: " + e.toString());
+				} catch (NoSuchAlgorithmException e) {
+					Log.e(InformaConstants.TAG, "Error initing ssl connection: " + e.toString());
 				}
 				
 			}
@@ -235,10 +215,7 @@ public class EncryptActivity extends Activity {
 		
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(Service.UPLOADER_AVAILABLE.equals(intent.getAction())) {
-				_uploader = Uploader.getUploader();
-				init();
-			}
+			
 		}
 	}
 	

@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteOpenHelper;
 
-import org.witness.informa.utils.InformaConstants;
+import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.*;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 	private static final String DATABASE_NAME = "informa.db";
@@ -35,7 +34,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Intent.Destination.EMAIL + " blob not null, " +
 							Media.MEDIA_TYPE + " integer not null, " +
 							Media.SHARE_VECTOR + " integer, " +
-							Media.STATUS + " integer" +
+							Media.STATUS + " integer, " +
+							Keys.Uploader.AUTH_TOKEN + " text" +
 							")",
 					"CREATE TABLE " + Tables.CONTACTS + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
@@ -74,6 +74,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Device.PUBLIC_KEY + " blob, " +
 							Device.PRIVATE_KEY + " blob, " +
 							Device.PASSPHRASE + " text" +
+							")",
+					"CREATE TABLE " + Tables.KEYSTORE + " (" + BaseColumns._ID + " " +
+							"integer primary key autoincrement, " +
+							TrustedDestinations.CERT + " blob, " +
+							TrustedDestinations.DATE_UPDATED + " text" +
 							")"
 				};
 			}
@@ -137,8 +142,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		
 		if(c != null && c.getCount() > 0) {
 			return c;
-		} else
+		} else {
+			c.close();
 			return null;
+		}
 	}
 	
 	public Cursor getMultiple(SQLiteDatabase db, String[] values, String matchKey, Object[] matchValue) {
@@ -171,8 +178,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		
 		if(c != null && c.getCount() > 0) {
 			return c;
-		} else
+		} else {
+			c.close();
 			return null;
+		}
 	}
 	
 	public Cursor getValue(SQLiteDatabase db, String[] values, String matchKey, Object matchValue) {
@@ -198,8 +207,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		
 		if(c != null && c.getCount() > 0) {
 			return c;
-		} else
+		} else {
+			c.close();
 			return null;
+		}
 	}
 	
 	public boolean setTable(SQLiteDatabase db, String whichTable) {
@@ -225,6 +236,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				queries.add(QueryBuilders.INIT_INFORMA.build()[5]);
 			else if(getTable().compareTo(Tables.KEYRING) == 0)
 				queries.add(QueryBuilders.INIT_INFORMA.build()[6]);
+			else if(getTable().compareTo(Tables.KEYSTORE) == 0)
+				queries.add(QueryBuilders.INIT_INFORMA.build()[7]);
 			
 			for(String q : queries)
 				db.execSQL(q);

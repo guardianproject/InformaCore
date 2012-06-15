@@ -41,7 +41,10 @@ import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.informa.utils.io.DatabaseHelper;
 
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
@@ -57,12 +60,14 @@ public class DestoService {
 	private StringBuffer destoQuery;
 	DatabaseHelper dh;
 	SQLiteDatabase db;
+	SharedPreferences sp;
 	private ArrayList<Map<String, String>> destoResults;
 	ArrayList<Map<String, Long>> destos;
 	
-	public DestoService(DatabaseHelper dh, SQLiteDatabase db) {
-		this.dh = dh;
-		this.db = db;
+	public DestoService(Context c) {
+		sp = PreferenceManager.getDefaultSharedPreferences(c);
+		dh = new DatabaseHelper(c);
+		db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
 		
 		destoResults = new ArrayList<Map<String, String>>();
 		destoQuery = new StringBuffer();
@@ -205,6 +210,8 @@ public class DestoService {
 				setShareVector(desto.getValue(), ShareVector.ENCRYPTED_UPLOAD_QUEUE, Status.UPLOADING);
 		}
 		
+		db.close();
+		dh.close();
 		return destoResults;
 	}
 	

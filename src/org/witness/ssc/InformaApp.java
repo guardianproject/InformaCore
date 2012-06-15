@@ -5,15 +5,24 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.util.ArrayList;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.apache.http.client.ClientProtocolException;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.LoginCache;
+import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.SensorSucker;
+import org.witness.informa.utils.SensorSucker.Broadcaster;
 import org.witness.informa.utils.SensorSucker.LocalBinder;
 import org.witness.informa.utils.io.InformaMediaScanner;
+import org.witness.informa.utils.io.Uploader;
 import org.witness.informa.utils.secure.Apg;
 import org.witness.ssc.Eula.OnEulaAgreedTo;
 import org.witness.ssc.InformaSettings.OnSettingsSeen;
@@ -54,12 +63,14 @@ import android.widget.Toast;
 public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSettingsSeen {
 	ActionBar ab;	
 	private Uri uriCameraImage = null;
+	ArrayList<Broadcaster> br;
 	
 	SharedPreferences _sp;
 	SharedPreferences.Editor _ed;
 	boolean showHints = false;
 	
 	SensorSucker informaService;
+	Uploader uploader;
 	Intent passingIntent;
 	File cameraImage;
 	
@@ -73,19 +84,6 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	public void onServiceDisconnected(ComponentName cn) {
     		informaService = null;
     	}
-    };
-    
-    BroadcastReceiver br = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context c, Intent i) {
-			if(MediaScanner.SCANNED.equals(i.getAction())) {
-				Log.d(InformaConstants.TAG, "scanned. go.");
-				uriCameraImage = i.getParcelableExtra(MediaScanner.URI);
-				launchEditor();
-			}
-		}
-    	
     };
 		
 	@Override
@@ -104,7 +102,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	@Override
 	protected void onPause() {
 		super.onPause();
-		unregisterReceiver(br);
+		for(BroadcastReceiver b : br)
+			unregisterReceiver(b);
 	}
 	
 	private void deleteTmpFile ()
@@ -136,13 +135,17 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	File tmpFileDirectory = new File(InformaConstants.DUMP_FOLDER);
         if (!tmpFileDirectory.exists())
         	tmpFileDirectory.mkdirs();
-    	
+        
+        br = new ArrayList<Broadcaster>();
+        br.add(new Broadcaster(new IntentFilter(MediaScanner.SCANNED))); 
+        br.add(new Broadcaster(new IntentFilter(Service.UPLOADER_AVAILABLE)));
     }
     
     @Override
 	protected void onResume() {
 		super.onResume();
-		registerReceiver(br, new IntentFilter(ObscuraConstants.MediaScanner.SCANNED));
+		for(BroadcastReceiver b : br)
+			registerReceiver(b, ((Broadcaster) b).intentFilter);
 		
 		final SharedPreferences eula = getSharedPreferences(Eula.PREFERENCES_EULA,
                 SherlockActivity.MODE_PRIVATE);
@@ -368,6 +371,8 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
     	
     	sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.UNLOCK_LOGS));
     	
+    	Intent startUploader = new Intent(this, Uploader.class);
+		startService(startUploader);
     }
     
     public void doLogout() {
@@ -379,7 +384,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 			unbindService(sc);
 			informaService = null;
 		} catch(IllegalArgumentException e) {}
-    	super.finish();
+		moveTaskToBack(true);
     }
 
 	@Override
@@ -393,4 +398,22 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	@Override
 	public void onSettingsSeen() {}
     
+	private class Broadcaster extends BroadcastReceiver {
+		public IntentFilter intentFilter;
+		
+		public Broadcaster(IntentFilter intentFilter) {
+			this.intentFilter = intentFilter;
+		}
+		
+		@Override
+		public void onReceive(Context c, Intent i) {
+			if(MediaScanner.SCANNED.equals(i.getAction())) {
+				Log.d(InformaConstants.TAG, "scanned. go.");
+				uriCameraImage = i.getParcelableExtra(MediaScanner.URI);
+				launchEditor();
+			} else if(Service.UPLOADER_AVAILABLE.equals(i.getAction())) {
+				uploader = Uploader.getUploader();
+			}
+		}
+	}
 }
