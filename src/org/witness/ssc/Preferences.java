@@ -7,6 +7,7 @@ import net.sqlcipher.database.SQLiteException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.io.DatabaseHelper;
@@ -28,6 +29,7 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -201,13 +203,16 @@ public class Preferences extends PreferenceActivity implements OnClickListener, 
 		if(((CheckBoxPreference) preference).isChecked()) {
 			// if checked, check to see if we have the user's device key.
 			try {
-				Cursor c = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
-				if(c == null || c.getCount() != 1) {
+				dh.setTable(db, Tables.SETUP);
+				Cursor c = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
+				if(c == null) {
 					Intent i = new Intent(this, Wizard.class);
 					i.putExtra("wizardRoot", "encrypt_routine.wizard");
 					startActivity(i);
-				}
+				} else
+					c.close();
 			} catch(SQLiteException e) {
+				Log.d(InformaConstants.TAG, "WHAT? " + e.toString());
 				Intent i = new Intent(this, Wizard.class);
 				i.putExtra("wizardRoot", "encrypt_routine.wizard");
 				startActivity(i);
