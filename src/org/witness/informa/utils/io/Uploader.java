@@ -44,37 +44,22 @@ import javax.net.ssl.X509TrustManager;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
-import org.witness.informa.utils.InformaConstants.Keys.Image;
 import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
-import org.witness.informa.utils.io.CustomMultipartEntity.ProgressListener;
+import org.witness.informa.utils.MetadataPack;
 import org.witness.ssc.MediaManager;
 import org.witness.ssc.R;
 import org.witness.ssc.utils.ObscuraConstants;
-import org.witness.ssc.utils.ObscuraConstants.MimeTypes;
 
-import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -89,7 +74,6 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
-import android.widget.Toast;
 
 public class Uploader extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -149,21 +133,46 @@ public class Uploader extends Service {
 		// TODO: pick up where uploader left off.
 		dh.setTable(db, Tables.IMAGES);
 		Cursor c = dh.getValue(db, new String[] {
+				BaseColumns._ID,
 				Keys.Image.UNREDACTED_IMAGE_HASH,
 				Keys.Image.LOCATION_OF_OBSCURED_VERSION,
-				Keys.Intent.Destination.EMAIL,
+				TrustedDestinations.DESTO,
 				Media.MEDIA_TYPE,
 				Media.SHARE_VECTOR,
 				Media.STATUS,
-				Keys.Uploader.AUTH_TOKEN
+				Keys.Uploader.AUTH_TOKEN,
+				Media.KEY_HASH
 		}, Media.STATUS, InformaConstants.Media.Status.UPLOADING);
 		if(c != null && c.getCount() > 0) {
 			c.moveToFirst();
-			if(
-				c.getInt(c.getColumnIndex(Media.SHARE_VECTOR)) == InformaConstants.Media.ShareVector.ENCRYPTED_UPLOAD_QUEUE ||
-				c.getInt(c.getColumnIndex(Media.SHARE_VECTOR)) == InformaConstants.Media.ShareVector.UNENCRYPTED_UPLOAD_QUEUE
-			) {
-				
+			while(!c.isAfterLast()) {
+				if(
+					c.getInt(c.getColumnIndex(Media.SHARE_VECTOR)) == InformaConstants.Media.ShareVector.ENCRYPTED_UPLOAD_QUEUE ||
+					c.getInt(c.getColumnIndex(Media.SHARE_VECTOR)) == InformaConstants.Media.ShareVector.UNENCRYPTED_UPLOAD_QUEUE
+				) {
+					try {
+						MetadataPack mp = new MetadataPack(
+								this,
+								null,
+								c.getInt(c.getColumnIndex(BaseColumns._ID)),
+								null,
+								null,
+								c.getString(c.getColumnIndex(Keys.Image.LOCATION_OF_OBSCURED_VERSION)),
+								c.getString(c.getColumnIndex(Keys.Image.UNREDACTED_IMAGE_HASH)),
+								c.getInt(c.getColumnIndex(Media.MEDIA_TYPE)),
+								c.getString(c.getColumnIndex(Media.KEY_HASH)));
+						mp.setTDDestination(c.getString(c.getColumnIndex(TrustedDestinations.DESTO)));
+						mp.authToken = c.getString(c.getColumnIndex(Keys.Uploader.AUTH_TOKEN));
+						mp.id = c.getInt(c.getColumnIndex(BaseColumns._ID));
+						
+						addToQueue(mp);
+					} catch(NullPointerException e){}
+					catch (KeyManagementException e) {
+						e.printStackTrace();
+					} catch (NoSuchAlgorithmException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 			c.close();
 		}
@@ -186,6 +195,10 @@ public class Uploader extends Service {
 			ContentValues cv = new ContentValues();
 			if(mp.authToken != null)
 				cv.put(Keys.Uploader.AUTH_TOKEN, mp.authToken);
+			if(mp.tdDestination != null)
+				cv.put(Keys.TrustedDestinations.DESTO, mp.tdDestination);
+			if(mp.messageUrl != null)
+				cv.put(Keys.Media.Manager.MESSAGE_URL, mp.messageUrl);
 			cv.put(Media.STATUS, mp.status);
 			db.update(dh.getTable(), cv, BaseColumns._ID + " =?", new String[] {Long.toString(mp.id)});
 		}
@@ -216,6 +229,7 @@ public class Uploader extends Service {
 				return;
 		}
 		
+		Log.d(TAG, "stopping uploader activity.");
 		stopSelf();
 	}
 	
@@ -361,6 +375,7 @@ public class Uploader extends Service {
 							res = uploadMedia.get();
 							if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
 								mp.status = InformaConstants.Media.Status.UPLOAD_COMPLETE;
+								mp.messageUrl = res.getString(Keys.Media.Manager.MESSAGE_URL);
 								updateQueueStatus();								
 							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
 								mp.retryFlags++;
@@ -593,10 +608,6 @@ public class Uploader extends Service {
 			return defaultTrustManager.getAcceptedIssuers();
 		}
 		
-		public KeyStore getKeyStore() {
-			return keyStore;
-		}
-		
 	}
 	
 	private class InformaConnectionFactory {
@@ -606,9 +617,6 @@ public class Uploader extends Service {
 		private Proxy proxy;
 		private DataOutputStream dos;
 		String hostString;
-		
-		private int percentUploaded = 0;
-		private int totalLength = 0;
 		
 		private boolean useProxy = false;
 		

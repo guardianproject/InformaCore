@@ -220,6 +220,7 @@ public class InformaConstants {
 			public final static String SHARE_VECTOR = "shareVector";
 			public final static String ALIAS = "mediaAlias";
 			public final static String AUTH_TOKEN = Keys.Uploader.AUTH_TOKEN;
+			public final static String KEY_HASH = Keys.Device.PUBLIC_KEY_HASH;
 			
 			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
 			public final static String STATUS = "status";
@@ -228,6 +229,7 @@ public class InformaConstants {
 				public final static String SHARE_BASE = "shareBase";
 				public final static String VIEW_IMAGE_URI = "viewImageUri";
 				public final static String SHARE_IMAGE_URI = "shareImageUri";
+				public final static String MESSAGE_URL = "messageUrl";
 			}
 		}
 		

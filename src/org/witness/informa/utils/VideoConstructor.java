@@ -14,11 +14,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Vector;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -26,16 +23,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.Informa.Video;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Genealogy;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.Keys.Ass;
-import org.witness.informa.utils.InformaConstants.Keys.Data;
-import org.witness.informa.utils.InformaConstants.Keys.Exif;
 import org.witness.informa.utils.InformaConstants.Keys.Informa;
-import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.VideoRegion;
 import org.witness.informa.utils.io.DatabaseHelper;

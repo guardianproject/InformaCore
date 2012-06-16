@@ -32,11 +32,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Image.LOCATION_OF_ORIGINAL + " text not null, " +
 							Image.LOCATION_OF_OBSCURED_VERSION + " text not null, " +
 							Intent.Destination.EMAIL + " blob not null, " +
+							TrustedDestinations.DESTO + " text, " +
 							Media.MEDIA_TYPE + " integer not null, " +
 							Media.SHARE_VECTOR + " integer, " +
 							Media.STATUS + " integer, " +
 							Keys.Uploader.AUTH_TOKEN + " text, " +
-							Media.ALIAS + " text" +
+							Media.ALIAS + " text, " +
+							Media.KEY_HASH + " text, " +
+							Media.Manager.MESSAGE_URL + " text" +
 							")",
 					"CREATE TABLE " + Tables.CONTACTS + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +

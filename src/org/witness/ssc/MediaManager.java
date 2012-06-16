@@ -112,7 +112,8 @@ public class MediaManager extends Activity implements OnClickListener {
 				Keys.Media.ALIAS,
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
-				Keys.Media.SHARE_VECTOR}, BaseColumns._ID, sb);
+				Keys.Media.SHARE_VECTOR,
+				Keys.Media.Manager.MESSAGE_URL}, BaseColumns._ID, sb);
 		if(c != null && c.getCount() > 0) {
 			populateList(c);
 		}
@@ -125,7 +126,8 @@ public class MediaManager extends Activity implements OnClickListener {
 				Keys.Media.ALIAS,
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
-				Keys.Media.SHARE_VECTOR}, null, null);
+				Keys.Media.SHARE_VECTOR,
+				Keys.Media.Manager.MESSAGE_URL}, null, null);
 		if(c != null && c.getCount() > 0) {
 			populateList(c);
 		}
