@@ -49,11 +49,12 @@ public class MediaManagerAdapter extends BaseAdapter {
 	public View getView(final int position, View convertView, ViewGroup parent) {
 		convertView = li.inflate(R.layout.mediamanager_listview, null);
 		JSONObject selectionExtras = selections.get(position).getExtras();
-		TextView mediaText = (TextView) convertView.findViewById(R.id.mediaText);
-		mediaText.setText(selections.get(position)._optionValue);
 		
+		TextView mediaText = (TextView) convertView.findViewById(R.id.mediaText);
 		ImageView mediaType = (ImageView) convertView.findViewById(R.id.mediaType);
+		
 		try {
+			mediaText.setText(selectionExtras.getString(Keys.Media.ALIAS));
 			if(selectionExtras.getInt(Media.MEDIA_TYPE) == MediaTypes.PHOTO)
 				mediaType.setImageResource(R.drawable.ic_picture);
 			else

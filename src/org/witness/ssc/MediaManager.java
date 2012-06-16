@@ -109,6 +109,7 @@ public class MediaManager extends Activity implements OnClickListener {
 		}
 		Cursor c = dh.getMultiple(db, new String[] {
 				Keys.Image.LOCATION_OF_OBSCURED_VERSION,
+				Keys.Media.ALIAS,
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
 				Keys.Media.SHARE_VECTOR}, BaseColumns._ID, sb);
@@ -121,6 +122,7 @@ public class MediaManager extends Activity implements OnClickListener {
 		dh.setTable(db, Tables.IMAGES);
 		Cursor c = dh.getValue(db, new String[] {
 				Keys.Image.LOCATION_OF_OBSCURED_VERSION,
+				Keys.Media.ALIAS,
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
 				Keys.Media.SHARE_VECTOR}, null, null);
@@ -139,6 +141,10 @@ public class MediaManager extends Activity implements OnClickListener {
 			details.put(Keys.Media.SHARE_VECTOR, c.getInt(c.getColumnIndex(Keys.Media.SHARE_VECTOR)));
 			
 			String[] displayName = details.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION).split("/");
+			if(c.getString(c.getColumnIndex(Keys.Media.ALIAS)) != null)
+				details.put(Keys.Media.ALIAS, c.getString(c.getColumnIndex(Keys.Media.ALIAS)));
+			else
+				details.put(Keys.Media.ALIAS, displayName[displayName.length - 1]);
 			media.add(new Selections(displayName[displayName.length - 1],false,details));
 			
 			c.moveToNext();
@@ -192,6 +198,10 @@ public class MediaManager extends Activity implements OnClickListener {
 		}
 	}
 	
+	private void setAlias() {
+		
+	}
+	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
@@ -225,6 +235,9 @@ public class MediaManager extends Activity implements OnClickListener {
 			}
 			return true;
 		case 2:
+			setAlias();
+			return true;
+		case 3:
 			getInfo();
 			return true;
 		default:

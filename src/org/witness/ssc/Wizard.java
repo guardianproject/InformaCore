@@ -250,19 +250,15 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 			
 			dh.setTable(db, InformaConstants.Keys.Tables.SETUP);
-			
-			long localTimestamp = System.currentTimeMillis();
-			
+						
 			ContentValues cv = new ContentValues();
 			cv.put(InformaConstants.Keys.Owner.SIG_KEY_ID, apg.getSignatureKeyId());
-			cv.put(InformaConstants.Keys.Owner.DEFAULT_SECURITY_LEVEL, InformaConstants.SecurityLevels.UNENCRYPTED_NOT_SHARABLE);
-			cv.put(InformaConstants.Keys.Owner.OWNERSHIP_TYPE, InformaConstants.Owner.INDIVIDUAL);
-			cv.put(InformaConstants.Keys.Device.LOCAL_TIMESTAMP, localTimestamp);
-			cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
-					
-			long insert = db.insert(dh.getTable(), null, cv);
-			if(insert != 0)
-				enableAction(wizard_next);
+			
+			int insert = db.update(dh.getTable(), cv, BaseColumns._ID, new String[] {Long.toString(1)});
+			
+			Log.d(InformaConstants.TAG, "updated user pgp: " + insert);
+			//if(insert != 0)
+			enableAction(wizard_next);
 			
 			db.close();
 			dh.close();
@@ -333,6 +329,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(preferences.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
 		
+		// set up the device.
 		dh.setTable(db, InformaConstants.Keys.Tables.KEYRING);
 		
 		ByteBuffer b = ByteBuffer.allocate(baseImage.getRowBytes() * baseImage.getHeight());
@@ -348,8 +345,21 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 		
 		ContentValues cv = new ContentValues();
 		cv.put(Device.BASE_IMAGE, imageBytes);
+		cv.put(TrustedDestinations.DISPLAY_NAME, InformaConstants.Device.SELF);
 		
 		long insert = db.insert(dh.getTable(), null, cv);
+		
+		// set up the user.
+		dh.setTable(db, InformaConstants.Keys.Tables.SETUP);
+		long localTimestamp = System.currentTimeMillis();
+		
+		cv = new ContentValues();
+		cv.put(InformaConstants.Keys.Owner.DEFAULT_SECURITY_LEVEL, InformaConstants.SecurityLevels.UNENCRYPTED_NOT_SHARABLE);
+		cv.put(InformaConstants.Keys.Owner.OWNERSHIP_TYPE, InformaConstants.Owner.INDIVIDUAL);
+		cv.put(InformaConstants.Keys.Device.LOCAL_TIMESTAMP, localTimestamp);
+		cv.put(InformaConstants.Keys.Device.PUBLIC_TIMESTAMP, getPublicTimestamp(localTimestamp));
+		insert = db.insert(dh.getTable(), null, cv);
+		
 		db.close();
 		dh.close();
 		

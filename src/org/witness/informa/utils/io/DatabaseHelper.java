@@ -35,7 +35,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Media.MEDIA_TYPE + " integer not null, " +
 							Media.SHARE_VECTOR + " integer, " +
 							Media.STATUS + " integer, " +
-							Keys.Uploader.AUTH_TOKEN + " text" +
+							Keys.Uploader.AUTH_TOKEN + " text, " +
+							Media.ALIAS + " text" +
 							")",
 					"CREATE TABLE " + Tables.CONTACTS + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
@@ -44,7 +45,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							")",
 					"CREATE TABLE " + Tables.SETUP + "(" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +
-							Owner.SIG_KEY_ID + " text not null, " + 
+							Owner.SIG_KEY_ID + " text , " + 
 							Owner.DEFAULT_SECURITY_LEVEL + " integer not null, " +
 							Device.LOCAL_TIMESTAMP + " integer not null, " +
 							Device.PUBLIC_TIMESTAMP + " integer not null, " +
@@ -73,7 +74,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Device.BASE_IMAGE + " blob, " +
 							Device.PUBLIC_KEY + " blob, " +
 							Device.PRIVATE_KEY + " blob, " +
-							Device.PASSPHRASE + " text" +
+							Device.PASSPHRASE + " text, " +
+							TrustedDestinations.DISPLAY_NAME + " text" +
 							")",
 					"CREATE TABLE " + Tables.KEYSTORE + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +

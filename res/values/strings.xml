@@ -126,6 +126,7 @@
 	<!--  INFORMA UPLOADER -->
 	<string name="informaUploader_id">Hey this is the Id for the upload service!</string>
 	<string name="informaUploader_title">Uploading\u2026</string>
+	<string name="informaUploader_err_noTor">Error: Cannot upload at this time.  Please make sure Tor is running and try again.</string>
 	
 	<!--  INFORMA MEDIA MANAGER -->
 	<string name="informaMediaManager_title">Media Manager</string>

@@ -85,6 +85,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
+import android.widget.Toast;
 
 public class Uploader extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -162,23 +163,32 @@ public class Uploader extends Service {
 	private int parseResult(JSONObject res) throws JSONException {
 		Log.d(TAG, res.toString());
 		if(res.getString("result").equals(Keys.Uploader.A_OK))
-			return Activity.RESULT_OK;
-		else
-			return Activity.RESULT_CANCELED;
+			return InformaConstants.Uploader.RequestCodes.A_OK;
+		else {
+			if(res.getString("result").equals(Keys.Uploader.POSTPONE))
+				return InformaConstants.Uploader.RequestCodes.POSTPONE;
+			else
+				return InformaConstants.Uploader.RequestCodes.RETRY;
+		}
+			
 			
 	}
 	
-	private JSONObject scheduleUpload(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+	private JSONObject scheduleUpload(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JSONException {
 		Map<String, Object> nvp = new HashMap<String, Object>();
 		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
 		nvp.put(Keys.Uploader.Entities.AUTH_TOKEN, mp.authToken);
 		nvp.put(Keys.Uploader.Entities.BYTES_EXPECTED, new File(mp.filepath).length());
 		
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
-		return connection.executePost(nvp);
+		try {
+			return connection.executePost(nvp);
+		} catch(NullPointerException e) {
+			return (JSONObject) new JSONTokener(InformaConstants.Uploader.Results.POSTPONE).nextValue();
+		}
 	}
 	
-	private JSONObject getUploadTicket(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException  {
+	private JSONObject getUploadTicket(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JSONException  {
 		Map<String, Object> nvp = new HashMap<String, Object>();
 		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
 		nvp.put(Keys.Uploader.Entities.TIMESTAMP_CREATED, mp.timestampCreated);
@@ -187,17 +197,26 @@ public class Uploader extends Service {
 		Log.d(TAG, nvp.toString());
 		
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
-		return connection.executePost(nvp);
+		
+		try {
+			return connection.executePost(nvp);
+		} catch(NullPointerException e) {
+			return (JSONObject) new JSONTokener(InformaConstants.Uploader.Results.POSTPONE).nextValue();
+		}
 		
 	}
 	
-	private JSONObject uploadMedia(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
+	private JSONObject uploadMedia(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JSONException {
 		Map<String, Object> nvp = new HashMap<String, Object>();
 		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
 		nvp.put(Keys.Uploader.Entities.AUTH_TOKEN, mp.authToken);
 		
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
-		return connection.executePost(nvp, new File(mp.filepath));
+		try {
+			return connection.executePost(nvp, new File(mp.filepath));
+		} catch(NullPointerException e) {
+			return (JSONObject) new JSONTokener(InformaConstants.Uploader.Results.POSTPONE).nextValue();
+		}
 	}
 	
 	public void testPing() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, ClientProtocolException, KeyStoreException, IOException {
@@ -247,10 +266,13 @@ public class Uploader extends Service {
 									
 								});
 								res = getUploadTicket.get();
-								if(parseResult(res) == Activity.RESULT_OK) {
+								if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
 									// HANDLE RESULT
-								} else
+								} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
 									run();
+								} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {
+									return;
+								}
 								
 							}
 							
@@ -261,10 +283,13 @@ public class Uploader extends Service {
 								}
 							});
 							res = scheduleUpload.get();
-							if(parseResult(res) == Activity.RESULT_OK) {
+							if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
 								// HANDLE RESULT
-							} else
+							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
 								run();
+							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {
+								return;
+							}
 							
 							Future<JSONObject> uploadMedia = ex.submit(new Callable<JSONObject>() {
 								@Override
@@ -273,10 +298,13 @@ public class Uploader extends Service {
 								}
 							});
 							res = uploadMedia.get();
-							if(parseResult(res) == Activity.RESULT_OK) {
-								// FINISH ACTIVITY.
-							} else
+							if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
+								// HANDLE RESULT
+							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
 								run();
+							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {
+								return;
+							}
 							
 						} catch (InterruptedException e) {
 							e.printStackTrace();
@@ -301,6 +329,15 @@ public class Uploader extends Service {
 		queue.addAll(mp);
 		if(!isCurrentlyUploading)
 			startUploading();
+	}
+	
+	public String getDestos(String query) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException {
+		Log.d(TAG, "Getting destos...");
+		InformaConnectionFactory icf = new InformaConnectionFactory("j3m.info/repo/");
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put("repo", query);
+		
+		return icf.executePost(nvp).toString();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -410,6 +447,7 @@ public class Uploader extends Service {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				keyStore.store(baos, pwd.toCharArray());
 				updateKeyStore(baos.toByteArray());
+				Log.d(TAG, "new key encountered!  length: " + baos.size());
 			} catch(KeyStoreException e) {
 				Log.e(TAG, "keystore exception: " + e.toString());	
 			} catch (NoSuchAlgorithmException e) {
@@ -422,16 +460,8 @@ public class Uploader extends Service {
 		}
 		
 		private void updateKeyStore(byte[] newKey) {
-			boolean firstKey = true;
-			Log.d(TAG, "key is: " + newKey.length);
-			if(keyStored != null) {
-				byte[] concat = new byte[keyStored.length + newKey.length];
-				System.arraycopy(keyStored, 0, concat, 0, keyStored.length);
-				System.arraycopy(newKey, 0, concat, keyStored.length, newKey.length);
-				keyStored = concat;
-				firstKey = false;
-			} else
-				keyStored = newKey;
+			boolean firstKey = (keyStored == null ? true : false);
+			keyStored = newKey;
 			lastUpdate = System.currentTimeMillis();
 			
 			dh.setTable(db, Tables.KEYSTORE);
@@ -512,20 +542,23 @@ public class Uploader extends Service {
 		private HostnameVerifier hnv;
 		private Proxy proxy;
 		private DataOutputStream dos;
+		String hostString;
 		
 		private int percentUploaded = 0;
 		private int totalLength = 0;
 		
+		private boolean useProxy = false;
 		
 		public InformaConnectionFactory(final String urlString) throws IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
 			this.url = new URL("https://" + urlString);
+			hostString = urlString.split("/")[0];
 			
 			hnv = new HostnameVerifier() {
 				@Override
 				public boolean verify(String hostname, SSLSession session) {
-					if(hostname.equals(urlString))
+					if(hostname.equals(hostString)) {
 						return true;
-					else
+					} else
 						return false;
 				}
 				
@@ -537,9 +570,11 @@ public class Uploader extends Service {
 						
 			HttpsURLConnection.setDefaultSSLSocketFactory(ssl.getSocketFactory());
 			HttpsURLConnection.setDefaultHostnameVerifier(hnv);
-			proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
-			
-				//URL url = new URL("https://j3m.info/repo/?repo=harlo.holmes@gmail.com"); 
+			if(urlString.contains(".onion")) {
+				Log.d(TAG, "this post must be proxied.");
+				proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
+				useProxy = true;
+			}
 		}
 		
 		public JSONObject executePost(Map<String, Object> nvp, File file)  throws ClientProtocolException, IOException {
@@ -556,13 +591,16 @@ public class Uploader extends Service {
 			}
 			
 			if(file != null) {
-				connection  = (HttpsURLConnection) url.openConnection(proxy);
-				connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; boundary=" + Keys.Uploader.BOUNDARY);
+				if(useProxy)
+					connection = (HttpsURLConnection) url.openConnection(proxy);
+				else
+					connection = (HttpsURLConnection) url.openConnection();
 				connection.setRequestMethod("POST");
+				connection.setRequestProperty("Connection","Keep-Alive");
+				connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; boundary=" + Keys.Uploader.BOUNDARY);
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
 				connection.setDoOutput(true);
-				connection.setRequestProperty("Connection","Keep-Alive");
 				
 				dos = new DataOutputStream(connection.getOutputStream());
 				dos.writeBytes(Keys.Uploader.HYPHENS + Keys.Uploader.BOUNDARY + Keys.Uploader.LINE_END);
@@ -589,13 +627,17 @@ public class Uploader extends Service {
 				
 				// ...blah blah blah
 			} else {
-				connection  = (HttpsURLConnection) url.openConnection(proxy);
+				if(useProxy)
+					connection = (HttpsURLConnection) url.openConnection(proxy);
+				else
+					connection = (HttpsURLConnection) url.openConnection();
 				connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 				connection.setRequestMethod("POST");
+				connection.setRequestProperty("Connection","Keep-Alive");
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
 				connection.setDoOutput(true);
-				connection.setRequestProperty("Connection","Keep-Alive");
+				
 				dos = new DataOutputStream(connection.getOutputStream());
 			}
 			
@@ -615,8 +657,11 @@ public class Uploader extends Service {
 				br.close();
 				connection.disconnect();
 				
+				Log.d(TAG, "server returns: " + sb.toString());
 				return (JSONObject) new JSONTokener(sb.toString()).nextValue();
 			} catch(NullPointerException e) {
+				Log.e(TAG, "NPE IN THIS LATEST REQUEST: " + e.toString());
+				e.printStackTrace();
 				return null;
 			} catch (JSONException e) {
 				return null;

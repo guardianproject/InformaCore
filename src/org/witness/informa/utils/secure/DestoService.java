@@ -39,6 +39,7 @@ import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.InformaConstants.Media.ShareVector;
 import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.informa.utils.io.DatabaseHelper;
+import org.witness.informa.utils.io.Uploader;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -63,6 +64,7 @@ public class DestoService {
 	SharedPreferences sp;
 	private ArrayList<Map<String, String>> destoResults;
 	ArrayList<Map<String, Long>> destos;
+	Uploader uploader;
 	
 	public DestoService(Context c) {
 		sp = PreferenceManager.getDefaultSharedPreferences(c);
@@ -71,6 +73,7 @@ public class DestoService {
 		
 		destoResults = new ArrayList<Map<String, String>>();
 		destoQuery = new StringBuffer();
+		uploader = Uploader.getUploader();
 	}
 	
 	private boolean isLocallyAvailable(String email) {
@@ -103,72 +106,10 @@ public class DestoService {
 		}
 		
 		ExecutorService ex = Executors.newFixedThreadPool(100);
-		Future<String> f = ex.submit(new Callable<String>() {
-			private final HostnameVerifier NO_VER = new HostnameVerifier() {
-				public boolean verify(String host, SSLSession session) {
-					/*
-					if(host.regionMatches(0, InformaConstants.REPO, 0, InformaConstants.REPO.length() - 1)) {
-						return true;
-					} else {
-						return false;
-					}
-					*/
-					return true;
-				}
-			};
-			
-			private void trustThisHost() {
-				TrustManager[] trustThisCert = new TrustManager[] {
-					new X509TrustManager() {
-
-						@Override
-						public void checkClientTrusted(X509Certificate[] chain,
-								String authType) throws CertificateException {}
-
-						@Override
-						public void checkServerTrusted(X509Certificate[] chain,
-								String authType) throws CertificateException {}
-
-						@Override
-						public X509Certificate[] getAcceptedIssuers() {
-							return new java.security.cert.X509Certificate[] {};
-						}
-						
-					}
-				};
-				
-				try {
-					SSLContext sc = SSLContext.getInstance("TLS");
-					sc.init(null, trustThisCert, new java.security.SecureRandom());
-					HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-				} catch(Exception e) {
-					Log.e(InformaConstants.TAG, "cannot init ssl context: " + e.getMessage());
-				}
-			}
-			
+		Future<String> f = ex.submit(new Callable<String>() {			
 			private String queryRepo() {
 				try {
-					URL url = new URL(InformaConstants.REPO + destoQuery.toString().substring(1));
-					trustThisHost();
-					HttpsURLConnection https = (HttpsURLConnection) url.openConnection();
-					https.setHostnameVerifier(NO_VER);
-					
-					if(https.getResponseCode() == HttpURLConnection.HTTP_OK) {
-						InputStream is = https.getInputStream();
-						BufferedReader br = new BufferedReader(new InputStreamReader(is));
-						
-						StringBuffer sb = new StringBuffer();
-						String r;
-						while((r = br.readLine()) != null)
-							sb.append(r);
-						
-						br.close();
-						is.close();
-						https.disconnect();
-						return sb.toString();
-					} else {
-						return null;
-					}
+					return uploader.getDestos(destoQuery.toString().substring(1));
 				} catch(Exception e) {
 					Log.e(InformaConstants.TAG, "https error in queryRepo(): " + e.toString());
 					return null;

@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.json.JSONObject;
+
 import android.media.ExifInterface;
 import android.os.Environment;
 import android.util.Log;
@@ -47,6 +49,7 @@ public class InformaConstants {
 			public static final String AUTH_TOKEN = "authToken";
 			public static final String A_OK = "A_OK";
 			public static final String FAIL = "FAIL";
+			public static final String POSTPONE = "POSTPONE";
 			public static final String BOUNDARY = "---------------------------InformaCamv1***924sggo2jbs924qabasfbwrthw9g4";
 			public static final String LINE_END = "\r\n";
 			public static final String HYPHENS = "--";
@@ -215,6 +218,7 @@ public class InformaConstants {
 			public final static String UNREDACTED_HASH = Image.UNREDACTED_IMAGE_HASH;
 			public final static String REDACTED_HASH = Image.REDACTED_IMAGE_HASH;
 			public final static String SHARE_VECTOR = "shareVector";
+			public final static String ALIAS = "mediaAlias";
 			
 			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
 			public final static String STATUS = "status";
@@ -353,7 +357,15 @@ public class InformaConstants {
 	
 	public final static class Uploader {
 		public final static int FROM_NOTIFICATION_BAR = 30;
+		public final static class RequestCodes {
+			public final static int A_OK = 200;
+			public final static int RETRY = 201;
+			public final static int POSTPONE = 202;
+		}
 		
+		public final static class Results {
+			public final static String POSTPONE = "{result: \"" + Keys.Uploader.POSTPONE + "\"}";
+		}
 		
 	}
 	
@@ -406,6 +418,7 @@ public class InformaConstants {
 	public final static class Device {
 		public final static int IS_SELF = -1;
 		public final static int IS_NEIGHBOR = 1;
+		public final static String SELF = "_self";
 	}
 	
 	public final static class Owner {
