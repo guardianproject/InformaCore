@@ -46,7 +46,7 @@ public class InformaConstants {
 		}
 		
 		public final static class Uploader {
-			public static final String AUTH_TOKEN = "authToken";
+			public static final String AUTH_TOKEN = "auth_token";
 			public static final String A_OK = "A_OK";
 			public static final String FAIL = "FAIL";
 			public static final String POSTPONE = "POSTPONE";
@@ -219,6 +219,7 @@ public class InformaConstants {
 			public final static String REDACTED_HASH = Image.REDACTED_IMAGE_HASH;
 			public final static String SHARE_VECTOR = "shareVector";
 			public final static String ALIAS = "mediaAlias";
+			public final static String AUTH_TOKEN = Keys.Uploader.AUTH_TOKEN;
 			
 			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
 			public final static String STATUS = "status";
@@ -273,6 +274,7 @@ public class InformaConstants {
 			public static final String BLUETOOTH_DEVICE_ADDRESS = Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS;
 			public static final String BASE_IMAGE = "device_baseImage";
 			public static final String PUBLIC_KEY = "device_publicKey";
+			public static final String PUBLIC_KEY_HASH = "hashed_pgp";
 			public static final String PRIVATE_KEY = "device_privateKey";
 			public static final String PASSPHRASE = "device_passphrase";
 			public static final String TIME_SEEN = "timeSeen";

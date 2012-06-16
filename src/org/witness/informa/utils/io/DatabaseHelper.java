@@ -74,6 +74,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Device.BASE_IMAGE + " blob, " +
 							Device.PUBLIC_KEY + " blob, " +
 							Device.PRIVATE_KEY + " blob, " +
+							Device.PUBLIC_KEY_HASH + " text, " +
 							Device.PASSPHRASE + " text, " +
 							TrustedDestinations.DISPLAY_NAME + " text" +
 							")",

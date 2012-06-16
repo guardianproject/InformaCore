@@ -24,6 +24,7 @@ public class ObscuraConstants {
 	
 	public final static String CAMCORDER_TMP_FILE = "ssctmp.mp4";
 	public final static String MIME_TYPE_MP4 = "video/mp4";
+	public final static String MIME_TYPE_MKV = "video/mkv";
 	
 	public final static class MimeTypes {
 		public final static String MP4 = "mp4";

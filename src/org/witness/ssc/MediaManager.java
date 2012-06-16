@@ -166,7 +166,7 @@ public class MediaManager extends Activity implements OnClickListener {
 			iView.setDataAndType(viewMediaUri, ObscuraConstants.MIME_TYPE_JPEG);
 			break;
 		case MediaTypes.VIDEO:
-			iView.setDataAndType(viewMediaUri, ObscuraConstants.MIME_TYPE_MP4);
+			iView.setDataAndType(viewMediaUri, ObscuraConstants.MIME_TYPE_MKV);
 			break;
 		}
 		startActivity(iView);

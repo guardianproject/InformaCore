@@ -275,7 +275,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
         	versNum = "";
         }
         
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.imageviewer);
 
 		// Calculate the minimum distance
@@ -1137,11 +1136,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 					}
         		}
         		return true;
-        		
-        	case R.id.menu_share:
-        		// Share Image
-          		shareImage();
-        		return true;       		
         	
         	case R.id.menu_preview:
         		showPreview();

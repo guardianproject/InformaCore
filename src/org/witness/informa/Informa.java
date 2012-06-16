@@ -272,15 +272,16 @@ public class Informa {
 	
 	public class Owner extends InformaZipper {
 		String sigKeyId;
-		//String publicKey;
+		String publicKey;
 		int ownershipType;
 		
 		public Owner() {
 			if(sp.getBoolean(Keys.Settings.WITH_ENCRYPTION, false)) {
+				this.publicKey = (String) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1, String.class);
 				this.sigKeyId = getAPGEmail(apg.getSignatureKeyId());
 				this.ownershipType = (Integer) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.OWNERSHIP_TYPE}, BaseColumns._ID, 1, Integer.class);
-				//this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1, String.class);
 			} else {
+				this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY_HASH}, BaseColumns._ID, 1, String.class);
 				this.sigKeyId = getAccountEmail();
 				this.ownershipType = InformaConstants.Owner.INDIVIDUAL;
 			}
@@ -408,6 +409,7 @@ public class Informa {
 		Pattern ep = Patterns.EMAIL_ADDRESS;
 		Account[] accounts = AccountManager.get(_c).getAccountsByType("com.google");
 		for(Account a : accounts) {
+			Log.d(InformaConstants.TAG, "grepping email address: " + a.name);
 			if(ep.matcher(a.name).matches()) {
 				return a.name;
 			}	

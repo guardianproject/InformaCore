@@ -3,6 +3,7 @@ package org.witness.ssc;
 import java.util.ArrayList;
 
 import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -199,8 +200,14 @@ public class Preferences extends PreferenceActivity implements OnClickListener, 
 	public boolean onPreferenceClick(Preference preference) {
 		if(((CheckBoxPreference) preference).isChecked()) {
 			// if checked, check to see if we have the user's device key.
-			Cursor c = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
-			if(c == null || c.getCount() != 1) {
+			try {
+				Cursor c = dh.getValue(db, new String[] {Keys.Device.PUBLIC_KEY}, BaseColumns._ID, 1);
+				if(c == null || c.getCount() != 1) {
+					Intent i = new Intent(this, Wizard.class);
+					i.putExtra("wizardRoot", "encrypt_routine.wizard");
+					startActivity(i);
+				}
+			} catch(SQLiteException e) {
 				Intent i = new Intent(this, Wizard.class);
 				i.putExtra("wizardRoot", "encrypt_routine.wizard");
 				startActivity(i);

@@ -161,14 +161,19 @@ public class Uploader extends Service {
 	}
 	
 	private int parseResult(JSONObject res) throws JSONException {
-		Log.d(TAG, res.toString());
-		if(res.getString("result").equals(Keys.Uploader.A_OK))
-			return InformaConstants.Uploader.RequestCodes.A_OK;
-		else {
-			if(res.getString("result").equals(Keys.Uploader.POSTPONE))
-				return InformaConstants.Uploader.RequestCodes.POSTPONE;
-			else
-				return InformaConstants.Uploader.RequestCodes.RETRY;
+		try {
+			Log.d(TAG, res.toString());
+			if(res.getString("result").equals(Keys.Uploader.A_OK))
+				return InformaConstants.Uploader.RequestCodes.A_OK;
+			else {
+				if(res.getString("result").equals(Keys.Uploader.POSTPONE))
+					return InformaConstants.Uploader.RequestCodes.POSTPONE;
+				else
+					return InformaConstants.Uploader.RequestCodes.RETRY;
+			}
+		} catch(NullPointerException e) {
+			Log.e(TAG, "Server returned null due to timeout or malformed request. tyring again");
+			return InformaConstants.Uploader.RequestCodes.RETRY;
 		}
 			
 			
@@ -180,10 +185,14 @@ public class Uploader extends Service {
 		nvp.put(Keys.Uploader.Entities.AUTH_TOKEN, mp.authToken);
 		nvp.put(Keys.Uploader.Entities.BYTES_EXPECTED, new File(mp.filepath).length());
 		
+		Log.d(TAG, nvp.toString());
+		
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
 		try {
 			return connection.executePost(nvp);
 		} catch(NullPointerException e) {
+			Log.d(TAG, "NPE HERE! " + e.toString());
+			e.printStackTrace();
 			return (JSONObject) new JSONTokener(InformaConstants.Uploader.Results.POSTPONE).nextValue();
 		}
 	}
@@ -268,6 +277,7 @@ public class Uploader extends Service {
 								res = getUploadTicket.get();
 								if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
 									// HANDLE RESULT
+									mp.authToken = res.getString(Keys.Uploader.AUTH_TOKEN);
 								} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
 									run();
 								} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {

@@ -43,6 +43,7 @@ import org.witness.informa.utils.InformaConstants.Keys.Owner;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
+import org.witness.informa.utils.secure.MediaHasher;
 import org.witness.mods.InformaButton;
 import org.witness.mods.InformaEditText;
 import org.witness.mods.InformaSpinner;
@@ -235,9 +236,26 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				
 				db.insert(dh.getTable(), null, cv);
 			}
-			enableAction(wizard_next);
+			
 			db.close();
 			dh.close();
+			
+			if(orderFile.equals("encrypt_routine.wizard")) {
+				wizard_next.setVisibility(View.GONE);
+				wizard_back.setVisibility(View.GONE);
+					
+				wizard_done.setVisibility(View.VISIBLE);
+				wizard_done.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						finish();
+					}
+					
+				});
+			} else 
+				enableAction(wizard_next);
+			
 		} catch(Exception e) {
 			Log.d(InformaConstants.TAG, "error : " + e.toString());
 			sendLog();
@@ -254,7 +272,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			ContentValues cv = new ContentValues();
 			cv.put(InformaConstants.Keys.Owner.SIG_KEY_ID, apg.getSignatureKeyId());
 			
-			int insert = db.update(dh.getTable(), cv, BaseColumns._ID, new String[] {Long.toString(1)});
+			int insert = db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(1)});
 			
 			Log.d(InformaConstants.TAG, "updated user pgp: " + insert);
 			//if(insert != 0)
@@ -427,6 +445,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				cv.put(Device.PRIVATE_KEY, secret.getEncoded());
 				cv.put(Device.PASSPHRASE, pwd);
 				cv.put(Device.PUBLIC_KEY, secret.getPublicKey().getEncoded());
+				cv.put(Device.PUBLIC_KEY_HASH, MediaHasher.hash(secret.getPublicKey().getEncoded(), "SHA-1"));
 				
 				Log.d(InformaConstants.TAG, "key id: " + secret.getKeyID());				
 				// update cv with new key
