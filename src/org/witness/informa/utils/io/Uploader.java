@@ -62,13 +62,17 @@ import org.json.JSONTokener;
 import org.witness.informa.EncryptActivity.MetadataPack;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Image;
 import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
+import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.io.CustomMultipartEntity.ProgressListener;
 import org.witness.ssc.MediaManager;
 import org.witness.ssc.R;
+import org.witness.ssc.utils.ObscuraConstants;
+import org.witness.ssc.utils.ObscuraConstants.MimeTypes;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -133,10 +137,37 @@ public class Uploader extends Service {
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(sp.getString(Settings.HAS_DB_PASSWORD, ""));
+		
+		pickupUploads();
 	}
 	
 	public static Uploader getUploader() {
 		return uploader;
+	}
+	
+	private void pickupUploads() {
+		// TODO: pick up where uploader left off.
+		dh.setTable(db, Tables.IMAGES);
+		Cursor c = dh.getValue(db, new String[] {
+				Keys.Image.UNREDACTED_IMAGE_HASH,
+				Keys.Image.LOCATION_OF_OBSCURED_VERSION,
+				Keys.Intent.Destination.EMAIL,
+				Media.MEDIA_TYPE,
+				Media.SHARE_VECTOR,
+				Media.STATUS,
+				Keys.Uploader.AUTH_TOKEN
+		}, Media.STATUS, InformaConstants.Media.Status.UPLOADING);
+		if(c != null && c.getCount() > 0) {
+			c.moveToFirst();
+			if(
+				c.getInt(c.getColumnIndex(Media.SHARE_VECTOR)) == InformaConstants.Media.ShareVector.ENCRYPTED_UPLOAD_QUEUE ||
+				c.getInt(c.getColumnIndex(Media.SHARE_VECTOR)) == InformaConstants.Media.ShareVector.UNENCRYPTED_UPLOAD_QUEUE
+			) {
+				
+			}
+			c.close();
+		}
+		
 	}
 	
 	
@@ -156,7 +187,7 @@ public class Uploader extends Service {
 			if(mp.authToken != null)
 				cv.put(Keys.Uploader.AUTH_TOKEN, mp.authToken);
 			cv.put(Media.STATUS, mp.status);
-			db.update(dh.getTable(), cv, BaseColumns._ID, new String[] {Long.toString(mp.id)});
+			db.update(dh.getTable(), cv, BaseColumns._ID + " =?", new String[] {Long.toString(mp.id)});
 		}
 	}
 	
@@ -177,6 +208,15 @@ public class Uploader extends Service {
 		}
 			
 			
+	}
+	
+	private void updateQueueStatus() {
+		for(MetadataPack mp : queue) {
+			if(mp.status == InformaConstants.Media.Status.UPLOADING)
+				return;
+		}
+		
+		stopSelf();
 	}
 	
 	private JSONObject scheduleUpload(MetadataPack mp) throws ClientProtocolException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, JSONException {
@@ -222,7 +262,7 @@ public class Uploader extends Service {
 		
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
 		try {
-			return connection.executePost(nvp, new File(mp.filepath));
+			return connection.executePost(nvp, new File(mp.filepath), mp.mediaType);
 		} catch(NullPointerException e) {
 			return (JSONObject) new JSONTokener(InformaConstants.Uploader.Results.POSTPONE).nextValue();
 		}
@@ -256,11 +296,21 @@ public class Uploader extends Service {
 		for(final MetadataPack mp : queue) {
 			if(mp.tdDestination != null) {
 				// in a thread...
+				mp.status = InformaConstants.Media.Status.UPLOADING;
 				new Thread(new Runnable() {
 					private static final int THREADS = 10;
 					
 					@Override
 					public void run() {
+						if(mp.status == InformaConstants.Media.Status.UPLOAD_FAILED) {
+							updateQueueStatus();
+							return;
+						} else if(mp.retryFlags > 7) {
+							mp.status = InformaConstants.Media.Status.UPLOAD_FAILED;
+							updateQueueStatus();
+							return;
+						}
+						
 						Log.d(TAG, "HEY WE ARE STARTING THIS PROCESS!");
 						JSONObject res;
 						try {
@@ -276,9 +326,9 @@ public class Uploader extends Service {
 								});
 								res = getUploadTicket.get();
 								if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
-									// HANDLE RESULT
 									mp.authToken = res.getString(Keys.Uploader.AUTH_TOKEN);
 								} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
+									mp.retryFlags++;
 									run();
 								} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {
 									return;
@@ -294,8 +344,9 @@ public class Uploader extends Service {
 							});
 							res = scheduleUpload.get();
 							if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
-								// HANDLE RESULT
+								// HANDLE RESULT?
 							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
+								mp.retryFlags++;
 								run();
 							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {
 								return;
@@ -309,8 +360,10 @@ public class Uploader extends Service {
 							});
 							res = uploadMedia.get();
 							if(parseResult(res) == InformaConstants.Uploader.RequestCodes.A_OK) {
-								// HANDLE RESULT
+								mp.status = InformaConstants.Media.Status.UPLOAD_COMPLETE;
+								updateQueueStatus();								
 							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.RETRY) {
+								mp.retryFlags++;
 								run();
 							} else if(parseResult(res) == InformaConstants.Uploader.RequestCodes.POSTPONE) {
 								return;
@@ -587,18 +640,8 @@ public class Uploader extends Service {
 			}
 		}
 		
-		public JSONObject executePost(Map<String, Object> nvp, File file)  throws ClientProtocolException, IOException {
+		public JSONObject executePost(Map<String, Object> nvp, File file, int mediaType)  throws ClientProtocolException, IOException {
 			Iterator<Entry<String, Object>> it = nvp.entrySet().iterator();
-			StringBuffer sb = new StringBuffer();
-			
-			while(it.hasNext()) {
-				Entry<String, Object> e = it.next();
-				try {
-					sb.append("&" + e.getKey() + "=" + URLEncoder.encode((String) e.getValue(), "UTF-8"));
-				} catch(ClassCastException cce) {
-					sb.append("&" + e.getKey() + "=" + e.getValue());
-				}
-			}
 			
 			if(file != null) {
 				if(useProxy)
@@ -607,36 +650,65 @@ public class Uploader extends Service {
 					connection = (HttpsURLConnection) url.openConnection();
 				connection.setRequestMethod("POST");
 				connection.setRequestProperty("Connection","Keep-Alive");
-				connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; boundary=" + Keys.Uploader.BOUNDARY);
+				connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Keys.Uploader.BOUNDARY);
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
 				connection.setDoOutput(true);
 				
 				dos = new DataOutputStream(connection.getOutputStream());
 				dos.writeBytes(Keys.Uploader.HYPHENS + Keys.Uploader.BOUNDARY + Keys.Uploader.LINE_END);
-				dos.writeBytes("Content-Disposition: post-data; name=" + Keys.Uploader.Entities.MEDIA_UPLOAD + ";filename=" + file.getName() + Keys.Uploader.LINE_END);
+				dos.writeBytes("Content-Disposition: form-data; name=\"" + Keys.Uploader.Entities.MEDIA_UPLOAD + "\";filename=\"" + file.getName() + "\"" + Keys.Uploader.LINE_END);
+				dos.writeBytes("Content-Type: " + (mediaType == MediaTypes.PHOTO ? ObscuraConstants.MIME_TYPE_JPEG : ObscuraConstants.MIME_TYPE_MKV) + Keys.Uploader.LINE_END);
 				dos.writeBytes(Keys.Uploader.LINE_END);
 				
 				FileInputStream fis = new FileInputStream(file);
-				int totalBytes = fis.available();
-				int bufSize = 1000;
-				byte[] buf = new byte[bufSize];
+				byte[] media = new byte[fis.available()];
+				fis.read(media);
 				
-				int read = fis.read(buf, 0, totalBytes);
-				while(read > 0) {
-					dos.write(buf, 0, totalBytes);
-					totalBytes = fis.available();
-					totalBytes = Math.min(totalBytes, bufSize);
-					read = fis.read(buf, 0, totalBytes);
-				}
+				int index = 0;
+				int bufSize = 1024;
+				
+				do {
+					if((index + bufSize) > media.length) {
+						bufSize = media.length - index;
+					}
+					dos.write(media, index, bufSize);
+					index += bufSize;
+				} while(index < media.length);
 				
 				dos.writeBytes(Keys.Uploader.LINE_END);
 				dos.writeBytes(Keys.Uploader.HYPHENS + Keys.Uploader.BOUNDARY + Keys.Uploader.HYPHENS + Keys.Uploader.LINE_END);
 				fis.close();
 				
+				while(it.hasNext()) {
+					Entry<String, Object> e = it.next();
+					StringBuilder sb = new StringBuilder();
+					sb.append(Keys.Uploader.HYPHENS + Keys.Uploader.BOUNDARY + Keys.Uploader.LINE_END);
+					sb.append("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Keys.Uploader.LINE_END);
+					sb.append("Content-Type: text/plain; charset=UTF-8" + Keys.Uploader.LINE_END + Keys.Uploader.LINE_END);
+					
+					StringBuilder _sb = new StringBuilder();
+					_sb.append(e.getValue());
+					sb.append(URLEncoder.encode(_sb.toString(), "UTF-8") + Keys.Uploader.LINE_END);
+					
+					dos.writeBytes(sb.toString());
+					Log.d(TAG, "THIS POST WITH EXTRAS:\n" + sb.toString());
+				}
+				
+				
 				
 				// ...blah blah blah
 			} else {
+				StringBuffer sb = new StringBuffer();
+				while(it.hasNext()) {
+					Entry<String, Object> e = it.next();
+					try {
+						sb.append("&" + e.getKey() + "=" + URLEncoder.encode((String) e.getValue(), "UTF-8"));
+					} catch(ClassCastException cce) {
+						sb.append("&" + e.getKey() + "=" + e.getValue());
+					}
+				}
+				
 				if(useProxy)
 					connection = (HttpsURLConnection) url.openConnection(proxy);
 				else
@@ -649,10 +721,10 @@ public class Uploader extends Service {
 				connection.setDoOutput(true);
 				
 				dos = new DataOutputStream(connection.getOutputStream());
+				Log.d(TAG, "posting: " + sb.toString().substring(1));
+				dos.writeBytes(sb.toString().substring(1));
 			}
 			
-			Log.d(TAG, "posting: " + sb.toString().substring(1));
-			dos.writeBytes(sb.toString().substring(1));
 			dos.flush();
 			dos.close();
 			
@@ -660,15 +732,15 @@ public class Uploader extends Service {
 				InputStream is = connection.getInputStream();
 				BufferedReader br = new BufferedReader(new InputStreamReader(is));
 				String line;
-				sb = new StringBuffer();
+				StringBuffer __sb = new StringBuffer();
 				while((line = br.readLine()) != null)
-					sb.append(line);
+					__sb.append(line);
 				
 				br.close();
 				connection.disconnect();
 				
-				Log.d(TAG, "server returns: " + sb.toString());
-				return (JSONObject) new JSONTokener(sb.toString()).nextValue();
+				Log.d(TAG, "server returns: " + __sb.toString());
+				return (JSONObject) new JSONTokener(__sb.toString()).nextValue();
 			} catch(NullPointerException e) {
 				Log.e(TAG, "NPE IN THIS LATEST REQUEST: " + e.toString());
 				e.printStackTrace();
@@ -680,7 +752,7 @@ public class Uploader extends Service {
 		}
 		
 		public JSONObject executePost(Map<String, Object> nvp) throws ClientProtocolException, IOException {
-			return executePost(nvp, null);
+			return executePost(nvp, null, 0);
 		}
 	}
 }

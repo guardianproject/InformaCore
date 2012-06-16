@@ -51,7 +51,6 @@
 	<string-array name="media_manager_context_menu">
     	<item>Share\u2026</item>
     	<item>View</item>
-    	<item>Rename</item>
     	<item>Get Info</item>
 	</string-array>
 </resources>

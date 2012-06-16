@@ -223,7 +223,7 @@ public class EncryptActivity extends Activity {
 		public String email, metadata, filepath, clonepath, keyHash;
 		public String tdDestination = null;
 		public String tmpId, authToken, hash;
-		public int mediaType, shareVector, status;
+		public int mediaType, shareVector, status, retryFlags;
 		public long timestampCreated, id;
 		
 		public MetadataPack(
@@ -239,6 +239,7 @@ public class EncryptActivity extends Activity {
 			this.keyHash = keyHash;
 			this.shareVector = ShareVector.UNENCRYPTED_NOT_UPLOADED;
 			this.status = Status.NEVER_SCHEDULED_FOR_UPLOAD;
+			this.retryFlags = 0;
 		}
 		
 		public void setTDDestination(String tdDestination) {

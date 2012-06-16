@@ -29,6 +29,7 @@ public class ObscuraConstants {
 	public final static class MimeTypes {
 		public final static String MP4 = "mp4";
 		public final static String JPEG = "jpg";
+		public static final String MKV = "mkv";
 	}
 	
 	public static final int NONE = 0;
