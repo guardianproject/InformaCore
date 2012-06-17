@@ -109,12 +109,6 @@ public class ImageConstructor {
 		
 		base = baseName.split("_")[0] + ".jpg";
 		
-		// handle original based on settings
-		
-		if(handleOriginalImage() == -1) {
-			return;
-		}
-		
 		metadataForEncryption = new ArrayList<Map<Long, String>>();
 		
 		// do redaction
@@ -162,12 +156,13 @@ public class ImageConstructor {
 		}
 		
 		redactedHash = getBitmapHash(clone);
-	}
-
-	public void doCleanup() {
 		dh.setTable(db, Tables.IMAGE_REGIONS);
 		for(ContentValues rcv : unredactedRegions)
 			db.insert(dh.getTable(), null, rcv);
+	}
+
+	public void doCleanup() {
+		//TODO: handle original image, remove tmp.jpg, camtmp.jpg
 	}
 	
 	private String getBitmapHash(File file) throws NoSuchAlgorithmException, IOException {
@@ -234,21 +229,6 @@ public class ImageConstructor {
 		return (clone.length() - irData.length);
 	}
 	
-	/*
-	public void imageHandled() {
-		
-		apg = Apg.getInstance();
-		dh.setTable(db, Tables.SETUP);
-		Cursor cursor = dh.getValue(db, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1);
-		if(cursor != null && cursor.getCount() != 0) {
-			cursor.moveToFirst();
-			apg.setSignatureKeyId(cursor.getLong(0));
-			cursor.close();
-			
-		}
-	}
-	*/
-	
 	private int handleOriginalImage() {
 		switch(Integer.parseInt(_sp.getString(Keys.Settings.DEFAULT_IMAGE_HANDLING,""))) {
 		case OriginalImageHandling.ENCRYPT_ORIGINAL:
@@ -271,11 +251,11 @@ public class ImageConstructor {
 				Log.d(InformaConstants.TAG, "Error encrypting original : " + e.toString());
 				return 0;
 			}
-		case OriginalImageHandling.LEAVE_ORIGINAL_ALONE:
+		case OriginalImageHandling.DELETE_ORIGINAL:
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					copyOriginalToSDCard();
+					deleteOriginal();
 				}
 			}).start();
 			return 1;
@@ -283,12 +263,13 @@ public class ImageConstructor {
 			return 0;
 		}
 	}
-
-	private void copyOriginalToSDCard() {
-		Log.d(InformaConstants.TAG, "copying original to sd card...");
+	
+	private void deleteOriginal() {
+		// TODO: copy over blank picture, run media scanner, delete file
+		Log.d(InformaConstants.TAG, "deleting original");
 		SimpleDateFormat sdf = new SimpleDateFormat(ObscuraConstants.EXPORT_DATE_FORMAT);
 		String dateString = "";
-		Date date = new Date();
+		Date date = new Date(0);
 		try {
 			JSONObject g = metadataObject.getJSONObject(Informa.GENEALOGY);
 			date.setTime(g.getLong(Genealogy.DATE_CREATED));
@@ -317,28 +298,7 @@ public class ImageConstructor {
 	}
 	
 	private int encryptOriginal() throws IOException {
-		JSONArray containment = new JSONArray();
-		long clength = clone.length();
-		int parts = (int) Math.ceil(clength/InformaConstants.BLOB_MAX) + 1;
-		
-		dh.setTable(db, Tables.ENCRYPTED_IMAGES);
-		
-		byte[] b = fileToBytes(clone);
-		int bytesLeft = b.length;
-		int offset = 0;
-		for(int i=0; i<parts; i++) {
-			byte[] cpy = new byte[Math.min(bytesLeft, InformaConstants.BLOB_MAX)];
-			System.arraycopy(b, offset, cpy, 0, cpy.length);
-			offset += cpy.length;
-			bytesLeft -= cpy.length;
-			
-			ContentValues cv = new ContentValues();
-			cv.put(Keys.ImageRegion.BASE, base);
-			cv.put(Keys.ImageRegion.DATA, cpy);
-			containment.put(db.insert(dh.getTable(), null, cv));
-		}
-		
-		containmentArray = containment.toString();
+		// TODO: encypt to device
 		return 1;
 		
 	}

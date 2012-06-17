@@ -282,6 +282,19 @@ public class Uploader extends Service {
 		}
 	}
 	
+	public JSONObject getMessages(String desto, String messageUrl, String keyHash) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, JSONException {
+		Map<String, Object> nvp = new HashMap<String, Object>();
+		nvp.put(Keys.Uploader.Entities.USER_PGP, keyHash);
+		nvp.put(Keys.Media.Manager.MESSAGE_URL, messageUrl);
+		
+		InformaConnectionFactory connection = new InformaConnectionFactory(desto);
+		try {
+			return connection.executePost(nvp);
+		} catch(NullPointerException e) {
+			return (JSONObject) new JSONTokener(InformaConstants.Uploader.Results.POSTPONE).nextValue();
+		}
+	}
+	
 	public void testPing() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, ClientProtocolException, KeyStoreException, IOException {
 		Log.d(InformaConstants.TAG, "STARTING UPLOADING!");
 		InformaConnectionFactory icf = new InformaConnectionFactory("rgr4us5kmgxombaf.onion");

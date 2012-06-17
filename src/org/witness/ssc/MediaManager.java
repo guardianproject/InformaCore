@@ -1,10 +1,16 @@
 package org.witness.ssc;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.util.ArrayList;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informa.utils.InformaConstants;
@@ -13,12 +19,18 @@ import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.io.DatabaseHelper;
+import org.witness.informa.utils.io.Uploader;
 import org.witness.mods.InformaButton;
+import org.witness.mods.InformaHeaderTextView;
 import org.witness.ssc.utils.MediaManagerAdapter;
 import org.witness.ssc.utils.ObscuraConstants;
 import org.witness.ssc.utils.Selections;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
+import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -29,13 +41,16 @@ import android.provider.BaseColumns;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 
 public class MediaManager extends Activity implements OnClickListener {
 	SharedPreferences sp;
@@ -49,6 +64,9 @@ public class MediaManager extends Activity implements OnClickListener {
 	ImageButton levelUp;
 	InformaButton checkMessages, quit;
 	JSONObject mediaObjectInContext = null;
+	
+	Uploader uploader;
+	AlertDialog ab;
 	
 	private static final String TAG = InformaConstants.TAG;
 	
@@ -81,7 +99,10 @@ public class MediaManager extends Activity implements OnClickListener {
 		}
 		
 		levelUp = (ImageButton) findViewById(R.id.mediaLevelUp);
-		levelUp.setImageResource(R.drawable.ic_level_up_inactive);
+		if(level == 1)
+			levelUp.setImageResource(R.drawable.ic_level_up_inactive);
+		else
+			levelUp.setImageResource(R.drawable.ic_level_up);
 		levelUp.setOnClickListener(this);
 		
 		checkMessages = (InformaButton) findViewById(R.id.mediaCheckMessages);
@@ -89,14 +110,31 @@ public class MediaManager extends Activity implements OnClickListener {
 		
 		quit = (InformaButton) findViewById(R.id.mediaQuit);
 		quit.setOnClickListener(this);
+		
+		uploader = Uploader.getUploader();
 	}
 	
 	@Override
 	public void onStop() {
 		super.onStop();
+		try {
+			updateAlias();
+		} catch (JSONException e) {}
 		db.close();
 		dh.close();
 		sp = null;
+	}
+	
+	private void updateAlias() throws JSONException {
+		dh.setTable(db, Tables.IMAGES);
+		for(Selections s: media) {
+			ContentValues cv = new ContentValues();
+			cv.put(Keys.Media.ALIAS, s.getExtras().getString(Keys.Media.ALIAS));
+			
+			db.update(dh.getTable(), cv, 
+					Keys.Image.LOCATION_OF_OBSCURED_VERSION + " =?", 
+					new String[] {s.getExtras().getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION)});
+		}
 	}
 	
 	private void getList(long[] shareBase) throws JSONException {
@@ -113,6 +151,7 @@ public class MediaManager extends Activity implements OnClickListener {
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
 				Keys.Media.SHARE_VECTOR,
+				Keys.TrustedDestinations.DESTO,
 				Keys.Media.Manager.MESSAGE_URL}, BaseColumns._ID, sb);
 		if(c != null && c.getCount() > 0) {
 			populateList(c);
@@ -127,6 +166,7 @@ public class MediaManager extends Activity implements OnClickListener {
 				Keys.Intent.Destination.EMAIL,
 				Keys.Media.MEDIA_TYPE,
 				Keys.Media.SHARE_VECTOR,
+				Keys.TrustedDestinations.DESTO,
 				Keys.Media.Manager.MESSAGE_URL}, null, null);
 		if(c != null && c.getCount() > 0) {
 			populateList(c);
@@ -141,6 +181,10 @@ public class MediaManager extends Activity implements OnClickListener {
 			details.put(Keys.Intent.Destination.EMAIL, c.getString(c.getColumnIndex(Keys.Intent.Destination.EMAIL)));
 			details.put(Keys.Media.MEDIA_TYPE, c.getInt(c.getColumnIndex(Keys.Media.MEDIA_TYPE)));
 			details.put(Keys.Media.SHARE_VECTOR, c.getInt(c.getColumnIndex(Keys.Media.SHARE_VECTOR)));
+			details.put(Keys.Media.Manager.MESSAGE_URL, c.getString(c.getColumnIndex(Keys.Media.Manager.MESSAGE_URL)));
+			
+			if(c.getString(c.getColumnIndex(Keys.TrustedDestinations.DESTO)) != null)
+				details.put(Keys.TrustedDestinations.DESTO, c.getString(c.getColumnIndex(Keys.TrustedDestinations.DESTO)));
 			
 			String[] displayName = details.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION).split("/");
 			if(c.getString(c.getColumnIndex(Keys.Media.ALIAS)) != null)
@@ -154,6 +198,10 @@ public class MediaManager extends Activity implements OnClickListener {
 		
 		c.close();
 		
+		refreshList();
+	}
+	
+	private void refreshList() {
 		mediaList.setAdapter(new MediaManagerAdapter(this, media));
 		registerForContextMenu(mediaList);
 	}
@@ -192,16 +240,56 @@ public class MediaManager extends Activity implements OnClickListener {
     }
 	
 	private void getInfo() {
-		try {
-			Log.d(TAG, "HEY: " + mediaObjectInContext.getString(Keys.Image.LOCATION_OF_OBSCURED_VERSION));
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 	}
 	
-	private void setAlias() {
+	private void setAlias() throws JSONException {
+		View aliasView = LayoutInflater.from(this).inflate(R.layout.message_prompt, null);
+		AlertDialog.Builder aliasBuilder = new AlertDialog.Builder(this);
+		aliasBuilder.setView(aliasView);
 		
+		InformaHeaderTextView header = (InformaHeaderTextView) aliasView.findViewById(R.id.messagePrompt_title);
+		TextView prompt = (TextView) aliasView.findViewById(R.id.messagePrompt_summary);
+		final EditText editField = (EditText) aliasView.findViewById(R.id.messagePrompt_text);
+		InformaButton ok = (InformaButton) aliasView.findViewById(R.id.messagePrompt_ok);
+		
+		header.setText(getString(R.string.informaMediaManager_rename));
+		prompt.setText(getString(R.string.informaMediaManager_rename) + " " + mediaObjectInContext.getString(Keys.Media.ALIAS));
+		
+		ok.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				try {
+					mediaObjectInContext.put(Keys.Media.ALIAS, editField.getText().toString());
+					ab.dismiss();
+					refreshList();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+				
+			}
+		});
+		
+		ab = aliasBuilder.create();
+		ab.show();
+	}
+	
+	private void viewMessages() throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, JSONException {
+		viewMessages(null, null, null);
+	}
+	
+	private void viewMessages(String desto, String messageUrl, String keyHash) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, JSONException {
+		JSONArray messages = new JSONArray();
+		if(messageUrl != null) {
+			messages.put(uploader.getMessages(desto, messageUrl, keyHash)); 
+		} else {
+			for(Selections s : media) {
+				JSONObject extras = s.getExtras();
+				if(extras.has(Keys.Media.Manager.MESSAGE_URL))
+					messages.put(uploader.getMessages(extras.getString(Keys.TrustedDestinations.DESTO), extras.getString(Keys.Media.Manager.MESSAGE_URL), extras.getString(Keys.Media.KEY_HASH)));
+			}
+		}
 	}
 	
 	@Override
@@ -237,7 +325,11 @@ public class MediaManager extends Activity implements OnClickListener {
 			}
 			return true;
 		case 2:
-			setAlias();
+			try {
+				setAlias();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			return true;
 		case 3:
 			getInfo();

@@ -14,13 +14,18 @@
         	android:layout_height="wrap_content"
         	android:text="@string/informaMediaManager_title" />
     </LinearLayout>
-
-    <ListView
-        android:id="@+id/mediaList"
+	
+    <RelativeLayout
+        android:layout_above="@+id/mediaNavigation"
+        android:layout_below="@+id/mediaHeader"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/mediaNavigation"
-        android:layout_below="@+id/mediaHeader" />
+        android:id="@+id/mediaContentRoot">
+	    <ListView
+	        android:id="@+id/mediaList"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent" />
+    </RelativeLayout>
 
     <LinearLayout
         android:layout_width="fill_parent"
@@ -40,12 +45,12 @@
    	        android:layout_width="0dip"
    	        android:layout_height="wrap_content"
    	        android:text="@string/informaMediaManager_messages"
-   	        android:layout_weight="0.5" />
+   	        android:layout_weight="0.6" />
         <org.witness.mods.InformaButton style="@style/Button_standard"
    	        android:id="@+id/mediaQuit"
    	        android:layout_width="0dip"
    	        android:layout_height="wrap_content"
    	        android:text="@string/informaMediaManager_quit"
-   	        android:layout_weight="0.35" />
+   	        android:layout_weight="0.25" />
     </LinearLayout>
 </RelativeLayout>

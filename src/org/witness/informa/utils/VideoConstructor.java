@@ -296,8 +296,8 @@ public class VideoConstructor {
 	}
 	
 	public void doCleanup() {
-		db.close();
-		dh.close();
+		// TODO: remove vidtmp.mp4, output***.txt, ass.ass, handle original video
+		
 	}
 	
 	public static long constructVideo(Context c, MetadataPack metadataPack, ShellCallback sc) throws IOException, JSONException {

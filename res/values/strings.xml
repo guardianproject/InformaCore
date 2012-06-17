@@ -134,6 +134,8 @@
 	<string name="informaMediaManager_messages">Messages</string>
 	<string name="informaMediaManager_quit">Quit</string>
 	<string name="informaMediaManager_sharePrompt">Share Encrypted Version/u2026</string>
+	<string name="informaMediaManager_rename">Rename</string>
+	<string name="informaMediaManager_reply">Reply</string>
 	
 	<!--  EULA related -->
     <string name="eula_title">You agree to:</string>
