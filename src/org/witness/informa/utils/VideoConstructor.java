@@ -58,6 +58,8 @@ public class VideoConstructor {
 	SharedPreferences sp;
 	
 	File clone;
+	
+	public static VideoConstructor videoConstructor;
 
 	public VideoConstructor(Context _context) throws FileNotFoundException, IOException {
 		this(_context, null);
@@ -65,6 +67,7 @@ public class VideoConstructor {
 	
 	public VideoConstructor(Context _context, String metadataObjectString) throws FileNotFoundException, IOException {
 		context = _context;
+		Log.d(LOGTAG, "vc sees context: " + context.toString());
 		fileBinDir = context.getDir("bin",0);
 
 		if (!new File(fileBinDir,libraryAssets[0]).exists())
@@ -82,8 +85,13 @@ public class VideoConstructor {
 				Log.d(LOGTAG, "metadata object is not valid: " + e.toString());
 			}
 		}
+		
+		videoConstructor = this;
 	}
 	
+	public static VideoConstructor getVideoConstructor() {
+		return videoConstructor;
+	}
 	
 	
 	private static void execProcess(String[] cmds, ShellCallback sc) throws Exception {		
@@ -300,14 +308,7 @@ public class VideoConstructor {
 		
 	}
 	
-	public static long constructVideo(Context c, MetadataPack metadataPack, ShellCallback sc) throws IOException, JSONException {
-		fileBinDir = c.getDir("bin",0);
-
-		if (!new File(fileBinDir,libraryAssets[0]).exists())
-		{
-			BinaryInstaller bi = new BinaryInstaller(c, fileBinDir);
-			bi.installFromRaw();
-		}
+	public long constructVideo(MetadataPack metadataPack, ShellCallback sc) throws IOException, JSONException {
 		
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
@@ -321,7 +322,7 @@ public class VideoConstructor {
 		JSONArray captureTimestamps = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CAPTURE_TIMESTAMPS);
 		JSONArray corroboration = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CORROBORATION);
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(c.getAssets().open("informa.ass")));
+		BufferedReader br = new BufferedReader(new InputStreamReader(context.getAssets().open("informa.ass")));
 		String line;
 		//Dialogue: 0,0:00:27.04,0:00:28.21,Main,,0000,0000,0000,,{\be1}Um...
 		String cloneLine = null;

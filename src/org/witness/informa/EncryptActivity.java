@@ -140,7 +140,7 @@ public class EncryptActivity extends Activity {
 			Cursor img = dh.getValue(db, new String[] {Image.METADATA, Image.UNREDACTED_IMAGE_HASH, Image.TRUSTED_DESTINATION, Media.MEDIA_TYPE}, BaseColumns._ID, (Long) e.getKey());
 			if(img != null && img.getCount() == 1) {
 				img.moveToFirst();
-				metadataPacks.add(new MetadataPack(this, clonePath, (Long) e.getKey(), img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), keyHash));
+				metadataPacks.add(new MetadataPack(clonePath, (Long) e.getKey(), img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), img.getString(img.getColumnIndex(Image.METADATA)), e.getValue(), img.getString(img.getColumnIndex(Image.UNREDACTED_IMAGE_HASH)), img.getInt(img.getColumnIndex(Media.MEDIA_TYPE)), keyHash));
 				Map<String, Long> mediaRecord = new HashMap<String, Long>();
 				mediaRecord.put(img.getString(img.getColumnIndex(Image.TRUSTED_DESTINATION)), (Long) e.getKey());
 				destos.add(mediaRecord);

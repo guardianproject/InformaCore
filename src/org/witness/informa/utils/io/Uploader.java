@@ -122,7 +122,7 @@ public class Uploader extends Service {
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(sp.getString(Settings.HAS_DB_PASSWORD, ""));
 		
-		pickupUploads();
+		//pickupUploads();
 	}
 	
 	public static Uploader getUploader() {
@@ -152,7 +152,6 @@ public class Uploader extends Service {
 				) {
 					try {
 						MetadataPack mp = new MetadataPack(
-								this,
 								null,
 								c.getInt(c.getColumnIndex(BaseColumns._ID)),
 								null,

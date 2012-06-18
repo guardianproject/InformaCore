@@ -8,7 +8,9 @@ import org.witness.informa.utils.InformaConstants.Media.ShareVector;
 import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.ssc.video.ShellUtils;
 
+import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 
 public class MetadataPack {
 	public String email, metadata, filepath, clonepath, keyHash;
@@ -16,10 +18,9 @@ public class MetadataPack {
 	public String tmpId, authToken, hash, messageUrl;
 	public int mediaType, shareVector, status, retryFlags;
 	public long timestampCreated, id;
-	private Context c;
 	
 	public MetadataPack(
-			Context c, String clonePath,
+			String clonePath,
 			long id, String email, String metadata, String filepath, 
 			String hash, int mediaType, String keyHash) {
 		this.id = id;
@@ -32,7 +33,7 @@ public class MetadataPack {
 		this.keyHash = keyHash;
 		this.shareVector = ShareVector.UNENCRYPTED_NOT_UPLOADED;
 		this.status = Status.NEVER_SCHEDULED_FOR_UPLOAD;
-		this.retryFlags = 0;
+		this.retryFlags = 0;		
 	}
 	
 	public void setTDDestination(String tdDestination) {
@@ -56,8 +57,8 @@ public class MetadataPack {
 	public void doInject() throws IOException, JSONException {
 		if(mediaType == MediaTypes.PHOTO)
 			timestampCreated = ImageConstructor.constructImage(this);
-		else if(mediaType == MediaTypes.VIDEO)
-			timestampCreated = VideoConstructor.constructVideo(c, this, new ShellUtils.ShellCallback() {
+		else if(mediaType == MediaTypes.VIDEO) {
+			timestampCreated = VideoConstructor.getVideoConstructor().constructVideo(this, new ShellUtils.ShellCallback() {
 				
 				@Override
 				public void shellOut(char[] msg) {
@@ -65,5 +66,6 @@ public class MetadataPack {
 					
 				}
 			});
+		}
 	}
 }

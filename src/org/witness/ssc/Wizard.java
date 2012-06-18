@@ -239,7 +239,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			
 			db.close();
 			dh.close();
-			
+			/*
 			if(orderFile.equals("encrypt_routine.wizard")) {
 				wizard_next.setVisibility(View.GONE);
 				wizard_back.setVisibility(View.GONE);
@@ -254,6 +254,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 					
 				});
 			} else 
+				*/
 				enableAction(wizard_next);
 			
 		} catch(Exception e) {
