@@ -1,7 +1,17 @@
 package org.witness.informa.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Iterator;
 
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.json.JSONException;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.Media.ShareVector;
@@ -18,6 +28,7 @@ public class MetadataPack {
 	public String tmpId, authToken, hash, messageUrl;
 	public int mediaType, shareVector, status, retryFlags;
 	public long timestampCreated, id;
+	public byte[] encryptionKey;
 	
 	public MetadataPack(
 			String clonePath,
@@ -41,13 +52,40 @@ public class MetadataPack {
 		this.status = Status.UPLOADING;
 	}
 	
+	public void setEncryptionKey(byte[] key) {
+		this.encryptionKey = key;
+	}
+	
 	public void doEncrypt() {
-		// TODO: once we have GPG/PGP working...
-		// until then, just sign data with the key
-		if(tdDestination != null)
-			setShareVector(ShareVector.ENCRYPTED_UPLOAD_QUEUE);
-		else
-			setShareVector(ShareVector.ENCRYPTED_BUT_NOT_UPLOADED);
+		try {
+			PGPPublicKey encKey = null;
+			PGPPublicKeyRingCollection keyRingCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(this.encryptionKey)));
+			Iterator<PGPPublicKeyRing> rIt = keyRingCol.getKeyRings();
+			while(rIt.hasNext()) {
+				PGPPublicKeyRing keyRing = (PGPPublicKeyRing) rIt.next();
+				Iterator<PGPPublicKey> kIt = keyRing.getPublicKeys();
+				
+				while(kIt.hasNext()) {
+					PGPPublicKey key = (PGPPublicKey) kIt.next();
+					if(key.isEncryptionKey())
+						encKey = key;
+				}
+			}
+			
+			if(encKey == null)
+				throw new IllegalArgumentException("uch i cannot find a key here");
+			else
+				Log.d(InformaConstants.TAG, "hey guess we reconstructed the key");
+			
+		} catch(NullPointerException e) {
+			Log.e(InformaConstants.TAG, "key is null dummy, you can't encrypt this. " + e.toString());
+		} catch (IOException e) {
+			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
+			e.printStackTrace();
+		} catch (PGPException e) {
+			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
+			e.printStackTrace();
+		}
 	}
 	
 	public void setShareVector(int shareVector) {

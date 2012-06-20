@@ -62,7 +62,13 @@ public class InformaConstants {
 				public static final String TIMESTAMP_CREATED = "timestamp_created";
 				public static final String MEDIA_UPLOAD = "media_upload";
 			}
-			
+		}
+		
+		public final static class OpenPGP {
+			public static final class Entities {
+				public static final String BEGIN_PGP_PUBLIC_KEY_BLOCK = "-----BEGIN PGP PUBLIC KEY BLOCK-----";
+				public static final String END_PGP_PUBLIC_KEY_BLOCK = "-----END PGP PUBLIC KEY BLOCK-----";
+			}
 		}
 		
 		public final static class Service {
@@ -211,6 +217,7 @@ public class InformaConstants {
 			public final static String HOOKUPS = "hookups";
 			public final static String CERT = "cert";
 			public final static String DATE_UPDATED = "dateUpdated";
+			public final static String ENCRYPTION_KEY = "encryptionKey";
 		}
 		
 		public final static class Media {

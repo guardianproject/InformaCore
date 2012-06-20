@@ -1,7 +1,12 @@
 package org.witness.informa.utils.secure;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -12,16 +17,20 @@ import java.util.concurrent.Future;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Device;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
-import org.witness.informa.utils.InformaConstants.Media.ShareVector;
-import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.io.Uploader;
 
@@ -30,7 +39,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.preference.PreferenceManager;
-import android.provider.BaseColumns;
 import android.util.Log;
 
 /*
@@ -42,117 +50,284 @@ import android.util.Log;
  * it will look up the desto's URI at the GuardianProject repo 
  */
 public class DestoService {
-	private StringBuffer destoQuery;
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	SharedPreferences sp;
-	private ArrayList<Map<String, String>> destoResults;
-	ArrayList<Map<String, Long>> destos;
+	ArrayList<Map<String, Map<String, Object>>> destoResults;
+	ArrayList<String> pubkeyQuery, destoQuery;
 	Uploader uploader;
+	String pubKeyQueryemail;
 	
 	public DestoService(Context c) {
 		sp = PreferenceManager.getDefaultSharedPreferences(c);
 		dh = new DatabaseHelper(c);
 		db = dh.getWritableDatabase(sp.getString(Keys.Settings.HAS_DB_PASSWORD, ""));
 		
-		destoResults = new ArrayList<Map<String, String>>();
-		destoQuery = new StringBuffer();
+		destoQuery = new ArrayList<String>();
+		pubkeyQuery = new ArrayList<String>();
+		
+		destoResults = new ArrayList<Map<String, Map<String, Object>>>();
+		
 		uploader = Uploader.getUploader();
 	}
 	
-	private boolean isLocallyAvailable(String email) {
-		dh.setTable(this.db, Tables.TRUSTED_DESTINATIONS);
+	private void checkTrustedDestinationServerIsAvailable(String email) {
+		dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
 		Cursor td = dh.getValue(db, new String[] {TrustedDestinations.DESTO}, TrustedDestinations.EMAIL, email);
 		if(td != null && td.getCount() == 1) {
 			td.moveToFirst();
-			if(td.getString(td.getColumnIndex(TrustedDestinations.DESTO)) == null) {
-				Log.d(InformaConstants.TAG, "DESTO SERVICE: contact is null");
-				td.close();
-				return false;
+			if(td.getString(td.getColumnIndex(TrustedDestinations.DESTO)) != null) {
+				Map<String, Object> desto = new HashMap<String, Object>();
+				desto.put(TrustedDestinations.DESTO, td.getString(td.getColumnIndex(TrustedDestinations.DESTO)));
+				
+				Map<String, Map<String, Object>> res = new HashMap<String, Map<String, Object>>();
+				res.put(email, desto);
+				destoResults.add(res);
 			} else {
-				Map<String, String> desto = new HashMap<String, String>();
-				desto.put(email, td.getString(td.getColumnIndex(TrustedDestinations.DESTO)));
-				destoResults.add(desto);
-				td.close();
-				return true;
-			}
+				destoQuery.add(email);
+			}			
+			td.close();
 		} else {
-			return false;
+			destoQuery.add(email);
 		}
 	}
-		
-	public ArrayList<Map<String, String>> getDestos(ArrayList<Map<String, Long>> destos) throws JSONException {
-		this.destos = destos;
-		for(Map<String, Long> d : this.destos) {
+	
+	private void checkPublicKeyIsAvailable(String email) {
+		dh.setTable(db, Tables.KEYRING);
+		Cursor pk = dh.getValue(db, new String[] {Device.PUBLIC_KEY}, TrustedDestinations.EMAIL, email);
+		if(pk != null) {
+			pk.moveToFirst();
+			Map<String, Object> desto = new HashMap<String, Object>();
+			desto.put(TrustedDestinations.ENCRYPTION_KEY, pk.getBlob(pk.getColumnIndex(Device.PUBLIC_KEY)));
+			
+			Map<String, Map<String, Object>> res = new HashMap<String, Map<String, Object>>();
+			res.put(email, desto);
+			destoResults.add(res);
+			
+			pk.close();
+		} else {
+			pubkeyQuery.add(email);
+		}
+	}
+	
+	public ArrayList<Map<String, Map<String, Object>>> getDestos(ArrayList<Map<String, Long>> destos) {
+		for(Map<String, Long> d : destos) {
 			Entry<String, Long> desto = d.entrySet().iterator().next();
-			if(!isLocallyAvailable(desto.getKey()))
-				destoQuery.append("," + desto.getKey());
+			checkTrustedDestinationServerIsAvailable(desto.getKey());
+			checkPublicKeyIsAvailable(desto.getKey());
 		}
 		
 		ExecutorService ex = Executors.newFixedThreadPool(100);
-		Future<String> f = ex.submit(new Callable<String>() {			
-			private String queryRepo() {
-				try {
-					return uploader.getDestos(destoQuery.toString().substring(1));
-				} catch(Exception e) {
-					Log.e(InformaConstants.TAG, "https error in queryRepo(): " + e.toString());
-					return null;
-				}
-			}
-			
-			public String call() {
-				return queryRepo();
-			}
-		});
-		
-		Log.d(InformaConstants.TAG, "DESTO SERVICE: destoQuery:" + destoQuery.toString()); 
-		if(destoQuery.length() != 0) {
+		if(destoQuery.size() > 0) {
+			TrustedDestinationCallable tdCallable = new TrustedDestinationCallable(destoQuery);
+			Future<Map<String, Object>> td = ex.submit(tdCallable);
 			try {
-				String destoResponse = f.get();
-				Log.d(InformaConstants.TAG, "DESTO SERVICE: destoResponse: " + destoResponse);
-				JSONArray jsond = (JSONArray) ((JSONObject) new JSONTokener(destoResponse).nextValue()).get(TrustedDestinations.HOOKUPS);
-				for(int i=0; i<jsond.length(); i++) {
-					Map<String, String> desto = new HashMap<String, String>();
-					JSONObject destoj = (JSONObject) jsond.get(i);
-					desto.put(destoj.getString(TrustedDestinations.EMAIL), destoj.getString(TrustedDestinations.DESTO));
-					updateTrustedDestination(desto);
-					destoResults.add(desto);
+				Iterator<Entry<String, Object>> it = td.get().entrySet().iterator();
+				while(it.hasNext()) {
+					Entry<String, Object> e = it.next();
+					Map<String, Object> desto = new HashMap<String, Object>();
+					desto.put(TrustedDestinations.DESTO, e.getValue());
+					
+					Map<String, Map<String, Object>> res = new HashMap<String, Map<String, Object>>();
+					res.put(e.getKey(), desto);
+					destoResults.add(res);
 				}
-			} catch(InterruptedException e) {
-				Log.e(InformaConstants.TAG, "https error in getDestos(): " + e.toString());
-			} catch(ExecutionException e) {
-				Log.e(InformaConstants.TAG, "https error in getDestos(): " + e.toString());
-			} catch(NullPointerException e) {
-				Log.e(InformaConstants.TAG, "https error in getDestos(): " + e.toString());
+			} catch (InterruptedException e) {
+				Log.e(InformaConstants.TAG, "https error in queryRepo(): " + e.toString());
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				Log.e(InformaConstants.TAG, "https error in queryRepo(): " + e.toString());
+				e.printStackTrace();
 			}
 		}
 		
-		for(Map<String, Long> d : this.destos) {
-			Entry<String, Long> desto = d.entrySet().iterator().next();
-			if(!isLocallyAvailable(desto.getKey()))
-				setShareVector(desto.getValue(), ShareVector.ENCRYPTED_BUT_NOT_UPLOADED, Status.NEVER_SCHEDULED_FOR_UPLOAD);
-			else
-				setShareVector(desto.getValue(), ShareVector.ENCRYPTED_UPLOAD_QUEUE, Status.UPLOADING);
+		if(pubkeyQuery.size() > 0) {
+			for(String pk : pubkeyQuery) {
+				KeyServerCallable ksCallable = new KeyServerCallable(pk);
+				Future<PGPPublicKey> ks = ex.submit(ksCallable);
+				PGPPublicKey key;
+				try {
+					key = ks.get();
+					if(key != null) {
+						Map<String, Object> keyEntry = new HashMap<String, Object>();
+						keyEntry.put(TrustedDestinations.ENCRYPTION_KEY, key.getEncoded());
+						
+						Map<String, Map<String, Object>> res = new HashMap<String, Map<String, Object>>();
+						res.put(pk, keyEntry);
+						destoResults.add(res);
+					}
+				} catch (InterruptedException e) {
+					Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+					e.printStackTrace();
+				} catch (IOException e) {
+					Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+					e.printStackTrace();
+				}
+				
+				
+			}
 		}
 		
 		db.close();
 		dh.close();
+		
+		consolidate();
+		
 		return destoResults;
 	}
 	
-	private void setShareVector(long record, int shareVector, int status) {
-		dh.setTable(db, Tables.IMAGES);
-		ContentValues cv = new ContentValues();
-		cv.put(Keys.Media.SHARE_VECTOR, shareVector);
-		cv.put(Keys.Media.STATUS, status);
-		db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(record)});
+	private void consolidate() {
+		ArrayList<Map<String, Map<String, Object>>> destoResultsCopy = new ArrayList<Map<String, Map<String, Object>>>();
+		
+		for(Map<String, Map<String, Object>> desto : destoResults) {
+			Entry<String, Map<String, Object>> e = desto.entrySet().iterator().next();
+			String email = e.getKey();
+			Map<String, Object> knownTargets = e.getValue();			
+			
+			if(destoResultsCopy.size() > 0) {
+				Iterator<Map<String, Map<String, Object>>> it = destoResultsCopy.iterator();
+				while(it.hasNext()) {
+					Map<String, Map<String, Object>> destoCopy = it.next();
+					Entry<String, Map<String, Object>> eCopy = destoCopy.entrySet().iterator().next();
+					String emailCopy = eCopy.getKey();
+					Map<String, Object> knownTargetsCopy = eCopy.getValue();
+					
+					
+					if(email.equals(emailCopy)) {
+						Iterator<Entry<String, Object>> itK = knownTargets.entrySet().iterator();
+						while(itK.hasNext()) {
+							Entry<String, Object> kt = itK.next();
+							knownTargetsCopy.put(kt.getKey(), kt.getValue());
+						}
+					} else {
+						destoResultsCopy.add(desto);
+					}
+				}
+			} else {
+				destoResultsCopy.add(desto);
+			}
+		}
+		destoResults = destoResultsCopy;
+		Log.d(InformaConstants.TAG, "all destos: " + destoResults.toString());
 	}
 	
-	private void updateTrustedDestination(Map<String, String> desto) {
+	private void updateKeyring(String destoEmail, PGPPublicKey key) throws NoSuchAlgorithmException, IOException {
 		dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
-		Entry<String, String> e = desto.entrySet().iterator().next();
+		Cursor pk = dh.getValue(db, new String[] {TrustedDestinations.KEYRING_ID, TrustedDestinations.DISPLAY_NAME}, TrustedDestinations.EMAIL, destoEmail);
+		if(pk != null) {
+			ContentValues cv = new ContentValues();
+			pk.moveToFirst();
+			cv.put(TrustedDestinations.EMAIL, destoEmail);
+			cv.put(TrustedDestinations.KEYRING_ID, key.getKeyID());
+			cv.put(TrustedDestinations.DISPLAY_NAME, pk.getString(pk.getColumnIndex(TrustedDestinations.DISPLAY_NAME)));
+			cv.put(Device.PUBLIC_KEY, key.getEncoded());
+			cv.put(Device.PUBLIC_KEY_HASH, MediaHasher.hash(key.getEncoded(), "SHA-1"));
+			pk.close();
+			
+			dh.setTable(db, Tables.KEYRING);
+			db.insert(dh.getTable(), null, cv);
+		}
+	}
+	
+	private void updateTrustedDestination(Map<String, Object> desto) {
+		dh.setTable(db, Tables.TRUSTED_DESTINATIONS);
+		Entry<String, Object> e = desto.entrySet().iterator().next();
 		ContentValues cv = new ContentValues();
-		cv.put(TrustedDestinations.DESTO, e.getValue());	
+		cv.put(TrustedDestinations.DESTO, (String) e.getValue());	
 		db.update(dh.getTable(), cv, TrustedDestinations.EMAIL + " = ?", new String[] {e.getKey()});
+	}
+	
+	private class TrustedDestinationCallable implements Callable<Map<String, Object>> {
+		ArrayList<String> emails;
+		
+		public TrustedDestinationCallable(ArrayList<String> emails) {
+			this.emails = emails;
+		}
+		
+		private Map<String, Object> parseResult(String result) throws JSONException {
+			Map<String, Object> res = new HashMap<String, Object>();
+			JSONArray jsond = (JSONArray) ((JSONObject) new JSONTokener(result).nextValue()).get(TrustedDestinations.HOOKUPS);
+			for(int i=0; i<jsond.length(); i++) {
+				JSONObject destoj = (JSONObject) jsond.get(i);
+				res.put(destoj.getString(TrustedDestinations.EMAIL), destoj.getString(TrustedDestinations.DESTO));
+				//updateTrustedDestination(res);
+			}
+			return res;
+		}
+		
+		private Map<String, Object> queryTrustedDestinationServer() {
+			StringBuffer sb = new StringBuffer();
+			for(String s : emails)
+				sb.append("," + s);
+			
+			try {
+				return parseResult(uploader.getDestos(sb.toString().substring(1)));
+			} catch(Exception e) {
+				Log.e(InformaConstants.TAG, "https error in queryRepo(): " + e.toString());
+				return null;
+			}
+		}
+		
+		public Map<String, Object> call() {
+			return queryTrustedDestinationServer();
+		}
+	}
+	
+	private class KeyServerCallable implements Callable<PGPPublicKey> {
+		String email;
+		
+		public KeyServerCallable(String email) {
+			this.email = email;
+		}
+		
+		private PGPPublicKey parseKey(byte[] keyBlock) throws IOException, PGPException {
+			PGPPublicKeyRingCollection keyringCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(keyBlock)));
+			PGPPublicKey key = null;
+			Iterator<PGPPublicKeyRing> rIt = keyringCol.getKeyRings();
+			while(key == null && rIt.hasNext()) {
+				PGPPublicKeyRing keyring = (PGPPublicKeyRing) rIt.next();
+				Iterator<PGPPublicKey> kIt = keyring.getPublicKeys();
+				while(key == null && kIt.hasNext()) {
+					PGPPublicKey k = (PGPPublicKey) kIt.next();
+					if(k.isEncryptionKey())
+						key = k;
+				}
+			}
+			if(key == null)
+				throw new IllegalArgumentException("there isn't an encryption key here.");
+			return key;
+		}
+		
+		private PGPPublicKey queryKeyServer() {
+			try {
+				PGPPublicKey newKey = parseKey(uploader.getPublicKey(this.email));
+				//updateKeyring(email, newKey);
+				return newKey;
+			} catch (IllegalStateException e) {
+				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+				e.printStackTrace();
+				return null;
+			} catch (IOException e) {
+				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+				e.printStackTrace();
+				return null;
+			} catch (URISyntaxException e) {
+				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+				e.printStackTrace();
+				return null;
+			} catch (PGPException e) {
+				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+				e.printStackTrace();
+				return null;
+			}
+		
+		}
+		
+		public PGPPublicKey call() throws Exception {
+			return queryKeyServer(); 
+		}
 	}
 }

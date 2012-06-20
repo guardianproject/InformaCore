@@ -79,7 +79,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 							Device.PRIVATE_KEY + " blob, " +
 							Device.PUBLIC_KEY_HASH + " text, " +
 							Device.PASSPHRASE + " text, " +
-							TrustedDestinations.DISPLAY_NAME + " text" +
+							TrustedDestinations.DISPLAY_NAME + " text, " +
+							TrustedDestinations.KEYRING_ID + " text, " +
+							TrustedDestinations.EMAIL + " text" +
 							")",
 					"CREATE TABLE " + Tables.KEYSTORE + " (" + BaseColumns._ID + " " +
 							"integer primary key autoincrement, " +

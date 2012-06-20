@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
@@ -44,7 +46,11 @@ import javax.net.ssl.X509TrustManager;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -205,7 +211,6 @@ public class Uploader extends Service {
 	
 	private int parseResult(JSONObject res) throws JSONException {
 		try {
-			Log.d(TAG, res.toString());
 			if(res.getString("result").equals(Keys.Uploader.A_OK))
 				return InformaConstants.Uploader.RequestCodes.A_OK;
 			else {
@@ -237,9 +242,7 @@ public class Uploader extends Service {
 		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
 		nvp.put(Keys.Uploader.Entities.AUTH_TOKEN, mp.authToken);
 		nvp.put(Keys.Uploader.Entities.BYTES_EXPECTED, new File(mp.filepath).length());
-		
-		Log.d(TAG, nvp.toString());
-		
+				
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
 		try {
 			return connection.executePost(nvp);
@@ -255,9 +258,7 @@ public class Uploader extends Service {
 		nvp.put(Keys.Uploader.Entities.USER_PGP, mp.keyHash);
 		nvp.put(Keys.Uploader.Entities.TIMESTAMP_CREATED, mp.timestampCreated);
 		nvp.put(Keys.Uploader.Entities.MEDIA_TYPE, mp.mediaType);
-		
-		Log.d(TAG, nvp.toString());
-		
+				
 		InformaConnectionFactory connection = new InformaConnectionFactory(mp.tdDestination);
 		
 		try {
@@ -294,16 +295,6 @@ public class Uploader extends Service {
 		}
 	}
 	
-	public void testPing() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, ClientProtocolException, KeyStoreException, IOException {
-		Log.d(InformaConstants.TAG, "STARTING UPLOADING!");
-		InformaConnectionFactory icf = new InformaConnectionFactory("rgr4us5kmgxombaf.onion");
-		
-		Map<String, Object> nvp = new HashMap<String, Object>();
-		nvp.put("user_pgp", "blahblahbblah");
-		nvp.put("test", "OH SHIT");
-		Log.d(TAG, "OMG:\n" + icf.executePost(nvp));
-	}
-	
 	private void uploadImage(MetadataPack mp) {
 		Map<String, Object> nvp = new HashMap<String, Object>();
 		nvp.put("user_pgp", mp.keyHash);
@@ -337,7 +328,7 @@ public class Uploader extends Service {
 							return;
 						}
 						
-						Log.d(TAG, "HEY WE ARE STARTING THIS PROCESS!");
+						Log.d(TAG, "Upload is being scheduled");
 						JSONObject res;
 						try {
 							ExecutorService ex = Executors.newFixedThreadPool(THREADS);
@@ -422,12 +413,47 @@ public class Uploader extends Service {
 	}
 	
 	public String getDestos(String query) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException {
-		Log.d(TAG, "Getting destos...");
 		InformaConnectionFactory icf = new InformaConnectionFactory("j3m.info/repo/");
 		Map<String, Object> nvp = new HashMap<String, Object>();
 		nvp.put("repo", query);
 		
 		return icf.executePost(nvp).toString();
+	}
+	
+	public byte[] getPublicKey(String email) throws IllegalStateException, IOException, URISyntaxException {
+		String url = "http://pool.sks-keyservers.net:11371/pks/lookup?op=get&search=" + email;
+		String res = executeGet(url);
+		res = res.substring(res.indexOf(Keys.OpenPGP.Entities.BEGIN_PGP_PUBLIC_KEY_BLOCK), res.indexOf(Keys.OpenPGP.Entities.END_PGP_PUBLIC_KEY_BLOCK) + Keys.OpenPGP.Entities.END_PGP_PUBLIC_KEY_BLOCK.length());
+		List<String> keyChunks = new ArrayList<String>();
+		StringBuffer sb = new StringBuffer();
+		for(String k : res.split("\r\n")) {
+			keyChunks.add(k);
+		}
+		
+		for(int i = 0; i < 3; i++)
+			keyChunks.remove(0);
+		
+		keyChunks.remove(keyChunks.size() - 1);
+		
+		for(String k : keyChunks)
+			sb.append(k + "\r\n");
+		//Log.d(TAG, sb.toString());
+		return sb.toString().getBytes();
+	}
+	
+	public String executeGet(String url) throws IllegalStateException, IOException, URISyntaxException {
+		HttpClient client = new DefaultHttpClient();
+		HttpGet request = new HttpGet();
+		request.setURI(new URI(url));
+		HttpResponse res = client.execute(request);
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(res.getEntity().getContent()));
+		StringBuffer sb = new StringBuffer();
+		String line = "";
+		while((line = br.readLine()) != null)
+			sb.append(line + "\r\n");
+		br.close();
+		return sb.toString();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -741,7 +767,6 @@ public class Uploader extends Service {
 				connection.setDoOutput(true);
 				
 				dos = new DataOutputStream(connection.getOutputStream());
-				Log.d(TAG, "posting: " + sb.toString().substring(1));
 				dos.writeBytes(sb.toString().substring(1));
 			}
 			
@@ -759,7 +784,6 @@ public class Uploader extends Service {
 				br.close();
 				connection.disconnect();
 				
-				Log.d(TAG, "server returns: " + __sb.toString());
 				return (JSONObject) new JSONTokener(__sb.toString()).nextValue();
 			} catch(NullPointerException e) {
 				Log.e(TAG, "NPE IN THIS LATEST REQUEST: " + e.toString());

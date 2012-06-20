@@ -5,6 +5,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +35,7 @@ import org.witness.ssc.video.ShellUtils;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -156,12 +158,34 @@ public class EncryptActivity extends Activity {
 			public void run() {
 				destoService = new DestoService(EncryptActivity.this);
 				try {
-					for(Map<String, String> desto : destoService.getDestos(destos)) {
+					for(Map<String, Map<String, Object>> d : destoService.getDestos(destos)) {
+						
+						Entry<String, Map<String, Object>> desto = d.entrySet().iterator().next();
 						for(MetadataPack mp : metadataPacks) {
-							if(desto.containsKey(mp.email)) {
-								mp.setTDDestination(desto.get(mp.email));
-								mp.setShareVector(ShareVector.UNENCRYPTED_UPLOAD_QUEUE);
+							if(desto.getKey().equals(mp.email)) {
+								Iterator<Entry<String, Object>> it = desto.getValue().entrySet().iterator();
+								while(it.hasNext()) {
+									Entry<String, Object> destoTarget = it.next();
+									if(destoTarget.getKey().equals(Keys.TrustedDestinations.DESTO))
+										mp.setTDDestination((String) destoTarget.getValue());
+									else if(destoTarget.getKey().equals(Keys.TrustedDestinations.ENCRYPTION_KEY))
+										mp.setEncryptionKey((byte[]) destoTarget.getValue());
+								}
 							}
+							 
+							if(mp.tdDestination != null) {
+								if(mp.encryptionKey != null)
+									mp.setShareVector(ShareVector.ENCRYPTED_UPLOAD_QUEUE);
+								else
+									mp.setShareVector(ShareVector.UNENCRYPTED_UPLOAD_QUEUE);
+							} else {
+								if(mp.encryptionKey != null)
+									mp.setShareVector(ShareVector.ENCRYPTED_BUT_NOT_UPLOADED);
+								else
+									mp.setShareVector(ShareVector.UNENCRYPTED_NOT_UPLOADED);
+							}
+							
+							setShareVector(mp.id, mp.shareVector, mp.status);
 						}
 					}
 					
@@ -188,6 +212,14 @@ public class EncryptActivity extends Activity {
 			}
 			
 		}).start();
+	}
+	
+	private void setShareVector(long record, int shareVector, int status) {
+		dh.setTable(db, Tables.IMAGES);
+		ContentValues cv = new ContentValues();
+		cv.put(Keys.Media.SHARE_VECTOR, shareVector);
+		cv.put(Keys.Media.STATUS, status);
+		db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(record)});
 	}
 	
 	@Override

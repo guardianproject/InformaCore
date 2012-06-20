@@ -203,8 +203,10 @@ public class VideoConstructor {
 					or = trail.getCurrentRegion(i, trail.isDoTweening());
 					if (or != null)
 					{
-						orData = or.getStringData(widthMod, heightMod,i,timeInc, trail.getObscureMode());
-						redactSettingsPrintWriter.println(orData);
+						if(!trail.getObscureMode().equals(RegionTrail.OBSCURE_MODE_IDENTIFY)) {
+							orData = or.getStringData(widthMod, heightMod,i,timeInc, trail.getObscureMode());
+							redactSettingsPrintWriter.println(orData);
+						}
 					}
 				}
 				
@@ -218,9 +220,10 @@ public class VideoConstructor {
 					
 					if (lastOr != null)
 					{
-						
-						orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp,or.timeStamp-lastOr.timeStamp, trail.getObscureMode());
+						if(!trail.getObscureMode().equals(RegionTrail.OBSCURE_MODE_IDENTIFY))
+							orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp,or.timeStamp-lastOr.timeStamp, trail.getObscureMode());
 					}
+					
 					
 					redactSettingsPrintWriter.println(orData);
 					
@@ -229,8 +232,10 @@ public class VideoConstructor {
 				
 				if (or != null)
 				{
-					orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp,or.timeStamp-lastOr.timeStamp, trail.getObscureMode());
-					redactSettingsPrintWriter.println(orData);
+					if(!trail.getObscureMode().equals(RegionTrail.OBSCURE_MODE_IDENTIFY)) {
+						orData = lastOr.getStringData(widthMod, heightMod,or.timeStamp,or.timeStamp-lastOr.timeStamp, trail.getObscureMode());
+						redactSettingsPrintWriter.println(orData);
+					}
 				}
 			}
 		}

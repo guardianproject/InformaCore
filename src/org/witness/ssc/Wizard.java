@@ -40,6 +40,7 @@ import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Device;
 import org.witness.informa.utils.InformaConstants.Keys.Owner;
+import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Keys.TrustedDestinations;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.secure.Apg;
@@ -276,6 +277,7 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 			int insert = db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(1)});
 			
 			Log.d(InformaConstants.TAG, "updated user pgp: " + insert);
+			
 			//if(insert != 0)
 			enableAction(wizard_next);
 			
@@ -447,8 +449,9 @@ public class Wizard extends SherlockActivity implements OnClickListener {
 				cv.put(Device.PASSPHRASE, pwd);
 				cv.put(Device.PUBLIC_KEY, secret.getPublicKey().getEncoded());
 				cv.put(Device.PUBLIC_KEY_HASH, MediaHasher.hash(secret.getPublicKey().getEncoded(), "SHA-1"));
+				cv.put(TrustedDestinations.KEYRING_ID, secret.getPublicKey().getKeyID());
 				
-				Log.d(InformaConstants.TAG, "key id: " + secret.getKeyID());				
+				//Log.d(InformaConstants.TAG, "key id: " + secret.getKeyID());				
 				// update cv with new key
 				db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Integer.toString(1)});
 				_ed.putBoolean(Keys.Settings.WITH_ENCRYPTION, true).commit();

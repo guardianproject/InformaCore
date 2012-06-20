@@ -1877,6 +1877,7 @@ public class VideoEditor extends Activity implements
 			break;
 			
 		case 7:
+			activeRegionTrail.setObscureMode(RegionTrail.OBSCURE_MODE_IDENTIFY);
 			launchTagger(activeRegionTrail);
 			break;
 			

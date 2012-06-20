@@ -27,6 +27,7 @@ public class RegionTrail {
 
 	public static final String OBSCURE_MODE_REDACT = "black";
 	public static final String OBSCURE_MODE_PIXELATE = "pixel";
+	public static final String OBSCURE_MODE_IDENTIFY = "identify";
 	
 	private String obscureMode = OBSCURE_MODE_PIXELATE;
 	
