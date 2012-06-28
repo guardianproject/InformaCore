@@ -135,6 +135,7 @@ public class Uploader extends Service {
 		return uploader;
 	}
 	
+	@SuppressWarnings("unused")
 	private void pickupUploads() {
 		// TODO: pick up where uploader left off.
 		dh.setTable(db, Tables.IMAGES);
@@ -295,17 +296,21 @@ public class Uploader extends Service {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private void uploadImage(MetadataPack mp) {
 		Map<String, Object> nvp = new HashMap<String, Object>();
-		nvp.put("user_pgp", mp.keyHash);
+		nvp.put("user_pgp_hash", mp.keyHash);
 		nvp.put("auth_token", mp.authToken);
+		// TODO: nvp.put("user_pgp", get key from keyring)
 		nvp.put("image_upload", new File(mp.filepath));
 	}
 	
+	@SuppressWarnings("unused")
 	private void uploadVideo(MetadataPack mp) {
 		Map<String, Object> nvp = new HashMap<String, Object>();
-		nvp.put("user_pgp", mp.keyHash);
+		nvp.put("user_pgp_hash", mp.keyHash);
 		nvp.put("auth_token", mp.authToken);
+		// TODO: nvp.put("user_pgp", get key from keyring)
 		nvp.put("video_upload", new File(mp.filepath));
 	}
 	
@@ -442,6 +447,7 @@ public class Uploader extends Service {
 	}
 	
 	public String executeGet(String url) throws IllegalStateException, IOException, URISyntaxException {
+		// TODO: should proxy over Tor
 		HttpClient client = new DefaultHttpClient();
 		HttpGet request = new HttpGet();
 		request.setURI(new URI(url));

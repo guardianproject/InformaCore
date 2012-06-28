@@ -9,11 +9,8 @@ import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.informa.utils.InformaConstants.CaptureEvents;
-import org.witness.informa.utils.InformaConstants.Keys;
 
 import android.content.Context;
-import android.util.Log;
 
 public class SensorLogger<T> {
 	public T _sucker;
@@ -95,6 +92,7 @@ public class SensorLogger<T> {
 	
 	public JSONObject returnCurrent() throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		JSONObject current = new JSONObject();
+		// TODO: sign this data and append signature? maybe...
 		
 		if(_sucker.getClass().getDeclaredMethod("forceReturn", null) != null) {
 			Method fr = _sucker.getClass().getDeclaredMethod("forceReturn", null);

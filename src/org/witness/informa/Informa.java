@@ -16,7 +16,6 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.CaptureEvents;
 import org.witness.informa.utils.InformaConstants.Keys;
@@ -452,6 +451,9 @@ public class Informa {
 		
 		for(int e=0; e<capturedEvents.length(); e++) {
 			JSONObject ce = (JSONObject) capturedEvents.get(e);
+			
+			// TODO: if we're dealing with encryption, validate the signature on the capture event
+			// if that's valid, resign the package
 			
 			int captureType = 0;
 			try {

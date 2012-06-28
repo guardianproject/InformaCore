@@ -7,11 +7,9 @@ import org.witness.ssc.utils.ObscuraConstants.MediaScanner;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.util.Log;
 
 public class InformaMediaScanner implements MediaScannerConnectionClient {

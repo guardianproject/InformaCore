@@ -3,11 +3,23 @@ package org.witness.informa.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.sql.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
@@ -18,8 +30,6 @@ import org.witness.informa.utils.InformaConstants.Media.ShareVector;
 import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.ssc.video.ShellUtils;
 
-import android.app.Activity;
-import android.content.Context;
 import android.util.Log;
 
 public class MetadataPack {
@@ -56,6 +66,7 @@ public class MetadataPack {
 		this.encryptionKey = key;
 	}
 	
+	@SuppressWarnings({ "deprecation", "unchecked" })
 	public void doEncrypt() {
 		try {
 			PGPPublicKey encKey = null;
@@ -72,17 +83,62 @@ public class MetadataPack {
 				}
 			}
 			
-			if(encKey == null)
-				throw new IllegalArgumentException("uch i cannot find a key here");
-			else
-				Log.d(InformaConstants.TAG, "hey guess we reconstructed the key");
+			if(encKey == null) {
+				Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
+			} else {
+				Log.e(InformaConstants.TAG, "good reference for: " + this.email);
+				Log.d(InformaConstants.TAG, "hey guess we reconstructed the key!");
+				
+				// TODO: ENCRYPTION HAPPENS HERE
+				int bufferSize = 1 << 16;
+				Security.addProvider(new BouncyCastleProvider());
+				OutputStream os = new ByteArrayOutputStream();
+				os = new ArmoredOutputStream(os);
+				
+				PGPEncryptedDataGenerator edg = new PGPEncryptedDataGenerator(
+						PGPEncryptedData.CAST5, true, new SecureRandom(), "BC");
+				edg.addMethod(encKey);
+				OutputStream encOs = edg.open(os, new byte[bufferSize]);
+				
+				PGPCompressedDataGenerator compressedData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+				OutputStream compOs = compressedData.open(encOs);
+				
+				PGPLiteralDataGenerator literalData = new PGPLiteralDataGenerator();
+				OutputStream litOs = literalData.open(compOs, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, new Date(System.currentTimeMillis()), new byte[bufferSize]);
+				
+				InputStream is = new ByteArrayInputStream(this.metadata.getBytes());
+				byte[] buf = new byte[bufferSize];
+				int len;
+				while((len = is.read(buf)) > 0)
+					litOs.write(buf, 0, len);
+				
+				litOs.close();
+				literalData.close();
+				
+				compOs.close();
+				compressedData.close();
+				
+				encOs.close();
+				edg.close();
+				
+				is.close();
+				this.metadata = new String(((ByteArrayOutputStream) os).toByteArray());
+				os.close();
+			}
 			
 		} catch(NullPointerException e) {
+			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
 			Log.e(InformaConstants.TAG, "key is null dummy, you can't encrypt this. " + e.toString());
 		} catch (IOException e) {
+			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
 			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
 			e.printStackTrace();
 		} catch (PGPException e) {
+			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
+			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
 			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
 			e.printStackTrace();
 		}

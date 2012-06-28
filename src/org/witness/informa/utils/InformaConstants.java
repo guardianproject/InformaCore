@@ -6,11 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.json.JSONObject;
-
 import android.media.ExifInterface;
 import android.os.Environment;
-import android.util.Log;
 
 public class InformaConstants {
 	public final static String TAG = "************ INFORMA ***********";
@@ -468,7 +465,6 @@ public class InformaConstants {
 	
 	public final static int NOT_REPORTED = -1;
 	
-	@SuppressWarnings("deprecation")
 	public final static long timestampToMillis(String ts) throws ParseException {
 		//2012:06:12 10:42:04
 		try {

@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
-import org.witness.informa.utils.ImageConstructor;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
 import org.witness.informa.utils.InformaConstants.Keys.Image;
@@ -21,17 +20,13 @@ import org.witness.informa.utils.InformaConstants.Keys.Media;
 import org.witness.informa.utils.InformaConstants.Keys.Settings;
 import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.Media.ShareVector;
-import org.witness.informa.utils.InformaConstants.Media.Status;
-import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.MetadataPack;
-import org.witness.informa.utils.VideoConstructor;
 import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.io.Uploader;
 import org.witness.informa.utils.secure.DestoService;
 import org.witness.informa.utils.secure.MediaHasher;
 import org.witness.mods.InformaTextView;
 import org.witness.ssc.R;
-import org.witness.ssc.video.ShellUtils;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -242,6 +237,7 @@ public class EncryptActivity extends Activity {
 	private class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
 		
+		@SuppressWarnings("unused")
 		public Broadcaster(IntentFilter intentFilter) {
 			this.intentFilter = intentFilter;
 		}

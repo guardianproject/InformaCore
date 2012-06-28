@@ -253,7 +253,7 @@ public class DestoService {
 			for(int i=0; i<jsond.length(); i++) {
 				JSONObject destoj = (JSONObject) jsond.get(i);
 				res.put(destoj.getString(TrustedDestinations.EMAIL), destoj.getString(TrustedDestinations.DESTO));
-				//updateTrustedDestination(res);
+				updateTrustedDestination(res);
 			}
 			return res;
 		}
@@ -283,6 +283,7 @@ public class DestoService {
 			this.email = email;
 		}
 		
+		@SuppressWarnings("unchecked")
 		private PGPPublicKey parseKey(byte[] keyBlock) throws IOException, PGPException {
 			PGPPublicKeyRingCollection keyringCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(keyBlock)));
 			PGPPublicKey key = null;
@@ -304,7 +305,7 @@ public class DestoService {
 		private PGPPublicKey queryKeyServer() {
 			try {
 				PGPPublicKey newKey = parseKey(uploader.getPublicKey(this.email));
-				//updateKeyring(email, newKey);
+				updateKeyring(email, newKey);
 				return newKey;
 			} catch (IllegalStateException e) {
 				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
@@ -322,8 +323,11 @@ public class DestoService {
 				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
 				e.printStackTrace();
 				return null;
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(InformaConstants.TAG, "http error in queryKeyServer(): " + e.toString());
+				e.printStackTrace();
+				return null;
 			}
-		
 		}
 		
 		public PGPPublicKey call() throws Exception {

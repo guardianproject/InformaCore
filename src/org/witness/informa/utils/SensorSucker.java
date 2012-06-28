@@ -362,7 +362,8 @@ public class SensorSucker extends Service {
 						encryptTo,
 						i.getIntExtra(Keys.Media.MEDIA_TYPE, MediaTypes.PHOTO),
 						i.getIntExtra(Keys.Genealogy.MEDIA_ORIGIN, Genealogy.MediaOrigin.IMPORT));
-				} else if(Keys.Service.SET_CURRENT.equals(i.getAction())) {					
+				} else if(Keys.Service.SET_CURRENT.equals(i.getAction())) {		
+					// TODO: this must be signed!
 					captureEventData(
 						i.getLongExtra(Keys.CaptureEvent.MATCH_TIMESTAMP, 0L),
 						i.getIntExtra(Keys.CaptureEvent.TYPE, CaptureEvents.REGION_GENERATED));
@@ -377,6 +378,7 @@ public class SensorSucker extends Service {
 				else if(Keys.Service.INFLATE_VIDEO_TRACK.equals(i.getAction()))
 					inflateFromLogs(i.getLongExtra(Keys.Video.FIRST_TIMESTAMP, 0), i.getIntExtra(Keys.Video.DURATION, 0));
 				else if(Keys.Service.ENCRYPT_METADATA.equals(i.getAction())) {
+					@SuppressWarnings("unchecked")
 					List<Map<String, String>> encryptedMetadata = (List<Map<String, String>>) i.getSerializableExtra(Keys.Service.ENCRYPT_METADATA);
 					sendBroadcast(new Intent().setAction(Keys.Service.FINISH_ACTIVITY));
 					
