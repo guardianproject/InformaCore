@@ -30,15 +30,19 @@ import org.witness.informa.utils.InformaConstants.Media.ShareVector;
 import org.witness.informa.utils.InformaConstants.Media.Status;
 import org.witness.ssc.video.ShellUtils;
 
+import android.util.Base64;
 import android.util.Log;
 
 public class MetadataPack {
 	public String email, metadata, filepath, clonepath, keyHash;
 	public String tdDestination = null;
+	public String encryptedMetadata = null;
 	public String tmpId, authToken, hash, messageUrl;
 	public int mediaType, shareVector, status, retryFlags;
 	public long timestampCreated, id;
 	public byte[] encryptionKey;
+	
+	private BouncyCastleProvider bc;
 	
 	public MetadataPack(
 			String clonePath,
@@ -68,6 +72,7 @@ public class MetadataPack {
 	
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	public void doEncrypt() {
+		bc = new BouncyCastleProvider();
 		try {
 			PGPPublicKey encKey = null;
 			PGPPublicKeyRingCollection keyRingCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(this.encryptionKey)));
@@ -92,13 +97,14 @@ public class MetadataPack {
 				// TODO: ENCRYPTION HAPPENS HERE
 				int bufferSize = 1 << 16;
 				Security.addProvider(new BouncyCastleProvider());
-				OutputStream os = new ByteArrayOutputStream();
-				os = new ArmoredOutputStream(os);
+				
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				OutputStream aos =  new ArmoredOutputStream(baos);
 				
 				PGPEncryptedDataGenerator edg = new PGPEncryptedDataGenerator(
-						PGPEncryptedData.CAST5, true, new SecureRandom(), "BC");
+						PGPEncryptedData.AES_256, true, new SecureRandom(), bc);
 				edg.addMethod(encKey);
-				OutputStream encOs = edg.open(os, new byte[bufferSize]);
+				OutputStream encOs = edg.open(aos, new byte[bufferSize]);
 				
 				PGPCompressedDataGenerator compressedData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
 				OutputStream compOs = compressedData.open(encOs);
@@ -122,8 +128,11 @@ public class MetadataPack {
 				edg.close();
 				
 				is.close();
-				this.metadata = new String(((ByteArrayOutputStream) os).toByteArray());
-				os.close();
+				this.encryptedMetadata = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+				Log.e(InformaConstants.TAG, "OH HO!\n" + new String(baos.toByteArray()));
+				
+				aos.close();
+				baos.close();
 			}
 			
 		} catch(NullPointerException e) {

@@ -216,7 +216,13 @@ public class ImageConstructor {
 	public static long constructImage(MetadataPack metadataPack) throws JSONException {
 		// insert metadata: filename, metadata package
 		JSONObject metadata = (JSONObject) new JSONTokener(metadataPack.metadata).nextValue();
-		if(constructImage(metadataPack.clonepath, metadataPack.filepath, metadataPack.metadata, metadataPack.metadata.length()) > 0)
+		String mdString = null;
+		if(metadataPack.encryptedMetadata == null)
+			mdString = metadataPack.metadata;
+		else
+			mdString = metadataPack.encryptedMetadata;
+		
+		if(constructImage(metadataPack.clonepath, metadataPack.filepath, mdString, mdString.length()) > 0)
 			return ((JSONObject) metadata.getJSONObject(Informa.GENEALOGY)).getLong(Keys.Genealogy.DATE_CREATED);
 		else
 			return 0L;

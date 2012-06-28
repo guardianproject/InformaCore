@@ -275,12 +275,11 @@ public class Informa {
 		int ownershipType;
 		
 		public Owner() {
+			this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY_HASH}, BaseColumns._ID, 1, String.class);
 			if(sp.getBoolean(Keys.Settings.WITH_ENCRYPTION, false)) {
-				this.publicKey = (String) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.SIG_KEY_ID}, BaseColumns._ID, 1, String.class);
 				this.sigKeyId = getAPGEmail(apg.getSignatureKeyId());
 				this.ownershipType = (Integer) getDBValue(Keys.Tables.SETUP, new String[] {Keys.Owner.OWNERSHIP_TYPE}, BaseColumns._ID, 1, Integer.class);
 			} else {
-				this.publicKey = (String) getDBValue(Keys.Tables.KEYRING, new String[] {Keys.Device.PUBLIC_KEY_HASH}, BaseColumns._ID, 1, String.class);
 				this.sigKeyId = getAccountEmail();
 				this.ownershipType = InformaConstants.Owner.INDIVIDUAL;
 			}

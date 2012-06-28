@@ -7,9 +7,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -180,7 +182,7 @@ public class DestoService {
 	}
 	
 	private void consolidate() {
-		ArrayList<Map<String, Map<String, Object>>> destoResultsCopy = new ArrayList<Map<String, Map<String, Object>>>();
+		List<Map<String, Map<String, Object>>> destoResultsCopy = new CopyOnWriteArrayList<Map<String, Map<String, Object>>>();
 		
 		for(Map<String, Map<String, Object>> desto : destoResults) {
 			Entry<String, Map<String, Object>> e = desto.entrySet().iterator().next();
@@ -210,7 +212,9 @@ public class DestoService {
 				destoResultsCopy.add(desto);
 			}
 		}
-		destoResults = destoResultsCopy;
+		
+		destoResults.clear();
+		destoResults.addAll(destoResultsCopy);
 		Log.d(InformaConstants.TAG, "all destos: " + destoResults.toString());
 	}
 	

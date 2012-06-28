@@ -314,7 +314,7 @@ public class VideoConstructor {
 	}
 	
 	public long constructVideo(MetadataPack metadataPack, ShellCallback sc) throws IOException, JSONException {
-		
+		// TODO: IF THIS IS ENCRYPTED AS A BLOB, THEN WHAT?
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 		

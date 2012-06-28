@@ -85,6 +85,12 @@ public class EncryptActivity extends Activity {
 		init();
 	}
 	
+	public void onDestroy() {
+		super.onDestroy();
+		db.close();
+		dh.close();
+	}
+	
 	private String getKeyHash() {
 		dh.setTable(db, Tables.KEYRING);
 		String keyHash = null;
