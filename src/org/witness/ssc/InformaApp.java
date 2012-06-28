@@ -16,14 +16,18 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.apache.http.client.ClientProtocolException;
 import org.witness.informa.utils.InformaConstants;
 import org.witness.informa.utils.InformaConstants.Keys;
+import org.witness.informa.utils.InformaConstants.Keys.Device;
+import org.witness.informa.utils.InformaConstants.Keys.Tables;
 import org.witness.informa.utils.InformaConstants.LoginCache;
 import org.witness.informa.utils.InformaConstants.Keys.Service;
 import org.witness.informa.utils.SensorSucker;
 import org.witness.informa.utils.SensorSucker.Broadcaster;
 import org.witness.informa.utils.SensorSucker.LocalBinder;
+import org.witness.informa.utils.io.DatabaseHelper;
 import org.witness.informa.utils.io.InformaMediaScanner;
 import org.witness.informa.utils.io.Uploader;
 import org.witness.informa.utils.secure.Apg;
+import org.witness.informa.utils.secure.SignatureUtil;
 import org.witness.ssc.Eula.OnEulaAgreedTo;
 import org.witness.ssc.InformaSettings.OnSettingsSeen;
 import org.witness.ssc.image.ImageEditor;
@@ -55,6 +59,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -74,6 +79,11 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 	Intent passingIntent;
 	File cameraImage;
 	
+	public SignatureUtil signatureUtil = null;
+	
+	DatabaseHelper dh;
+	SQLiteDatabase db;
+	
 	private ServiceConnection sc = new ServiceConnection() {
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
     		LocalBinder lb = (LocalBinder) binder;
@@ -92,6 +102,7 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
 		super.onDestroy();
 		deleteTmpFile();
 		sendBroadcast(new Intent().setAction(InformaConstants.Keys.Service.STOP_SERVICE));
+		signatureUtil = null;
 		
 		try {
 			if(Integer.parseInt(_sp.getString(Keys.Settings.DB_PASSWORD_CACHE_TIMEOUT, "")) == LoginCache.ON_CLOSE)
@@ -352,15 +363,36 @@ public class InformaApp extends SherlockActivity implements OnEulaAgreedTo, OnSe
         }
     }
     
+    private void launchSigUtil() {
+    	if(signatureUtil == null) {
+	    	dh = new DatabaseHelper(this);
+	    	db = dh.getReadableDatabase(_sp.getString(InformaConstants.Keys.Settings.HAS_DB_PASSWORD, ""));
+	    	dh.setTable(db, Tables.KEYRING);
+	    	
+	    	Cursor k = dh.getValue(db, new String[] {Device.PRIVATE_KEY, Device.PASSPHRASE}, BaseColumns._ID, Long.toString(1));
+	    	if(k != null && k.getCount() == 1) {
+	    		k.moveToFirst();
+	    		signatureUtil = new SignatureUtil(k.getBlob(k.getColumnIndex(Device.PRIVATE_KEY)), k.getString(k.getColumnIndex(Device.PASSPHRASE)));
+	    		k.close();
+	    	}
+	    	
+	    	db.close();
+	    	dh.close();
+    	}
+    }
+    
     private void launchInforma() {
     	// create folder if it doesn't exist
     	File informaDump = new File(InformaConstants.DUMP_FOLDER);
     	if(!informaDump.exists())
     		informaDump.mkdirs();
-    	    
+    	
+    	launchSigUtil();
+    	
     	if(informaService == null) {
     		Intent startSensorSucker = new Intent(this, SensorSucker.class);
     		bindService(startSensorSucker, sc, Context.BIND_AUTO_CREATE);
+    		
     	}
 
     	showHints = _sp.getBoolean(ObscuraConstants.Preferences.Keys.SHOW_HINTS, true);

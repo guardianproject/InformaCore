@@ -325,6 +325,8 @@ public class InformaConstants {
 				public final static String BLUETOOTH_DEVICE_NAME = "device_bluetooth_name";
 				public final static String BLUETOOTH_DEVICE_ADDRESS = "device_bluetooth_address";
 			}
+			
+			public static final String SIGNATURE = "verifiedSignature";
 		}
 		
 		public final static class Exif {

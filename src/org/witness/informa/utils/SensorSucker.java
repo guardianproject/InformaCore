@@ -37,6 +37,7 @@ import org.witness.informa.utils.InformaConstants.Genealogy;
 import org.witness.informa.utils.InformaConstants.MediaTypes;
 import org.witness.informa.utils.InformaConstants.OriginalImageHandling;
 import org.witness.informa.utils.io.DatabaseHelper;
+import org.witness.informa.utils.secure.SignatureUtil;
 import org.witness.informa.utils.suckers.*;
 
 import android.app.Activity;
@@ -207,6 +208,9 @@ public class SensorSucker extends Service {
 		captureEventData.put(Suckers.Phone.BLUETOOTH_DEVICE_NAME, device.getName());
 		captureEventData.put(Suckers.Phone.BLUETOOTH_DEVICE_ADDRESS, device.getAddress());
 		
+		String sig = SignatureUtil.getSignatureUtil().signData(captureEventData.toString().getBytes());
+		captureEventData.put(Keys.Suckers.SIGNATURE, sig);
+		
 		capturedEvents.put(captureEventData);
 	}
 	
@@ -217,6 +221,9 @@ public class SensorSucker extends Service {
 		captureEventData.put(CaptureEvent.TYPE, InformaConstants.CaptureEvents.EXIF_REPORTED);
 		captureEventData.put(Keys.Image.EXIF, exifData);
 		captureEventData.put(CaptureEvent.MATCH_TIMESTAMP, InformaConstants.timestampToMillis((String) exifData.get(Keys.Exif.TIMESTAMP)));
+		
+		String sig = SignatureUtil.getSignatureUtil().signData(captureEventData.toString().getBytes());
+		captureEventData.put(Keys.Suckers.SIGNATURE, sig);
 		
 		capturedEvents.put(captureEventData);
 	}
