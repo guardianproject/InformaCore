@@ -20,6 +20,7 @@ import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
@@ -75,74 +76,89 @@ public class MetadataPack {
 		bc = new BouncyCastleProvider();
 		try {
 			PGPPublicKey encKey = null;
-			PGPPublicKeyRingCollection keyRingCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(this.encryptionKey)));
-			Iterator<PGPPublicKeyRing> rIt = keyRingCol.getKeyRings();
-			while(rIt.hasNext()) {
-				PGPPublicKeyRing keyRing = (PGPPublicKeyRing) rIt.next();
-				Iterator<PGPPublicKey> kIt = keyRing.getPublicKeys();
+			try {
+				PGPPublicKeyRingCollection keyRingCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(this.encryptionKey)));
+				Iterator<PGPPublicKeyRing> rIt = keyRingCol.getKeyRings();
+				while(rIt.hasNext()) {
+					PGPPublicKeyRing keyRing = (PGPPublicKeyRing) rIt.next();
+					Iterator<PGPPublicKey> kIt = keyRing.getPublicKeys();
+					
+					while(kIt.hasNext()) {
+						PGPPublicKey key = (PGPPublicKey) kIt.next();
+						if(key.isEncryptionKey())
+							encKey = key;
+					}
+				}
+			} catch(PGPException e) {
+				// assumably, key found where key ring should be?
+				PGPObjectFactory objFact = new PGPObjectFactory(PGPUtil.getDecoderStream(new ByteArrayInputStream(this.encryptionKey)));
+				Object obj;
 				
-				while(kIt.hasNext()) {
-					PGPPublicKey key = (PGPPublicKey) kIt.next();
-					if(key.isEncryptionKey())
-						encKey = key;
+				while((obj = objFact.nextObject()) != null) {
+					if(obj instanceof PGPPublicKey) {
+						encKey = (PGPPublicKey) obj;
+						continue;
+					}
 				}
 			}
 			
 			if(encKey == null) {
 				Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
 			} else {
-				Log.e(InformaConstants.TAG, "good reference for: " + this.email);
-				Log.d(InformaConstants.TAG, "hey guess we reconstructed the key!");
-				
-				// TODO: ENCRYPTION HAPPENS HERE
-				int bufferSize = 1 << 16;
-				Security.addProvider(new BouncyCastleProvider());
-				
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				OutputStream aos =  new ArmoredOutputStream(baos);
-				
-				PGPEncryptedDataGenerator edg = new PGPEncryptedDataGenerator(
-						PGPEncryptedData.AES_256, true, new SecureRandom(), bc);
-				edg.addMethod(encKey);
-				OutputStream encOs = edg.open(aos, new byte[bufferSize]);
-				
-				PGPCompressedDataGenerator compressedData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-				OutputStream compOs = compressedData.open(encOs);
-				
-				PGPLiteralDataGenerator literalData = new PGPLiteralDataGenerator();
-				OutputStream litOs = literalData.open(compOs, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, new Date(System.currentTimeMillis()), new byte[bufferSize]);
-				
-				InputStream is = new ByteArrayInputStream(this.metadata.getBytes());
-				byte[] buf = new byte[bufferSize];
-				int len;
-				while((len = is.read(buf)) > 0)
-					litOs.write(buf, 0, len);
-				
-				litOs.close();
-				literalData.close();
-				
-				compOs.close();
-				compressedData.close();
-				
-				encOs.close();
-				edg.close();
-				
-				is.close();
-				this.encryptedMetadata = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-				Log.e(InformaConstants.TAG, "OH HO!\n" + new String(baos.toByteArray()));
-				
-				aos.close();
-				baos.close();
+				try {
+					Log.e(InformaConstants.TAG, "good reference for: " + this.email);
+					Log.d(InformaConstants.TAG, "hey guess we reconstructed the key!");
+					
+					// TODO: ENCRYPTION HAPPENS HERE
+					int bufferSize = 1 << 16;
+					Security.addProvider(new BouncyCastleProvider());
+					
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					OutputStream aos =  new ArmoredOutputStream(baos);
+					
+					PGPEncryptedDataGenerator edg = new PGPEncryptedDataGenerator(
+							PGPEncryptedData.AES_256, true, new SecureRandom(), bc);
+					edg.addMethod(encKey);
+					OutputStream encOs = edg.open(aos, new byte[bufferSize]);
+					
+					PGPCompressedDataGenerator compressedData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+					OutputStream compOs = compressedData.open(encOs);
+					
+					PGPLiteralDataGenerator literalData = new PGPLiteralDataGenerator();
+					OutputStream litOs = literalData.open(compOs, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, new Date(System.currentTimeMillis()), new byte[bufferSize]);
+					
+					InputStream is = new ByteArrayInputStream(this.metadata.getBytes());
+					byte[] buf = new byte[bufferSize];
+					int len;
+					while((len = is.read(buf)) > 0)
+						litOs.write(buf, 0, len);
+					
+					litOs.close();
+					literalData.close();
+					
+					compOs.close();
+					compressedData.close();
+					
+					encOs.close();
+					edg.close();
+					
+					is.close();
+					this.encryptedMetadata = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+					Log.e(InformaConstants.TAG, "OH HO!\n" + new String(baos.toByteArray()));
+					
+					aos.close();
+					baos.close();
+				} catch(PGPException e) {
+					Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
+					Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
+					e.printStackTrace();
+				}
 			}
 			
 		} catch(NullPointerException e) {
 			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
 			Log.e(InformaConstants.TAG, "key is null dummy, you can't encrypt this. " + e.toString());
 		} catch (IOException e) {
-			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
-			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
-			e.printStackTrace();
-		} catch (PGPException e) {
 			Log.e(InformaConstants.TAG, "bad reference for: " + this.email);
 			Log.e(InformaConstants.TAG, "encryption troubles: " + e.toString());
 			e.printStackTrace();

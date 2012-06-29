@@ -115,7 +115,6 @@ public class Informa {
 		Set<Corroboration> corroboration;
 		Set<ImageRegion> imageRegions;
 		Set<VideoRegion> videoRegions;
-		Set<Event> events;
 		
 		public Data(int sourceType) {
 			this.sourceType = sourceType;
@@ -204,16 +203,6 @@ public class Informa {
 			this.deviceBTName = deviceBTName;
 			this.selfOrNeighbor = selfOrNeighbor;
 			this.timeSeen = timeSeen;
-		}
-	}
-	
-	public class Event extends InformaZipper {
-		JSONObject eventData;
-		int eventType;
-		
-		public Event(int eventType, JSONObject eventData) {
-			this.eventType = eventType;
-			this.eventData = eventData;
 		}
 	}
 	

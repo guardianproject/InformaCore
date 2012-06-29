@@ -23,6 +23,7 @@ public class InformaConstants {
 	public final static int BLOB_MAX = 1048576;
 	public final static String DUMP_FOLDER = Environment.getExternalStorageDirectory() + "/InformaCam/";
 	public final static String TMP_FILE_NAME = "tmp_.jpg";
+	public final static String TMP_VIDEO_DATA_FILE_NAME = "tmp_.txt";
 	public final static String NOT_INCLUDED = "NOT INCLUDED IN THIS VERSION";
 	
 	public final static String REPO = "https://j3m.info/repo/?repo=";

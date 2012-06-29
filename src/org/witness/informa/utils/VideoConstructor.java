@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -15,7 +16,11 @@ import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -67,7 +72,6 @@ public class VideoConstructor {
 	
 	public VideoConstructor(Context _context, String metadataObjectString) throws FileNotFoundException, IOException {
 		context = _context;
-		Log.d(LOGTAG, "vc sees context: " + context.toString());
 		fileBinDir = context.getDir("bin",0);
 
 		if (!new File(fileBinDir,libraryAssets[0]).exists())
@@ -272,8 +276,12 @@ public class VideoConstructor {
 		}
 	}
 	
-	public void createVersionForTrustedDestination(Video v) throws JSONException, NoSuchAlgorithmException, IOException {
+	public void createVersionForTrustedDestination(Video v) throws NoSuchAlgorithmException, IOException, JSONException {
+		Log.d(LOGTAG, "creating version for TD NOW");
 		JSONObject mediaHash = new JSONObject();
+		List<JSONObject> eventLog = new CopyOnWriteArrayList<JSONObject>();
+		List<JSONArray> events = new ArrayList<JSONArray>();
+		JSONArray e = new JSONArray();
 		String unredactedHash = MediaHasher.hash(clone, "SHA-1");
 		
 		metadataForEncryption = new ArrayList<Map<Long, String>>();
@@ -290,6 +298,51 @@ public class VideoConstructor {
 		// replace the metadata's intended destination
 		metadataObject.getJSONObject(Keys.Informa.INTENT).put(Keys.Intent.INTENDED_DESTINATION, v.getIntendedDestination());
 		
+		// format the metadata for video
+		long rootTime = ((JSONObject) metadataObject.get(Informa.GENEALOGY)).getLong(Genealogy.DATE_CREATED);
+		
+		events.add((JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.VIDEO_REGIONS));
+		events.add((JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.LOCATIONS));
+		events.add((JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CAPTURE_TIMESTAMPS));
+		events.add((JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CORROBORATION));
+		
+		//Log.d(LOGTAG, "events: " + events.size());
+		
+		for(JSONArray j : events) {
+			for(int i=0; i<j.length(); i++)
+				e.put(j.get(i));
+		}
+		
+		
+		for(int t=0; t<e.length(); t++) {
+			JSONObject td = e.getJSONObject(t);
+			String time = InformaConstants.millisecondsToTimestamp(0);
+			if(td.has(Keys.VideoRegion.START_TIME))
+				time = InformaConstants.millisecondsToTimestamp((long) td.getInt(Keys.VideoRegion.START_TIME));
+			
+			boolean newEvent = true;
+			
+			Log.d(LOGTAG, "this event: " + td.toString());
+			
+			Iterator<JSONObject> eIt = eventLog.iterator();
+			while(eIt.hasNext()) {
+				
+				JSONObject evt = eIt.next();
+				if(evt.has(time)) {
+					evt.accumulate(time, td);
+					newEvent = false;
+					continue;
+				}
+			}
+			
+			if(newEvent) {
+				JSONObject newEvt = new JSONObject();
+				newEvt.put(time, td);
+				eventLog.add(newEvt);
+			}
+		}
+		
+		metadataObject.put(InformaConstants.Keys.Video.VIDEO_TRACK, eventLog.toString());
 		// insert into database for later
 		ContentValues cv = new ContentValues();
 		// package zipped image region bytes
@@ -320,80 +373,28 @@ public class VideoConstructor {
 		
 		JSONObject metadataObject = (JSONObject) new JSONTokener(metadataPack.metadata).nextValue();
 		long rootTime = ((JSONObject) metadataObject.get(Informa.GENEALOGY)).getLong(Genealogy.DATE_CREATED);
-		int duration = ((JSONObject) ((JSONObject) metadataObject.get(Informa.DATA)).get(Keys.Data.EXIF)).getInt(Keys.Exif.DURATION);
 		
-		JSONArray timedData = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.VIDEO_REGIONS);
-		JSONArray locations = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.LOCATIONS);
-		JSONArray captureTimestamps = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CAPTURE_TIMESTAMPS);
-		JSONArray corroboration = (JSONArray) ((JSONObject) metadataObject.get(Informa.DATA)).remove(Keys.Data.CORROBORATION);
+		File mdFile = new File(InformaConstants.DUMP_FOLDER, InformaConstants.TMP_VIDEO_DATA_FILE_NAME);
+		String mdData = (metadataPack.encryptedMetadata == null ? metadataPack.metadata : metadataPack.encryptedMetadata);
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(context.getAssets().open("informa.ass")));
-		String line;
-		//Dialogue: 0,0:00:27.04,0:00:28.21,Main,,0000,0000,0000,,{\be1}Um...
-		String cloneLine = null;
-		StringBuilder sb = new StringBuilder();
-		while((line = br.readLine()) != null) {
-			if(line.contains(Ass.VROOT))
-				line = line.replace(Ass.VROOT, metadataPack.filepath);
-			if(line.contains("Dialog")) {
-				cloneLine = line;
-				line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(1L));
-				line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp((long) duration));
-				line = line.replace(Ass.BLOCK_DATA, metadataObject.toString());
-			}
-			sb.append(line).append('\n');
-		}
-		br.close();
-		
-		// replace the first line in the ass file with the remainder of the metadataObject
-		for(int t=0; t<timedData.length(); t++) {
-			// group the rest by timestamp and format for ass file
-			JSONObject td = timedData.getJSONObject(t);
-			line = cloneLine;
-			line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp((long) td.getInt(Keys.VideoRegion.START_TIME)));
-			line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp((long) td.getInt(VideoRegion.END_TIME)));
-			line = line.replace(Ass.BLOCK_DATA, td.toString());
-			
-			sb.append(line).append('\n');
-		}
-		
-		for(int t=0; t<corroboration.length(); t++) {
-			JSONObject cd = corroboration.getJSONObject(t);
-			long timeSeen = rootTime - cd.getLong(Keys.Device.TIME_SEEN);
-			line = cloneLine;
-			
-			line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(timeSeen, duration));
-			line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp(timeSeen + 1000, duration));
-			line = line.replace(Ass.BLOCK_DATA, cd.toString());
-			
-			sb.append(line).append('\n');
-		}
-		
-		for(int t=0; t<captureTimestamps.length(); t++) {
-			JSONObject ctd = captureTimestamps.getJSONObject(t);
-			long timeSeen = rootTime - ctd.getLong(Keys.CaptureEvent.TIMESTAMP);
-			for(int l=0; l<locations.length(); l++) {
-				JSONObject ld = locations.getJSONObject(l);
-				if(ld.getInt(Keys.Location.TYPE) == ctd.getInt(Keys.CaptureTimestamp.TYPE))
-					line = line.replace(Ass.BLOCK_DATA, ld.toString());
-			}
-			line = cloneLine;
-			line = line.replace(Ass.BLOCK_START, InformaConstants.millisecondsToTimestamp(timeSeen, duration));
-			line = line.replace(Ass.BLOCK_END, InformaConstants.millisecondsToTimestamp(timeSeen + 1000, duration));
-			
-			sb.append(line).append('\n');
-		}
-		
-		File mdfile = stringToFile(sb.toString(), InformaConstants.DUMP_FOLDER, Ass.TEMP);
+		PrintWriter pw = new PrintWriter(mdFile);
+		pw.print(mdData);
+		pw.close();
 		
 		String[] ffmpegCommand = new String[] {
 			ffmpegBin, "-i", metadataPack.clonepath,
-			"-i", mdfile.getAbsolutePath(),
-			"-scodec", "copy",
+			"-attach", mdFile.getAbsolutePath(),
+			"-metadata:s:2", "mimetype=text/plain",
 			"-vcodec", "copy",
 			"-acodec", "copy",
 			metadataPack.filepath
 		};
+		
+		StringBuffer sb = new StringBuffer();
+		for(String f: ffmpegCommand) {
+			sb.append(f + " ");
+		}
+		Log.d(LOGTAG, "command to ffmpeg: " + sb.toString());
 		
 		try {
 			execProcess(ffmpegCommand, sc);
