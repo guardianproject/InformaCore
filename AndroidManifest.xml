@@ -1,70 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="org.witness.ssc"
-      android:versionCode="24"
-      android:versionName="1.2-RC3"
-      android:installLocation="auto">
-    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="15"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.VIBRATE"/>
+    package="org.witness.informacam"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="10" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="org.thialfihar.android.apg.permission.READ_KEY_DETAILS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <application android:label="@string/app_name" android:icon="@drawable/ic_launcher_ssc" android:theme="@style/Theme.Sherlock">
-        <activity android:label="@string/app_name_label" android:name="org.witness.ssc.InformaApp" android:theme="@android:style/Theme.Black.NoTitleBar" android:screenOrientation="portrait" android:configChanges="orientation|keyboardHidden|screenSize">
+
+    <application
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.Light.NoTitleBar">
+        <activity
+            android:name="org.witness.informacam.app.MainActivity"
+            android:label="@string/app_name"
+            android:configChanges="orientation|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="org.witness.ssc.image.ImageEditor" android:screenOrientation="landscape">
+        <activity android:name=".app.editors.image.ImageEditor" android:screenOrientation="landscape">
 			<intent-filter>
                  <action android:name="android.intent.action.VIEW" />
                  <action android:name="android.intent.action.EDIT" />
                  <action android:name="android.intent.action.SEND" />
-                 <action android:name="org.thialfihar.android.apg.intent.ENCRYPT_FILE" />
-                 
+                                  
                  <category android:name="android.intent.category.DEFAULT" />
                  <category android:name="android.intent.category.ALTERNATIVE" /> 
                  <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
                  
-                 
                  <data android:mimeType="image/*" />
              </intent-filter>        
         </activity>
-        <activity android:name="org.witness.ssc.video.VideoEditor"  android:screenOrientation="landscape">
-    	    <intent-filter>
-                 <action android:name="android.intent.action.VIEW" />
-                 <action android:name="android.intent.action.EDIT" />
-                 <action android:name="android.intent.action.SEND" />
-                 
-                 <category android:name="android.intent.category.DEFAULT" />
-                 <category android:name="android.intent.category.ALTERNATIVE" /> 
-                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" /> 
-                 
-                 <data android:mimeType="video/*" />
-             </intent-filter>
-    	</activity>
-    	<activity android:name="org.witness.ssc.video.VideoPreferences" />
-        <activity android:name="org.witness.ssc.image.ImagePreview" android:label="@string/image_preview" android:configChanges="orientation|keyboardHidden|screenSize" />
-    	<activity android:name="org.witness.informa.Tagger" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />
-		<activity android:name="org.witness.informa.KeyChooser" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />
-		<activity android:name="org.witness.informa.ReviewAndFinish" android:theme="@style/Theme.CustomDialog" android:configChanges="orientation|keyboardHidden|screenSize" />
-    	<activity android:name="org.witness.ssc.Wizard" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-    	<activity android:name="org.witness.ssc.Preferences" android:label="@string/preferences_label" android:screenOrientation="portrait" />
-    	<activity android:name="org.witness.ssc.Login" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-    	<activity android:name="org.witness.ssc.About" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-    	<activity android:name="org.witness.informa.EncryptActivity" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-    	<activity android:name="org.witness.ssc.MediaManager" android:theme="@style/Theme.CustomDialog" android:screenOrientation="portrait" />
-    	<activity android:name="com.xtralogic.android.logcollector.SendLogActivity"
+        <activity android:name=".app.WizardActivity"
+            android:theme="@style/Theme.CustomDialog"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.AboutActivity"
+            android:theme="@style/Theme.CustomDialog"
+            android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.LoginActivity"
+            android:theme="@style/Theme.CustomDialog"
+            android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.AnnotationActivity"
+            android:theme="@style/Theme.CustomDialog"
+            android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.DestinationChooserActivity"
+            android:theme="@style/Theme.CustomDialog"
+            android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.AddressBookChooserActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:theme="@style/Theme.CustomDialog" />
+        
+        
+        <activity android:name=".app.MediaManagerActivity" android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.MessageCenterActivity" android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.AddressBookActivity" android:configChanges="orientation|keyboardHidden" />
+        
+        <activity android:name=".app.KnowledgebaseActivity" />
+        <activity android:name=".app.PreferencesActivity" />
+        
+        <activity android:name="com.xtralogic.android.logcollector.SendLogActivity"
                   android:label="@string/app_name_lc"
                   android:theme="@style/Theme.CustomDialog">
             <intent-filter>
@@ -72,8 +77,9 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-    	
-    	<service android:enabled="true" android:name="org.witness.informa.utils.SensorSucker" />
-    	<service android:enabled="true" android:name="org.witness.informa.utils.io.Uploader" /> 
+        
+        <service android:name=".informa.InformaService" android:enabled="true" />
+        <service android:name=".transport.UploaderService" android:enabled="true" />
     </application>
-</manifest> 
+
+</manifest>

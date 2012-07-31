@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry kind="lib" path="libs/sqlcipher.jar"/>
-	<classpathentry kind="lib" path="libs/commons-codec.jar"/>
-	<classpathentry kind="lib" path="libs/guava-r09.jar"/>
-	<classpathentry kind="lib" path="libs/httpmime-4.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpcore-4.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpclient-cache-4.1.jar"/>
-	<classpathentry kind="lib" path="libs/httpclient-4.1.jar"/>
-	<classpathentry kind="lib" path="libs/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="libs/bcpg-jdk15on-147.jar"/>
-	<classpathentry kind="lib" path="libs/bcprov-jdk15on-147.jar"/>
 	<classpathentry kind="src" path="gen"/>
-	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry kind="lib" path="/IOCipher/bin/iocipher.jar"/>
+	<classpathentry kind="lib" path="libs/sqlcipher.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

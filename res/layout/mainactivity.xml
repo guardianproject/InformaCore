@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:id="@+id/navigation_holder"
+        style="@style/NavHolder">
+        <TextView
+            android:id="@+id/navigation_label"
+            style="@style/NavH1"
+            android:text="@string/app_name" />
+    </LinearLayout>
+    
+    <LinearLayout android:id="@+id/new_media_holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1.0"
+        android:layout_marginTop="10dip"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:padding="10dip"
+        android:background="@drawable/new_media_holder"
+        android:layout_below="@+id/navigation_holder">
+        <Button style="@style/NewMediaButton"
+            android:id="@+id/camera_button"
+            android:text="@string/camera"
+            android:drawableLeft="@drawable/menu_camera_selector" />
+        <Button style="@style/NewMediaButton"
+            android:id="@+id/camcorder_button"
+            android:text="@string/camcorder"
+            android:layout_marginLeft="5dip"
+            android:drawableLeft="@drawable/menu_camcorder_selector" />
+    </LinearLayout>
+    
+    <LinearLayout android:id="@+id/lockbox_holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="left"
+        android:layout_alignParentBottom="true">
+        <Button android:id="@+id/media_manager_button"
+            style="@style/Button_lockbox"
+            android:text="@string/media_manager" />
+        <Button android:id="@+id/message_center_button"
+            style="@style/Button_lockbox"
+            android:text="@string/message_center" />
+        <Button android:id="@+id/address_book_button"
+            style="@style/Button_lockbox"
+            android:text="@string/address_book" />
+    </LinearLayout>
+</RelativeLayout>

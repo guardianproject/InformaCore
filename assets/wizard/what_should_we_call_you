@@ -1,0 +1,2 @@
+Choose a name to identify yourself.  It does NOT have to be your real name.
+{$ type=input; callback=setUserAlias; mandatory=false;}

@@ -3,7 +3,7 @@ package net.londatiga.android;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.witness.ssc.R;
+import org.witness.informacam.R;
 
 import android.content.Context;
 import android.graphics.Rect;

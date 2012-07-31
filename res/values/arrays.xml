@@ -54,4 +54,16 @@
     	<item>Rename</item>
     	<item>Get Info</item>
 	</string-array>
+	
+	<string-array name="address_book_actions">
+	    <item>View Details\u2026</item>
+	    <item>Refresh Key</item>
+	    <item>Delete Contact</item>
+	</string-array>
+	
+	<string-array name="informa_statuses">
+	    <item>InformaCam running</item>
+	    <item>InformaCam stopped</item>
+	    <item>Uploading media\u2026</item>
+	</string-array>
 </resources>

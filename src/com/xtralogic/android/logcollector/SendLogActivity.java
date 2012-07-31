@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.witness.ssc.R;
+import org.witness.informacam.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;

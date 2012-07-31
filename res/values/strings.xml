@@ -1,29 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!--  LABELS -->
     <string name="app_name">InformaCam</string>
-    <string name="app_name_label">InformaCam</string>
-    <string name="image_preview">InformaCam Image Preview</string>
-	<string name="SplashTextViewString">InformaCam</string>
-	<string name="CreditsTextViewString">Powered by the Guardian Project and Witness</string>
-	<string name="WalkThroughSkipButton">Skip</string>
-	<string name="WalkThroughContinueButton">Continue</string>
-	<string name="WalkThroughTextView">This is an application which helps protect the privacy of individuals that may appear in pictures.</string>
-	<string name="WalkThroughPrefSliderLabel">Select Risk Level</string>
-    <string name="menu_about">About InformaCam</string>
-    <string name="menu_logout">Logout</string>
+    <string name="media_manager">Media Manager</string>
+    <string name="message_center">Message Center</string>
+    <string name="address_book">Address Book</string>
+    <string name="camera">Camera</string>
+    <string name="camcorder">Camcorder</string>
     
-    <!--  Main Menu -->
-    <string name="camera">Take Photo</string>
-    <string name="video">Take Video</string>
-    <string name="choose_photos">Choose from Gallery</string>
-    <string name="gallery_launch_error">Unable to open Gallery app.</string>
-    <string name="menu_go_to_media_manager">Media Manager</string>
-    <string name="menu_new_media">New\u2026</string>
-    <string name="menu_import_media">Import\u2026</string>
+    <!--  BASIC STRINGS -->
+	<string name="yes">Yes</string>
+	<string name="no">No</string>
+	<string name="_continue">Continue</string>
+	<string name="cancel">Cancel</string>
+	<string name="ok">OK</string>
+	<string name="save">Save</string>
+    <string name="back">Back</string>
+    <string name="next">Next</string>
+    <string name="done">Done</string>
+    <string name="saving">Saving\u2026</string>
+    <string name="select">Select</string>
+    <string name="add">Add</string>
     
-    <string name="menu_send_log">Send Error Log\u2026</string>
+    <!-- MAIN MENU -->
+    <string name="mainactivity_preferences">Preferences</string>
+    <string name="mainactivity_about">About InformaCam</string>
+    <string name="mainactivity_knowledgebase">Knowledgebase</string>
+    <string name="mainactivity_send_log">Send Log\u2026</string>
+    <string name="mainactivity_log_out">Log Out</string>
+    <string name="mainactivity_log_in">Log In</string>
     
-    <!-- Image/Video Editor Menus -->
+    <!--  IMAGE/VIDEO EDITORS -->
     <string name="menu_this_image">This Image\u2026</string>
     <string name="menu_new_region">New Tag</string>
     <string name="menu_detect">Detect Faces</string>    
@@ -41,150 +48,9 @@
     <string name="menu_region_delete">Delete</string>
     <string name="menu_minimize">Hide Menu</string>
     <string name="menu_hide_hints">Show/Hide Hints</string>
-    
-    
-    <string name="ok">OK</string>
-    <string name="save">Save</string>
-    <string name="back">Back</string>
-    <string name="next">Next</string>
-    <string name="done">Done</string>
-    <string name="saving">Saving\u2026</string>
-    
-    <!-- Informa Options -->
-    <string name="informaOpt_consent">Subject has given his/her informed consent to be photographed.</string>
-    <string name="informaOpt_autoFilter">Automatically apply this type of filter each time this person appears in an ObscuraCam photo.</string>
-    
-     <!-- APG related -->
-    <string name="apg_error_activity_not_found">No suitable application for this action found.</string>
-    <string name="apg_error_apg_version_not_supported">The installed APG version is not supported.</string>
-    <string name="apg_btn_crypto_sign">Sign</string>
-    <string name="apg_btn_encrypt">Encrypt</string>
-    <string name="apg_btn_decrypt">Decrypt</string>
-    <string name="apg_btn_verify">Verify</string>
-    <string name="apg_btn_select">Select</string>
-    <string name="apg_encrypting_title">Encrypting</string>
-    <string name="apg_encrypting_progress">Encrypting to</string>
-    <string name="encrypt_encrypting_to">Encrypting to</string>
-    <string name="encrypt_contacting_td">Contacting Trusted Destinations\u2026</string>
-    
-    <string name="unknown_crypto_signature_user_id">&lt;unknown&gt;</string>
-    <string name="key_id">id: %s</string>
-    <string name="insufficient_apg_permissions">This app doesn\'t have permission to access APG fully, please reinstall the app to fix that.</string>
-    <string name="pgp_mime_unsupported">PGP/MIME messages are not supported yet.</string>
-    <string name="attachment_encryption_unsupported">Warning: attachments are NOT signed or encrypted yet.</string>
-    <string name="send_aborted">Send aborted.</string>
+    <string name="welcomeSubMsg">now with video!</string>
     <string name="menu_delete_original">Delete Original</string>
     <string name="menu_preview">Preview</string>
-    
-    <string name="loading_image">Loading photo\u2026</string>
-    
-    <!--  ABOUT Related -->
-    <string name="about">This app was developed by the SecureSmartCam Team, a joint effort by WITNESS and the Guardian Project.</string>
-	<string name="about2">Learn more at http://witness.org and https://guardianproject.info</string>
-	<string name="about3">This software is freely licensed under the GNU GPL v3.</string>
-	
-	<!--  HINTS  -->
-	<string name="hint_label">Hint:</string>
-	<string name="hint_explain_informa_menu">This is the InformaCam Menu.  Tap this icon to view your options at any point.</string>
-	<string name="hint_explain_suckers">InformaCam has turned on your GPS and Bluetooth in order to start logging more complete data.</string>
-	<string name="hint_explain_suckers_more">What else is this app logging?</string>
-	<string name="hint_explain_image_editor">Tap on the image to create a new tag.\nTap on any displayed tag to edit it: a tag-editor icon will appear in the menu bar.</string>
-	
-	<!--  BASIC STRINGS -->
-	<string name="yes">Yes</string>
-	<string name="no">No</string>
-	<string name="_continue">Continue</string>
-	<string name="cancel">Cancel</string>
-	
-	<!--  LOG IN ACTIVITY -->
-	<string name="login">Log In</string>
-	<string name="login_text">Please enter your password to continue</string>
-	<string name="login_fail">Your password is incorrect.  Please try again</string>
-	
-	<!--  INFORMA TAGGER -->
-	<string name="tagger_no_name_error">You haven\'t identified anyone!</string>
-	<string name="tagger_informed_consent_question">This subject given his/her informed consent to appear in this image</string>
-	<string name="tagger_subject_filter_preference_question">InformaCam should attempt to add the same image filter to the subject in every image</string>
-	<string name="tagger_hint">Name/Pseudonym</string>
-	
-	<!--  INFORMA KEY CHOOSER  -->
-	<string name="chooser_prompt">Select trusted destinations:</string>
-	<string name="chooser_no_choice_warning_title">Wait!</string>
-	<string name="chooser_no_choice_warning_text">You have not selected any trusted destinations.  Continue anyway?\nWarning: your image will be redacted, but metadata will not be saved.</string>
-	
-	<!--  INFORMA CONFIRM ACTIVITY -->
-	<string name="informaConfirm_title">Media Saved</string>
-	<string name="informaConfirm_text">Your media has been saved.  What would you like to do?</string>
-	<string name="informaConfirm_btn_view">View Redacted Version</string>
-	<string name="informaConfirm_btn_quit">Quit Informa</string>
-	<string name="informaConfirm_btn_takeAnother">Take Another</string>
-	<string name="informaConfirm_btn_goToHome">Go to Home Screen</string>
-	<string name="informaConfirm_btn_goToManager">Go to Media Manager</string>
-	<string name="informaConfirm_btn_share">Share Redacted Version</string>
-	<string name="informaConfirm_share_prompt">Share Redacted Version\u2026</string>
-	
-	<!--  INFORMA UPLOADER -->
-	<string name="informaUploader_id">Hey this is the Id for the upload service!</string>
-	<string name="informaUploader_title">Uploading\u2026</string>
-	<string name="informaUploader_err_noTor">Error: Cannot upload at this time.  Please make sure Tor is running and try again.</string>
-	
-	<!--  INFORMA MEDIA MANAGER -->
-	<string name="informaMediaManager_title">Media Manager</string>
-	<string name="informaMediaManager_checkingMessages">Checking for Messages</string>
-	<string name="informaMediaManager_messages">Messages</string>
-	<string name="informaMediaManager_quit">Quit</string>
-	<string name="informaMediaManager_sharePrompt">Share Encrypted Version/u2026</string>
-	<string name="informaMediaManager_rename">Rename</string>
-	<string name="informaMediaManager_reply">Reply</string>
-	
-	<!--  EULA related -->
-    <string name="eula_title">You agree to:</string>
-    <string name="eula_accept">Accept</string>
-    <string name="eula_refuse">Refuse</string>
-    
-    <!--  INFORMA PREFERENCES -->
-    <string name="ip_title">Informa Preferences</string>
-    <string name="ip_enter_pw">Please enter your InformaCam database password to continue:</string>
-    <string name="informaPref_label">Informa Preferences</string>
-	<string name="informaPref_dbpw">Database Password</string>
-	<string name="informaPref_dbpw_sum">Set your password to your encrypted media database:</string>
-	<string name="informaPref_dbpw_notfound">You haven\'t set a password for the database yet.</string>
-	<string name="informaPref_destKeys">Trusted Destinations</string>
-	<string name="informaPref_destKeys_sum">Add/Edit trusted destinations for your encrypted media:</string>
-	<string name="informaPref_destKeys_add">Add new trusted destination</string>
-	<string name="informaPref_destKeys_notfound">Could not find APG key with this email address.</string>
-	<string name="informaPrefs_newkey_label">New Trusted Destination</string>
-	<string name="informaPrefs_keyalias">Destination Name:</string>
-	<string name="informaPrefs_keyemail">Destination Email:</string>
-	<string name="informaPrefs_trustedDestinations_title">Trusted Destinations</string>
-	<string name="informaPrefs_trustedDestinations_prompt">Manage your trusted destinations\u2026</string>
-	
-	<!--  INFORMA TRUSTED DESTINATIONS MANAGER -->
-	<string name="tdmanager_title">Trusted Destinations Manager</string>
-	<string name="tdmanager_add_new">Import new PGP contacts</string>
-	<string name="tdmanager_no_contacts">You do not have any PGP contacts yet!</string>
-    
-    <!--  WIZARD related -->
-    <string name="wizard_main_title">Setup Wizard</string>
-    <string name="wizard_error_password_too_short">Please choose a password of 6 or more characters.</string>
-    <string name="wizard_error_no_apg">APG cannot be detected on the device.  Are you sure you have it installed?</string>
-    
-    <!--  GLOBAL PREFERENCES related -->
-    <string name="preferences_label">InformaCam Preferences</string>
-    <string name="preferences_show_hints_label">Show Hints?</string>
-    <string name="preferences_show_hints_text">Show handy hints as you use the app.</string>
-    <string name="preferences_cache_label">Login Options</string>
-    <string name="preferences_cache_text">How long should you stay logged in to the app?  If you choose "always," you must manually log out of the app (through the main menu.)</string>
-    <string name="preferences_image_handling_label">Media Handling</string>
-    <string name="preferences_image_handling_text">What should the app do with your original media?</string>
-    <string name="preferences_language_label">Language</string>
-    <string name="preferences_language_text">What language should the app use?</string>
-    <string name="preferences_encrypt_metadata_label">Encrypt Metadata</string>
-    <string name="preferences_encrypt_metadata_text">Sign and encrypt metadata to Trusted Destinations?</string>
-    
-    <!--  VIDEO related -->
-    <string name="welcomeSubMsg">now with video!</string>
-    
     <string name="play_video">Play Video</string>
     <string name="share_video">Share Video</string>
     
@@ -209,6 +75,39 @@
      <string name="pref_out_vheight_title">Custom Video Height (px)</string>
     <string name="pref_out_vheight_summary">custom video height for outputed video</string>
     
+    <!--  ERRORS -->
+    <string name="error_media_mounted">Please insert an SD card to save media!</string>
+    <string name="error_no_key_found_for_email">Sorry!  No public key found for </string>
+    <string name="error_cannot_delete_contact">This contact cannot be deleted.</string>
+    
+    <!--  ADDRESS BOOK AND CHOOSER -->
+    <string name="address_book_new_contact">Add new contact\u2026</string>
+    <string name="address_book_directions">You can add a new contact by either typing in the email address, picking from your contact list, or by importing a public key (.asc) from storage.</string>
+    <string name="address_book_pick_from_contacts">Pick contact</string>
+    <string name="address_book_enter_email_address">email@example.com</string>
+    <string name="address_book_import_key">Import Key</string>
+    <string name="address_book_multiple_email">Multiple email addresses were found for this contact.  Which one would you like to use?</string>
+    <string name="address_book_querying_keyserver_wait">Querying keyservers\u2026</string>
+    <string name="address_book_keyserver_result">Would you like to add the following key to your Address Book?\n\nPLEASE CHECK THE FINGERPRINT BEFORE ADDING!</string>
+    <string name="address_book_email">Email:</string>
+    <string name="address_book_fingerprint">Fingerprint:</string>
+    <string name="address_book_creation_date">Created on:</string>
+    <string name="address_book_expiry_date">Expires on:</string>
+    
+	<!--  LOG IN ACTIVITY -->
+	<string name="login">Log In</string>
+	<string name="login_text">Please enter your password to continue</string>
+	<string name="login_fail">Your password is incorrect.  Please try again</string>
+    
+	<!--  EULA related -->
+    <string name="eula_title">You agree to:</string>
+    <string name="eula_accept">Accept</string>
+    <string name="eula_refuse">Refuse</string>
+    
+    <!--  WIZARD related -->
+    <string name="wizard_main_title">Setup Wizard</string>
+    <string name="wizard_error_password_too_short">Please choose a password of 10 or more characters.</string>
+    
     <!--  LOG COLLECTOR related -->
     <string name="app_name_lc">Log Collector</string>
     <string name="message_subject">Android device log</string>
@@ -226,4 +125,5 @@ Firmware version: <xliff:g id="firmware_revision">%s</xliff:g>\n
 Kernel version: <xliff:g id="kernel_version">%s</xliff:g>\n
 Build number: <xliff:g id="build_number">%s</xliff:g>\n
     </string>
+
 </resources>

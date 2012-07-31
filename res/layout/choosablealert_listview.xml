@@ -1,0 +1,31 @@
+<LinearLayout style="@style/OverlayActivity"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:weightSum="1.0" >
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="0.15">
+    	<org.witness.informacam.app.mods.InformaHeaderTextView style="@style/H1"
+    		android:layout_width="match_parent"
+    		android:layout_height="wrap_content"
+    		android:id="@+id/choice_title" />
+    </LinearLayout>
+    <LinearLayout
+    	android:orientation="vertical"
+    	android:layout_width="match_parent"
+    	android:layout_height="0dip"
+    	android:layout_weight="0.25"
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip"
+    	android:paddingLeft="6dip"
+    	android:paddingRight="6dip" >
+    	<ListView
+    	    android:layout_width="match_parent"
+    	    android:layout_height="wrap_content"
+    	    android:id="@+id/choice_list"
+    	    android:padding="0dip" />
+    </LinearLayout>
+</LinearLayout>

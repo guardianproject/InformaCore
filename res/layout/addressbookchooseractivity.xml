@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout style="@style/OverlayActivity"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:weightSum="1.0" >
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="0.15">
+    	<org.witness.informacam.app.mods.InformaHeaderTextView style="@style/H1"
+    		android:layout_width="match_parent"
+    		android:layout_height="wrap_content"
+    		android:text="@string/address_book_new_contact" />
+    </LinearLayout>
+    <LinearLayout
+    	android:orientation="vertical"
+    	android:layout_width="match_parent"
+    	android:layout_height="0dip"
+    	android:layout_weight="0.25"
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip"
+    	android:paddingLeft="6dip"
+    	android:paddingRight="6dip" >
+    	<TextView style="@style/P"
+    	    android:layout_width="match_parent"
+    	    android:layout_height="wrap_content"
+    	    android:id="@+id/choose_instructions" />
+    	<LinearLayout
+    	    android:layout_marginTop="10dip"
+    	    android:orientation="horizontal"
+    	    android:layout_width="match_parent"
+    	    android:layout_height="wrap_content"
+    	    android:weightSum="1.0">
+    	    <org.witness.informacam.app.mods.InformaEditText style="@style/EditText_standard"
+    	        android:layout_width="0dip"
+    	        android:layout_height="wrap_content"
+    	        android:layout_weight="0.8"
+    	        android:id="@+id/input_contact_text"
+    	        android:hint="@string/address_book_enter_email_address" />
+    	    <org.witness.informacam.app.mods.InformaButton style="@style/Button_standard"
+    	        android:id="@+id/input_contact"
+    	        android:layout_width="0dip"
+    	        android:layout_height="wrap_content"
+    	        android:layout_weight="0.2"
+    	        android:text="@string/add" />
+    	</LinearLayout>
+    	<LinearLayout
+    	    android:orientation="horizontal"
+    	    android:layout_width="match_parent"
+    	    android:layout_height="wrap_content"
+    	    android:weightSum="1.0"
+    	    android:layout_marginTop="10dip">
+    	    <org.witness.informacam.app.mods.InformaButton style="@style/Button_standard"
+    	        android:layout_width="0dip"
+    	        android:layout_height="wrap_content"
+    	        android:layout_weight="0.5"
+    	        android:text="@string/address_book_pick_from_contacts"
+    	        android:id="@+id/pick_contact" />
+    	    <org.witness.informacam.app.mods.InformaButton style="@style/Button_standard"
+    	        android:layout_width="0dip"
+    	        android:layout_height="wrap_content"
+    	        android:layout_weight="0.5"
+    	        android:text="@string/address_book_import_key"
+    	        android:id="@+id/import_contact" />
+    	</LinearLayout>
+    	<LinearLayout
+    	    android:orientation="vertical"
+    	    android:layout_width="match_parent"
+    	    android:layout_height="wrap_content"
+    	    android:layout_marginTop="10dip"
+    	    android:id="@+id/contact_info" />
+    	<org.witness.informacam.app.mods.InformaButton style="@style/Button_standard"
+    	    android:layout_width="match_parent"
+    	    android:layout_height="wrap_content"
+    	    android:text="@string/done"
+    	    android:layout_marginTop="10dip"
+    	    android:visibility="gone"
+    	    android:id="@+id/address_book_done" />
+    </LinearLayout>
+</LinearLayout>
