@@ -19,6 +19,7 @@ import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Informa.Keys;
+import org.witness.informacam.utils.Constants.Informa.Status;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 
@@ -94,8 +95,13 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 		Log.d(Constants.Informa.LOG, "InformaService running");
 		
 		toMainActivity = new Intent(this, MainActivity.class);
-		nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);		
-		init();
+		nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		
+		br.add(new Broadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
+		
+		for(BroadcastReceiver b : br)
+			registerReceiver(b, ((Broadcaster) b).intentFilter);
+		
 		informaService = this;
 	}
 	
@@ -106,14 +112,9 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 	}
 		
 	@SuppressWarnings({"unchecked","deprecation"})
-	private void init() {
-		br.add(new Broadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
-		
-		for(BroadcastReceiver b : br)
-			registerReceiver(b, ((Broadcaster) b).intentFilter);
-		
+	public void init() {
 		suckerCache = CacheBuilder.newBuilder()
-				.maximumSize(20000L)
+				.maximumSize(200000L)
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
@@ -125,13 +126,23 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 		_geo = new GeoSucker(InformaService.this);
 		_phone = new PhoneSucker(InformaService.this);
 		_acc = new AccelerometerSucker(InformaService.this);
+		this.setCurrentStatus(Status.RUNNING);
+	}
+	
+	public void suspend() {
+		this.setCurrentStatus(Status.STOPPED);
+		_geo.getSucker().stopUpdates();
+		_phone.getSucker().stopUpdates();
+		_acc.getSucker().stopUpdates();
+		
+		_geo = null;
+		_phone = null;
+		_acc = null;
 	}
 	
 	@SuppressWarnings("unused")
 	private void doShutdown() {
-		_geo.getSucker().stopUpdates();
-		_phone.getSucker().stopUpdates();
-		_acc.getSucker().stopUpdates();
+		suspend();
 		
 		for(BroadcastReceiver b : br)
 			unregisterReceiver(b);
@@ -156,6 +167,7 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 		nm.notify(R.string.app_name_lc, n);
 	}
 	
+	@SuppressWarnings("unused")
 	private void pushToSucker(SensorLogger<?> sucker, LogPack logPack) throws JSONException {
 		if(sucker.getClass().equals(PhoneSucker.class))
 			_phone.sendToBuffer(logPack);

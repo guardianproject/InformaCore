@@ -176,7 +176,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     
     private void launchEditor() {
     	editorIntent.setData(mediaCaptureUri);
-    	startActivity(editorIntent);
+    	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
     	Toast.makeText(this, "i would launch the editor here\nURI: " + mediaCaptureUri.toString(), Toast.LENGTH_LONG).show();
     }
     
@@ -185,6 +185,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		Toast.makeText(this, getResources().getString(R.string.error_media_mounted), Toast.LENGTH_LONG).show();
     		return;
     	}
+    	
+    	informaService.init();
     	
     	ContentValues values = new ContentValues();
     	values.put(MediaStore.Images.Media.TITLE, tempFile);
@@ -228,6 +230,17 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 					}
     			}
     			new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
+    			break;
+    		case App.Main.FROM_EDITOR:
+    			if(informaService != null)
+    				informaService.suspend();
+    			break;
+    		}
+    	} else if(resultCode == Activity.RESULT_CANCELED) {
+    		switch(requestCode) {
+    		case App.Main.FROM_EDITOR:
+    			if(informaService != null)
+    				informaService.suspend();
     			break;
     		}
     	}

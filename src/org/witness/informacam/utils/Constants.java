@@ -23,6 +23,7 @@ public class Constants {
 		
 		public final static class Main {
 			public final static int FROM_MEDIA_CAPTURE = 774;
+			public final static int FROM_EDITOR = 775;
 		}
 		
 		public final static class MediaManager {
