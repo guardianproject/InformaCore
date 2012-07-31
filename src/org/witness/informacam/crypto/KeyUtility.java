@@ -202,8 +202,10 @@ public class KeyUtility {
 				td.put(TrustedDestination.Keys.EMAIL, key.getAsString(PGP.Keys.PGP_EMAIL_ADDRESS));
 				td.put(TrustedDestination.Keys.KEYRING_ID, key.getAsLong(PGP.Keys.PGP_KEY_ID));
 				td.put(TrustedDestination.Keys.CONTACT_PHOTO, abd.getString(AddressBook.Keys.CONTACT_PHOTO));
-			
-				Log.d(Crypto.LOG, td.toString());
+				td.put(TrustedDestination.Keys.IS_DELETABLE, abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE));
+				
+				abd.remove(AddressBook.Keys.CONTACT_PHOTO);
+				Log.d(Crypto.LOG, abd.toString());
 				db.insert(dh.getTable(), null, td);
 			} catch(JSONException e){}
 		}

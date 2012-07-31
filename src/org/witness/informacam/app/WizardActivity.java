@@ -254,7 +254,7 @@ public class WizardActivity extends Activity implements OnClickListener {
 			
 			PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(sb.toString().getBytes());
 			KeyServerResponse ksr = new KeyUtility.KeyServerResponse(key);
-			AddressBookDisplay abd = new AddressBookDisplay(WizardActivity.this, 0L, ksr.getString(PGP.Keys.PGP_DISPLAY_NAME), ksr.getString(PGP.Keys.PGP_EMAIL_ADDRESS), false);
+			AddressBookDisplay abd = new AddressBookDisplay(WizardActivity.this, 0L, ksr.getString(PGP.Keys.PGP_DISPLAY_NAME), ksr.getString(PGP.Keys.PGP_EMAIL_ADDRESS), null, false);
 			KeyUtility.installNewKey(WizardActivity.this, ksr, abd);
 			
 			Log.d(App.LOG, abd.toString());

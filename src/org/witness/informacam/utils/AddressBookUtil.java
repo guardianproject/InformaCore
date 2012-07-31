@@ -48,7 +48,7 @@ public class AddressBookUtil {
 			String photoQuery = Data.MIMETYPE + "='" + Photo.CONTENT_ITEM_TYPE + "'";
 			Cursor b = c.getContentResolver().query(Data.CONTENT_URI, null, photoQuery, null, null);
 			
-			abd = new AddressBookDisplay(c, contactId, contactDisplayName, lookup, true);
+			abd = new AddressBookDisplay(c, contactId, contactDisplayName, lookup, null, true);
 			if(b != null) {
 				if(b.moveToFirst()) {
 					Uri contact = ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId);										
@@ -115,7 +115,7 @@ public class AddressBookUtil {
 			String photoQuery = Data.MIMETYPE + "='" + Photo.CONTENT_ITEM_TYPE + "'";
 			Cursor b = c.getContentResolver().query(Data.CONTENT_URI, null, photoQuery, null, null);
 			
-			abd = new AddressBookDisplay(c, lookup, contactDisplayName, contactEmail, true);
+			abd = new AddressBookDisplay(c, lookup, contactDisplayName, contactEmail, null, true);
 			if(b != null) {
 				if(b.moveToFirst()) {
 					Uri contact = ContentUris.withAppendedId(Contacts.CONTENT_URI, lookup);										
@@ -146,6 +146,9 @@ public class AddressBookUtil {
 	
 	public final static class AddressBookDisplay extends JSONObject {
 		public AddressBookDisplay(Activity c, long id, String displayName, String emailAddress, byte[] photo, boolean isDeletable) {
+			if(photo == null)
+				photo = Base64.encode(IOUtility.getBytesFromBitmap(((BitmapDrawable) c.getResources().getDrawable(R.drawable.ic_blank_person)).getBitmap(), 10));
+
 			try {
 				this.put(AddressBook.Keys.CONTACT_NAME, displayName);
 				this.put(AddressBook.Keys.CONTACT_EMAIL, emailAddress);
@@ -153,10 +156,6 @@ public class AddressBookUtil {
 				this.put(AddressBook.Keys.CONTACT_PHOTO, new String(photo));
 				this.put(TrustedDestination.Keys.IS_DELETABLE, isDeletable);
 			} catch (JSONException e) {}
-		}
-		
-		public AddressBookDisplay(Activity c, long id, String displayName, String emailAddress, boolean isDeletable) {
-			this(c, id, displayName, emailAddress, Base64.encode(IOUtility.getBytesFromBitmap(((BitmapDrawable) c.getResources().getDrawable(R.drawable.ic_blank_person)).getBitmap(), 10)), isDeletable);
 		}
 	}
 	

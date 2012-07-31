@@ -237,12 +237,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			break;
     		}
     	} else if(resultCode == Activity.RESULT_CANCELED) {
-    		switch(requestCode) {
-    		case App.Main.FROM_EDITOR:
-    			if(informaService != null)
-    				informaService.suspend();
-    			break;
-    		}
+    		if(informaService != null)
+				informaService.suspend();
     	}
     }
     

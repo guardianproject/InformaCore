@@ -74,7 +74,6 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	private void getAddresses() {
 		dh.setTable(db, Tables.Keys.TRUSTED_DESTINATIONS);
 		Cursor a = dh.getValue(db, AddressBook.Projections.LIST_DISPLAY, null, null);
-		Log.d(App.LOG, "a is " + a.getCount());
 		if(a != null && a.getCount() > 0) {
 			addresses = new ArrayList<AddressBookDisplay>();
 			a.moveToFirst();
@@ -84,7 +83,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 						a.getString(a.getColumnIndex(TrustedDestination.Keys.DISPLAY_NAME)),
 						a.getString(a.getColumnIndex(TrustedDestination.Keys.EMAIL)),
 						a.getBlob(a.getColumnIndex(TrustedDestination.Keys.CONTACT_PHOTO)),
-						Boolean.parseBoolean(a.getString(a.getColumnIndex(TrustedDestination.Keys.IS_DELETABLE)))
+						a.getInt(a.getColumnIndex(TrustedDestination.Keys.IS_DELETABLE)) == 0 ? false:true
 						);
 				
 				try {
@@ -152,7 +151,6 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	
 	@Override
 	public void onAddressFocusedListener(int which) {
-		Log.d(App.LOG, "i pressed on " + which);
 		InformaChoosableAlert alert = new InformaChoosableAlert(AddressBookActivity.this, getResources().getStringArray(R.array.address_book_actions), addresses.get(which));
 		try {
 			alert.setTitle(addresses.get(which).getString(AddressBook.Keys.CONTACT_NAME));
@@ -165,6 +163,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		AddressBookDisplay abd = (AddressBookDisplay) obj;
 		switch(which) {
 		case AddressBook.Actions.DELETE_CONTACT:
+			Log.d(App.LOG, abd.toString());
 			try {
 				if(abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE)) {
 					AddressBookUtil.deleteContact(abd.getLong(BaseColumns._ID), abd.getString(AddressBook.Keys.CONTACT_EMAIL));
