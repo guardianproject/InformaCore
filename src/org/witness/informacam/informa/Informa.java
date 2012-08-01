@@ -4,14 +4,32 @@ import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.Set;
 
+import net.sqlcipher.database.SQLiteDatabase;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Storage.Tables;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Build;
+import android.preference.PreferenceManager;
 
 public class Informa {
+	Intent intent;
+	Genealogy genealogy;
+	Data data;
+	
+	DatabaseHelper dh;
+	SQLiteDatabase db;
+	
+	Context c;
+	SharedPreferences sp;
 	
 	public interface InformaListener {
 		public void onInformaInit();
@@ -78,7 +96,8 @@ public class Informa {
 		int ownershipType;
 		
 		public Owner() {
-			
+			dh.setTable(db, Tables.Keys.SETUP);
+			//Cursor cursor = dh.getValue(db, new String[] {PGP.Keys}, matchKey, matchValue)
 		}
 	}
 	
@@ -148,7 +167,15 @@ public class Informa {
 		}
 	}
 	
-	public Informa() {
+	public Informa(Context c) {
 		// should init intent with owner, genealogy
+		this.c = c;
+		sp = PreferenceManager.getDefaultSharedPreferences(this.c);
+		
+		dh = new DatabaseHelper(c);
+		db = dh.getWritableDatabase(sp.getString(Settings.Keys.CURRENT_LOGIN, ""));
+		
+		intent = new Intent();
+		intent.owner = new Owner();
 	}
 }
