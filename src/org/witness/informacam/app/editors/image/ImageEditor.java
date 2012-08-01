@@ -195,6 +195,9 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			.onSuckerUpdate(timestampNow, logPack);
         
 		setContentView(R.layout.imageviewer);
+		
+		InformaService.getInstance()
+			.onInformaInit();
 
 		// Calculate the minimum distance
 		minMoveDistance = minMoveDistanceDP * this.getResources().getDisplayMetrics().density + 0.5f;
@@ -281,8 +284,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
-
-			//debug(ObscuraApp.TAG,"loading uri: " + pullPathFromUri(originalImageUri));
 
 			// Load up smaller image
 			try {

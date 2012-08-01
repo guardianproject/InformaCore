@@ -64,7 +64,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
     		LocalBinder lb = (LocalBinder) binder;
     		informaService = lb.getService();
-    		informaService.setCurrentStatus(Informa.Status.RUNNING);
     	}
     	
     	public void onServiceDisconnected(ComponentName cn) {
@@ -177,7 +176,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     private void launchEditor() {
     	editorIntent.setData(mediaCaptureUri);
     	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
-    	Toast.makeText(this, "i would launch the editor here\nURI: " + mediaCaptureUri.toString(), Toast.LENGTH_LONG).show();
     }
     
     private void launchMediaCapture(String tempFile) {

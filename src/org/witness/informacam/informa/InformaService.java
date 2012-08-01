@@ -1,6 +1,7 @@
 package org.witness.informacam.informa;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -12,6 +13,7 @@ import org.json.JSONException;
 import org.witness.informacam.R;
 import org.witness.informacam.app.MainActivity;
 import org.witness.informacam.crypto.SignatureUtility;
+import org.witness.informacam.informa.Informa.InformaListener;
 import org.witness.informacam.informa.SensorLogger.OnSuckerUpdateListener;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
@@ -20,6 +22,7 @@ import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Informa.Keys;
 import org.witness.informacam.utils.Constants.Informa.Status;
+import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 
@@ -41,7 +44,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-public class InformaService extends Service implements OnSuckerUpdateListener {
+public class InformaService extends Service implements OnSuckerUpdateListener, InformaListener {
 	public static InformaService informaService;
 	private final IBinder binder = new LocalBinder();
 	
@@ -59,6 +62,8 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 	
 	private LoadingCache<Long, LogPack> suckerCache;
 	ExecutorService ex;
+	
+	Informa informa;
 	
 	public class LocalBinder extends Binder {
 		public InformaService getService() {
@@ -110,15 +115,14 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 		super.onDestroy();
 		Log.d(Constants.Informa.LOG, "InformaService stopped");
 	}
-		
-	@SuppressWarnings({"unchecked","deprecation"})
+			
+	@SuppressWarnings({"unchecked"})
 	public void init() {
 		suckerCache = CacheBuilder.newBuilder()
 				.maximumSize(200000L)
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
-						
 						return suckerCache.get(timestamp);
 					}
 				});
@@ -186,6 +190,16 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 				}
 				
 			});
+			
+			LogPack lp = suckerCache.getIfPresent(timestamp);
+			if(lp != null) {
+				Iterator<String> lIt = lp.keys();
+				while(lIt.hasNext()) {
+					String key = lIt.next();
+					logPack.put(key, lp.get(key));
+				}
+			}
+			
 			logPack.put(Signatures.Keys.SIGNATURE, sig.get());
 			suckerCache.put(timestamp, logPack);
 			ex.shutdown();
@@ -217,6 +231,12 @@ public class InformaService extends Service implements OnSuckerUpdateListener {
 			}
 			
 		}
+		
+	}
+
+	@Override
+	public void onInformaInit() {
+		informa = new Informa();
 		
 	}
 
