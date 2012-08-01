@@ -10,8 +10,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.MainActivity;
+import org.witness.informacam.app.editors.image.ImageRegion;
+import org.witness.informacam.app.editors.image.ImageRegion.ImageRegionListener;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.informa.Informa.InformaListener;
 import org.witness.informacam.informa.SensorLogger.OnSuckerUpdateListener;
@@ -20,13 +23,9 @@ import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
-import org.witness.informacam.utils.Constants.Informa.Keys;
 import org.witness.informacam.utils.Constants.Informa.Status;
-import org.witness.informacam.utils.Constants.Informa;
-import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -44,7 +43,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-public class InformaService extends Service implements OnSuckerUpdateListener, InformaListener {
+public class InformaService extends Service implements OnSuckerUpdateListener, InformaListener, ImageRegionListener {
 	public static InformaService informaService;
 	private final IBinder binder = new LocalBinder();
 	
@@ -177,10 +176,11 @@ public class InformaService extends Service implements OnSuckerUpdateListener, I
 			_phone.sendToBuffer(logPack);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void onSuckerUpdate(long timestamp, final LogPack logPack) {
 		try {
-			Log.d(Suckers.LOG, timestamp + " :\n" + logPack.toString());
+			//Log.d(Suckers.LOG, timestamp + " :\n" + logPack.toString());
 			ex = Executors.newFixedThreadPool(100);
 			Future<String> sig = ex.submit(new Callable<String>() {
 
@@ -236,7 +236,61 @@ public class InformaService extends Service implements OnSuckerUpdateListener, I
 
 	@Override
 	public void onInformaInit() {
-		informa = new Informa();
+		informa = new Informa(this);
+		try {
+			informa.setDeviceCredentials(_phone.getSucker().forceReturn());
+			
+		} catch(JSONException e) {}
+		
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void onImageRegionCreated(ImageRegion ir) {
+		// TODO: add new image region
+		try {
+			JSONObject rep = ir.getRepresentation();
+			long timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
+			
+			LogPack logPack = new LogPack();
+			Iterator<String> repIt = rep.keys();
+			while(repIt.hasNext()) {
+				String key = repIt.next();
+				logPack.put(key, rep.get(key));
+			}
+			
+			this.onSuckerUpdate(timestamp, logPack);
+			
+			Log.d(Constants.Informa.LOG, "new image region!");
+			Log.d(Constants.Informa.LOG, logPack.toString());
+		} catch(JSONException e) {}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void onImageRegionChanged(ImageRegion ir) {
+		// TODO pull out image region from cache and update values
+		try {
+			JSONObject rep = ir.getRepresentation();
+			long timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
+			
+			LogPack logPack = suckerCache.get(timestamp);
+			Iterator<String> repIt = rep.keys();
+			while(repIt.hasNext()) {
+				String key = repIt.next();
+				logPack.put(key, rep.get(key));
+			}
+			
+			
+			Log.d(Constants.Informa.LOG, "updating image region!");
+			Log.d(Constants.Informa.LOG, logPack.toString());
+		} catch(JSONException e) {}
+		catch (ExecutionException e) {
+			Log.d(Constants.Informa.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
 		
 	}
 

@@ -7,12 +7,14 @@ import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.BaseColumns;
+import android.util.Log;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
 import net.sqlcipher.database.SQLiteOpenHelper;
@@ -109,6 +111,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		}
 		query = query.substring(0, query.length() - 5);
 		db.execSQL(query);
+	}
+	
+	public Cursor getJoinedValue(SQLiteDatabase db, String[] values, String[] queryTables, String[] matchKeys) {
+		String select = "*";
+		
+		if(values != null) {
+			StringBuffer sb = new StringBuffer();
+			for(String v : values)
+				sb.append("," + v);
+			select = sb.toString().substring(1);
+		}
+		
+		String query = "SELECT " + select + 
+			" FROM " + queryTables[0] + 
+			" JOIN " + queryTables[1] + 
+			" ON " + queryTables[0] + "." + matchKeys[0] + 
+			"=" + queryTables[1] + "." + matchKeys[1];
+		
+		Cursor c = db.rawQuery(query, null);
+		if(c != null && c.getCount() > 0) {
+			return c;
+		} else {
+			c.close();
+			return null;
+		}
 	}
 	
 	public Cursor getValue(SQLiteDatabase db, String[] values, String matchKey, Object matchValue, Object[] matchRange) {

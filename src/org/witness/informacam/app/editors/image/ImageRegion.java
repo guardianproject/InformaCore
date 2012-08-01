@@ -15,6 +15,7 @@ import org.witness.informacam.app.editors.image.filters.InformaTagger;
 import org.witness.informacam.app.editors.image.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.image.filters.RegionProcesser;
 import org.witness.informacam.app.editors.image.filters.SolidObscure;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 
@@ -96,6 +97,11 @@ public class ImageRegion implements OnActionItemClickListener
 	
 	private int cornerMode = -1;
 	private long timestampOnGeneration;
+	
+	public interface ImageRegionListener {
+		public void onImageRegionCreated(ImageRegion ir);
+		public void onImageRegionChanged(ImageRegion ir);
+	}
 	
 	public RegionProcesser getRegionProcessor() {
 		return mRProc;
@@ -194,7 +200,9 @@ public class ImageRegion implements OnActionItemClickListener
         
         //set default processor
         this.setRegionProcessor(new PixelizeObscure());
-        mImageEditor.associateImageRegionData(this);
+        
+        // notify informa
+        InformaService.getInstance().onImageRegionCreated(this);
     }		
 	
 	public void setMatrix (Matrix matrix)
@@ -489,6 +497,7 @@ public void updateRegionProcessor (int obscureType) {
 			imageRegionBorder = unidentifiedBorder;
 		
 		mImageEditor.updateDisplayImage();
+		InformaService.getInstance().onImageRegionChanged(this);
 	}
 
 	@Override

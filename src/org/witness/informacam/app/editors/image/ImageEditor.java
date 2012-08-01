@@ -17,6 +17,7 @@ import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.DestinationChooserActivity;
 import org.witness.informacam.app.editors.image.detect.GoogleFaceDetection;
@@ -147,7 +148,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	
 	// Saved Image Uri
 	Uri savedImageUri;
-	
 	
 	//handles threaded events for the UI thread
     private Handler mHandler = new Handler()
@@ -625,7 +625,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				mode = Mode.NONE;
 				handled = currRegion.onTouch(v, event);
 				currRegion.setSelected(false);
-				
+				InformaService.getInstance().onImageRegionChanged(currRegion);
 			break;
 			
 			case MotionEvent.ACTION_MOVE:
@@ -895,14 +895,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		}
 	}
 	
-	/*
-	 * Associate the current log data to the image region's properties
-	 */
-	public void associateImageRegionData(ImageRegion ir) {
-		LogPack logPack = new LogPack(CaptureEvent.Keys.USER_ACTION, CaptureEvent.REGION_GENERATED);
-		InformaService.getInstance()
-			.onSuckerUpdate((Long) ir.mRProc.getProperties().get(Informa.Keys.Data.ImageRegion.TIMESTAMP), logPack);
-	}
 	
 	/*
 	 * Delete/Remove specific ImageRegion
