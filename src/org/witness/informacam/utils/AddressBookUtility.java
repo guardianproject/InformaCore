@@ -23,7 +23,7 @@ import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.util.Log;
 
-public class AddressBookUtil {
+public class AddressBookUtility {
 	public interface AddressBookListener {
 		public void receiveNewAddresses(AddressBookDisplay address);
 		public void onNoResultFound(String emailAddress);
@@ -75,7 +75,7 @@ public class AddressBookUtil {
 	}
 	
 	public static void getEmailAddressFromLookup(final Activity c, long lookup) {
-		AddressBookUtil.getEmailAddressFromLookup(c, lookup, -1);
+		AddressBookUtility.getEmailAddressFromLookup(c, lookup, -1);
 	}
 	
 	public static void getEmailAddressFromLookup(final Activity c, long lookup, int certainChoice) {

@@ -6,8 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -50,7 +48,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.transport.HttpUtility;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookDisplay;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
@@ -96,7 +94,6 @@ public class KeyUtility {
 	public final static class KeyServerResponse extends JSONObject {
 		public KeyServerResponse(PGPPublicKey key, String displayName, String email) {
 			if(email == null) {
-				Log.d(Crypto.LOG, "no display name or email");
 				Iterator<String> uIt = key.getUserIDs();
 				while(uIt.hasNext()) {
 					String[] id = uIt.next().split("<");
@@ -204,8 +201,10 @@ public class KeyUtility {
 				td.put(TrustedDestination.Keys.CONTACT_PHOTO, abd.getString(AddressBook.Keys.CONTACT_PHOTO));
 				td.put(TrustedDestination.Keys.IS_DELETABLE, abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE));
 				
+				if(abd.getString(TrustedDestination.Keys.URL) != null)
+					td.put(TrustedDestination.Keys.URL, abd.getString(TrustedDestination.Keys.URL));
+				
 				abd.remove(AddressBook.Keys.CONTACT_PHOTO);
-				Log.d(Crypto.LOG, abd.toString());
 				db.insert(dh.getTable(), null, td);
 			} catch(JSONException e){}
 		}
@@ -293,8 +292,6 @@ public class KeyUtility {
 				cv.put(Settings.Device.Keys.AUTH_KEY, pwd);
 				cv.put(Settings.Device.Keys.KEYRING_ID, secret.getPublicKey().getKeyID());
 				
-				Log.d(Crypto.LOG, cv.toString());
-
 				db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Integer.toString(1)});
 				db.close();
 				dh.close();

@@ -2,6 +2,7 @@ package org.witness.informacam.app;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,6 +14,7 @@ import net.sqlcipher.database.SQLiteDatabase;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,12 +25,13 @@ import org.witness.informacam.app.mods.InformaEditText;
 import org.witness.informacam.app.mods.InformaSpinner;
 import org.witness.informacam.app.mods.InformaTextView;
 import org.witness.informacam.app.mods.Selections;
+import org.witness.informacam.crypto.CertificateUtility;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.KeyUtility.KeyServerResponse;
 import org.witness.informacam.storage.DatabaseHelper;
-import org.witness.informacam.utils.AddressBookUtil;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookDisplay;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookListener;
+import org.witness.informacam.utils.AddressBookUtility;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookListener;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Informa;
@@ -235,29 +238,58 @@ public class WizardActivity extends Activity implements OnClickListener {
 	private void initInstalledKeys() throws IOException, PGPException, JSONException {
 		
 		String[] allKeys = getAssets().list("installedKeys");
-		for(String keyFile : allKeys) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("installedKeys/" + keyFile)));
+		for(String keyFolder : allKeys) {
+			String[] folderContent = getAssets().list("installedKeys/" + keyFolder);
 			
-			String line;
-			StringBuilder sb = new StringBuilder();
+			KeyServerResponse ksr = null;
+			byte[] imgBytes = null;
+			String trustedDestinationURL = null;
 			
-			char[] buf = new char[1024];
-			int numRead = 0;
-			
-			while((numRead = br.read(buf)) != -1) {
-				line = String.valueOf(buf, 0, numRead);
-				sb.append(line);
-				buf = new char[1024];
+			for(String keyFile : folderContent) {
+				String ext = keyFile.substring(keyFile.lastIndexOf("."));
+				
+				if(!ext.equals(".png") && !ext.equals(".jpg")) {
+					BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("installedKeys/" + keyFolder + "/" + keyFile)));
+					char[] buf = new char[1024];
+					int numRead = 0;
+					
+					String line;
+					StringBuilder sb = new StringBuilder();
+				
+					while((numRead = br.read(buf)) != -1) {
+						line = String.valueOf(buf, 0, numRead);
+						if(ext.equals(".txt")) {
+							String key = line.split("=")[0];
+							String value = line.split("=")[1];
+							
+							if(key.equals(TrustedDestination.Keys.URL))
+								trustedDestinationURL = value;
+							// TODO: if we add other key-values to the txt file, they can be caught here...
+						} else 
+							sb.append(line);
+						buf = new char[1024];
+					}
+					
+					br.close();
+					
+					if(ext.equals(".asc")) {
+						PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(sb.toString().getBytes());
+						ksr = new KeyUtility.KeyServerResponse(key);	
+					} else if(ext.equals(".pem"))
+						CertificateUtility.storeCertificate(this, sb.toString().getBytes());
+				} else {
+					InputStream is = getAssets().open("installedKeys/" + keyFolder + "/" + keyFile);
+					imgBytes = new byte[is.available()];
+					is.read(imgBytes);
+					
+					imgBytes = Base64.encode(imgBytes);
+				}
 			}
 			
-			br.close();
+			AddressBookDisplay abd = new AddressBookDisplay(WizardActivity.this, 0L, ksr.getString(PGP.Keys.PGP_DISPLAY_NAME), ksr.getString(PGP.Keys.PGP_EMAIL_ADDRESS), imgBytes, false);
+			abd.put(TrustedDestination.Keys.URL, trustedDestinationURL);
 			
-			PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(sb.toString().getBytes());
-			KeyServerResponse ksr = new KeyUtility.KeyServerResponse(key);
-			AddressBookDisplay abd = new AddressBookDisplay(WizardActivity.this, 0L, ksr.getString(PGP.Keys.PGP_DISPLAY_NAME), ksr.getString(PGP.Keys.PGP_EMAIL_ADDRESS), null, false);
-			KeyUtility.installNewKey(WizardActivity.this, ksr, abd);
-			
-			Log.d(App.LOG, abd.toString());
+			KeyUtility.installNewKey(WizardActivity.this, ksr, abd);			
 		}
 	}
 	

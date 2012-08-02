@@ -12,9 +12,9 @@ import org.witness.informacam.app.mods.Selections;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.KeyUtility.KeyFoundListener;
 import org.witness.informacam.crypto.KeyUtility.KeyServerResponse;
-import org.witness.informacam.utils.AddressBookUtil;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookDisplay;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookListener;
+import org.witness.informacam.utils.AddressBookUtility;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookListener;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
@@ -137,7 +137,7 @@ public class AddressBookChooserActivity extends Activity implements OnClickListe
 			switch(requestCode) {
 			case App.AddressBook.FROM_CONTACT_CHOOSER:
 				queryId = Long.parseLong(data.getData().getLastPathSegment());
-				AddressBookUtil.getEmailAddressFromLookup(AddressBookChooserActivity.this, queryId);
+				AddressBookUtility.getEmailAddressFromLookup(AddressBookChooserActivity.this, queryId);
 				break;
 			case App.AddressBook.FROM_ASC_IMPORT:
 				// TODO:  this.
@@ -150,7 +150,7 @@ public class AddressBookChooserActivity extends Activity implements OnClickListe
 	public void onClick(View v) {
 		if(v == input_contact) {
 			queryEmail = input_contact_text.getText().toString();
-			AddressBookUtil.getLookupFromEmailAddress(AddressBookChooserActivity.this, queryEmail);
+			AddressBookUtility.getLookupFromEmailAddress(AddressBookChooserActivity.this, queryEmail);
 		} else if(v == pick_contact) {
 			Intent intent = new Intent(Intent.ACTION_PICK, Contacts.CONTENT_URI);
 			startActivityForResult(intent, App.AddressBook.FROM_CONTACT_CHOOSER);
@@ -212,7 +212,7 @@ public class AddressBookChooserActivity extends Activity implements OnClickListe
 				for(int i=0; i<sd.selectionsList.getAdapter().getCount(); i++) {
 					Selections s = (Selections) sd.selectionsList.getAdapter().getItem(i);
 					if(s.getSelected())
-						AddressBookUtil.getEmailAddressFromLookup(AddressBookChooserActivity.this, queryId, i);
+						AddressBookUtility.getEmailAddressFromLookup(AddressBookChooserActivity.this, queryId, i);
 					reloadViews(++stage);
 				}
 				

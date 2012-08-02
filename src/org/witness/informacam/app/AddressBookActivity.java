@@ -12,8 +12,8 @@ import org.witness.informacam.app.adapters.AddressBookAdapter.OnAddressFocusedLi
 import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.storage.DatabaseHelper;
-import org.witness.informacam.utils.AddressBookUtil;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookDisplay;
+import org.witness.informacam.utils.AddressBookUtility;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Mods.Selections;
@@ -166,7 +166,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 			Log.d(App.LOG, abd.toString());
 			try {
 				if(abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE)) {
-					AddressBookUtil.deleteContact(abd.getLong(BaseColumns._ID), abd.getString(AddressBook.Keys.CONTACT_EMAIL));
+					AddressBookUtility.deleteContact(abd.getLong(BaseColumns._ID), abd.getString(AddressBook.Keys.CONTACT_EMAIL));
 					getAddresses();
 				} else {
 					Toast.makeText(this, getString(R.string.error_cannot_delete_contact), Toast.LENGTH_LONG).show();

@@ -7,7 +7,7 @@ import org.witness.informacam.R;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.IOUtility;
-import org.witness.informacam.utils.AddressBookUtil.AddressBookDisplay;
+import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 
 import android.app.Activity;
