@@ -44,7 +44,7 @@
     <string name="menu_region_pixelate">Pixelate</string>
     <string name="menu_region_crowd_pixelate">Pixelate Background</string>
     <string name="menu_region_redact">Redact</string>
-    <string name="menu_region_identify">Identify</string>
+    <string name="menu_region_identify">Annotate</string>
     <string name="menu_region_delete">Delete</string>
     <string name="menu_minimize">Hide Menu</string>
     <string name="menu_hide_hints">Show/Hide Hints</string>
@@ -75,10 +75,13 @@
      <string name="pref_out_vheight_title">Custom Video Height (px)</string>
     <string name="pref_out_vheight_summary">custom video height for outputed video</string>
     
+    <string name="annotation_hint">Name, pseudonym or alias</string>
+    
     <!--  ERRORS -->
     <string name="error_media_mounted">Please insert an SD card to save media!</string>
     <string name="error_no_key_found_for_email">Sorry!  No public key found for </string>
     <string name="error_cannot_delete_contact">This contact cannot be deleted.</string>
+    <string name="error_annotation_empty">You haven\'t annotated anything!</string>
     
     <!--  ADDRESS BOOK AND CHOOSER -->
     <string name="address_book_new_contact">Add new contact\u2026</string>

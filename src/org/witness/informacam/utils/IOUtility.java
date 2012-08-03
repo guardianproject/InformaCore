@@ -13,6 +13,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -29,7 +30,11 @@ public class IOUtility {
 		if(isBase64)
 			b = Base64.decode(bytes);
 		
-		return BitmapFactory.decodeByteArray(b, 0, b.length);
+		Bitmap bitmap = BitmapFactory.decodeByteArray(b,0,b.length);
+		Matrix m = new Matrix();
+		m.postScale(80f/bitmap.getWidth(), 80f/bitmap.getHeight());
+		
+		return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
 		
 	}
 	

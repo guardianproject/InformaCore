@@ -904,6 +904,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		imageRegions.remove(ir);
 		//redrawRegions();
 		updateDisplayImage();
+		// TODO: remove from cache
 	}
 	
 	/*
