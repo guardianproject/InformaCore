@@ -76,6 +76,7 @@
     <string name="pref_out_vheight_summary">custom video height for outputed video</string>
     
     <string name="annotation_hint">Name, pseudonym or alias</string>
+    <string name="destination_chooser_prompt">Choose Recipients</string>
     
     <!--  ERRORS -->
     <string name="error_media_mounted">Please insert an SD card to save media!</string>
