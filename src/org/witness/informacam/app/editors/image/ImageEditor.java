@@ -1,7 +1,8 @@
 package org.witness.informacam.app.editors.image;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,13 +18,13 @@ import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.DestinationChooserActivity;
 import org.witness.informacam.app.editors.image.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.image.filters.RegionProcesser;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
@@ -55,14 +56,12 @@ import android.graphics.PixelFormat;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.media.ExifInterface;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
-import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
 import android.util.Log;
@@ -149,6 +148,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	// Saved Image Uri
 	Uri savedImageUri;
 	
+	IOCipherService ioCipherService = IOCipherService.getInstance();
+	
 	//handles threaded events for the UI thread
     private Handler mHandler = new Handler()
     {
@@ -192,7 +193,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		LogPack logPack = new LogPack(CaptureEvent.Keys.USER_ACTION, CaptureEvent.MEDIA_OPENED);
 		
 		InformaService.getInstance()
-			.onSuckerUpdate(timestampNow, logPack);
+			.onUpdate(timestampNow, logPack);
         
 		setContentView(R.layout.imageviewer);
 		
@@ -216,75 +217,28 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		// Passed in from CameraObscuraMainMenu
 		originalImageUri = getIntent().getData();
+		Log.d(App.LOG, originalImageUri.toString());
 		
 		// If originalImageUri is null, we are likely coming from another app via "share"
 		if (originalImageUri == null)
-		{
 			if (getIntent().hasExtra(Intent.EXTRA_STREAM)) 
-			{
 				originalImageUri = (Uri) getIntent().getExtras().get(Intent.EXTRA_STREAM);
-			}
-			else if (getIntent().hasExtra("bitmap"))
-			{
-				Bitmap b = (Bitmap)getIntent().getExtras().get("bitmap");
-				setBitmap(b);
-				
-				boolean autodetect = true;
-
-				if (autodetect)
-				{
-
-					mProgressDialog = ProgressDialog.show(this, "", "Detecting faces...", true, true);
-					
-					doAutoDetectionThread();
-					
-					
-				}
-				
-				originalImageWidth = b.getWidth();
-				originalImageHeight = b.getHeight();
-				return;
-				
-			}
-		}
 		
 		
 		// Load the image if it isn't null
 		if (originalImageUri != null) {
+			// TODO: get image orientation from the exif logpack
 			
-			// Get the orientation
-			File originalFilename = pullPathFromUri(originalImageUri);			
+			/*
 			try {
-				LogPack exif = new LogPack();
-				ExifInterface ei = new ExifInterface(originalFilename.getAbsolutePath());
-				
-				originalImageOrientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-				
-				exif.put(Exif.TIMESTAMP, ei.getAttribute(Exif.TIMESTAMP));
-				exif.put(Exif.APERTURE, ei.getAttribute(Exif.APERTURE));
-				exif.put(Exif.EXPOSURE, ei.getAttribute(Exif.EXPOSURE));
-				exif.put(Exif.FLASH, ei.getAttributeInt(Exif.FLASH, Informa.Keys.NOT_REPORTED));
-				exif.put(Exif.FOCAL_LENGTH, ei.getAttributeInt(Exif.FOCAL_LENGTH, Informa.Keys.NOT_REPORTED));
-				exif.put(Exif.IMAGE_LENGTH, ei.getAttributeInt(Exif.IMAGE_LENGTH, Informa.Keys.NOT_REPORTED));
-				exif.put(Exif.IMAGE_WIDTH, ei.getAttributeInt(Exif.IMAGE_WIDTH, Informa.Keys.NOT_REPORTED));
-				exif.put(Exif.ISO, ei.getAttribute(Exif.ISO));
-				exif.put(Exif.MAKE, ei.getAttribute(Exif.MAKE));
-				exif.put(Exif.MODEL, ei.getAttribute(Exif.MODEL));
-				exif.put(Exif.ORIENTATION, originalImageOrientation);
-				exif.put(Exif.WHITE_BALANCE, ei.getAttributeInt(Exif.WHITE_BALANCE, Informa.Keys.NOT_REPORTED));
-				
-				InformaService.getInstance()
-					.onSuckerUpdate(Time.timestampToMillis(exif.get(Exif.TIMESTAMP).toString()), exif);
-				
+				originalImageOrientation = 0;
+				//File originalFilename = ioCipherService.getFile(originalImageUri);
 			} catch (IOException e1) {
 				debug(App.LOG,"Couldn't get Orientation");
 				e1.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-
+			} 
+			*/
+			
 			// Load up smaller image
 			try {
 				// Load up the image's dimensions not the image itself
@@ -292,8 +246,9 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				bmpFactoryOptions.inJustDecodeBounds = true;
 				// Needs to be this config for Google Face Detection 
 				bmpFactoryOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+				
 				// Parse the image
-				Bitmap loadedBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(originalImageUri), null, bmpFactoryOptions);
+				Bitmap loadedBitmap = BitmapFactory.decodeStream(ioCipherService.getFileStream(originalImageUri));
 
 				// Hold onto the unscaled dimensions
 				originalImageWidth = bmpFactoryOptions.outWidth;
@@ -329,7 +284,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 				// Decode it for real
 				bmpFactoryOptions.inJustDecodeBounds = false;
-				loadedBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(originalImageUri), null, bmpFactoryOptions);
+				
+				loadedBitmap = BitmapFactory.decodeStream(ioCipherService.getFileStream(originalImageUri), null, bmpFactoryOptions);
 				debug(App.LOG,"Was: " + loadedBitmap.getConfig());
 
 				if (loadedBitmap == null) {
@@ -1150,13 +1106,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		//TODO: handle the exif wiping...
 		
-		// force mediascanner to update file
-		MediaScannerConnection.scanFile(
-				this,
-				new String[] {pullPathFromUri(savedImageUri).getAbsolutePath()},
-				new String[] {Constants.Media.Type.MIME_TYPE_JPEG},
-				null);
-		
 		File tmp = new File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 		if(tmp.exists())
 			tmp.delete();
@@ -1170,7 +1119,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		}
 		
 		InformaService.getInstance()
-			.onSuckerUpdate(System.currentTimeMillis(), new LogPack(CaptureEvent.Keys.USER_ACTION, CaptureEvent.MEDIA_SAVED));
+			.onUpdate(System.currentTimeMillis(), new LogPack(CaptureEvent.Keys.USER_ACTION, CaptureEvent.MEDIA_SAVED));
 		
 		JSONArray imageRegionObject = new JSONArray();
 		try {
@@ -1199,31 +1148,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	sendBroadcast(informa);
     	*/
 		return true;
-    }
-    
-    /*
-     * Yep, uncommenting it back out so we can use the original path to refresh media scanner
-     * HNH 8/23/11
-     */
-    public File pullPathFromUri(Uri originalUri) {
-
-    	String originalImageFilePath = null;
-
-    	if (originalUri.getScheme() != null && originalUri.getScheme().equals("file"))
-    	{
-    		originalImageFilePath = originalUri.toString();
-    	}
-    	else
-    	{
-	    	String[] columnsToSelect = { MediaStore.Images.Media.DATA };
-	    	Cursor imageCursor = getContentResolver().query(originalUri, columnsToSelect, null, null, null );
-	    	if ( imageCursor != null && imageCursor.getCount() == 1 ) {
-		        imageCursor.moveToFirst();
-		        originalImageFilePath = imageCursor.getString(imageCursor.getColumnIndex(MediaStore.Images.Media.DATA));
-	    	}
-    	}
-
-    	return new File(originalImageFilePath);
     }
 
     /*

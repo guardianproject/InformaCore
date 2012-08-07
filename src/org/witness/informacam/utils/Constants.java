@@ -154,6 +154,7 @@ public class Constants {
 			public final static String MIME_TYPE_JPEG = "image/jpeg";
 			public final static String MIME_TYPE_MP4 = "video/mp4";
 			public final static String MIME_TYPE_MKV = "video/mkv";
+			public final static String J3M_TORRENT = J3M.TORRENT_MIME_TYPE;
 		}
 	}
 	
@@ -438,7 +439,8 @@ public class Constants {
 		}
 		
 		public final static class IOCipher {
-			public final static String STORE = "informaCamIoCipher.db";
+			public final static String STORE = "iocipher.db";
+			public static final String ROOT = "informaCamIoCipher";
 			
 		}
 	}
@@ -516,6 +518,8 @@ public class Constants {
 				return length;
 			}
 		}
+		
+		public final static String TORRENT_MIME_TYPE = ".j3mtorrent";
 		
 		public final static class State {
 			public static final int IS_IDLE = 0;

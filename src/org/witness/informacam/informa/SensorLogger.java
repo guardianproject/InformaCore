@@ -31,8 +31,8 @@ public class SensorLogger<T> {
 	
 	boolean isRunning;
 		
-	public interface OnSuckerUpdateListener {
-		public void onSuckerUpdate(long timestamp, LogPack logPack);
+	public interface OnUpdateListener {
+		public void onUpdate(long timestamp, LogPack logPack);
 	}
 	
 	public SensorLogger(InformaService is) {
@@ -98,6 +98,6 @@ public class SensorLogger<T> {
 	}
 
 	public void sendToBuffer(LogPack logPack) throws JSONException {
-		((OnSuckerUpdateListener) is).onSuckerUpdate(System.currentTimeMillis(), logPack); 
+		((OnUpdateListener) is).onUpdate(System.currentTimeMillis(), logPack); 
 	}
 }

@@ -7,9 +7,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.json.JSONException;
 import org.witness.informacam.R;
 import org.witness.informacam.app.Eula.OnEulaAgreedTo;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
@@ -17,11 +20,17 @@ import org.witness.informacam.app.editors.image.ImageEditor;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.LocalBinder;
+import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
+import org.witness.informacam.utils.Constants.Media;
+import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
+import org.witness.informacam.utils.IOUtility;
 import org.witness.informacam.utils.InformaMediaScanner;
+import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
 
 import com.xtralogic.android.logcollector.SendLogActivity;
@@ -56,6 +65,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     
     private Uri mediaCaptureUri = null;
     private File mediaCaptureFile = null;
+    private String mimeType = Media.Type.MIME_TYPE_JPEG;
+    
     Intent captureIntent, editorIntent;
     
     Handler h;
@@ -173,7 +184,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	startActivity(intent);
     }
     
-    private void launchEditor() {
+    private void launchEditor() throws NoSuchAlgorithmException, IOException {
+    	mediaCaptureUri = IOCipherService.getInstance().moveFileToIOCipher(mediaCaptureUri, Integer.parseInt(sp.getString(Settings.Keys.DEFAULT_IMAGE_HANDLING, Integer.toString(Settings.OriginalImageHandling.LEAVE_ORIGINAL_ALONE))));
     	editorIntent.setData(mediaCaptureUri);
     	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
     }
@@ -210,6 +222,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     				editorIntent = new Intent(this, ImageEditor.class);
     			} else {
     				//editorIntent = new Intent(this, VideoEditor.class);
+    				mimeType = Media.Type.MIME_TYPE_MP4;
     				mediaCaptureUri = data.getData();
     				FileOutputStream fos;
 					try {
@@ -227,6 +240,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 						Log.e(App.LOG, e.toString());
 					}
     			}
+    			
     			new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
     			break;
     		case App.Main.FROM_EDITOR:
@@ -291,7 +305,19 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 		h.post(new Runnable() {
 			@Override
 			public void run() {
-				launchEditor();
+				try {
+					LogPack logPack = IOUtility.getMetadata(mediaCaptureFile.getAbsolutePath(), mimeType);
+    				informaService.onUpdate(Time.timestampToMillis(logPack.get(Exif.TIMESTAMP).toString()), logPack);
+    				launchEditor();
+				} catch (NoSuchAlgorithmException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
 			}
 		});
 	}

@@ -17,7 +17,7 @@ import org.witness.informacam.app.editors.image.ImageRegion;
 import org.witness.informacam.app.editors.image.ImageRegion.ImageRegionListener;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.informa.Informa.InformaListener;
-import org.witness.informacam.informa.SensorLogger.OnSuckerUpdateListener;
+import org.witness.informacam.informa.SensorLogger.OnUpdateListener;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
@@ -43,7 +43,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-public class InformaService extends Service implements OnSuckerUpdateListener, InformaListener, ImageRegionListener {
+public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener {
 	public static InformaService informaService;
 	private final IBinder binder = new LocalBinder();
 	
@@ -178,7 +178,7 @@ public class InformaService extends Service implements OnSuckerUpdateListener, I
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void onSuckerUpdate(long timestamp, final LogPack logPack) {
+	public void onUpdate(long timestamp, final LogPack logPack) {
 		try {
 			//Log.d(Suckers.LOG, timestamp + " :\n" + logPack.toString());
 			ex = Executors.newFixedThreadPool(100);
@@ -260,7 +260,7 @@ public class InformaService extends Service implements OnSuckerUpdateListener, I
 				logPack.put(key, rep.get(key));
 			}
 			
-			this.onSuckerUpdate(timestamp, logPack);
+			onUpdate(timestamp, logPack);
 			
 			Log.d(Constants.Informa.LOG, "new image region!");
 			Log.d(Constants.Informa.LOG, logPack.toString());
