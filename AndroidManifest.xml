@@ -80,6 +80,7 @@
         
         <service android:name=".informa.InformaService" android:enabled="true" />
         <service android:name=".transport.UploaderService" android:enabled="true" />
+        <service android:name=".storage.IOCipherService" android:enabled="true" />
     </application>
 
 </manifest>

@@ -438,10 +438,8 @@ public class Constants {
 		}
 		
 		public final static class IOCipher {
-			private final static String LOCALHOST = "127.0.0.1";
-			private final static int DEFAULT_PORT = 8443;
-			private boolean USE_SSL = true;
-			private boolean RUN_ON_BIND = true;
+			public final static String STORE = "informaCamIoCipher.db";
+			
 		}
 	}
 	

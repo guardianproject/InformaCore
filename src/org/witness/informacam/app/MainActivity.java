@@ -1,7 +1,8 @@
 package org.witness.informacam.app;
 
-import info.guardianproject.iocipher.File;
+import info.guardianproject.iocipher.VirtualFileSystem;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import org.witness.informacam.app.editors.image.ImageEditor;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.LocalBinder;
+import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Storage;
@@ -97,15 +99,13 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void initInformaCam() {
-    	/*
-    	File dumpFolder = new File(Storage.FileIO.DUMP_FOLDER);
-    	if(!dumpFolder.exists())
-    		dumpFolder.mkdir();
-    	*/
     	SignatureUtility signatureUtility = new SignatureUtility(MainActivity.this);
     	
     	Intent launchInformaService = new Intent(this, InformaService.class);
 		bindService(launchInformaService, sc, Context.BIND_AUTO_CREATE);
+		
+		Intent initVirtualStorage = new Intent(this, IOCipherService.class);
+		startService(initVirtualStorage);
     }
     
     @Override
