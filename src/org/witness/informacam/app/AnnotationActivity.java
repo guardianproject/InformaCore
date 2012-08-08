@@ -46,6 +46,8 @@ public class AnnotationActivity extends Activity implements OnClickListener {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		setContentView(R.layout.annotationactivity);
+		
 		mProps = (HashMap<String, String>) getIntent().getSerializableExtra(App.ImageEditor.Keys.PROPERTIES);
 		try {
 			parseChecklist();

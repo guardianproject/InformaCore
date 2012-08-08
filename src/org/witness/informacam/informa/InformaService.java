@@ -1,9 +1,11 @@
 package org.witness.informacam.informa;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +25,10 @@ import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
+import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Status;
+import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 
 import com.google.common.cache.CacheBuilder;
@@ -90,6 +95,32 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		return informaService;
 	}
 	
+	public LogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
+		ex = Executors.newFixedThreadPool(100);
+		Future<LogPack> query = ex.submit(new Callable<LogPack>() {
+
+			@Override
+			public LogPack call() throws Exception {
+				Iterator<LogPack> cIt = suckerCache.asMap().values().iterator();
+				LogPack logPack = null;
+				while(cIt.hasNext() && logPack == null) {
+					LogPack lp = cIt.next();
+					
+					Log.d(Storage.LOG, "querying logpacks for type " + type + "\n" + lp);
+					if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
+						logPack = lp;
+				}
+				
+				return logPack;
+			}
+			
+		});
+		LogPack logPack = query.get();
+		ex.shutdown();
+		
+		return logPack;
+	}
+	
 	public int getStatus() {
 		return informaCurrentStatus;
 	}
@@ -118,7 +149,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	@SuppressWarnings({"unchecked"})
 	public void init() {
 		suckerCache = CacheBuilder.newBuilder()
-				.maximumSize(200000L)
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
@@ -273,15 +303,23 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		// TODO pull out image region from cache and update values
 		try {
 			JSONObject rep = ir.getRepresentation();
-			long timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
+			long timestamp = 0L;
+			
+			try {
+				timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
+			} catch(ClassCastException e) {
+				timestamp = Long.parseLong((String) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP));
+			}
 			
 			LogPack logPack = suckerCache.get(timestamp);
+			logPack.remove(Signatures.Keys.SIGNATURE);
 			Iterator<String> repIt = rep.keys();
 			while(repIt.hasNext()) {
 				String key = repIt.next();
 				logPack.put(key, rep.get(key));
 			}
 			
+			onUpdate(timestamp, logPack);
 			
 			Log.d(Constants.Informa.LOG, "updating image region!");
 			Log.d(Constants.Informa.LOG, logPack.toString());

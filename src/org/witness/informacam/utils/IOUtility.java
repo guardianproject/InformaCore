@@ -128,7 +128,7 @@ public class IOUtility {
 				logPack.put(Exif.MODEL, ei.getAttribute(Exif.MODEL));
 				logPack.put(Exif.ORIENTATION, ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL));
 				logPack.put(Exif.WHITE_BALANCE, ei.getAttributeInt(Exif.WHITE_BALANCE, Informa.Keys.NOT_REPORTED));
-				
+				logPack.put(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
 			} catch (IOException e) {
 				
 				e.printStackTrace();

@@ -1,6 +1,7 @@
 package org.witness.informacam.app;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -9,6 +10,7 @@ import org.witness.informacam.R;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.adapters.AddressBookAdapter;
 import org.witness.informacam.app.adapters.AddressBookAdapter.OnAddressFocusedListener;
+import org.witness.informacam.app.adapters.AddressBookChooserAdapter;
 import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.storage.DatabaseHelper;
@@ -16,7 +18,7 @@ import org.witness.informacam.utils.AddressBookUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Mods.Selections;
+import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Storage.Tables;
@@ -42,7 +44,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	Handler h;
 	
 	ImageButton navigation;
-	Button new_contact;
+	Button new_contact, select_contact;
 	ListView address_list;
 	
 	SQLiteDatabase db;
@@ -50,12 +52,19 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	
 	SharedPreferences sp;
 	
+	boolean isSelecting = false;
 	ArrayList<AddressBookDisplay> addresses;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		initLayout();
+		
+		if(getIntent().getExtras() != null && getIntent().getExtras().containsKey(App.ImageEditor.Keys.CHOOSE_TRUSTED_DESTINATION))
+			initLayoutForChooser();
+		else
+			initLayout();
+		
+		
 		MainRouter.show(this);
 	}
 	
@@ -69,6 +78,19 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		new_contact.setOnClickListener(this);
 		
 		address_list = (ListView) findViewById(R.id.address_book_list);
+	}
+	
+	private void initLayoutForChooser() {
+		setContentView(R.layout.addressbookactivity_chooser);
+		
+		navigation = (ImageButton) findViewById(R.id.navigation_button);
+		navigation.setOnClickListener(this);
+		
+		select_contact = (Button) findViewById(R.id.select_contact_button);
+		select_contact.setOnClickListener(this);
+		
+		address_list = (ListView) findViewById(R.id.address_book_list);
+		isSelecting = true;
 	}
 	
 	private void getAddresses() {
@@ -97,7 +119,11 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 			}
 			
 			a.close();
-			address_list.setAdapter(new AddressBookAdapter(AddressBookActivity.this, addresses));
+			
+			if(isSelecting)
+				address_list.setAdapter(new AddressBookChooserAdapter(AddressBookActivity.this, addresses));
+			else
+				address_list.setAdapter(new AddressBookAdapter(AddressBookActivity.this, addresses));
 		}
 	}
 	
@@ -120,6 +146,25 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		else if(v == new_contact) {
 			Intent intent = new Intent(this, AddressBookChooserActivity.class);
 			startActivityForResult(intent, App.AddressBook.FROM_CONTACT_CHOOSER);
+		} else if(v == select_contact) {
+			List<Long> encryptList = new ArrayList<Long>();
+			for(AddressBookDisplay adr : addresses) {
+				
+				try {
+					if(adr.has(AddressBook.Keys.CONTACT_SELECTED) && adr.getBoolean(AddressBook.Keys.CONTACT_SELECTED))
+						encryptList.add(adr.getLong(BaseColumns._ID));
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			long[] encryptListArray = new long[encryptList.size()];
+			for(int l=0; l<encryptList.size(); l++)
+				encryptListArray[l] = encryptList.get(l);
+			
+			getIntent().putExtra(Informa.Keys.Intent.ENCRYPT_LIST, encryptListArray);
+			setResult(Activity.RESULT_OK,getIntent());
+			finish();
 		}
 		
 	}
@@ -127,7 +172,6 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(resultCode == Activity.RESULT_OK && requestCode == App.AddressBook.FROM_CONTACT_CHOOSER) {
-			Log.d(App.LOG, "coming back from contacts");
 			getAddresses();
 		}
 	}

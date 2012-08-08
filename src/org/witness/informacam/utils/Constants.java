@@ -47,6 +47,9 @@ public class Constants {
 				public static final int TAP = 3;
 			}
 			
+			public static final int QUALITY = 100;
+			public static final String GALLERY_NAME = System.currentTimeMillis() + "_InformaCamImage.jpg";
+			
 			// Maximum zoom scale
 			public static final float MAX_SCALE = 10f;
 			public final static float CORNER_SIZE = 26;
@@ -70,6 +73,7 @@ public class Constants {
 			
 			public final static class Keys {
 				public final static String PROPERTIES = "mProps";
+				public final static String CHOOSE_TRUSTED_DESTINATION = "chooseTrustedDestination";
 				
 			}
 		}
@@ -98,6 +102,7 @@ public class Constants {
 			public final static String CONTACT_NAME = "contactName";
 			public final static String CONTACT_EMAIL = "contactEmail";
 			public final static String CONTACT_ID = "contactID";
+			public static final String CONTACT_SELECTED = "contactSelectedAsTrustedDestination";
 		}
 	}
 	
@@ -289,6 +294,7 @@ public class Constants {
 		}
 		
 		public final static class CaptureEvent {
+			public final static int METADATA_CAPTURED = 272;
 			public final static int MEDIA_OPENED = 273;
 			public final static int REGION_GENERATED = 274;
 			public final static int MEDIA_SAVED = 275;
@@ -300,6 +306,7 @@ public class Constants {
 				public final static String TIMESTAMP = "captureEventTimestamp";
 				public final static String ON_VIDEO_START = "timestampOnVideoStart";
 				public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
+				public final static String METADATA_CAPTURED = "metadataCaptured";
 			}
 		}
 		

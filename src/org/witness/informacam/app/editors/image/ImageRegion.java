@@ -484,7 +484,7 @@ public void updateRegionProcessor (int obscureType) {
 					mImageEditor.updateDisplayImage();
 				}
 			
-				mImageEditor.launchDestinationChooser(this);
+				mImageEditor.launchAnnotationActivity(this);
 				break;
 			default:
 				setRegionProcessor(new PixelizeObscure());
