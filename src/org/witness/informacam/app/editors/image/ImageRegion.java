@@ -101,6 +101,7 @@ public class ImageRegion implements OnActionItemClickListener
 	public interface ImageRegionListener {
 		public void onImageRegionCreated(ImageRegion ir);
 		public void onImageRegionChanged(ImageRegion ir);
+		public void onImageRegionRemoved(ImageRegion ir);
 	}
 	
 	public RegionProcesser getRegionProcessor() {

@@ -160,6 +160,9 @@ public class Constants {
 			public final static String MIME_TYPE_MP4 = "video/mp4";
 			public final static String MIME_TYPE_MKV = "video/mkv";
 			public final static String J3M_TORRENT = J3M.TORRENT_MIME_TYPE;
+			
+			public final static int IMAGE = 400;
+			public final static int VIDEO = 401;
 		}
 	}
 	
@@ -298,6 +301,7 @@ public class Constants {
 			public final static int MEDIA_OPENED = 273;
 			public final static int REGION_GENERATED = 274;
 			public final static int MEDIA_SAVED = 275;
+			public final static int SENSOR_PLAYBACK = 271;
 			
 			public final static class Keys {
 				public final static String USER_ACTION = "userActionReported";

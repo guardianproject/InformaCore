@@ -1,7 +1,5 @@
 package org.witness.informacam.app.editors.image;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -27,7 +25,6 @@ import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
@@ -148,7 +145,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	Uri savedImageUri;
 	
 	IOCipherService ioCipherService = IOCipherService.getInstance();
-	long[] encryptList;
 	
 	//handles threaded events for the UI thread
     private Handler mHandler = new Handler()
@@ -870,6 +866,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	public void deleteRegion(ImageRegion ir)
 	{
 		imageRegions.remove(ir);
+		InformaService.getInstance().onImageRegionRemoved(ir);
 		//redrawRegions();
 		updateDisplayImage();
 		// TODO: remove from cache
@@ -1063,7 +1060,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	Bitmap obscuredBmp = createObscuredBitmap(w,h, false);
     	
     	// Create the Uri - This can't be "private"
-    	File tmpFile = new File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
+    	java.io.File tmpFile = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
     	debug(App.LOG, tmpFile.getPath());
     	
 		try {
@@ -1119,24 +1116,17 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			return false;
 		}
 		
-		InformaService.getInstance()
-			.onUpdate(System.currentTimeMillis(), new LogPack(CaptureEvent.Keys.USER_ACTION, CaptureEvent.MEDIA_SAVED));
-		
-		Log.d(App.LOG, "encrypt list!");
-		for(long l : encryptList)
-			Log.d(App.LOG, "encrypt to: " + l);
-		
-		/*
-		JSONArray imageRegionObject = new JSONArray();
 		try {
-			for(ImageRegion ir : imageRegions) {
-				imageRegionObject.put(ir.getRepresentation());
-			}
-		} catch (JSONException e) {
-			return false;
-		}
-		
-		*/
+			InformaService.getInstance().packageInforma();
+		} catch(JSONException e){}
+		catch (InterruptedException e) {}
+		catch (ExecutionException e) {} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 		
 		cleanup();
 		
@@ -1148,8 +1138,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	// TODO: handle original image
     	
     	// clean up temp files
-    	mProgressDialog.cancel();
-		finish();
+		//finish();
     }
 
     /*
@@ -1220,7 +1209,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     				  public void run() {
     				    // this will be done in the Pipeline Thread
 		        		if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
-		        			encryptList = data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST);
+		        			InformaService.getInstance().setEncryptionList(data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST));
 		        		
 		        		try {
 							saveImage();

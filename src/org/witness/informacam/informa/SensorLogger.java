@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.utils.Constants.Suckers;
+import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 
 import android.app.Activity;
 import android.content.Context;
@@ -91,13 +92,18 @@ public class SensorLogger<T> {
 	public LogPack forceReturn() throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, JSONException {
 		if(_sucker.getClass().getDeclaredMethod("forceReturn", null) != null) {
 			Method fr = _sucker.getClass().getDeclaredMethod("forceReturn", null);
-			return (LogPack) fr.invoke(_sucker, null);
+			
+			LogPack logPack = (LogPack) fr.invoke(_sucker, null);
+			logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
+			
+			return logPack;
 		}
 		
 		return null;
 	}
 
 	public void sendToBuffer(LogPack logPack) throws JSONException {
+		logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
 		((OnUpdateListener) is).onUpdate(System.currentTimeMillis(), logPack); 
 	}
 }

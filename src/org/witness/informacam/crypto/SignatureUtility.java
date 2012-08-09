@@ -1,5 +1,8 @@
 package org.witness.informacam.crypto;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,12 +12,22 @@ import java.util.concurrent.Future;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPOnePassSignature;
+import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.PGPUtil;
+import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Settings.Device;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
@@ -22,6 +35,8 @@ import android.app.Activity;
 import android.database.Cursor;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
+import android.util.Base64;
+import android.util.Log;
 
 
 public class SignatureUtility {
@@ -61,6 +76,32 @@ public class SignatureUtility {
 		secretKey = KeyUtility.extractSecretKey(sk);
 		privateKey = secretKey.extractPrivateKey(this.authKey.toCharArray(), new BouncyCastleProvider());
 		publicKey = secretKey.getPublicKey();
+	}
+	
+	public boolean isVerified(final LogPack data) {
+		boolean isVerified = true;
+
+		ExecutorService ex = Executors.newFixedThreadPool(100);
+		Future<Boolean> future = ex.submit(new Callable<Boolean>() {
+			
+			@SuppressWarnings("deprecation")
+			@Override
+			public Boolean call() throws Exception {
+				String signedData = (String) data.remove(Signatures.Keys.SIGNATURE);
+				return KeyUtility.verifyData(data.toString().getBytes(), signedData.getBytes(), publicKey);
+			}
+		});
+		
+		try {
+			isVerified = future.get();
+		} catch (InterruptedException e) {}
+		catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		
+		ex.shutdown();
+		
+		return isVerified;
 	}
 	
 	public String signData(final byte[] data) {

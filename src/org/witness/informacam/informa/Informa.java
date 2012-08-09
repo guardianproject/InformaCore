@@ -3,6 +3,8 @@ package org.witness.informacam.informa;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import net.sqlcipher.database.SQLiteDatabase;
@@ -10,13 +12,18 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
+import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Storage.Tables;
+
+import com.google.common.cache.LoadingCache;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -95,6 +102,7 @@ public class Informa {
 		public Data() {
 			mediaCapturePlayback = new HashSet<MediaCapturePlayback>();
 			annotations = new HashSet<Annotation>();
+			mediaHash = new MediaHash();
 		}
 	}
 	
@@ -156,9 +164,7 @@ public class Informa {
 	public class MediaHash extends InformaZipper {
 		String unredactedHash, redactedHash, editIndex;
 		
-		public MediaHash() {
-			
-		}
+		public MediaHash() {}
 	}
 	
 	public class MediaCapturePlayback extends InformaZipper {
@@ -166,7 +172,10 @@ public class Informa {
 		String editIndex;
 		LogPack sensorPlayback;
 		
-		public MediaCapturePlayback() {}
+		public MediaCapturePlayback(long timestamp, LogPack sensorPlayback) {
+			this.timestamp = timestamp;
+			this.sensorPlayback = sensorPlayback;
+		}
 	}
 	
 	public class Annotation extends InformaZipper {
@@ -176,7 +185,10 @@ public class Informa {
 		Subject subject;
 		RegionBounds regionBounds;
 		
-		public Annotation() {}
+		public Annotation(long timestamp, LogPack logPack) {
+			this.timestamp = timestamp;
+			Log.d(App.LOG, "ADDING AN ANNOTATION:\n" + logPack.toString());
+		}
 	}
 	
 	public class Subject extends InformaZipper {
@@ -217,6 +229,30 @@ public class Informa {
 			intent.owner.ownershipType = Constants.Informa.Owner.INDIVIDUAL;	// TODO: FOR NOW...
 			
 			cursor.close();
+		}
+	}
+	
+	public void setInitialData(Entry<Long, LogPack> initialData) throws JSONException {
+		data.exif = new Exif(initialData.getValue());
+		genealogy.dateCreated = initialData.getKey();
+		data.mediaHash.unredactedHash = initialData.getValue().getString(Constants.Informa.Keys.Data.Description.ORIGINAL_HASH);
+	}
+	
+	public void addToPlayback(List<Entry<Long, LogPack>> playback) throws JSONException {
+		for(Entry<Long, LogPack> e : playback) {
+			if(SignatureUtility.getInstance().isVerified(e.getValue())) {
+				e.getValue().remove(CaptureEvent.Keys.TYPE);
+				data.mediaCapturePlayback.add(new MediaCapturePlayback(e.getKey(), e.getValue()));
+			}
+		}
+	}
+	
+	public void addToAnnotations(List<Entry<Long, LogPack>> annotations) throws JSONException {
+		for(Entry<Long, LogPack> e : annotations) {
+			if(SignatureUtility.getInstance().isVerified(e.getValue())) {
+				e.getValue().remove(CaptureEvent.Keys.TYPE);
+				data.annotations.add(new Annotation(e.getKey(), e.getValue()));
+			}
 		}
 	}
 	

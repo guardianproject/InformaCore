@@ -5,12 +5,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.security.NoSuchAlgorithmException;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
@@ -110,10 +112,10 @@ public class IOUtility {
 	}
 	
 	public final static LogPack getMetadata(String filepath, String mimeType) {
-		LogPack logPack = new LogPack();
-		
-		if(mimeType.equals(Media.Type.MIME_TYPE_JPEG)) {
-			try {
+		try {
+			LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
+			
+			if(mimeType.equals(Media.Type.MIME_TYPE_JPEG)) {
 				ExifInterface ei = new ExifInterface(filepath);
 				
 				logPack.put(Exif.TIMESTAMP, ei.getAttribute(Exif.TIMESTAMP));
@@ -128,16 +130,24 @@ public class IOUtility {
 				logPack.put(Exif.MODEL, ei.getAttribute(Exif.MODEL));
 				logPack.put(Exif.ORIENTATION, ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL));
 				logPack.put(Exif.WHITE_BALANCE, ei.getAttributeInt(Exif.WHITE_BALANCE, Informa.Keys.NOT_REPORTED));
-				logPack.put(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
-			} catch (IOException e) {
 				
-				e.printStackTrace();
-			} catch (JSONException e) {}
-		} else if(mimeType.equals(Media.Type.MIME_TYPE_MP4)) {
-			
+				logPack.put(Data.Description.MEDIA_TYPE, Media.Type.IMAGE);
+				logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+				
+				Log.d(App.LOG, logPack.toString());
+			} else if(mimeType.equals(Media.Type.MIME_TYPE_MP4)) {
+				
+				logPack.put(Data.Description.MEDIA_TYPE, Media.Type.VIDEO);
+				logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+			}
+			return logPack;
+		} catch (IOException e) {
+			return null;
+		} catch (JSONException e) {
+			return null;
+		} catch (NoSuchAlgorithmException e) {
+			return null;
 		}
-		
-		return logPack;
 	}
 	
 	public final static void refreshMediaScanner() {

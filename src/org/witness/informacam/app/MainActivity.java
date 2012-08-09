@@ -325,7 +325,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	@Override
 	public void onRouted() {
 		initInformaCam();
-		
 	}
 	
 	private void doShutdown() {
