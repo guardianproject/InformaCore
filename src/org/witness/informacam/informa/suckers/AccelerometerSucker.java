@@ -85,12 +85,14 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 			sendToBuffer(currentLight);
 	}
 	
+	/*
 	public LogPack forceReturn() throws JSONException {
 		LogPack fr = new LogPack(Suckers.Accelerometer.Keys.ACC, currentAccelerometer);
 		fr.put(Suckers.Accelerometer.Keys.ORIENTATION, currentMagField);
 		fr.put(Suckers.Accelerometer.Keys.LIGHT, currentLight);
 		return fr;
 	}
+	*/
 
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {}

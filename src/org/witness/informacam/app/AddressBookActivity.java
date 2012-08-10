@@ -31,7 +31,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -207,7 +206,6 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		AddressBookDisplay abd = (AddressBookDisplay) obj;
 		switch(which) {
 		case AddressBook.Actions.DELETE_CONTACT:
-			Log.d(App.LOG, abd.toString());
 			try {
 				if(abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE)) {
 					AddressBookUtility.deleteContact(abd.getLong(BaseColumns._ID), abd.getString(AddressBook.Keys.CONTACT_EMAIL));

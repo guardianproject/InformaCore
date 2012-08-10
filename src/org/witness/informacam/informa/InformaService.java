@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,7 +37,10 @@ import org.witness.informacam.utils.Constants.Suckers.Phone;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -70,10 +74,16 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	ExecutorService ex;
 	
 	Informa informa;
+	Activity editor;
 	
 	long[] encryptList;
 	
 	String LOG = Constants.Informa.LOG;
+	
+	public interface InformaServiceListener {
+		public void onInformaPackageGenerated();
+		public void onMetadataEncryptedAndEmbedded();
+	}
 	
 	public class LocalBinder extends Binder {
 		public InformaService getService() {
@@ -160,7 +170,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				while(cIt.hasNext() && logPack == null) {
 					LogPack lp = cIt.next();
 					
-					Log.d(Storage.LOG, "querying logpacks for type " + type + "\n" + lp);
 					if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
 						logPack = lp;
 				}
@@ -200,20 +209,30 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		Log.d(LOG, "InformaService stopped");
 	}
 			
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings("unchecked")
 	public void init() {
+		initCache();
+		
+		_geo = new GeoSucker(InformaService.this);
+		_phone = new PhoneSucker(InformaService.this);
+		_acc = new AccelerometerSucker(InformaService.this);
+		this.setCurrentStatus(Status.RUNNING);
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	private void initCache() {
+		if(suckerCache != null)
+			suckerCache = null;
+		
 		suckerCache = CacheBuilder.newBuilder()
+				//.maximumSize(640) //64 bytes per entry, 200 entries = 128000
+				//.removalListener(new CacheAllocator())
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
 						return suckerCache.get(timestamp);
 					}
 				});
-		
-		_geo = new GeoSucker(InformaService.this);
-		_phone = new PhoneSucker(InformaService.this);
-		_acc = new AccelerometerSucker(InformaService.this);
-		this.setCurrentStatus(Status.RUNNING);
 	}
 	
 	public void suspend() {
@@ -297,18 +316,34 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 
 	@Override
-	public void onInformaInit() {
+	public void onInformaInit(Activity editor) {
 		informa = new Informa(this);
 		try {
 			informa.setDeviceCredentials(_phone.getSucker().forceReturn());			
 		} catch(JSONException e) {}
+		this.editor = editor;
 	}
 	
-	public void packageInforma() throws JSONException, InterruptedException, ExecutionException, IllegalArgumentException, IllegalAccessException {
-		// set metadata
-		informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED));
-		informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK));
-		informa.addToAnnotations(getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED));		
+	public void packageInforma() {
+		Thread packageInforma = new Thread(
+				new Runnable() {
+					@Override
+					public void run() {
+						try {
+							if(informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED)))
+								if(informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK)))
+									if(informa.addToAnnotations(getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED)))
+										((InformaServiceListener) editor).onInformaPackageGenerated();
+						} catch(JSONException e){}
+						catch (InterruptedException e) {
+							e.printStackTrace();
+						} catch (ExecutionException e) {
+							e.printStackTrace();
+						}
+					}
+				});
+		packageInforma.start();
+		
 	}
 	
 	public void setEncryptionList(long[] encryptList) {
@@ -321,10 +356,12 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			long timestamp = 0L;
 			
 			try {
-				timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
+				timestamp = (Long) rep.get(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
 			} catch(ClassCastException e) {
-				timestamp = Long.parseLong((String) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP));
+				timestamp = Long.parseLong((String) rep.get(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP));
 			}
+			
+			rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
 			
 			LogPack logPack = suckerCache.get(timestamp);
 			logPack.remove(Signatures.Keys.SIGNATURE);
@@ -370,7 +407,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		try {
 			long timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
 			
-			LogPack logPack = new LogPack();
+			LogPack logPack = new LogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED);
 			Iterator<String> repIt = rep.keys();
 			while(repIt.hasNext()) {
 				String key = repIt.next();
@@ -382,32 +419,66 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 
 	@Override
-	public void onImageRegionCreated(ImageRegion ir) {
-		try {
-			addRegion(ir.getRepresentation());
-		} catch(JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
+	public void onImageRegionCreated(final ImageRegion ir) {
+		new Thread(
+			new Runnable() {
+				@Override
+				public void run() {
+					try {
+						addRegion(ir.getRepresentation());
+					} catch(JSONException e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
+					}
+				}
+		}).start();
+		
 	}
 
 	@Override
-	public void onImageRegionChanged(ImageRegion ir) {
-		try {
-			changeRegion(ir.getRepresentation());
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
+	public void onImageRegionChanged(final ImageRegion ir) {
+		new Thread(
+				new Runnable() {
+					@Override
+					public void run() {
+						try {
+							changeRegion(ir.getRepresentation());
+						} catch (JSONException e) {
+							Log.e(LOG, e.toString());
+							e.printStackTrace();
+						}
+					}
+			}).start();
 	}
 
 	@Override
-	public void onImageRegionRemoved(ImageRegion ir) {
-		try {
-			removeRegion(ir.getRepresentation());
-		} catch(JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();	
+	public void onImageRegionRemoved(final ImageRegion ir) {
+		new Thread(
+				new Runnable() {
+					@Override
+					public void run() {
+						try {
+							removeRegion(ir.getRepresentation());
+						} catch(JSONException e) {
+							Log.e(LOG, e.toString());
+							e.printStackTrace();	
+						}
+					}
+			}).start();
+		
+	}
+	
+	public class CacheAllocator implements RemovalListener<Long, LogPack> {
+		public CacheAllocator() {
+			
+		}
+
+		@Override
+		public void onRemoval(RemovalNotification<Long, LogPack> rn) {
+			Log.d(Storage.LOG, "removing entries from cache!");
+			Log.d(Storage.LOG, rn.getCause().toString());
+			Log.d(Storage.LOG, rn.getValue().toString());
+			
 		}
 	}
 	

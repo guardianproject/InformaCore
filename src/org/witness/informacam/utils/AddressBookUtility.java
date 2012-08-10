@@ -21,7 +21,6 @@ import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
-import android.util.Log;
 
 public class AddressBookUtility {
 	public interface AddressBookListener {
@@ -83,9 +82,7 @@ public class AddressBookUtility {
 				Email.DATA,
 				Contacts.DISPLAY_NAME,
 		};
-		
-		Log.d(App.LOG, "looking up " + lookup);
-		
+				
 		AddressBookDisplay abd = null;
 		String contactEmail = "email";
 		String contactDisplayName = null;
@@ -94,7 +91,6 @@ public class AddressBookUtility {
 		
 		Cursor a = c.getContentResolver().query(Email.CONTENT_URI, projection, Email.CONTACT_ID + "=?", new String[] {Long.toString(lookup)}, null);
 		if(a != null && a.moveToFirst()) {
-			Log.d(App.LOG, "found " + a.getCount() + " results");
 			if(a.getCount() > 1) {
 				if(certainChoice == -1) {
 					ArrayList<Selections> choices = new ArrayList<Selections>();

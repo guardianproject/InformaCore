@@ -18,13 +18,16 @@ import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import com.google.common.cache.LoadingCache;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -44,7 +47,7 @@ public class Informa {
 	SharedPreferences sp;
 	
 	public interface InformaListener {
-		public void onInformaInit();
+		public void onInformaInit(Activity editor);
 	}
 	
 	private class InformaZipper extends JSONObject {
@@ -90,7 +93,6 @@ public class Informa {
 		String localMediaPath;
 		Device createdOnDevice;
 		long dateCreated;
-		EditLog editLog;
 	}
 	
 	public class Data extends InformaZipper {
@@ -118,16 +120,6 @@ public class Informa {
 		
 		public Device() {}
 		
-	}
-	
-	public class EditLog extends InformaZipper {
-		long dateAccessed;
-		Device device;
-		Set<String> performedEdits;
-		
-		public EditLog() {
-			
-		}
 	}
 	
 	public class Exif extends InformaZipper {
@@ -162,7 +154,7 @@ public class Informa {
 	}
 	
 	public class MediaHash extends InformaZipper {
-		String unredactedHash, redactedHash, editIndex;
+		String unredactedHash, redactedHash;
 		
 		public MediaHash() {}
 	}
@@ -180,14 +172,26 @@ public class Informa {
 	
 	public class Annotation extends InformaZipper {
 		long timestamp;
-		String editIndex, obfuscationType;
+		String obfuscationType;
 		Location location;
 		Subject subject;
 		RegionBounds regionBounds;
 		
 		public Annotation(long timestamp, LogPack logPack) {
 			this.timestamp = timestamp;
-			Log.d(App.LOG, "ADDING AN ANNOTATION:\n" + logPack.toString());
+			try {
+				obfuscationType = logPack.getString(ImageRegion.FILTER);
+				regionBounds = new RegionBounds(
+						logPack.getString(ImageRegion.WIDTH),
+						logPack.getString(ImageRegion.HEIGHT),
+						logPack.getString(ImageRegion.COORDINATES));
+				
+				if(logPack.has(ImageRegion.Subject.PSEUDONYM)) {
+					subject = new Subject(
+							logPack.getString(ImageRegion.Subject.PSEUDONYM), 
+							logPack.getString(ImageRegion.Subject.INFORMED_CONSENT_GIVEN));
+				}
+			} catch(JSONException e){}
 		}
 	}
 	
@@ -195,15 +199,30 @@ public class Informa {
 		int[] customCodes;
 		String alias;
 		
-		public Subject() {}
+		public Subject(String alias, String consentGiven) {
+			this.alias = alias;
+			if(new Boolean(consentGiven)) {
+				this.customCodes = new int[1];
+				this.customCodes[0] = Constants.Informa.Consent.GENERAL;
+			}
+		}
 	}
 	
 	public class RegionBounds extends InformaZipper {
 		JSONObject regionDimensions, regionCoordinates;
 		
-		public RegionBounds() {
+		public RegionBounds(String regionWidth, String regionHeight, String regionCoordinates) {
 			regionDimensions = new JSONObject();
-			regionCoordinates = new JSONObject();
+			this.regionCoordinates = new JSONObject();
+			
+			try {
+				regionDimensions.put(ImageRegion.HEIGHT, Float.parseFloat(regionHeight));
+				regionDimensions.put(ImageRegion.WIDTH, Float.parseFloat(regionWidth));
+				
+				this.regionCoordinates.put(ImageRegion.LEFT, Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(","))));
+				this.regionCoordinates.put(ImageRegion.TOP, Float.parseFloat(regionCoordinates.substring(regionCoordinates.indexOf(",") + 1, regionCoordinates.length() - 1)));
+				
+			} catch(JSONException e){}
 		}
 	}
 	
@@ -232,28 +251,35 @@ public class Informa {
 		}
 	}
 	
-	public void setInitialData(Entry<Long, LogPack> initialData) throws JSONException {
+	public boolean setInitialData(Entry<Long, LogPack> initialData) throws JSONException {
 		data.exif = new Exif(initialData.getValue());
 		genealogy.dateCreated = initialData.getKey();
 		data.mediaHash.unredactedHash = initialData.getValue().getString(Constants.Informa.Keys.Data.Description.ORIGINAL_HASH);
+		return true;
 	}
 	
-	public void addToPlayback(List<Entry<Long, LogPack>> playback) throws JSONException {
+	public boolean addToPlayback(List<Entry<Long, LogPack>> playback) throws JSONException {
+		Log.d(Storage.LOG, "adding to PLAYBACK");
 		for(Entry<Long, LogPack> e : playback) {
 			if(SignatureUtility.getInstance().isVerified(e.getValue())) {
 				e.getValue().remove(CaptureEvent.Keys.TYPE);
 				data.mediaCapturePlayback.add(new MediaCapturePlayback(e.getKey(), e.getValue()));
 			}
 		}
+		Log.d(Storage.LOG, "PLAYBACK: done");
+		return true;
 	}
 	
-	public void addToAnnotations(List<Entry<Long, LogPack>> annotations) throws JSONException {
+	public boolean addToAnnotations(List<Entry<Long, LogPack>> annotations) throws JSONException {
+		Log.d(Storage.LOG, "adding to ANNOTATIONS");
 		for(Entry<Long, LogPack> e : annotations) {
 			if(SignatureUtility.getInstance().isVerified(e.getValue())) {
 				e.getValue().remove(CaptureEvent.Keys.TYPE);
 				data.annotations.add(new Annotation(e.getKey(), e.getValue()));
 			}
 		}
+		Log.d(Storage.LOG, "ANNOTATIONS: done");
+		return true;
 	}
 	
 	public void setDeviceCredentials(LogPack initPack) throws JSONException {

@@ -70,7 +70,6 @@ public class AnnotationActivity extends Activity implements OnClickListener {
 		
 		otherInformaOptionsHolder = (ListView) findViewById(R.id.otherInformaOptionsHolder);
 		otherInformaOptionsHolder.setAdapter(new Adapter());
-		
 	}
 		
 	public void parseChecklist() throws IOException {
@@ -117,6 +116,7 @@ public class AnnotationActivity extends Activity implements OnClickListener {
 				getIntent().putExtra(ImageRegion.TAGGER_RETURN, mProps);
 				getIntent().putExtra(ImageRegion.INDEX, getIntent().getIntExtra(ImageRegion.INDEX, 0));
 				setResult(Activity.RESULT_OK,getIntent());
+				
 				finish();
 				
 			} else

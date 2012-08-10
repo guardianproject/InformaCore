@@ -21,6 +21,7 @@ import org.witness.informacam.app.AnnotationActivity;
 import org.witness.informacam.app.editors.image.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.image.filters.RegionProcesser;
 import org.witness.informacam.informa.InformaService;
+import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
@@ -74,7 +75,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class ImageEditor extends Activity implements OnTouchListener, OnClickListener {
+public class ImageEditor extends Activity implements OnTouchListener, OnClickListener, InformaServiceListener {
 	// Constants for Informa
 	
 	// Image Matrix
@@ -147,26 +148,25 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	IOCipherService ioCipherService = IOCipherService.getInstance();
 	
 	//handles threaded events for the UI thread
-    private Handler mHandler = new Handler()
-    {
+    private Handler mHandler = new Handler() {
 
 		@Override
 		public void handleMessage(Message msg) {
 			super.handleMessage(msg);
 			
-
-	 	   switch (msg.what) {
-           	
-           case 3: //completed
-   	    	mProgressDialog.dismiss();
-   	    	 
-           	break;
-           default:
-               super.handleMessage(msg);
-       }
-   }
+			switch (msg.what) {
+			
+			case 3: //completed
+				mProgressDialog.dismiss();
+				break;
+			default:
+				super.handleMessage(msg);
+			}
+		}
     	
     };
+    
+    private Handler informaHandler = new Handler();
 
     //UI for background threads
     ProgressDialog mProgressDialog;
@@ -194,7 +194,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		setContentView(R.layout.imageviewer);
 		
 		InformaService.getInstance()
-			.onInformaInit();
+			.onInformaInit(ImageEditor.this);
 
 		// Calculate the minimum distance
 		minMoveDistance = minMoveDistanceDP * this.getResources().getDisplayMetrics().density + 0.5f;
@@ -869,7 +869,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		InformaService.getInstance().onImageRegionRemoved(ir);
 		//redrawRegions();
 		updateDisplayImage();
-		// TODO: remove from cache
 	}
 	
 	/*
@@ -1116,17 +1115,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			return false;
 		}
 		
-		try {
-			InformaService.getInstance().packageInforma();
-		} catch(JSONException e){}
-		catch (InterruptedException e) {}
-		catch (ExecutionException e) {} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}		
+		updateMessage(getString(R.string.generating_metadata));
+        InformaService.getInstance().packageInforma();
 		
 		cleanup();
 		
@@ -1162,6 +1152,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     }    
     
     public void launchAnnotationActivity(ImageRegion ir) {
+    	Log.d(App.LOG, ir.getRegionProcessor().getProperties().toString());
+    	
     	Intent informa = new Intent(this, AnnotationActivity.class);
     	informa.putExtra(App.ImageEditor.Keys.PROPERTIES, ir.getRegionProcessor().getProperties());
     	informa.putExtra(Informa.Keys.Data.ImageRegion.INDEX, imageRegions.indexOf(ir));
@@ -1195,20 +1187,22 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     			// iterate through returned hashmap and place these new properties in it.
     			for(Map.Entry<String, Object> entry : informaReturn.entrySet())
     				mProp.setProperty(entry.getKey(), entry.getValue().toString());
+
     			
     			ImageRegion ir = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0));
     			ir.getRegionProcessor().setProperties(mProp);
     			
     			// TODO: update the cache
-    			//InformaService.getInstance().onImageRegionChanged(ir);
+    			InformaService.getInstance().onImageRegionChanged(ir);
     			    			
-    		} else if(requestCode == App.ImageEditor.FROM_DESTINATION_CHOOSER) {
-    			mProgressDialog = ProgressDialog.show(this, "", getResources().getString(R.string.saving), true, true);
+    		} else if(requestCode == App.ImageEditor.FROM_DESTINATION_CHOOSER) {    			
     			mHandler.postDelayed(new Runnable() {
     				  @Override
     				  public void run() {
-    				    // this will be done in the Pipeline Thread
-		        		if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
+
+    					mProgressDialog = ProgressDialog.show(ImageEditor.this, "", getResources().getString(R.string.saving), true, true);
+		        		
+    					if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
 		        			InformaService.getInstance().setEncryptionList(data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST));
 		        		
 		        		try {
@@ -1246,11 +1240,38 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		return imageView;
 	}
 	
+	private void updateMessage(final String message) {
+		Runnable updateMessage = new Runnable() {
+			@Override
+			public void run() {
+				mProgressDialog.setMessage(message);
+			}
+		};
+		updateMessage.run();
+	}
+	
 	@Override
 	public void onAttachedToWindow() {
 	    super.onAttachedToWindow();
 	    Window window = getWindow();
 	    window.setFormat(PixelFormat.RGBA_8888);
 	    window.getDecorView().getBackground().setDither(true);
+	}
+
+	@Override
+	public void onInformaPackageGenerated() {
+		informaHandler.post(new Runnable() {
+			@Override
+			public void run() {
+				updateMessage(getString(R.string.encrypting_to_trusted_destinations));
+			}
+		});
+		
+	}
+
+	@Override
+	public void onMetadataEncryptedAndEmbedded() {
+		mProgressDialog.cancel();
+		finish();
 	}
 }

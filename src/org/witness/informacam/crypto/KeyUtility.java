@@ -339,42 +339,6 @@ public class KeyUtility {
 		return false;
 	}
 	
-	@SuppressWarnings("deprecation")
-	public static boolean verifyData(byte[] data, byte[] signedData, PGPPublicKey publicKey) throws IOException, PGPException, SignatureException {
-		ByteArrayInputStream sd = new ByteArrayInputStream(Base64.decode(signedData, Base64.DEFAULT));				
-		
-		InputStream is = PGPUtil.getDecoderStream(sd);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				
-		PGPObjectFactory objFactory = new PGPObjectFactory(is);
-		PGPCompressedData cd = (PGPCompressedData) objFactory.nextObject();
-		
-		objFactory = new PGPObjectFactory(cd.getDataStream());
-		
-		PGPOnePassSignatureList sigList_o = (PGPOnePassSignatureList) objFactory.nextObject();
-		PGPOnePassSignature sig = sigList_o.get(0);
-		
-		PGPLiteralData ld = (PGPLiteralData) objFactory.nextObject();
-		InputStream literalIn = ld.getInputStream();
-		
-		sig.initVerify(publicKey, new BouncyCastleProvider());
-		
-		int read;
-		while((read = literalIn.read()) > 0) {
-			sig.update((byte) read);
-			baos.write(read);
-		}
-		
-		PGPSignatureList sigList = (PGPSignatureList) objFactory.nextObject();
-		
-		if(sig.verify(sigList.get(0)) && new String(data).equals(new String(baos.toByteArray()))) {
-			baos.close();			
-			return true;
-		} else {
-			baos.close();
-			return false;
-		}
-	}
 	
 	public static String applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
 		int buffSize = 1 <<16;
