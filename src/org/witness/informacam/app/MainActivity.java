@@ -1,7 +1,5 @@
 package org.witness.informacam.app;
 
-import info.guardianproject.iocipher.VirtualFileSystem;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -23,7 +21,6 @@ import org.witness.informacam.informa.InformaService.LocalBinder;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
@@ -36,6 +33,7 @@ import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
 import com.xtralogic.android.logcollector.SendLogActivity;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
@@ -70,6 +68,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     Intent captureIntent, editorIntent;
     
     Handler h;
+    ProgressDialog mProgressDialog;
     
     InformaService informaService = null;
     
@@ -109,7 +108,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		onEulaAgreedTo();
     }
     
-    private void initInformaCam() {
+    @SuppressWarnings("unused")
+	private void initInformaCam() {
     	SignatureUtility signatureUtility = new SignatureUtility(MainActivity.this);
     	
     	Intent launchInformaService = new Intent(this, InformaService.class);
@@ -191,6 +191,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchMediaCapture(String tempFile) {
+    	mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
+    	
     	if(!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
     		Toast.makeText(this, getResources().getString(R.string.error_media_mounted), Toast.LENGTH_LONG).show();
     		return;
@@ -217,6 +219,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	if(resultCode == Activity.RESULT_OK) {
     		switch(requestCode) {
     		case App.Main.FROM_MEDIA_CAPTURE:
+    			mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
+    			
     			Log.d(App.LOG, mediaCaptureFile.getAbsolutePath());
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
@@ -249,6 +253,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			break;
     		}
     	} else if(resultCode == Activity.RESULT_CANCELED) {
+    		mProgressDialog.cancel();
     		if(informaService != null)
 				informaService.suspend();
     	}

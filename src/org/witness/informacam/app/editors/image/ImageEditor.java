@@ -170,6 +170,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
     //UI for background threads
     ProgressDialog mProgressDialog;
+    boolean autodetect;
     
     // Handles when we should do realtime preview and when we shouldn't
     boolean doRealtimePreview = true;
@@ -193,9 +194,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
         
 		setContentView(R.layout.imageviewer);
 		
-		InformaService.getInstance()
-			.onInformaInit(ImageEditor.this);
-
 		// Calculate the minimum distance
 		minMoveDistance = minMoveDistanceDP * this.getResources().getDisplayMetrics().density + 0.5f;
 		
@@ -223,11 +221,13 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		// Load the image if it isn't null
 		if (originalImageUri != null) {
+			InformaService.getInstance()
+				.onInformaInit(ImageEditor.this, originalImageUri);
 			// get image orientation from the exif logpack
 			originalImageOrientation = ExifInterface.ORIENTATION_NORMAL;
 			
 			try {
-				LogPack exif = InformaService.getInstance().getEventByType(Informa.CaptureEvent.METADATA_CAPTURED);
+				LogPack exif = InformaService.getInstance().getMetadata();
 				originalImageOrientation = exif.getInt(Exif.ORIENTATION);
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -237,15 +237,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				e.printStackTrace();
 			}
 			
-			/*
-			try {
-				originalImageOrientation = 0;
-				//File originalFilename = ioCipherService.getFile(originalImageUri);
-			} catch (IOException e1) {
-				debug(App.LOG,"Couldn't get Orientation");
-				e1.printStackTrace();
-			} 
-			*/
 			
 			// Load up smaller image
 			try {
@@ -320,7 +311,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
 					setBitmap (loadedBitmap);
 					
-					boolean autodetect = true;
+					autodetect = true;
 
 					if (autodetect)
 					{
@@ -440,7 +431,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 					isLast,
 					isLast);
 		}	 				
-		
+		autodetect = false;
 		return autodetectedRects.length;
 	}
 	
@@ -857,6 +848,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				}
 			});
 		}
+		InformaService.getInstance().onImageRegionCreated(imageRegion);
 	}
 	
 	
@@ -1079,50 +1071,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		}
     }
     
-    /*
-     * The method that actually saves the altered image.  
-     * This in combination with createObscuredBitmap could/should be done in another, more memory efficient manner. 
-     */
-    private boolean saveImage() throws IOException {
-    	SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.Media.DateFormats.EXPORT_DATE_FORMAT);
-		Date date = new Date();
-		String dateString = dateFormat.format(date);
-	
-		ContentValues cv = new ContentValues();
-		cv.put(Images.Media.DATE_ADDED, dateString);
-		cv.put(Images.Media.DATE_TAKEN, dateString);
-		cv.put(Images.Media.DATE_MODIFIED, dateString);
-		cv.put(Images.Media.DESCRIPTION, Exif.DESCRIPTION);
-		cv.put(Images.Media.TITLE, Exif.TITLE);
-	
-		savedImageUri = getContentResolver().insert(Media.EXTERNAL_CONTENT_URI, cv);
-		obscuredBmp = createObscuredBitmap(imageBitmap.getWidth(),imageBitmap.getHeight(), false);
-
-		OutputStream imageFileOS;
-
-		 //lossless?  good question - still a smaller version
-		imageFileOS = getContentResolver().openOutputStream(savedImageUri);
-		obscuredBmp.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, imageFileOS);
-		
-		// create new file and save it
-		java.io.File savedImage = new java.io.File(Storage.FileIO.DUMP_FOLDER, App.ImageEditor.GALLERY_NAME);
-		
-		try {
-			FileOutputStream fos = new FileOutputStream(savedImage.getAbsoluteFile());
-			imageBitmap.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, fos);
-		} catch(IOException e) {
-			Log.d(App.LOG, "error saving tmp bitmap: " + e);
-			return false;
-		}
-		
-		updateMessage(getString(R.string.generating_metadata));
-        InformaService.getInstance().packageInforma();
-		
-		cleanup();
-		
-		
-		return true;
-    }
+    
     
     private void cleanup() {
     	// TODO: handle original image
@@ -1171,6 +1120,43 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	
     }
     
+    private void saveImage() throws FileNotFoundException {
+    	SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.Media.DateFormats.EXPORT_DATE_FORMAT);
+		Date date = new Date();
+		String dateString = dateFormat.format(date);
+	
+		ContentValues cv = new ContentValues();
+		cv.put(Images.Media.DATE_ADDED, dateString);
+		cv.put(Images.Media.DATE_TAKEN, dateString);
+		cv.put(Images.Media.DATE_MODIFIED, dateString);
+		cv.put(Images.Media.DESCRIPTION, Exif.DESCRIPTION);
+		cv.put(Images.Media.TITLE, Exif.TITLE);
+	
+		savedImageUri = getContentResolver().insert(Media.EXTERNAL_CONTENT_URI, cv);
+		obscuredBmp = createObscuredBitmap(imageBitmap.getWidth(),imageBitmap.getHeight(), false);
+
+		OutputStream imageFileOS;
+
+		 //lossless?  good question - still a smaller version
+		imageFileOS = getContentResolver().openOutputStream(savedImageUri);
+		obscuredBmp.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, imageFileOS);
+		
+		// create new file and save it
+		java.io.File savedImage = new java.io.File(Storage.FileIO.DUMP_FOLDER, App.ImageEditor.GALLERY_NAME);
+		
+		try {
+			FileOutputStream fos = new FileOutputStream(savedImage.getAbsoluteFile());
+			imageBitmap.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, fos);
+		} catch(IOException e) {
+			Log.d(App.LOG, "error saving tmp bitmap: " + e);
+		}
+		
+		updateMessage(getString(R.string.generating_metadata));
+        InformaService.getInstance().packageInforma();
+		
+		cleanup();
+    }
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
     	super.onActivityResult(requestCode, resultCode, data);
@@ -1195,23 +1181,29 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     			// TODO: update the cache
     			InformaService.getInstance().onImageRegionChanged(ir);
     			    			
-    		} else if(requestCode == App.ImageEditor.FROM_DESTINATION_CHOOSER) {    			
+    		} else if(requestCode == App.ImageEditor.FROM_DESTINATION_CHOOSER) { 
+    			mProgressDialog = new ProgressDialog(ImageEditor.this);
+				mProgressDialog.setCancelable(false);
+				mProgressDialog.setCanceledOnTouchOutside(false);
+				mProgressDialog.setMessage(getResources().getString(R.string.saving));
+				mProgressDialog.show();
+				
     			mHandler.postDelayed(new Runnable() {
     				  @Override
     				  public void run() {
-
-    					mProgressDialog = ProgressDialog.show(ImageEditor.this, "", getResources().getString(R.string.saving), true, true);
-		        		
+    					
+    					
     					if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
 		        			InformaService.getInstance().setEncryptionList(data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST));
 		        		
 		        		try {
-							saveImage();
+		        			saveImage();
+		        			
 						} catch (IOException e) {
 							Log.e(App.LOG, "error saving image", e);
 						}
     				  }
-    				},500);
+    				},1000);
     		} else if(requestCode == App.ImageEditor.Actions.REVIEW_MEDIA) {
     			setResult(Activity.RESULT_OK);
     			finish();
@@ -1266,7 +1258,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				updateMessage(getString(R.string.encrypting_to_trusted_destinations));
 			}
 		});
-		
 	}
 
 	@Override

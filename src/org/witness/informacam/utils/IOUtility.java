@@ -150,10 +150,6 @@ public class IOUtility {
 		}
 	}
 	
-	public final static void refreshMediaScanner() {
-		
-	}
-	
 	public final static void deleteFromMediaStore(Uri uri, Context c) {
 		if(uri.getScheme().equals("file")) {
 			File file = new File(uri.getPath());

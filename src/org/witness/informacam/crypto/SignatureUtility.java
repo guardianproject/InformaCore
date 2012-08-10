@@ -87,38 +87,42 @@ public class SignatureUtility {
 			@SuppressWarnings("deprecation")
 			@Override
 			public Boolean call() throws Exception {
-				String signedData = (String) data.remove(Signatures.Keys.SIGNATURE);
-				ByteArrayInputStream sd = new ByteArrayInputStream(Base64.decode(signedData, Base64.DEFAULT));				
-				
-				InputStream is = PGPUtil.getDecoderStream(sd);
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-						
-				PGPObjectFactory objFactory = new PGPObjectFactory(is);
-				PGPCompressedData cd = (PGPCompressedData) objFactory.nextObject();
-				
-				objFactory = new PGPObjectFactory(cd.getDataStream());
-				
-				PGPOnePassSignatureList sigList_o = (PGPOnePassSignatureList) objFactory.nextObject();
-				PGPOnePassSignature sig = sigList_o.get(0);
-				
-				PGPLiteralData ld = (PGPLiteralData) objFactory.nextObject();
-				InputStream literalIn = ld.getInputStream();
-				
-				sig.initVerify(publicKey, new BouncyCastleProvider());
-				
-				int read;
-				while((read = literalIn.read()) > 0) {
-					sig.update((byte) read);
-					baos.write(read);
-				}
-				
-				PGPSignatureList sigList = (PGPSignatureList) objFactory.nextObject();
-				
-				if(sig.verify(sigList.get(0)) && data.toString().equals(new String(baos.toByteArray()))) {
-					baos.close();			
-					return true;
-				} else {
-					baos.close();
+				try {
+					byte[] signedData = (byte[]) data.remove(Signatures.Keys.SIGNATURE);
+					ByteArrayInputStream sd = new ByteArrayInputStream(signedData);				
+					
+					InputStream is = PGPUtil.getDecoderStream(sd);
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							
+					PGPObjectFactory objFactory = new PGPObjectFactory(is);
+					PGPCompressedData cd = (PGPCompressedData) objFactory.nextObject();
+					
+					objFactory = new PGPObjectFactory(cd.getDataStream());
+					
+					PGPOnePassSignatureList sigList_o = (PGPOnePassSignatureList) objFactory.nextObject();
+					PGPOnePassSignature sig = sigList_o.get(0);
+					
+					PGPLiteralData ld = (PGPLiteralData) objFactory.nextObject();
+					InputStream literalIn = ld.getInputStream();
+					
+					sig.initVerify(publicKey, new BouncyCastleProvider());
+					
+					int read;
+					while((read = literalIn.read()) > 0) {
+						sig.update((byte) read);
+						baos.write(read);
+					}
+					
+					PGPSignatureList sigList = (PGPSignatureList) objFactory.nextObject();
+					
+					if(sig.verify(sigList.get(0)) && data.toString().equals(new String(baos.toByteArray()))) {
+						baos.close();			
+						return true;
+					} else {
+						baos.close();
+						return false;
+					}
+				} catch(NullPointerException e) {
 					return false;
 				}
 			}
@@ -128,9 +132,7 @@ public class SignatureUtility {
 			isVerified = future.get();
 		} catch (InterruptedException e) {}
 		catch (ExecutionException e) {
-			Log.e(Crypto.LOG, "a problem with:\n" + data.toString());
 			e.printStackTrace();
-			
 		}
 		
 		ex.shutdown();
@@ -138,12 +140,12 @@ public class SignatureUtility {
 		return isVerified;
 	}
 	
-	public String signData(final byte[] data) {
+	public byte[] signData(final byte[] data) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
-		Future<String> future = ex.submit(new Callable<String>() {
+		Future<byte[]> future = ex.submit(new Callable<byte[]>() {
 
 			@Override
-			public String call() throws Exception {
+			public byte[] call() throws Exception {
 				return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);
 			}
 		});

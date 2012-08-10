@@ -98,6 +98,24 @@ public class IOCipherService extends Service {
 		return new FileInputStream(getFile(uri));
 	}
 	
+	public java.io.File moveFromIOCipherToMemory(Uri uri, String filename) throws IOException {
+		FileInputStream fis = getFileStream(uri);
+		
+		java.io.File file = new java.io.File(Storage.FileIO.DUMP_FOLDER, filename);
+		java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+		
+		int read = 0;
+		byte[] bytes = new byte[fis.available()];
+		while((read = fis.read(bytes)) != -1)
+			fos.write(bytes, 0, read);
+		
+		fis.close();
+		fos.flush();
+		fos.close();
+		
+		return file;
+	}
+	
 	public Uri moveFileToIOCipher(Uri originalUri, int defaultImageHandling) throws NoSuchAlgorithmException, IOException {
 		// hash file to make folder for file (if it doesn't already exist)
 		byte[] fileBytes = IOUtility.getBytesFromUri(originalUri, this);

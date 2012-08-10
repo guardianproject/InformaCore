@@ -40,6 +40,8 @@ public class Constants {
 			public final static int FROM_ANNOTATION_ACTIVITY = 574;
 			public final static int FROM_DESTINATION_CHOOSER = 575;
 			
+			public final static String TAG = "app.editors.image.ImageEditor";
+			
 			public final static class Mode {
 				public static final int NONE = 0;
 				public static final int DRAG = 1;
@@ -69,6 +71,14 @@ public class Constants {
 				public final static int SAVE_MENU_ITEM = 1;
 				public final static int SHARE_MENU_ITEM = 2;
 				public final static int NEW_REGION_MENU_ITEM = 3;
+			}
+			
+			public final static class Filters {
+				public final static String PIXELIZE = "p";
+				public final static String INFORMA_TAGGER = "t";
+				public final static String CROWD_PIXELIZE = "i";
+				public final static String SOLID = "s";
+				public final static String VIDEO_PIXELIZE = "pixel";
 			}
 			
 			public final static class Keys {
@@ -391,6 +401,9 @@ public class Constants {
 					public final static String LEFT = "region_left";
 					public final static String UNREDACTED_DATA = "unredactedRegionData";
 					public final static String BASE = "base";
+					public final static String LENGTH = "imageRegionByteLength";
+					public final static String BYTES = "imageRegionBytes";
+					public final static String HASH = "imageRegionHash";
 					
 					public final static class Subject {
 						public final static String PSEUDONYM = "subject_pseudonym";

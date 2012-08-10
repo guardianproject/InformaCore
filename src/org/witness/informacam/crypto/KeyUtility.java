@@ -340,7 +340,7 @@ public class KeyUtility {
 	}
 	
 	
-	public static String applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
+	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
 		int buffSize = 1 <<16;
 		BouncyCastleProvider bc = new BouncyCastleProvider();
 		
@@ -391,7 +391,7 @@ public class KeyUtility {
 			bais.close();
 			
 			targetOut.close();
-			return Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+			return baos.toByteArray();
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(Crypto.LOG, e.toString());
 			e.printStackTrace();

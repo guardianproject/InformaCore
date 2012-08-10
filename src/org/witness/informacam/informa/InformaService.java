@@ -1,17 +1,16 @@
 package org.witness.informacam.informa;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,17 +18,24 @@ import org.witness.informacam.R;
 import org.witness.informacam.app.MainActivity;
 import org.witness.informacam.app.editors.image.ImageRegion;
 import org.witness.informacam.app.editors.image.ImageRegion.ImageRegionListener;
-import org.witness.informacam.crypto.SignatureUtility;
-import org.witness.informacam.informa.Informa.Exif;
+import org.witness.informacam.app.editors.image.filters.CrowdPixelizeObscure;
+import org.witness.informacam.app.editors.image.filters.InformaTagger;
+import org.witness.informacam.app.editors.image.filters.PixelizeObscure;
+import org.witness.informacam.app.editors.image.filters.SolidObscure;
+import org.witness.informacam.informa.Informa;
 import org.witness.informacam.informa.Informa.InformaListener;
 import org.witness.informacam.informa.SensorLogger.OnUpdateListener;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
+import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.Constants.App.ImageEditor;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Status;
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
@@ -50,8 +56,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 
 public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener {
@@ -70,15 +78,20 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	
 	List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
 	
-	private LoadingCache<Long, LogPack> suckerCache;
+	private LoadingCache<Long, LogPack> suckerCache, annotationCache;
 	ExecutorService ex;
 	
 	Informa informa;
 	Activity editor;
 	
+	Uri originalUri;
 	long[] encryptList;
 	
 	String LOG = Constants.Informa.LOG;
+	
+	static {
+		System.loadLibrary("JpegRedaction");
+	}
 	
 	public interface InformaServiceListener {
 		public void onInformaPackageGenerated();
@@ -111,37 +124,61 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		return informaService;
 	}
 	
-	public List<Entry<Long, LogPack>> getAllEventsByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
+	public List<LogPack> getAllEventsByType(final int type, final LoadingCache<Long, LogPack> cache) throws InterruptedException, ExecutionException {
+		ex = Executors.newFixedThreadPool(100);
+		Future<List<LogPack>> query = ex.submit(new Callable<List<LogPack>>() {
+			
+			@Override
+			public List<LogPack> call() throws Exception {
+				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
+				List<LogPack> events = new ArrayList<LogPack>();
+				while(cIt.hasNext()) {
+					Entry<Long, LogPack> entry = cIt.next();
+					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+						events.add(entry.getValue());
+				}
+				
+				return events;
+			}
+		});
+		
+		List<LogPack> events = query.get();
+		ex.shutdown();
+		
+		return events;
+	}
+	
+	public List<Entry<Long, LogPack>> getAllEventsByTypeWithTimestamp(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<List<Entry<Long, LogPack>>> query = ex.submit(new Callable<List<Entry<Long, LogPack>>>() {
 			
 			@Override
 			public List<Entry<Long, LogPack>> call() throws Exception {
-				Iterator<Entry<Long, LogPack>> cIt = suckerCache.asMap().entrySet().iterator();
-				List<Entry<Long, LogPack>> entries = new ArrayList<Entry<Long, LogPack>>();
+				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
+				List<Entry<Long, LogPack>> events = new ArrayList<Entry<Long, LogPack>>();
 				while(cIt.hasNext()) {
 					Entry<Long, LogPack> entry = cIt.next();
 					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						entries.add(entry);
+						events.add(entry);
 				}
 				
-				return entries;
+				return events;
 			}
 		});
 		
-		List<Entry<Long, LogPack>> entries = query.get();
+		List<Entry<Long, LogPack>> events = query.get();
 		ex.shutdown();
 		
-		return entries;
+		return events;
 	}
 	
-	public Entry<Long, LogPack> getEventByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
+	public Entry<Long, LogPack> getEventByTypeWithTimestamp(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<Entry<Long, LogPack>> query = ex.submit(new Callable<Entry<Long, LogPack>>() {
 			
 			@Override
 			public Entry<Long, LogPack> call() throws Exception {
-				Iterator<Entry<Long, LogPack>> cIt = suckerCache.asMap().entrySet().iterator();
+				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
 				Entry<Long, LogPack> entry = null;
 				while(cIt.hasNext() && entry == null) {
 					Entry<Long, LogPack> e = cIt.next();
@@ -159,13 +196,13 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		return entry;
 	}
 	
-	public LogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
+	public LogPack getEventByType(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<LogPack> query = ex.submit(new Callable<LogPack>() {
 
 			@Override
 			public LogPack call() throws Exception {
-				Iterator<LogPack> cIt = suckerCache.asMap().values().iterator();
+				Iterator<LogPack> cIt = cache.asMap().values().iterator();
 				LogPack logPack = null;
 				while(cIt.hasNext() && logPack == null) {
 					LogPack lp = cIt.next();
@@ -211,7 +248,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			
 	@SuppressWarnings("unchecked")
 	public void init() {
-		initCache();
+		initCaches();
 		
 		_geo = new GeoSucker(InformaService.this);
 		_phone = new PhoneSucker(InformaService.this);
@@ -219,8 +256,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		this.setCurrentStatus(Status.RUNNING);
 	}
 	
-	@SuppressWarnings({"unchecked"})
-	private void initCache() {
+	private void initCaches() {
 		if(suckerCache != null)
 			suckerCache = null;
 		
@@ -231,6 +267,19 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
 						return suckerCache.get(timestamp);
+					}
+				});
+		
+		if(annotationCache != null)
+			annotationCache = null;
+		
+		annotationCache = CacheBuilder.newBuilder()
+				//.maximumSize(640) //64 bytes per entry, 200 entries = 128000
+				//.removalListener(new CacheAllocator())
+				.build(new CacheLoader<Long, LogPack>() {
+					@Override
+					public LogPack load(Long timestamp) throws Exception {
+						return annotationCache.get(timestamp);
 					}
 				});
 	}
@@ -282,46 +331,53 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	@SuppressWarnings("unchecked")
 	@Override
 	public void onUpdate(long timestamp, final LogPack logPack) {
+		
 		try {
-			//Log.d(Suckers.LOG, timestamp + " :\n" + logPack.toString());
-			ex = Executors.newFixedThreadPool(100);
-			Future<String> sig = ex.submit(new Callable<String>() {
-
-				@Override
-				public String call() throws Exception {
-					return SignatureUtility.getInstance().signData(logPack.toString().getBytes());
-				}
-				
-			});
+			LogPack lp = null;
 			
-			LogPack lp = suckerCache.getIfPresent(timestamp);
-			if(lp != null) {
-				Iterator<String> lIt = lp.keys();
-				while(lIt.hasNext()) {
-					String key = lIt.next();
-					logPack.put(key, lp.get(key));
+			
+			switch(logPack.getInt(CaptureEvent.Keys.TYPE)) {
+			case CaptureEvent.SENSOR_PLAYBACK:
+				lp = suckerCache.getIfPresent(timestamp);
+				if(lp != null) {
+					//Log.d(Suckers.LOG, "already have " + timestamp + " :\n" + lp.toString());
+					Iterator<String> lIt = lp.keys();
+					while(lIt.hasNext()) {
+						String key = lIt.next();
+						logPack.put(key, lp.get(key));
+							
+					}
 				}
+				suckerCache.put(timestamp, logPack);
+				break;
+			default:
+				Log.d(Suckers.LOG, "LOGGING " + timestamp + " :\n" + logPack.toString());
+				lp = annotationCache.getIfPresent(timestamp);
+				if(lp != null) {
+					Iterator<String> lIt = lp.keys();
+					while(lIt.hasNext()) {
+						String key = lIt.next();
+						logPack.put(key, lp.get(key));
+							
+					}
+				}
+				annotationCache.put(timestamp, logPack);
+				break;
 			}
 			
-			logPack.put(Signatures.Keys.SIGNATURE, sig.get());
-			suckerCache.put(timestamp, logPack);
-			ex.shutdown();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-		}
+		} catch (JSONException e) {}
 	}
 
 	@Override
-	public void onInformaInit(Activity editor) {
+	public void onInformaInit(Activity editor, Uri originalUri) {
 		informa = new Informa(this);
 		try {
-			informa.setDeviceCredentials(_phone.getSucker().forceReturn());			
+			informa.setDeviceCredentials(_phone.getSucker().forceReturn());
+			informa.setFileInformation(originalUri.toString());
 		} catch(JSONException e) {}
+		
 		this.editor = editor;
+		this.originalUri = originalUri;
 	}
 	
 	public void packageInforma() {
@@ -330,10 +386,15 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 					@Override
 					public void run() {
 						try {
-							if(informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED)))
-								if(informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK)))
-									if(informa.addToAnnotations(getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED)))
-										((InformaServiceListener) editor).onInformaPackageGenerated();
+							if(informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED, annotationCache)))
+								if(informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK, suckerCache))) {
+									((InformaServiceListener) editor).onInformaPackageGenerated();
+
+									if(editor.getLocalClassName().equals(App.ImageEditor.TAG)) {
+										ImageConstructor imageConstructor = new ImageConstructor();
+									}
+										
+								}
 						} catch(JSONException e){}
 						catch (InterruptedException e) {
 							e.printStackTrace();
@@ -343,7 +404,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 					}
 				});
 		packageInforma.start();
-		
+	}
+	
+	public LogPack getMetadata() throws JSONException, InterruptedException, ExecutionException {
+		return getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache);
 	}
 	
 	public void setEncryptionList(long[] encryptList) {
@@ -363,7 +427,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			
 			rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
 			
-			LogPack logPack = suckerCache.get(timestamp);
+			LogPack logPack = annotationCache.get(timestamp);
 			logPack.remove(Signatures.Keys.SIGNATURE);
 			Iterator<String> repIt = rep.keys();
 			while(repIt.hasNext()) {
@@ -390,8 +454,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				timestamp = Long.parseLong((String) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP));
 			}
 			
-			LogPack logPack = suckerCache.get(timestamp);
-			logPack.remove(Signatures.Keys.SIGNATURE);
+			LogPack logPack = annotationCache.get(timestamp);
 			Iterator<String> repIt = rep.keys();
 			while(repIt.hasNext())
 				logPack.remove(repIt.next());
@@ -483,7 +546,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	public class ImageConstructor {
-		long[] encryptList;
 		
 		public native int constructImage(
 				String originalImageFilename, 
@@ -500,10 +562,60 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				int bottom,
 				String redactionCommand);
 		
-		public ImageConstructor(long[] encryptList) {
-			this.encryptList = encryptList;
-			
-			// get all image regions and run through image constructor
+		public ImageConstructor() {						
+			try {
+				// XXX: create clone as flat file -- should not need to do this though :(
+				java.io.File clone = IOCipherService.getInstance().moveFromIOCipherToMemory(originalUri, originalUri.getLastPathSegment()); 
+				
+				// get all image regions and run through image constructor
+				
+				List<Entry<Long, LogPack>> annotations = getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED, annotationCache);
+				
+				for(Entry<Long, LogPack> entry : annotations) {
+					LogPack lp = entry.getValue();
+					Log.d(Storage.LOG, lp.toString());
+					
+					String redactionMethod = lp.getString(Constants.Informa.Keys.Data.ImageRegion.FILTER);
+					if(!redactionMethod.equals(InformaTagger.class.getName())) {
+						String redactionCode = "";
+						
+						if(redactionMethod.equals(PixelizeObscure.class.getName()))
+							redactionCode = ImageEditor.Filters.PIXELIZE;
+						else if(redactionMethod.equals(SolidObscure.class.getName()))
+							redactionCode = ImageEditor.Filters.SOLID;
+						else if(redactionMethod.equals(CrowdPixelizeObscure.class.getName()))
+							redactionCode = ImageEditor.Filters.CROWD_PIXELIZE;
+						
+						String regionCoordinates = lp.getString(Constants.Informa.Keys.Data.ImageRegion.COORDINATES);
+						
+						int top = (int) Float.parseFloat(regionCoordinates.substring(regionCoordinates.indexOf(",") + 1, regionCoordinates.length() - 1));
+						int left = (int) Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(",")));
+						int right = (int) (left + Integer.parseInt(lp.getString(Constants.Informa.Keys.Data.ImageRegion.WIDTH)));
+						int bottom = (int) (top + Integer.parseInt(lp.getString(Constants.Informa.Keys.Data.ImageRegion.HEIGHT)));
+						
+						byte[] redactionPack = redactRegion(clone.getAbsolutePath(), clone.getAbsolutePath(), left, right, top, bottom, redactionCode);
+						
+						JSONObject imageRegionData = new JSONObject();
+						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.LENGTH, redactionPack.length);
+						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.HASH, MediaHasher.hash(redactionPack, "SHA-1"));
+						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.BYTES, Base64.encode(redactionPack, Base64.DEFAULT));
+						
+						lp.put(Constants.Informa.Keys.Data.ImageRegion.UNREDACTED_DATA, imageRegionData);
+					}
+				}
+				
+				if(informa.addToAnnotations(annotations)) {
+					// then it is ok... time to encrypt
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {}
 			
 			// when done, for each in the encrypt list, insert metadata
 			

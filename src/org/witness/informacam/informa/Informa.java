@@ -31,6 +31,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -47,7 +48,7 @@ public class Informa {
 	SharedPreferences sp;
 	
 	public interface InformaListener {
-		public void onInformaInit(Activity editor);
+		public void onInformaInit(Activity editor, Uri originalUri);
 	}
 	
 	private class InformaZipper extends JSONObject {
@@ -258,27 +259,27 @@ public class Informa {
 		return true;
 	}
 	
+	public void setFileInformation(String localMediaPath) {
+		genealogy.localMediaPath = localMediaPath;
+	}
+	
 	public boolean addToPlayback(List<Entry<Long, LogPack>> playback) throws JSONException {
 		Log.d(Storage.LOG, "adding to PLAYBACK");
 		for(Entry<Long, LogPack> e : playback) {
-			if(SignatureUtility.getInstance().isVerified(e.getValue())) {
-				e.getValue().remove(CaptureEvent.Keys.TYPE);
-				data.mediaCapturePlayback.add(new MediaCapturePlayback(e.getKey(), e.getValue()));
-			}
+			e.getValue().remove(CaptureEvent.Keys.TYPE);
+			data.mediaCapturePlayback.add(new MediaCapturePlayback(e.getKey(), e.getValue()));
 		}
-		Log.d(Storage.LOG, "PLAYBACK: done");
+		Log.d(Storage.LOG, "PLAYBACK: done (total: " + playback.size() + ")");
 		return true;
 	}
 	
 	public boolean addToAnnotations(List<Entry<Long, LogPack>> annotations) throws JSONException {
 		Log.d(Storage.LOG, "adding to ANNOTATIONS");
 		for(Entry<Long, LogPack> e : annotations) {
-			if(SignatureUtility.getInstance().isVerified(e.getValue())) {
-				e.getValue().remove(CaptureEvent.Keys.TYPE);
-				data.annotations.add(new Annotation(e.getKey(), e.getValue()));
-			}
+			e.getValue().remove(CaptureEvent.Keys.TYPE);
+			data.annotations.add(new Annotation(e.getKey(), e.getValue()));
 		}
-		Log.d(Storage.LOG, "ANNOTATIONS: done");
+		Log.d(Storage.LOG, "ANNOTATIONS: done (total: " + annotations.size() + ")");
 		return true;
 	}
 	
