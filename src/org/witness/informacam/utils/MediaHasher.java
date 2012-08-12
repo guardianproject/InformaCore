@@ -5,8 +5,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 public class MediaHasher 
 {
@@ -43,4 +47,33 @@ public class MediaHasher
 	        return hexString.toString();
 	
 	}
+	
+	public static String getBitmapHash(File file) throws NoSuchAlgorithmException, IOException {
+		Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+		String hash = "";
+		ByteBuffer buf;
+		
+		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
+		
+		bitmap.copyPixelsToBuffer(buf);
+		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		buf.clear();
+		buf = null;
+		return hash;
+	}
+	
+	public static String getBitmapHash(FileInputStream fis) throws NoSuchAlgorithmException, IOException {
+		Bitmap bitmap = BitmapFactory.decodeStream(fis);
+		String hash = "";
+		ByteBuffer buf;
+		
+		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
+		
+		bitmap.copyPixelsToBuffer(buf);
+		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		buf.clear();
+		buf = null;
+		return hash;
+	}
+	
 }

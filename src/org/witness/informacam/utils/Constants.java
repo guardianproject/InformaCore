@@ -165,7 +165,7 @@ public class Constants {
 		public final static class Type {
 			public final static String MP4 = ".mp4";
 			public final static String MKV = ".mkv";
-			public final static String JEPG = ".jpg";
+			public final static String JPEG = ".jpg";
 			public final static String MIME_TYPE_JPEG = "image/jpeg";
 			public final static String MIME_TYPE_MP4 = "video/mp4";
 			public final static String MIME_TYPE_MKV = "video/mkv";

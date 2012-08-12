@@ -534,18 +534,6 @@ public class WizardActivity extends Activity implements OnClickListener {
 					} else if(type.compareTo("input") == 0) {
 						InformaEditText edittext = new InformaEditText(_c);
 						
-						edittext.addOnLayoutChangeListener(new TextView.OnLayoutChangeListener() {
-
-							@Override
-							public void onLayoutChange(View v, int left,
-									int top, int right, int bottom,
-									int oldLeft, int oldTop, int oldRight,
-									int oldBottom) {
-								
-							}
-							
-						});
-						
 						views.add(edittext);
 					} else if(type.compareTo("password") == 0) {
 						InformaEditText edittext = new InformaEditText(_c);

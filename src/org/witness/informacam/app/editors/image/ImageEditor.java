@@ -1,5 +1,7 @@
 package org.witness.informacam.app.editors.image;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -109,7 +111,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	
 		
 	// Bitmap for the original image (scaled)
-	Bitmap imageBitmap;
+	Bitmap imageBitmap, originalBitmap;
 	
 	// Bitmap for holding the realtime obscured image
     Bitmap obscuredBmp;
@@ -308,7 +310,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 						rotateMatrix.postRotate(270);
 						loadedBitmap = Bitmap.createBitmap(loadedBitmap,0,0,loadedBitmap.getWidth(),loadedBitmap.getHeight(),rotateMatrix,false);
 					}
-
+					
+					originalBitmap = loadedBitmap;
 					setBitmap (loadedBitmap);
 					
 					autodetect = true;
@@ -320,14 +323,12 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 						mProgressDialog = ProgressDialog.show(this, "", "Detecting faces...", true, true);
 					
 						doAutoDetectionThread();
+						
 					}
 				}				
 			} catch (IOException e) {
 				Log.e(App.LOG, "error loading bitmap from Uri: " + e.getMessage(), e);
 			}
-			
-			
-			
 		}
 		
 		bitmapCornerUL = BitmapFactory.decodeResource(getResources(),
@@ -344,7 +345,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	@Override
 	public void onResume() {
 		super.onResume();
-		
+		autodetect = false;
 	}
 	
 	@Override
@@ -1150,6 +1151,15 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		} catch(IOException e) {
 			Log.d(App.LOG, "error saving tmp bitmap: " + e);
 		}
+		
+		// overwrite the original file and save it
+		try {
+			IOCipherService.getInstance().resaveBitmap(originalBitmap, originalImageUri);
+		} catch(IOException e) {
+			Log.d(App.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
 		
 		updateMessage(getString(R.string.generating_metadata));
         InformaService.getInstance().packageInforma();

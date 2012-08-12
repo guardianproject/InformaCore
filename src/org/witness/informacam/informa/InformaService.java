@@ -16,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.MainActivity;
+import org.witness.informacam.app.editors.image.ImageConstructor;
 import org.witness.informacam.app.editors.image.ImageRegion;
 import org.witness.informacam.app.editors.image.ImageRegion.ImageRegionListener;
 import org.witness.informacam.app.editors.image.filters.CrowdPixelizeObscure;
@@ -81,17 +82,13 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	private LoadingCache<Long, LogPack> suckerCache, annotationCache;
 	ExecutorService ex;
 	
-	Informa informa;
+	public Informa informa;
 	Activity editor;
 	
-	Uri originalUri;
+	public Uri originalUri;
 	long[] encryptList;
 	
 	String LOG = Constants.Informa.LOG;
-	
-	static {
-		System.loadLibrary("JpegRedaction");
-	}
 	
 	public interface InformaServiceListener {
 		public void onInformaPackageGenerated();
@@ -389,9 +386,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 							if(informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED, annotationCache)))
 								if(informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK, suckerCache))) {
 									((InformaServiceListener) editor).onInformaPackageGenerated();
+									suspend();
 
 									if(editor.getLocalClassName().equals(App.ImageEditor.TAG)) {
-										ImageConstructor imageConstructor = new ImageConstructor();
+										ImageConstructor imageConstructor = new ImageConstructor(annotationCache);
 									}
 										
 								}
@@ -529,108 +527,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 					}
 			}).start();
 		
-	}
-	
-	public class CacheAllocator implements RemovalListener<Long, LogPack> {
-		public CacheAllocator() {
-			
-		}
-
-		@Override
-		public void onRemoval(RemovalNotification<Long, LogPack> rn) {
-			Log.d(Storage.LOG, "removing entries from cache!");
-			Log.d(Storage.LOG, rn.getCause().toString());
-			Log.d(Storage.LOG, rn.getValue().toString());
-			
-		}
-	}
-	
-	public class ImageConstructor {
-		
-		public native int constructImage(
-				String originalImageFilename, 
-				String informaImageFilename, 
-				String metadataObjectString, 
-				int metadataLength);
-		
-		public native byte[] redactRegion(
-				String originalImageFilename,
-				String informaImageFilename,
-				int left,
-				int right,
-				int top,
-				int bottom,
-				String redactionCommand);
-		
-		public ImageConstructor() {						
-			try {
-				// XXX: create clone as flat file -- should not need to do this though :(
-				java.io.File clone = IOCipherService.getInstance().moveFromIOCipherToMemory(originalUri, originalUri.getLastPathSegment()); 
-				
-				// get all image regions and run through image constructor
-				
-				List<Entry<Long, LogPack>> annotations = getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED, annotationCache);
-				
-				for(Entry<Long, LogPack> entry : annotations) {
-					LogPack lp = entry.getValue();
-					Log.d(Storage.LOG, lp.toString());
-					
-					String redactionMethod = lp.getString(Constants.Informa.Keys.Data.ImageRegion.FILTER);
-					if(!redactionMethod.equals(InformaTagger.class.getName())) {
-						String redactionCode = "";
-						
-						if(redactionMethod.equals(PixelizeObscure.class.getName()))
-							redactionCode = ImageEditor.Filters.PIXELIZE;
-						else if(redactionMethod.equals(SolidObscure.class.getName()))
-							redactionCode = ImageEditor.Filters.SOLID;
-						else if(redactionMethod.equals(CrowdPixelizeObscure.class.getName()))
-							redactionCode = ImageEditor.Filters.CROWD_PIXELIZE;
-						
-						String regionCoordinates = lp.getString(Constants.Informa.Keys.Data.ImageRegion.COORDINATES);
-						
-						int top = (int) Float.parseFloat(regionCoordinates.substring(regionCoordinates.indexOf(",") + 1, regionCoordinates.length() - 1));
-						int left = (int) Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(",")));
-						int right = (int) (left + Integer.parseInt(lp.getString(Constants.Informa.Keys.Data.ImageRegion.WIDTH)));
-						int bottom = (int) (top + Integer.parseInt(lp.getString(Constants.Informa.Keys.Data.ImageRegion.HEIGHT)));
-						
-						byte[] redactionPack = redactRegion(clone.getAbsolutePath(), clone.getAbsolutePath(), left, right, top, bottom, redactionCode);
-						
-						JSONObject imageRegionData = new JSONObject();
-						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.LENGTH, redactionPack.length);
-						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.HASH, MediaHasher.hash(redactionPack, "SHA-1"));
-						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.BYTES, Base64.encode(redactionPack, Base64.DEFAULT));
-						
-						lp.put(Constants.Informa.Keys.Data.ImageRegion.UNREDACTED_DATA, imageRegionData);
-					}
-				}
-				
-				if(informa.addToAnnotations(annotations)) {
-					// then it is ok... time to encrypt
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (NoSuchAlgorithmException e) {}
-			
-			// when done, for each in the encrypt list, insert metadata
-			
-			// add to upload queue if possible
-			
-			/* TODO HERE!
-			(CaptureEvent.Keys.TYPE, CaptureEvent.MEDIA_SAVED);
-			*/
-		}
-	}
-	
-	public class VideoConstructor {
-		public VideoConstructor() {
-			
-		}
 	}
 	
 	private class Broadcaster extends BroadcastReceiver {

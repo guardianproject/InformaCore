@@ -138,7 +138,7 @@ public class IOUtility {
 			} else if(mimeType.equals(Media.Type.MIME_TYPE_MP4)) {
 				
 				logPack.put(Data.Description.MEDIA_TYPE, Media.Type.VIDEO);
-				logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+				logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.getBitmapHash(new java.io.File(filepath)));
 			}
 			return logPack;
 		} catch (IOException e) {
@@ -175,6 +175,19 @@ public class IOUtility {
 			}
 		} else 
 			c.getContentResolver().delete(uri, null, null);		
+	}
+	
+	public final static java.io.File getFileFromUri(Uri uri, Context c) {
+		if (uri.getScheme() != null && uri.getScheme().equals("file")) {
+    		return new java.io.File(uri.toString());
+    	} else {
+	    	Cursor imageCursor = c.getContentResolver().query(uri, new String[] {MediaStore.Images.Media.DATA}, null, null, null );
+	    	if ( imageCursor != null && imageCursor.getCount() == 1 ) {
+		        imageCursor.moveToFirst();
+		        return new java.io.File(imageCursor.getString(imageCursor.getColumnIndex(MediaStore.Images.Media.DATA)));
+	    	} else
+	    		return null;
+    	}
 	}
 	
 	public final static byte[] getBytesFromUri(Uri uri, Context c) {

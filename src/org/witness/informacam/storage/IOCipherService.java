@@ -1,11 +1,13 @@
 package org.witness.informacam.storage;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileInputStream;
+import info.guardianproject.iocipher.FileOutputStream;
 import info.guardianproject.iocipher.VirtualFileSystem;
 
 import net.sqlcipher.database.SQLiteDatabase;
@@ -21,12 +23,13 @@ import org.witness.informacam.utils.MediaHasher;
 import android.app.Service;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
-import android.provider.MediaStore;
 import android.util.Log;
 
 public class IOCipherService extends Service {
@@ -121,7 +124,7 @@ public class IOCipherService extends Service {
 		byte[] fileBytes = IOUtility.getBytesFromUri(originalUri, this);
 		String fileHash = MediaHasher.hash(fileBytes, "SHA-1");
 		
-		String mimeType = Media.Type.JEPG;
+		String mimeType = Media.Type.JPEG;
 		
 		if(originalUri.getLastPathSegment().contains(Media.Type.MP4))
 			mimeType = Media.Type.MP4;
@@ -140,6 +143,22 @@ public class IOCipherService extends Service {
 		}
 
 		return Uri.fromFile(ioCipherClone);
+	}
+	
+	public boolean resaveBitmap(Bitmap bitmap, Uri uri) throws FileNotFoundException {
+		if(getFile(uri).exists())
+			getFile(uri).delete();
+		
+		List<String> paths = uri.getPathSegments();
+		
+		File file = new File(paths.get(0), paths.get(1));
+		Log.d(Storage.LOG, file.getAbsolutePath());
+		
+		FileOutputStream fos = new FileOutputStream(file);
+
+		boolean result = bitmap.compress(CompressFormat.JPEG, 100, fos);
+		Log.d(Storage.LOG, "result from this is " + result);
+		return result;
 	}
 	
 	public static IOCipherService getInstance() {
