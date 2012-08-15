@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+import net.sqlcipher.database.SQLiteDatabase;
+
 import org.json.JSONException;
 import org.witness.informacam.R;
 import org.witness.informacam.app.AddressBookActivity;
@@ -25,10 +27,14 @@ import org.witness.informacam.app.editors.image.filters.RegionProcesser;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
+import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Storage;
@@ -41,6 +47,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -61,6 +68,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
 import android.util.Log;
@@ -312,6 +320,23 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 					}
 					
 					originalBitmap = loadedBitmap;
+					
+					new Thread(
+						new Runnable() {
+							@Override
+							public void run() {
+								// overwrite the original file and save it
+								try {
+									IOCipherService.getInstance().resaveBitmap(originalBitmap, originalImageUri);
+								} catch(IOException e) {
+									Log.d(App.LOG, e.toString());
+									e.printStackTrace();
+								}
+							}
+						}
+					).start();
+					
+					
 					setBitmap (loadedBitmap);
 					
 					autodetect = true;
@@ -1078,6 +1103,10 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	// TODO: handle original image
     	
     	// clean up temp files
+    	java.io.File tmpFile = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
+    	if(tmpFile.exists())
+    		tmpFile.delete();
+    	
 		//finish();
     }
 
@@ -1151,16 +1180,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		} catch(IOException e) {
 			Log.d(App.LOG, "error saving tmp bitmap: " + e);
 		}
-		
-		// overwrite the original file and save it
-		try {
-			IOCipherService.getInstance().resaveBitmap(originalBitmap, originalImageUri);
-		} catch(IOException e) {
-			Log.d(App.LOG, e.toString());
-			e.printStackTrace();
-		}
-		
-		
+				
 		updateMessage(getString(R.string.generating_metadata));
         InformaService.getInstance().packageInforma();
 		
@@ -1188,7 +1208,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     			ImageRegion ir = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0));
     			ir.getRegionProcessor().setProperties(mProp);
     			
-    			// TODO: update the cache
     			InformaService.getInstance().onImageRegionChanged(ir);
     			    			
     		} else if(requestCode == App.ImageEditor.FROM_DESTINATION_CHOOSER) { 
@@ -1205,7 +1224,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     					
     					if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
 		        			InformaService.getInstance().setEncryptionList(data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST));
-		        		
+    					
 		        		try {
 		        			saveImage();
 		        			
@@ -1262,17 +1281,9 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
 	@Override
 	public void onInformaPackageGenerated() {
-		informaHandler.post(new Runnable() {
-			@Override
-			public void run() {
-				updateMessage(getString(R.string.encrypting_to_trusted_destinations));
-			}
-		});
-	}
-
-	@Override
-	public void onMetadataEncryptedAndEmbedded() {
 		mProgressDialog.cancel();
+		getIntent().putExtra(App.ImageEditor.Keys.FINISH_ON, App.ImageEditor.PACKAGE_GENERATED);
+		setResult(Activity.RESULT_OK, getIntent());
 		finish();
 	}
 }

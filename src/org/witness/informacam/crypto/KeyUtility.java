@@ -1,3 +1,4 @@
+
 package org.witness.informacam.crypto;
 
 import java.io.ByteArrayInputStream;
@@ -7,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -77,6 +79,18 @@ public class KeyUtility {
 		public void onKeyFound(KeyServerResponse keyServerResponse);
 	}
 	
+	public static PGPPublicKey makeKey(byte[] keyblock) throws IOException {
+		PGPPublicKey key = null;
+		PGPObjectFactory objFact = new PGPObjectFactory(PGPUtil.getDecoderStream(new ByteArrayInputStream(keyblock)));
+		Object obj;
+		
+		while((obj = objFact.nextObject()) != null && key == null) {
+			if(obj instanceof PGPPublicKey)
+				key = (PGPPublicKey) obj;
+		}
+		return key;
+	}
+	
 	public static PGPSecretKey extractSecretKey(byte[] keyblock) {
 		PGPSecretKey secretKey = null;
 		try {
@@ -116,6 +130,7 @@ public class KeyUtility {
 				this.put(PGP.Keys.PGP_FINGERPRINT, new String(Hex.encode(key.getFingerprint())));
 				this.put(PGP.Keys.PGP_KEY_ID, key.getKeyID());
 				this.put(Crypto.Keyring.Keys.PUBLIC_KEY, new String(key.getEncoded()));
+				this.put(Crypto.Keyring.Keys.ALGORITHM, key.getAlgorithm());
 			} catch (JSONException e) {}
 			catch (IOException e) {}
 		}

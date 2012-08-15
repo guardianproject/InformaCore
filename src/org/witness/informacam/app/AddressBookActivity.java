@@ -31,6 +31,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -150,8 +151,11 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 			for(AddressBookDisplay adr : addresses) {
 				
 				try {
-					if(adr.has(AddressBook.Keys.CONTACT_SELECTED) && adr.getBoolean(AddressBook.Keys.CONTACT_SELECTED))
-						encryptList.add(adr.getLong(BaseColumns._ID));
+					if(adr.has(AddressBook.Keys.CONTACT_SELECTED) && adr.getBoolean(AddressBook.Keys.CONTACT_SELECTED)) {
+						encryptList.add(adr.getLong(TrustedDestination.Keys.KEYRING_ID));
+						Log.d(App.LOG, "key id: " + adr.getLong(TrustedDestination.Keys.KEYRING_ID));
+					}
+					
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}

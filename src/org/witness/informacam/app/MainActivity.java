@@ -248,8 +248,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
     			break;
     		case App.Main.FROM_EDITOR:
-    			if(informaService != null)
-    				informaService.suspend();
+    			// TODO: add to upload queue...
+    			mProgressDialog.cancel();
     			break;
     		}
     	} else if(resultCode == Activity.RESULT_CANCELED) {

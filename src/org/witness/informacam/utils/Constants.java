@@ -39,6 +39,7 @@ public class Constants {
 		public final static class ImageEditor {
 			public final static int FROM_ANNOTATION_ACTIVITY = 574;
 			public final static int FROM_DESTINATION_CHOOSER = 575;
+			public static final int PACKAGE_GENERATED = 573;
 			
 			public final static String TAG = "app.editors.image.ImageEditor";
 			
@@ -84,6 +85,7 @@ public class Constants {
 			public final static class Keys {
 				public final static String PROPERTIES = "mProps";
 				public final static String CHOOSE_TRUSTED_DESTINATION = "chooseTrustedDestination";
+				public final static String FINISH_ON = "finishOn";
 				
 			}
 		}
@@ -173,6 +175,15 @@ public class Constants {
 			
 			public final static int IMAGE = 400;
 			public final static int VIDEO = 401;
+		}
+		
+		public final static class Status {
+			public final static int IDLE = 1029;
+			public final static int UPLOADING = 1030;
+			public final static int UPLOAD_COMPLETE = 1031;
+			public final static int UPLOAD_FAILED = 1032;
+			public final static int NEVER_SCHEDULED_FOR_UPLOAD = 1033;
+			public final static int BASE_IMAGE_REQUIRED = 1034;
 		}
 	}
 	
@@ -493,6 +504,7 @@ public class Constants {
 				public final static String PUBLIC_KEY = "trustedDestinationPublicKey";
 				public final static String FINGERPRINT = PGP.Keys.PGP_FINGERPRINT;
 				public final static String TRUSTED_DESTINATION_ID = "trustedDestinationId";
+				public static final String ALGORITHM = "keyAlgorithm";
 			}
 		}
 		
@@ -524,6 +536,7 @@ public class Constants {
 				public final static String PGP_EMAIL_ADDRESS = "pgpEmailAddress";
 				public final static String PGP_DISPLAY_NAME = "pgpDisplayName";
 				public final static String PGP_KEY_IS_TRUSTED = "pgpKeyIsTrusted";
+				public final static String PGP_PUBLIC_KEY = Crypto.Keyring.Keys.PUBLIC_KEY;
 			}
 		}
 	}

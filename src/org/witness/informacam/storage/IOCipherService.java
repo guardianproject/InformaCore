@@ -12,6 +12,7 @@ import info.guardianproject.iocipher.VirtualFileSystem;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
@@ -46,6 +47,10 @@ public class IOCipherService extends Service {
 	@Override
 	public IBinder onBind(Intent intent) {
 		return binder;
+	}
+	
+	public interface IOCipherServiceListener {
+		public void onBitmapResaved();
 	}
 	
 	@Override
@@ -145,7 +150,7 @@ public class IOCipherService extends Service {
 		return Uri.fromFile(ioCipherClone);
 	}
 	
-	public boolean resaveBitmap(Bitmap bitmap, Uri uri) throws FileNotFoundException {
+	public void resaveBitmap(Bitmap bitmap, Uri uri) throws FileNotFoundException {
 		if(getFile(uri).exists())
 			getFile(uri).delete();
 		
@@ -158,7 +163,11 @@ public class IOCipherService extends Service {
 
 		boolean result = bitmap.compress(CompressFormat.JPEG, 100, fos);
 		Log.d(Storage.LOG, "result from this is " + result);
-		return result;
+		
+		if(result)
+			InformaService.getInstance().onBitmapResaved();
+		else
+			Log.d(Storage.LOG, "could not save bitmap");
 	}
 	
 	public static IOCipherService getInstance() {

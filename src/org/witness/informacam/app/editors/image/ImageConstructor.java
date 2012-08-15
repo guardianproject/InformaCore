@@ -1,10 +1,13 @@
 package org.witness.informacam.app.editors.image;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
+
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,19 +15,32 @@ import org.witness.informacam.app.editors.image.filters.CrowdPixelizeObscure;
 import org.witness.informacam.app.editors.image.filters.InformaTagger;
 import org.witness.informacam.app.editors.image.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.image.filters.SolidObscure;
+import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Crypto;
+import org.witness.informacam.utils.Constants.Media;
+import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.App.ImageEditor;
+import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import com.google.common.cache.LoadingCache;
 
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.util.Base64;
 import android.util.Log;
 
@@ -32,6 +48,9 @@ public class ImageConstructor {
 	static {
 		System.loadLibrary("JpegRedaction");
 	}
+	
+	private DatabaseHelper dh;
+	private SQLiteDatabase db;
 	
 	public static native int constructImage(
 			String originalImageFilename, 
@@ -48,7 +67,7 @@ public class ImageConstructor {
 			int bottom,
 			String redactionCommand);
 	
-	public ImageConstructor(LoadingCache<Long, LogPack> annotationCache) {						
+	public ImageConstructor(Context c, LoadingCache<Long, LogPack> annotationCache, long[] encryptList) {						
 		try {
 			// XXX: create clone as flat file -- should not need to do this though :(
 			Uri originalUri = InformaService.getInstance().originalUri;
@@ -94,11 +113,49 @@ public class ImageConstructor {
 			
 			if(InformaService.getInstance().informa.addToAnnotations(annotations)) {
 				// then it is ok... time to encrypt
-				// when done, for each in the encrypt list, insert metadata
+				dh = new DatabaseHelper(c);
+				db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(c).getString(Settings.Keys.CURRENT_LOGIN, ""));
 				
-				/* TODO HERE!
-				(CaptureEvent.Keys.TYPE, CaptureEvent.MEDIA_SAVED);
-				*/
+				long saveTime = System.currentTimeMillis();
+				InformaService.getInstance().informa.setSaveTime(saveTime);
+				
+				dh.setTable(db, Tables.Keys.KEYRING);
+				
+				// for each trusted destination
+				for(long td : encryptList) {
+					Log.d(Storage.LOG, "keyring id: " + td);
+					Cursor cursor = dh.getValue(db, new String[] {PGP.Keys.PGP_DISPLAY_NAME, PGP.Keys.PGP_EMAIL_ADDRESS, PGP.Keys.PGP_PUBLIC_KEY, Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID}, TrustedDestination.Keys.KEYRING_ID, td);
+					
+					if(cursor != null && cursor.moveToFirst()) {
+						for(String s : cursor.getColumnNames())
+							Log.d(Storage.LOG, s);
+						
+						String forName = cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_DISPLAY_NAME));
+						Log.d(Storage.LOG, forName);
+						
+						// add into intent
+						InformaService.getInstance().informa.setTrustedDestination(cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_EMAIL_ADDRESS)));
+						
+						
+						// bundle up informadata
+						String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY)));
+						
+						
+						// insert metadata
+						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.JPEG);
+						constructImage(clone.getAbsolutePath(), version.getAbsolutePath(), informaMetadata, informaMetadata.length());
+						
+						// save metadata in database
+						dh.setTable(db, Tables.Keys.MEDIA);
+						db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(version.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
+						
+						cursor.close();
+						
+					}
+				}
+				
+				db.close();
+				dh.close();
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();

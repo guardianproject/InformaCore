@@ -1,6 +1,8 @@
 package org.witness.informacam.informa;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -15,8 +17,10 @@ import org.json.JSONObject;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
+import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -28,6 +32,7 @@ import org.witness.informacam.utils.Constants.Storage.Tables;
 import com.google.common.cache.LoadingCache;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -93,7 +98,7 @@ public class Informa {
 	public class Genealogy extends InformaZipper {
 		String localMediaPath;
 		Device createdOnDevice;
-		long dateCreated;
+		long dateCreated, dateSavedAsInformaDocument;
 	}
 	
 	public class Data extends InformaZipper {
@@ -240,7 +245,8 @@ public class Informa {
 				db, 
 				new String[] {PGP.Keys.PGP_FINGERPRINT, PGP.Keys.PGP_EMAIL_ADDRESS}, 
 				new String[] {Tables.Keys.KEYRING, Tables.Keys.SETUP},
-				new String[] {PGP.Keys.PGP_KEY_ID, PGP.Keys.PGP_KEY_ID});
+				new String[] {PGP.Keys.PGP_KEY_ID, PGP.Keys.PGP_KEY_ID},
+				null);
 		if(cursor != null && cursor.moveToFirst()) {
 			intent.owner = new Owner();
 						
@@ -249,7 +255,22 @@ public class Informa {
 			intent.owner.ownershipType = Constants.Informa.Owner.INDIVIDUAL;	// TODO: FOR NOW...
 			
 			cursor.close();
-		}
+		} else
+			Log.d(Storage.LOG, "null cursor");
+	}
+	
+	public ContentValues initMetadata(String versionPath, long trustedDestinationId) throws NoSuchAlgorithmException, IOException {
+		ContentValues cv = new ContentValues();
+		
+		cv.put(Media.Keys.TYPE, Media.Type.IMAGE);
+		cv.put(Media.Keys.ORIGINAL_HASH, data.mediaHash.unredactedHash);
+		cv.put(Media.Keys.ANNOTATED_HASH, MediaHasher.hash(bundle().toString().getBytes(), "SHA-1"));
+		cv.put(Media.Keys.LOCATION_OF_ORIGINAL, genealogy.localMediaPath);
+		cv.put(Media.Keys.LOCATION_OF_SENT, versionPath);
+		cv.put(Media.Keys.TRUSTED_DESTINATION_ID, trustedDestinationId);
+		cv.put(Media.Keys.STATUS, Media.Status.IDLE);
+		
+		return cv;
 	}
 	
 	public boolean setInitialData(Entry<Long, LogPack> initialData) throws JSONException {
@@ -292,6 +313,14 @@ public class Informa {
 		genealogy.createdOnDevice.deviceFingerprint = intent.owner.publicKeyFingerprint;
 	}
 	
+	public void setTrustedDestination(String email) {
+		intent.intendedDestination = email;
+	}
+	
+	public void setSaveTime(long saveTime) {
+		genealogy.dateSavedAsInformaDocument = saveTime;
+	}
+	
 	public Informa(Context c) {
 		this.c = c;
 		sp = PreferenceManager.getDefaultSharedPreferences(this.c);
@@ -304,5 +333,23 @@ public class Informa {
 		data = new Data();
 		
 		getOwnerCredentials();
+	}
+
+	public String bundle() {
+		JSONObject bundle = new JSONObject();
+		try {
+			bundle.put(Constants.Informa.Keys.INTENT, intent.zip());
+			bundle.put(Constants.Informa.Keys.GENEALOGY, genealogy.zip());
+			bundle.put(Constants.Informa.Keys.DATA, data.zip());
+			
+			return bundle.toString();
+		} catch(JSONException e) {
+			return null;
+		} catch (IllegalArgumentException e) {
+			return null;
+		} catch (IllegalAccessException e) {
+			return null;
+		}
+		
 	}
 }

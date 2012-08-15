@@ -113,23 +113,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		db.execSQL(query);
 	}
 	
-	public Cursor getJoinedValue(SQLiteDatabase db, String[] values, String[] queryTables, String[] matchKeys) {
-		String select = "*";
+	public Cursor getJoinedValue(SQLiteDatabase db, String[] values, String[] queryTables, String[] matchKeys, Object matchValue) {
+		String select = queryTables[0] + ".*";
 		
 		if(values != null) {
 			StringBuffer sb = new StringBuffer();
 			for(String v : values)
-				sb.append("," + v);
+				sb.append(", " + queryTables[0] + "." + v);
 			select = sb.toString().substring(1);
 		}
 		
 		String query = "SELECT " + select + 
 			" FROM " + queryTables[0] + 
-			" JOIN " + queryTables[1] + 
+			" INNER JOIN " + queryTables[1] + 
 			" ON " + queryTables[0] + "." + matchKeys[0] + 
 			"=" + queryTables[1] + "." + matchKeys[1];
 		
+		Log.d(Storage.LOG, query);
+		
 		Cursor c = db.rawQuery(query, null);
+		
 		if(c != null && c.getCount() > 0) {
 			return c;
 		} else {

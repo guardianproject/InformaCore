@@ -30,6 +30,7 @@ import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.storage.IOCipherService.IOCipherServiceListener;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App.ImageEditor;
@@ -63,7 +64,7 @@ import android.os.IBinder;
 import android.util.Base64;
 import android.util.Log;
 
-public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener {
+public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener, IOCipherServiceListener {
 	public static InformaService informaService;
 	private final IBinder binder = new LocalBinder();
 	
@@ -90,9 +91,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	
 	String LOG = Constants.Informa.LOG;
 	
+	private boolean isBlocking = true; 
+	
 	public interface InformaServiceListener {
 		public void onInformaPackageGenerated();
-		public void onMetadataEncryptedAndEmbedded();
 	}
 	
 	public class LocalBinder extends Binder {
@@ -283,10 +285,13 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	
 	public void suspend() {
 		this.setCurrentStatus(Status.STOPPED);
-		_geo.getSucker().stopUpdates();
-		_phone.getSucker().stopUpdates();
-		_acc.getSucker().stopUpdates();
-		
+		try {
+			_geo.getSucker().stopUpdates();
+			_phone.getSucker().stopUpdates();
+			_acc.getSucker().stopUpdates();
+		} catch(NullPointerException e) {
+			e.printStackTrace();
+		}
 		_geo = null;
 		_phone = null;
 		_acc = null;
@@ -389,7 +394,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 									suspend();
 
 									if(editor.getLocalClassName().equals(App.ImageEditor.TAG)) {
-										ImageConstructor imageConstructor = new ImageConstructor(annotationCache);
+										Log.d(Storage.LOG, "...waiting for image to resave...");
+										long time = System.currentTimeMillis();
+										do {
+											// do nothing!
+										} while(isBlocking);
+										Log.d(Storage.LOG, "saving took " + Math.abs(time - System.currentTimeMillis()) + " ms");
+										Log.d(Storage.LOG, "no longer blocking!");
+										ImageConstructor imageConstructor = new ImageConstructor(InformaService.this.getApplicationContext(), annotationCache, encryptList);
 									}
 										
 								}
@@ -548,5 +560,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			}
 			
 		}
+	}
+
+	@Override
+	public void onBitmapResaved() {
+		isBlocking = false;
 	}
 }
