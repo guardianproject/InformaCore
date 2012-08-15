@@ -36,6 +36,39 @@ public class Constants {
 			public final static int FROM_USER_CHOICE = 676;
 		}
 		
+		public final static class VideoEditor {
+			public final static int FROM_ANNOTATION_ACTIVITY = 474;
+			public final static int FROM_DESTINATION_CHOOSER = 475;
+			public static final int PACKAGE_GENERATED = 473;
+			
+			public final static int FACE_TIME_BUFFER = 2000;
+		    public final static int HUMAN_OFFSET_BUFFER = 50;
+			public final static float MIN_MOVE = 10;
+			
+			public final static class Mode {
+				public static final int NONE = 0;
+				public static final int DRAG = 1;
+			}
+			
+			public final static String TAG = "app.editors.video.VideoEditor";
+			
+			public final static class Keys {
+				public final static String PROPERTIES = App.ImageEditor.Keys.PROPERTIES;
+				public final static String CHOOSE_TRUSTED_DESTINATION = App.ImageEditor.Keys.CHOOSE_TRUSTED_DESTINATION;
+				public final static String FINISH_ON = App.ImageEditor.Keys.FINISH_ON;
+			}
+			
+			public final static class Actions {
+				public final static int REVIEW_MEDIA = 0;
+				public final static int SAVE_MENU_ITEM = 1;
+				
+				public final static int PLAY = 1;
+				public final static int STOP = 2;
+				public final static int PROCESS = 3;
+				
+			}
+		}
+		
 		public final static class ImageEditor {
 			public final static int FROM_ANNOTATION_ACTIVITY = 574;
 			public final static int FROM_DESTINATION_CHOOSER = 575;
@@ -433,6 +466,11 @@ public class Constants {
 					public final static String FILTER = Informa.Keys.Data.ImageRegion.FILTER;
 					public final static String UNREDACTED_DATA = Informa.Keys.Data.ImageRegion.UNREDACTED_DATA;
 					public final static String BASE = Informa.Keys.Data.ImageRegion.BASE;
+					public static final String START_TIME = "videoStartTime";
+					public static final String END_TIME = "videoEndTime";
+					public static final String CHILD_REGIONS = "videoChildRegions";
+					public static final String TRAIL = "videoTrail";
+					public static final String PROPERTIES = "videoProperties";
 					
 					public final static class Child {
 						public final static String COORDINATES = Informa.Keys.Data.ImageRegion.COORDINATES;
@@ -471,6 +509,7 @@ public class Constants {
 			public final static String DUMP_FOLDER = Environment.getExternalStorageDirectory() + "/InformaCam";
 			public final static String IMAGE_TMP = "informa_tmp.jpg";
 			public final static String VIDEO_TMP = "informa_tmp.mp4";
+			public final static String TMP_VIDEO_DATA_FILE_NAME = "informaCam_metadata.txt";
 		}
 		
 		public final static class IOCipher {

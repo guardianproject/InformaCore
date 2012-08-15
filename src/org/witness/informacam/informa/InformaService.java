@@ -1,7 +1,5 @@
 package org.witness.informacam.informa;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,22 +17,17 @@ import org.witness.informacam.app.MainActivity;
 import org.witness.informacam.app.editors.image.ImageConstructor;
 import org.witness.informacam.app.editors.image.ImageRegion;
 import org.witness.informacam.app.editors.image.ImageRegion.ImageRegionListener;
-import org.witness.informacam.app.editors.image.filters.CrowdPixelizeObscure;
-import org.witness.informacam.app.editors.image.filters.InformaTagger;
-import org.witness.informacam.app.editors.image.filters.PixelizeObscure;
-import org.witness.informacam.app.editors.image.filters.SolidObscure;
+import org.witness.informacam.app.editors.video.RegionTrail;
+import org.witness.informacam.app.editors.video.RegionTrail.VideoRegionListener;
+import org.witness.informacam.app.editors.video.VideoConstructor;
 import org.witness.informacam.informa.Informa;
 import org.witness.informacam.informa.Informa.InformaListener;
 import org.witness.informacam.informa.SensorLogger.OnUpdateListener;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
-import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOCipherService.IOCipherServiceListener;
 import org.witness.informacam.utils.Constants;
-import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.App.ImageEditor;
-import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Status;
 import org.witness.informacam.utils.Constants.App;
@@ -45,8 +38,6 @@ import org.witness.informacam.utils.Constants.Suckers.Phone;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -61,10 +52,9 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Base64;
 import android.util.Log;
 
-public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener, IOCipherServiceListener {
+public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener, VideoRegionListener, IOCipherServiceListener {
 	public static InformaService informaService;
 	private final IBinder binder = new LocalBinder();
 	
@@ -101,6 +91,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		public InformaService getService() {
 			return InformaService.this;
 		}
+	}
+	
+	public void versionsCreated() {
+		// cleanup, add to upload queue, etc
 	}
 	
 	public void setCurrentStatus(int status) {
@@ -402,6 +396,9 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 										Log.d(Storage.LOG, "saving took " + Math.abs(time - System.currentTimeMillis()) + " ms");
 										Log.d(Storage.LOG, "no longer blocking!");
 										ImageConstructor imageConstructor = new ImageConstructor(InformaService.this.getApplicationContext(), annotationCache, encryptList);
+									} else if(editor.getLocalClassName().equals(App.VideoEditor.TAG)) {
+										isBlocking = false;
+										VideoConstructor.getVideoConstructor().buildInformaVideo(InformaService.this.getApplicationContext(), annotationCache, encryptList);
 									}
 										
 								}
@@ -438,7 +435,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
 			
 			LogPack logPack = annotationCache.get(timestamp);
-			logPack.remove(Signatures.Keys.SIGNATURE);
 			Iterator<String> repIt = rep.keys();
 			while(repIt.hasNext()) {
 				String key = repIt.next();
@@ -541,6 +537,57 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		
 	}
 	
+	@Override
+	public void onVideoRegionCreated(final RegionTrail rt) {
+		new Thread(
+				new Runnable() {
+					@Override
+					public void run() {
+						try {
+							addRegion(rt.getRepresentation());
+						} catch(JSONException e) {
+							Log.e(LOG, e.toString());
+						}
+					}
+				
+			}).start();
+		
+	}
+
+	@Override
+	public void onVideoRegionChanged(final RegionTrail rt) {
+		new Thread(
+				new Runnable() {
+					@Override
+					public void run() {
+						try {
+							changeRegion(rt.getRepresentation());
+						} catch(JSONException e) {
+							Log.e(LOG, e.toString());
+						}
+					}
+				
+			}).start();
+		
+	}
+
+	@Override
+	public void onVideoRegionDeleted(final RegionTrail rt) {
+		new Thread(
+				new Runnable() {
+					@Override
+					public void run() {
+						try {
+							removeRegion(rt.getRepresentation());
+						} catch(JSONException e) {
+							Log.e(LOG, e.toString());
+						}
+					}
+				
+			}).start();
+		
+	}
+
 	private class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
 		
@@ -566,4 +613,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void onBitmapResaved() {
 		isBlocking = false;
 	}
+
+	
 }

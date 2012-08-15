@@ -15,6 +15,7 @@ import org.witness.informacam.R;
 import org.witness.informacam.app.Eula.OnEulaAgreedTo;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.editors.image.ImageEditor;
+import org.witness.informacam.app.editors.video.VideoEditor;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.LocalBinder;
@@ -185,7 +186,9 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchEditor() throws NoSuchAlgorithmException, IOException {
-    	mediaCaptureUri = IOCipherService.getInstance().moveFileToIOCipher(mediaCaptureUri, Integer.parseInt(sp.getString(Settings.Keys.DEFAULT_IMAGE_HANDLING, Integer.toString(Settings.OriginalImageHandling.LEAVE_ORIGINAL_ALONE))));
+    	if(mimeType.equals(Media.Type.MIME_TYPE_JPEG))
+    		mediaCaptureUri = IOCipherService.getInstance().moveFileToIOCipher(mediaCaptureUri, Integer.parseInt(sp.getString(Settings.Keys.DEFAULT_IMAGE_HANDLING, Integer.toString(Settings.OriginalImageHandling.LEAVE_ORIGINAL_ALONE))));
+    	
     	editorIntent.setData(mediaCaptureUri);
     	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
     }
@@ -225,7 +228,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
     			} else {
-    				//editorIntent = new Intent(this, VideoEditor.class);
+    				editorIntent = new Intent(this, VideoEditor.class);
     				mimeType = Media.Type.MIME_TYPE_MP4;
     				mediaCaptureUri = data.getData();
     				FileOutputStream fos;
@@ -263,6 +266,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     public boolean onCreateOptionsMenu(Menu menu) {
     	
     	return super.onCreateOptionsMenu(menu);
+    	// TODO: init menu pls
     }
     
     public boolean onOptionsItemSelected(MenuItem mi) {
@@ -311,7 +315,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			@Override
 			public void run() {
 				try {
-					LogPack logPack = IOUtility.getMetadata(mediaCaptureFile.getAbsolutePath(), mimeType);
+					LogPack logPack = IOUtility.getMetadata(mediaCaptureUri, mediaCaptureFile.getAbsolutePath(), mimeType, MainActivity.this);
     				informaService.onUpdate(Time.timestampToMillis(logPack.get(Exif.TIMESTAMP).toString()), logPack);
     				launchEditor();
 				} catch (NoSuchAlgorithmException e) {

@@ -1,7 +1,5 @@
 package org.witness.informacam.app.editors.image;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -16,25 +14,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-import net.sqlcipher.database.SQLiteDatabase;
-
 import org.json.JSONException;
 import org.witness.informacam.R;
 import org.witness.informacam.app.AddressBookActivity;
 import org.witness.informacam.app.AnnotationActivity;
-import org.witness.informacam.app.editors.image.detect.GoogleFaceDetection;
-import org.witness.informacam.app.editors.image.filters.RegionProcesser;
+import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
+import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
-import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Settings;
-import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
-import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Storage;
@@ -47,7 +39,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -68,7 +59,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
-import android.preference.PreferenceManager;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.Media;
 import android.util.Log;
@@ -176,8 +166,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	
     };
     
-    private Handler informaHandler = new Handler();
-
     //UI for background threads
     ProgressDialog mProgressDialog;
     boolean autodetect;

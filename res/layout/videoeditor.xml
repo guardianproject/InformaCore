@@ -29,7 +29,7 @@
  				android:src="@android:drawable/ic_media_play" 
  				android:layout_height="wrap_content" 				
  				/>	
-			<org.witness.ssc.video.InOutPlayheadSeekBar 
+			<org.witness.informacam.app.editors.video.InOutPlayheadSeekBar 
 				android:id="@+id/InOutPlayheadSeekBar" 
 				android:layout_height="fill_parent" 
 				android:layout_width="0dip" 
@@ -45,14 +45,6 @@
 				android:paddingRight="0dip"
 				android:paddingTop="5dip"
 				/>
-			<!-- 
-			<org.witness.sscvideoproto.RegionBarArea
-				android:id="@+id/RegionBarArea"
-				android:layout_height="30dp" 
-				android:layout_width="fill_parent">
-			</org.witness.sscvideoproto.RegionBarArea>
-			 -->
-	
 	</LinearLayout>		
   	
 </FrameLayout>

@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
@@ -19,11 +20,13 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -111,35 +114,71 @@ public class IOUtility {
 		
 	}
 	
-	public final static LogPack getMetadata(String filepath, String mimeType) {
+	public static LogPack getMetadata(Uri mediaCaptureUri, String absolutePath, String mimeType, Context c) {
+		if(mimeType.equals(Media.Type.MIME_TYPE_JPEG))
+			return getImageMetadata(absolutePath);
+		else
+			return getVideoMetadata(mediaCaptureUri, absolutePath, c);
+	}
+	
+	public final static LogPack getVideoMetadata(Uri uri, String filepath, Context c) {
 		try {
 			LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
+			Log.d(Storage.LOG, "getting metadata for " + uri.toString());
+			MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+			retriever.setDataSource(c, uri);
 			
-			if(mimeType.equals(Media.Type.MIME_TYPE_JPEG)) {
-				ExifInterface ei = new ExifInterface(filepath);
-				
-				logPack.put(Exif.TIMESTAMP, ei.getAttribute(Exif.TIMESTAMP));
-				logPack.put(Exif.APERTURE, ei.getAttribute(Exif.APERTURE));
-				logPack.put(Exif.EXPOSURE, ei.getAttribute(Exif.EXPOSURE));
-				logPack.put(Exif.FLASH, ei.getAttributeInt(Exif.FLASH, Informa.Keys.NOT_REPORTED));
-				logPack.put(Exif.FOCAL_LENGTH, ei.getAttributeInt(Exif.FOCAL_LENGTH, Informa.Keys.NOT_REPORTED));
-				logPack.put(Exif.IMAGE_LENGTH, ei.getAttributeInt(Exif.IMAGE_LENGTH, Informa.Keys.NOT_REPORTED));
-				logPack.put(Exif.IMAGE_WIDTH, ei.getAttributeInt(Exif.IMAGE_WIDTH, Informa.Keys.NOT_REPORTED));
-				logPack.put(Exif.ISO, ei.getAttribute(Exif.ISO));
-				logPack.put(Exif.MAKE, ei.getAttribute(Exif.MAKE));
-				logPack.put(Exif.MODEL, ei.getAttribute(Exif.MODEL));
-				logPack.put(Exif.ORIENTATION, ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL));
-				logPack.put(Exif.WHITE_BALANCE, ei.getAttributeInt(Exif.WHITE_BALANCE, Informa.Keys.NOT_REPORTED));
-				
-				logPack.put(Data.Description.MEDIA_TYPE, Media.Type.IMAGE);
-				logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
-				
-				Log.d(App.LOG, logPack.toString());
-			} else if(mimeType.equals(Media.Type.MIME_TYPE_MP4)) {
-				
-				logPack.put(Data.Description.MEDIA_TYPE, Media.Type.VIDEO);
-				logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.getBitmapHash(new java.io.File(filepath)));
-			}
+			String[] columnsToSelect = { MediaStore.Video.Media.DATE_TAKEN };
+	    	Cursor videoCursor = c.getContentResolver().query(uri, columnsToSelect, null, null, null );
+	    	if (videoCursor != null && videoCursor.getCount() == 1 ) {
+		        videoCursor.moveToFirst();
+		        logPack.put(Exif.TIMESTAMP, videoCursor.getString(videoCursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN)));
+		        
+		        videoCursor.close();
+	    	}
+	    	
+						
+			logPack.put(Exif.IMAGE_LENGTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+			logPack.put(Exif.IMAGE_WIDTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+			logPack.put(Exif.DURATION, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+			
+			
+			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.VIDEO);
+			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+						
+			return logPack;
+		} catch (IOException e) {
+			return null;
+		} catch (JSONException e) {
+			return null;
+		} catch (NoSuchAlgorithmException e) {
+			return null;
+		}
+	}
+	
+	public final static LogPack getImageMetadata(String filepath) {
+		try {
+			LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
+			ExifInterface ei = new ExifInterface(filepath);
+			
+			logPack.put(Exif.TIMESTAMP, ei.getAttribute(Exif.TIMESTAMP));
+			logPack.put(Exif.APERTURE, ei.getAttribute(Exif.APERTURE));
+			logPack.put(Exif.EXPOSURE, ei.getAttribute(Exif.EXPOSURE));
+			logPack.put(Exif.FLASH, ei.getAttributeInt(Exif.FLASH, Informa.Keys.NOT_REPORTED));
+			logPack.put(Exif.FOCAL_LENGTH, ei.getAttributeInt(Exif.FOCAL_LENGTH, Informa.Keys.NOT_REPORTED));
+			logPack.put(Exif.IMAGE_LENGTH, ei.getAttributeInt(Exif.IMAGE_LENGTH, Informa.Keys.NOT_REPORTED));
+			logPack.put(Exif.IMAGE_WIDTH, ei.getAttributeInt(Exif.IMAGE_WIDTH, Informa.Keys.NOT_REPORTED));
+			logPack.put(Exif.ISO, ei.getAttribute(Exif.ISO));
+			logPack.put(Exif.MAKE, ei.getAttribute(Exif.MAKE));
+			logPack.put(Exif.MODEL, ei.getAttribute(Exif.MODEL));
+			logPack.put(Exif.ORIENTATION, ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL));
+			logPack.put(Exif.WHITE_BALANCE, ei.getAttributeInt(Exif.WHITE_BALANCE, Informa.Keys.NOT_REPORTED));
+			
+			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.IMAGE);
+			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+			
+			Log.d(App.LOG, logPack.toString());
+			
 			return logPack;
 		} catch (IOException e) {
 			return null;

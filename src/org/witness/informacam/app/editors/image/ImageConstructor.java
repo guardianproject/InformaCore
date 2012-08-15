@@ -11,10 +11,10 @@ import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.informacam.app.editors.image.filters.CrowdPixelizeObscure;
-import org.witness.informacam.app.editors.image.filters.InformaTagger;
-import org.witness.informacam.app.editors.image.filters.PixelizeObscure;
-import org.witness.informacam.app.editors.image.filters.SolidObscure;
+import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
+import org.witness.informacam.app.editors.filters.InformaTagger;
+import org.witness.informacam.app.editors.filters.PixelizeObscure;
+import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
@@ -156,6 +156,8 @@ public class ImageConstructor {
 				
 				db.close();
 				dh.close();
+				
+				InformaService.getInstance().versionsCreated();
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -166,10 +168,5 @@ public class ImageConstructor {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {}
-		
-		
-		// add to upload queue if possible
-		
-		
 	}
 }
