@@ -27,6 +27,7 @@ import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.storage.IOCipherService.IOCipherServiceListener;
+import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Status;
@@ -94,7 +95,22 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	public void versionsCreated() {
-		// cleanup, add to upload queue, etc
+		// TODO: cleanup, add to upload queue, etc
+		java.io.File imgTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
+		if(imgTemp.exists())
+			imgTemp.delete();
+		
+		java.io.File vidTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.VIDEO_TMP);
+		if(vidTemp.exists()) {
+			vidTemp.delete();
+		}
+		
+		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
+		if(vidMetadata.exists())
+			vidMetadata.delete();
+		
+		Intent intent = new Intent(this, UploaderService.class);
+		startService(intent);
 	}
 	
 	public void setCurrentStatus(int status) {
@@ -587,6 +603,11 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			}).start();
 		
 	}
+	
+	@Override
+	public void onBitmapResaved() {
+		isBlocking = false;
+	}
 
 	private class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
@@ -607,12 +628,5 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			}
 			
 		}
-	}
-
-	@Override
-	public void onBitmapResaved() {
-		isBlocking = false;
-	}
-
-	
+	}	
 }

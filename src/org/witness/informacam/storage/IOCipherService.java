@@ -18,7 +18,6 @@ import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Settings.Device;
 import org.witness.informacam.utils.Constants.Storage.Tables;
-import org.witness.informacam.utils.IOUtility;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Service;
@@ -55,6 +54,8 @@ public class IOCipherService extends Service {
 	
 	@Override
 	public void onCreate() {
+		SQLiteDatabase.loadLibs(this);
+		
     	java.io.File storageRoot = new java.io.File(getDir(Storage.IOCipher.ROOT, MODE_PRIVATE).getAbsolutePath(), Storage.IOCipher.STORE);
     	vfs = new VirtualFileSystem(storageRoot);
     	
@@ -100,6 +101,10 @@ public class IOCipherService extends Service {
 		}
 		
 		return file;
+	}
+	
+	public File getFile(String filepath) {
+		return getFile(Uri.fromFile(new File(filepath)));
 	}
 	
 	public FileInputStream getFileStream(Uri uri) throws IOException {
@@ -148,6 +153,22 @@ public class IOCipherService extends Service {
 		}
 
 		return Uri.fromFile(ioCipherClone);
+	}
+	
+	public File moveFileToIOCipher(java.io.File version, String rootFolder, boolean delete) {
+		Log.d(Storage.LOG, "moving to iocipher at " + rootFolder + "/" + version.getName());
+		
+		File ioCipherCloneFolder = new File(rootFolder);
+		if(!ioCipherCloneFolder.exists())
+			ioCipherCloneFolder.mkdir();
+		
+		byte[] fileBytes = IOUtility.getBytesFromFile(version);
+		String forName = version.getName();
+		
+		if(delete)
+			version.delete();
+		
+		return IOUtility.fileFromBytes(fileBytes, rootFolder + "/" + forName);
 	}
 	
 	public void resaveBitmap(Bitmap bitmap, Uri uri) throws FileNotFoundException {

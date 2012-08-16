@@ -526,6 +526,27 @@ public class Constants {
 			public final static String AVAILABLE = "uploaderAvailable";
 			public final static String START = "startUploaderService";
 		}
+		
+		public static final class Keys {
+			public final static String CLIENT_PGP = Crypto.PGP.Keys.PGP_FINGERPRINT;
+			public final static String TIMESTAMP_CREATED = Informa.Keys.Genealogy.DATE_CREATED;
+			public final static String MEDIA_TYPE = Media.Keys.TYPE;
+			public final static String ORIGINAL_HASH = Media.Keys.ORIGINAL_HASH;
+			public final static String BYTES_EXPECTED = "totalBytesExpected";
+			public final static String ZIPPED_BYTES_EXPECTED = "zippedBytesExpected";
+			public final static String ZIPPED_HASH = "zippedHash";
+			
+			public final static String BYTES_TRANSFERED = "bytesTransfered";
+			public final static String LAST_BYTE_TRANSFERED = "lastByteTransfered";
+			
+			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
+		}
+		
+		public static final class Status {
+			public final static int TICKET_REQUESTED = 375;
+			public final static int TICKET_RECEIVED = 374;
+			
+		}
 	}
 	
 	public final static class Crypto {

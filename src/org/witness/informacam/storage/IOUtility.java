@@ -1,22 +1,34 @@
-package org.witness.informacam.utils;
+package org.witness.informacam.storage;
 
+import info.guardianproject.iocipher.FileInputStream;
+import info.guardianproject.iocipher.FileOutputStream;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
+import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Informa.CaptureEvent.Keys;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data.Description;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
+import org.witness.informacam.utils.Constants.Media.Type;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -70,6 +82,44 @@ public class IOUtility {
 		
 		
 		return bytes;
+	}
+	
+	public final static byte[] zipFile(info.guardianproject.iocipher.File file) {
+		try {
+			FileInputStream fis = new FileInputStream(file);
+			
+			BufferedOutputStream bos = null;
+			int buf = 2048;
+			
+			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis));
+			ZipEntry ze;
+			
+			while((ze = zis.getNextEntry()) != null) {
+				int count;
+				byte[] data = new byte[buf];
+				
+				FileOutputStream fos = new FileOutputStream(ze.getName());
+				bos = new BufferedOutputStream(fos, buf);
+				
+				while((count = zis.read(data, 0, buf)) != -1)
+					bos.write(data, 0, count);
+				
+				bos.flush();
+				bos.close();
+			}
+			
+			byte[] zip = new byte[zis.available()];
+			zis.read(zip);
+			zis.close();
+			
+			return zip;
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	public final static byte[] getBytesFromFile(info.guardianproject.iocipher.File file) {

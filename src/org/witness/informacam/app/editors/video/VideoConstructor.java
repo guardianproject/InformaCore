@@ -29,10 +29,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Media;
+import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
@@ -272,6 +275,9 @@ public class VideoConstructor {
 		long saveTime = System.currentTimeMillis();
 		InformaService.getInstance().informa.setSaveTime(saveTime);
 		
+		dh = new DatabaseHelper(c);
+		db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(c).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		
 		try {
 			dh.setTable(db, Tables.Keys.KEYRING);
 			
@@ -297,8 +303,12 @@ public class VideoConstructor {
 					File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.MKV);
 					constructVideo(version, informaMetadata);
 					
+					// XXX:  move back to IOCipher and remove this version from public filestore
+					info.guardianproject.iocipher.File ioCipherVersion = IOCipherService.getInstance().moveFileToIOCipher(version, MediaHasher.hash(clone, "SHA-1"), true);
+					
+					
 					dh.setTable(db, Tables.Keys.MEDIA);
-					db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(version.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
+					db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(ioCipherVersion.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
 					
 					cursor.close();
 				}

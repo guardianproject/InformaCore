@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 import org.json.JSONException;
 import org.witness.informacam.R;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.IOUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 

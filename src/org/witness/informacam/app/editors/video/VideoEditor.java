@@ -260,7 +260,7 @@ public class VideoEditor extends Activity implements
 					originalVideoUri = Uri.fromFile(new File(savedInstanceState.getString("path")));
 					recordingFile = new File (savedInstanceState.getString("path"));
 					
-					InformaService.getInstance().onInformaInit(VideoEditor.this, originalVideoUri);
+					
 				}
 				else
 				{
@@ -276,6 +276,8 @@ public class VideoEditor extends Activity implements
 			
 			Log.d(App.LOG, "recording file: " + recordingFile.getAbsolutePath());
 			Log.d(App.LOG, "original uri: " + originalVideoUri.toString());
+			
+			InformaService.getInstance().onInformaInit(VideoEditor.this, originalVideoUri);
 		}
 		
 		fileExternDir = new File(Environment.getExternalStorageDirectory(),getString(R.string.app_name));

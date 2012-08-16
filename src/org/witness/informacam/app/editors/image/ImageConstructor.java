@@ -35,12 +35,10 @@ import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import com.google.common.cache.LoadingCache;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
-import android.provider.BaseColumns;
 import android.util.Base64;
 import android.util.Log;
 
@@ -145,9 +143,12 @@ public class ImageConstructor {
 						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.JPEG);
 						constructImage(clone.getAbsolutePath(), version.getAbsolutePath(), informaMetadata, informaMetadata.length());
 						
+						// XXX: move back to IOCipher and remove this version from public filestore
+						info.guardianproject.iocipher.File ioCipherVersion = IOCipherService.getInstance().moveFileToIOCipher(version, originalUri.getPathSegments().get(0), true);
+						
 						// save metadata in database
 						dh.setTable(db, Tables.Keys.MEDIA);
-						db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(version.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
+						db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(ioCipherVersion.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
 						
 						cursor.close();
 						

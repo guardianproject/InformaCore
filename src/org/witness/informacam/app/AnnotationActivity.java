@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.witness.informacam.R;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion.Subject;
-import org.witness.informacam.utils.IOUtility;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
