@@ -38,6 +38,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 					Media.Keys.ANNOTATED_HASH + " text, " +
 					Media.Keys.LOCATION_OF_ORIGINAL + " text, " +
 					Media.Keys.LOCATION_OF_SENT + " text, " +
+					Media.Keys.TIME_CAPTURED + " integer, " +
 					Media.Keys.TRUSTED_DESTINATION_ID + " integer, " +
 					Media.Keys.SHARE_VECTOR + " integer, " + 
 					Media.Keys.MESSAGE_URL + " text, " +

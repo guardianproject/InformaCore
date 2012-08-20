@@ -190,6 +190,7 @@ public class Constants {
 			public final static String STATUS = "transitStatus";
 			public final static String AUTH_TOKEN = "authToken";
 			public final static String ALIAS = "mediaAlias";
+			public static final String TIME_CAPTURED = Informa.CaptureEvent.Keys.MEDIA_CAPTURE_COMPLETE;
 		}
 		
 		public final static class DateFormats {
@@ -599,6 +600,25 @@ public class Constants {
 				public final static String PGP_PUBLIC_KEY = Crypto.Keyring.Keys.PUBLIC_KEY;
 			}
 		}
+	}
+	
+	public final static class Transport {
+		public static final String LOG = "**************** InformaCam:TRANSPORT ****************";
+		
+		public final static class Result {
+			public final static String OK = "OK";
+			public final static String FAIL = "FAIL";
+		}
+		
+		public final static class Keys {
+			public final static String HYPHENS = "--";
+			public final static String BOUNDARY = "*****InformaCamData*134*72&^*1*";
+			public final static String LINE_END = "\r\n";
+			
+		}
+		
+		
+		
 	}
 	
 	public final static class J3M {

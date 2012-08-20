@@ -1,7 +1,10 @@
 package org.witness.informacam.transport;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -12,6 +15,7 @@ import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Uploader;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
@@ -89,11 +93,22 @@ public class UploaderService extends Service implements J3MListener {
 			});
 	
 	private void requestTicket(J3MDescriptor j3m) {
-		String request = "https://" + j3m.serverUrl +
-				"/?" + Uploader.Keys.CLIENT_PGP + "=" + "" +
-				"&" + Uploader.Keys.TIMESTAMP_CREATED + "=" + "" +
-				"&" + Uploader.Keys.MEDIA_TYPE + "=" + "" +
-				"&" + Uploader.Keys.BYTES_EXPECTED + "=" + "";
+		Map<String, Object> postData = new HashMap<String, Object>();
+		postData.put(Uploader.Keys.CLIENT_PGP, j3m.clientPGPFingerprint);
+		postData.put(Uploader.Keys.TIMESTAMP_CREATED, j3m.timestampCreated);
+		postData.put(Uploader.Keys.MEDIA_TYPE, j3m.mediaType);
+		postData.put(Uploader.Keys.BYTES_EXPECTED, j3m.totalBytesExpected);
+		
+		
+		try {
+			HttpUtility.executeHttpsPost(this, j3m.serverUrl, postData, null);
+		} catch (InterruptedException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -154,6 +169,7 @@ public class UploaderService extends Service implements J3MListener {
 					j3m.setFile(uploads.getString(uploads.getColumnIndex(Media.Keys.LOCATION_OF_SENT)));
 					j3m.mediaType = uploads.getInt(uploads.getColumnIndex(Media.Keys.TYPE));
 					j3m.serverUrl = server.getString(server.getColumnIndex(TrustedDestination.Keys.URL));
+					j3m.timestampCreated = uploads.getLong(uploads.getColumnIndex(Media.Keys.TIME_CAPTURED));
 					
 					j3m.changeStatus(Media.Status.UPLOADING);
 					addToQueue(j3m);
