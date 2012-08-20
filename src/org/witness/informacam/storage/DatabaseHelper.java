@@ -68,6 +68,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 					Crypto.Keyring.Keys.ID + " integer, " +
 					Crypto.Keyring.Keys.PUBLIC_KEY + " blob, " +
 					Crypto.Keyring.Keys.FINGERPRINT + " text, " +
+					Crypto.Keyring.Keys.ALGORITHM + " integer, " +
 					PGP.Keys.PGP_CREATION_DATE + " integer, " +
 					PGP.Keys.PGP_EXPIRY_DATE + " integer, " +
 					PGP.Keys.PGP_DISPLAY_NAME + " text, " +

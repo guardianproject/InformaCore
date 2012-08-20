@@ -1737,7 +1737,7 @@ public class VideoEditor extends Activity implements
 		rt.addIdentityTagger();
 		
     	Intent informa = new Intent(this, AnnotationActivity.class);
-    	informa.putExtra(VideoRegion.PROPERTIES, rt.getPrettyPrintedProperties());
+    	informa.putExtra(App.VideoEditor.Keys.PROPERTIES, rt.getPrettyPrintedProperties());
     	informa.putExtra(VideoRegion.INDEX, obscureTrails.indexOf(rt));
     	
 	    retriever.setDataSource(recordingFile.getAbsolutePath());
