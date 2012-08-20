@@ -14,7 +14,6 @@ import net.sqlcipher.database.SQLiteDatabase;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,6 +55,7 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -273,7 +273,7 @@ public class WizardActivity extends Activity implements OnClickListener {
 					br.close();
 					
 					if(ext.equals(".asc")) {
-						PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(sb.toString().getBytes());
+						PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(Base64.encodeToString(sb.toString().getBytes(), Base64.DEFAULT).getBytes());
 						ksr = new KeyUtility.KeyServerResponse(key);	
 					} else if(ext.equals(".pem"))
 						CertificateUtility.storeCertificate(this, sb.toString().getBytes());
@@ -282,7 +282,7 @@ public class WizardActivity extends Activity implements OnClickListener {
 					imgBytes = new byte[is.available()];
 					is.read(imgBytes);
 					
-					imgBytes = Base64.encode(imgBytes);
+					imgBytes = Base64.encode(imgBytes, Base64.DEFAULT);
 				}
 			}
 			

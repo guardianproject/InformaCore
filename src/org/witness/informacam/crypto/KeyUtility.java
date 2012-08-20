@@ -81,7 +81,7 @@ public class KeyUtility {
 	
 	public static PGPPublicKey makeKey(byte[] keyblock) throws IOException {
 		PGPPublicKey key = null;
-		PGPObjectFactory objFact = new PGPObjectFactory(PGPUtil.getDecoderStream(new ByteArrayInputStream(keyblock)));
+		PGPObjectFactory objFact = new PGPObjectFactory(PGPUtil.getDecoderStream(new ByteArrayInputStream(Base64.decode(keyblock, Base64.DEFAULT))));
 		Object obj;
 		
 		while((obj = objFact.nextObject()) != null && key == null) {
@@ -94,7 +94,7 @@ public class KeyUtility {
 	public static PGPSecretKey extractSecretKey(byte[] keyblock) {
 		PGPSecretKey secretKey = null;
 		try {
-			PGPSecretKeyRingCollection pkrc = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(keyblock)));
+			PGPSecretKeyRingCollection pkrc = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(Base64.decode(keyblock, Base64.DEFAULT))));
 			Iterator<PGPSecretKeyRing> rIt = pkrc.getKeyRings();
 			while(rIt.hasNext()) {
 				PGPSecretKeyRing pkr = (PGPSecretKeyRing) rIt.next();
@@ -129,8 +129,11 @@ public class KeyUtility {
 				this.put(PGP.Keys.PGP_EXPIRY_DATE, key.getCreationTime().getTime() + key.getValidSeconds());
 				this.put(PGP.Keys.PGP_FINGERPRINT, new String(Hex.encode(key.getFingerprint())));
 				this.put(PGP.Keys.PGP_KEY_ID, key.getKeyID());
-				this.put(Crypto.Keyring.Keys.PUBLIC_KEY, new String(key.getEncoded()));
+				this.put(Crypto.Keyring.Keys.PUBLIC_KEY, Base64.encodeToString(key.getEncoded(), Base64.DEFAULT));
+				Log.d(Crypto.LOG, "key length: " + this.getString(Crypto.Keyring.Keys.PUBLIC_KEY).length());
 				this.put(Crypto.Keyring.Keys.ALGORITHM, key.getAlgorithm());
+				
+				Log.d(Crypto.LOG, this.toString());
 			} catch (JSONException e) {}
 			catch (IOException e) {}
 		}
@@ -170,7 +173,7 @@ public class KeyUtility {
 	
 	@SuppressWarnings("unchecked")
 	public static PGPPublicKey extractPublicKeyFromBytes(byte[] keyBlock) throws IOException, PGPException {
-		PGPPublicKeyRingCollection keyringCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(keyBlock)));
+		PGPPublicKeyRingCollection keyringCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(Base64.decode(keyBlock, Base64.DEFAULT))));
 		PGPPublicKey key = null;
 		Iterator<PGPPublicKeyRing> rIt = keyringCol.getKeyRings();
 		while(key == null && rIt.hasNext()) {
@@ -188,18 +191,26 @@ public class KeyUtility {
 		return key;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static boolean installNewKey(Activity c, KeyServerResponse ksr, AddressBookDisplay abd) {
 		ContentValues key = new ContentValues();
 		Iterator<String> kIt = ksr.keys();
 		while(kIt.hasNext()) {
 			String k = kIt.next();
 			try {
-				key.put(k, ksr.getString(k));
+				if(k.equals(Crypto.Keyring.Keys.PUBLIC_KEY))
+					key.put(k, ksr.getString(k).getBytes());
+				else
+					key.put(k, ksr.getString(k));
 			} catch(ClassCastException e) {
 				try {
 					key.put(k, ksr.getLong(k));
 				} catch (JSONException e1) {
 					e1.printStackTrace();
+				} catch(ClassCastException e1) {
+					try {
+						key.put(k, ksr.getInt(k));
+					} catch(JSONException e2) {}
 				}
 			} catch (JSONException e) {
 				e.printStackTrace();
@@ -309,7 +320,7 @@ public class KeyUtility {
 						"BC");
 				
 				ContentValues cv = new ContentValues();
-				cv.put(Settings.Device.Keys.SECRET_KEY, secret.getEncoded());
+				cv.put(Settings.Device.Keys.SECRET_KEY, Base64.encodeToString(secret.getEncoded(), Base64.DEFAULT));
 				cv.put(Settings.Device.Keys.AUTH_KEY, pwd);
 				cv.put(Settings.Device.Keys.KEYRING_ID, secret.getPublicKey().getKeyID());
 				

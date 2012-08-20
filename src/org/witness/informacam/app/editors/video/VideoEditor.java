@@ -337,13 +337,13 @@ public class VideoEditor extends Activity implements
 			mediaPlayer.setDataSource(originalVideoUri.toString());
 			Log.d(LOGTAG, "setData done.");
 		} catch (IllegalArgumentException e) {
-			Log.v(LOGTAG, "setDataSource error: " + e.getMessage());
+			Log.e(LOGTAG, "setDataSource error: " + e.getMessage());
 			finish();
 		} catch (IllegalStateException e) {
-			Log.v(LOGTAG, "setDataSource error: " + e.getMessage());
+			Log.e(LOGTAG, "setDataSource error: " + e.getMessage());
 			finish();
 		} catch (IOException e) {
-			Log.v(LOGTAG, "setDataSource error: " + e.getMessage());
+			Log.e(LOGTAG, "setDataSource error: " + e.getMessage());
 			finish();
 		}
 		
