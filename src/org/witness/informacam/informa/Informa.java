@@ -265,6 +265,7 @@ public class Informa {
 		cv.put(Media.Keys.TYPE, Media.Type.IMAGE);
 		cv.put(Media.Keys.ORIGINAL_HASH, data.mediaHash.unredactedHash);
 		cv.put(Media.Keys.ANNOTATED_HASH, MediaHasher.hash(bundle().toString().getBytes(), "SHA-1"));
+		cv.put(Media.Keys.TIME_CAPTURED, genealogy.dateCreated);
 		cv.put(Media.Keys.LOCATION_OF_ORIGINAL, genealogy.localMediaPath);
 		cv.put(Media.Keys.LOCATION_OF_SENT, versionPath);
 		cv.put(Media.Keys.TRUSTED_DESTINATION_ID, trustedDestinationId);
