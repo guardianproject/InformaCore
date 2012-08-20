@@ -40,7 +40,7 @@ public class EncryptionUtility {
 			OutputStream aos = new ArmoredOutputStream(baos);
 			
 			PGPEncryptedDataGenerator edg = new PGPEncryptedDataGenerator(PGPEncryptedData.AES_256, true, new SecureRandom(), bc);
-			edg.addMethod(KeyUtility.makeKey(publicKey));
+			edg.addMethod(KeyUtility.extractPublicKeyFromBytes(publicKey));
 			OutputStream encOs = edg.open(aos, new byte[bufferSize]);
 			
 			PGPCompressedDataGenerator cdg = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
@@ -71,7 +71,6 @@ public class EncryptionUtility {
 			
 			aos.close();
 			baos.close();
-			Log.d(Crypto.LOG, "encrypted data as:\n" + encrypted);
 			
 			return encrypted;
 		} catch (NoSuchProviderException e) {

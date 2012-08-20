@@ -79,18 +79,6 @@ public class KeyUtility {
 		public void onKeyFound(KeyServerResponse keyServerResponse);
 	}
 	
-	public static PGPPublicKey makeKey(byte[] keyblock) throws IOException {
-		PGPPublicKey key = null;
-		PGPObjectFactory objFact = new PGPObjectFactory(PGPUtil.getDecoderStream(new ByteArrayInputStream(Base64.decode(keyblock, Base64.DEFAULT))));
-		Object obj;
-		
-		while((obj = objFact.nextObject()) != null && key == null) {
-			if(obj instanceof PGPPublicKey)
-				key = (PGPPublicKey) obj;
-		}
-		return key;
-	}
-	
 	public static PGPSecretKey extractSecretKey(byte[] keyblock) {
 		PGPSecretKey secretKey = null;
 		try {
