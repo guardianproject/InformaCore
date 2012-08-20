@@ -1097,8 +1097,9 @@ public class VideoEditor extends Activity implements
     			return true;
     			
         	case R.id.menu_save:
-
         		//TODO: my additions to menu_save (saving happens here)
+        		mediaPlayerIsPrepared = true;
+        		
         		Intent keyChooser = new Intent(this, AddressBookActivity.class)
         			.putExtra(App.VideoEditor.Keys.CHOOSE_TRUSTED_DESTINATION, true);
         		
