@@ -99,16 +99,7 @@ public class UploaderService extends Service implements J3MListener {
 		postData.put(Uploader.Keys.MEDIA_TYPE, j3m.mediaType);
 		postData.put(Uploader.Keys.BYTES_EXPECTED, j3m.totalBytesExpected);
 		
-		
-		try {
-			HttpUtility.executeHttpsPost(this, j3m.serverUrl, postData, null);
-		} catch (InterruptedException e) {
-			Log.e(Transport.LOG, e.toString());
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			Log.e(Transport.LOG, e.toString());
-			e.printStackTrace();
-		}
+		HttpUtility.executeHttpsPost(this, j3m.serverUrl, postData, null);
 	}
 	
 	@Override

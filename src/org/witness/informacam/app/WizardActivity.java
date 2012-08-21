@@ -28,9 +28,7 @@ import org.witness.informacam.crypto.CertificateUtility;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.KeyUtility.KeyServerResponse;
 import org.witness.informacam.storage.DatabaseHelper;
-import org.witness.informacam.utils.AddressBookUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
-import org.witness.informacam.utils.AddressBookUtility.AddressBookListener;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Informa;
@@ -46,7 +44,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -182,7 +179,7 @@ public class WizardActivity extends Activity implements OnClickListener {
 		try {
 			b.get(imageBytes, 0, imageBytes.length);
 		} catch(BufferUnderflowException e) {
-			Log.d(Crypto.LOG, "buffer underflow!" + e.toString());
+			Log.d(Crypto.LOG, "buffer underflow! (but this will always happen...)\n" + e.toString());
 		}
 		
 		ContentValues cv = new ContentValues();
@@ -277,6 +274,8 @@ public class WizardActivity extends Activity implements OnClickListener {
 						ksr = new KeyUtility.KeyServerResponse(key);	
 					} else if(ext.equals(".pem"))
 						CertificateUtility.storeCertificate(this, sb.toString().getBytes());
+					else if(ext.equals(".p12"))
+						CertificateUtility.storeClientCertificate(this, sb.toString().getBytes());
 				} else {
 					InputStream is = getAssets().open("installedKeys/" + keyFolder + "/" + keyFile);
 					imgBytes = new byte[is.available()];
@@ -331,11 +330,11 @@ public class WizardActivity extends Activity implements OnClickListener {
 					try {
 						c.doCallback();
 					} catch (IllegalAccessException e) {
-						Log.d(App.LOG, e.toString());
+						Log.e(App.LOG, e.toString());
 					} catch (NoSuchMethodException e) {
-						Log.d(App.LOG, e.toString());
+						Log.e(App.LOG, e.toString());
 					} catch (InvocationTargetException e) {
-						Log.d(App.LOG, e.toString());
+						Log.e(App.LOG, e.toString());
 					}
 				}
 				
@@ -492,11 +491,11 @@ public class WizardActivity extends Activity implements OnClickListener {
 								try {
 									buttonCall.doCallback();
 								} catch (IllegalAccessException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (NoSuchMethodException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (InvocationTargetException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								}
 							}
 							
@@ -519,11 +518,11 @@ public class WizardActivity extends Activity implements OnClickListener {
 								try {
 									spinnerCall.doCallback();
 								} catch (IllegalAccessException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (NoSuchMethodException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (InvocationTargetException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								}
 								
 							}
@@ -576,7 +575,6 @@ public class WizardActivity extends Activity implements OnClickListener {
 						ListView lv = new ListView(_c);
 						
 						for(String option : findKey(s, "values").split(",")) {
-							Log.d(App.LOG, "this option: " + option);
 							if(Character.toString(option.charAt(0)).equals("#")) {
 								// populate from callback
 								Callback populate = new Callback(option.substring(1), null);
@@ -586,11 +584,11 @@ public class WizardActivity extends Activity implements OnClickListener {
 										selections.add(new Selections(res, false));
 									
 								} catch (IllegalAccessException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (NoSuchMethodException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (InvocationTargetException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								}
 							} else 
 								selections.add(new Selections(option, false));
@@ -611,11 +609,11 @@ public class WizardActivity extends Activity implements OnClickListener {
 									for(String res : (String[]) populate.doCallback())
 										list.add(res);
 								} catch (IllegalAccessException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (NoSuchMethodException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								} catch (InvocationTargetException e) {
-									Log.d(App.LOG, "wizard error", e);
+									Log.e(App.LOG, "wizard error", e);
 								}
 							}
 						}

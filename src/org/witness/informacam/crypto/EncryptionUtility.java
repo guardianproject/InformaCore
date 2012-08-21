@@ -19,17 +19,13 @@ import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPPublicKey;
-import org.witness.informacam.utils.Constants.Crypto;
 
 import android.util.Base64;
-import android.util.Log;
 
 public class EncryptionUtility {
 	
 	@SuppressWarnings("deprecation")
 	public final static String encrypt(byte[] data, byte[] publicKey) {
-		Log.d(Crypto.LOG, "encrypting data:\n" + new String(data));
 		try {
 			BouncyCastleProvider bc = new BouncyCastleProvider();
 			int bufferSize = 1 << 16;

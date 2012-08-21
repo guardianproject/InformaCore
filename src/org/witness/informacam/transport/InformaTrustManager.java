@@ -62,7 +62,7 @@ public class InformaTrustManager implements X509TrustManager {
 			d.moveToFirst();
 			keyStored = d.getBlob(d.getColumnIndex(Crypto.Keystore.Keys.CERTS));
 			lastUpdate = d.getLong(d.getColumnIndex(Crypto.Keystore.Keys.TIME_MODIFIED));
-			d.close();
+			d.close();			
 		}
 		
 		loadKeyStore();

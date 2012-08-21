@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -15,31 +14,21 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
-import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
-import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
-import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.app.editors.video.BinaryInstaller;
@@ -52,11 +41,9 @@ import org.witness.informacam.informa.LogPack;
 
 import com.google.common.cache.LoadingCache;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -285,11 +272,7 @@ public class VideoConstructor {
 				Cursor cursor = dh.getValue(db, new String[] {PGP.Keys.PGP_DISPLAY_NAME, PGP.Keys.PGP_EMAIL_ADDRESS, PGP.Keys.PGP_PUBLIC_KEY, Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID}, TrustedDestination.Keys.KEYRING_ID, td);
 				
 				if(cursor != null && cursor.moveToFirst()) {
-					for(String s : cursor.getColumnNames())
-						Log.d(Storage.LOG, s);
-					
 					String forName = cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_DISPLAY_NAME));
-					Log.d(Storage.LOG, forName);
 					
 					// add into intent
 					InformaService.getInstance().informa.setTrustedDestination(cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_EMAIL_ADDRESS)));
@@ -297,7 +280,6 @@ public class VideoConstructor {
 					
 					// bundle up informadata
 					byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
-					Log.d(Storage.LOG, "key (" + key.length + "):\n" + new String(key));
 					String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
 					
 					

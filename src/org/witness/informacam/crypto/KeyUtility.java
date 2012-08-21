@@ -5,10 +5,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -31,14 +29,10 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
-import org.bouncycastle.openpgp.PGPOnePassSignature;
-import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
@@ -48,7 +42,6 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
-import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.util.encoders.Hex;
@@ -118,10 +111,7 @@ public class KeyUtility {
 				this.put(PGP.Keys.PGP_FINGERPRINT, new String(Hex.encode(key.getFingerprint())));
 				this.put(PGP.Keys.PGP_KEY_ID, key.getKeyID());
 				this.put(Crypto.Keyring.Keys.PUBLIC_KEY, Base64.encodeToString(key.getEncoded(), Base64.DEFAULT));
-				Log.d(Crypto.LOG, "key length: " + this.getString(Crypto.Keyring.Keys.PUBLIC_KEY).length());
-				this.put(Crypto.Keyring.Keys.ALGORITHM, key.getAlgorithm());
-				
-				Log.d(Crypto.LOG, this.toString());
+				this.put(Crypto.Keyring.Keys.ALGORITHM, key.getAlgorithm());				
 			} catch (JSONException e) {}
 			catch (IOException e) {}
 		}

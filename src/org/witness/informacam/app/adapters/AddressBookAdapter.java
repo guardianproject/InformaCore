@@ -11,7 +11,6 @@ import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 
 import android.app.Activity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -63,7 +62,6 @@ public class AddressBookAdapter extends BaseAdapter {
 			
 			TextView contactDetails = (TextView) convertView.findViewById(R.id.contact_details);
 			contactDetails.setText(details.toString());
-			Log.d(App.LOG, details.toString());
 			
 			LinearLayout contactDetailsHolder = (LinearLayout) convertView.findViewById(R.id.contact_details_holder);
 			contactDetailsHolder.setOnLongClickListener(new OnLongClickListener() {

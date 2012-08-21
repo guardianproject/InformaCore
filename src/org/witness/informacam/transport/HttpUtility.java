@@ -48,11 +48,11 @@ import android.content.Context;
 import android.util.Log;
 
 public class HttpUtility {
-	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final File file) throws InterruptedException, ExecutionException {
+	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final File file) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<String> future = ex.submit(new Callable<String>() {
 			String result = Transport.Result.FAIL;
-			String host;
+			String hostname;
 			
 			URL url;
 			HttpsURLConnection connection;
@@ -65,15 +65,9 @@ public class HttpUtility {
 			
 			private void buildQuery() {
 				Iterator<Entry<String, Object>> it = postData.entrySet().iterator();
+				StringBuffer sb = new StringBuffer();
 				
 				try {
-					connection = (HttpsURLConnection) url.openConnection(proxy);
-					connection.setRequestMethod("POST");
-					connection.setRequestProperty("Connection", "Keep-Alive");
-					connection.setUseCaches(false);
-					connection.setDoInput(true);
-					connection.setDoOutput(true);
-					
 					dos = new DataOutputStream(connection.getOutputStream());
 					
 					if(file != null) {
@@ -98,10 +92,16 @@ public class HttpUtility {
 					
 					while(it.hasNext()) {
 						Entry<String, Object> e = it.next();
-						dos.writeBytes(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
-						dos.writeBytes("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Transport.Keys.LINE_END);
-						dos.writeBytes("Content-Type: text/plain; charset=UTF-8" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
-						dos.writeBytes(URLEncoder.encode(String.valueOf(e.getValue()), "UTF-8") + Transport.Keys.LINE_END);
+						
+						
+						sb.append(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
+						sb.append("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Transport.Keys.LINE_END);
+						sb.append("Content-Type: text/plain; charset=UTF-8" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
+						sb.append(URLEncoder.encode(String.valueOf(e.getValue()), "UTF-8") + Transport.Keys.LINE_END);
+						
+						Log.d(Transport.LOG, "attempting to send:\n" + sb.toString());
+						
+						dos.writeBytes(sb.toString());
 					}
 					
 					dos.flush();
@@ -114,13 +114,16 @@ public class HttpUtility {
 			
 			@Override
 			public String call() throws Exception {
-				this.host = host.split("/")[0];
+				hostname = host.split("/")[0];
 				url = new URL("https://" + host);
+				
+				Log.d(Transport.LOG, hostname);
+				Log.d(Transport.LOG, url.toString());
 				
 				hnv = new HostnameVerifier() {
 					@Override
-					public boolean verify(String hostname, SSLSession session) {
-						if(hostname.equals(host))
+					public boolean verify(String hn, SSLSession session) {
+						if(hn.equals(hostname))
 							return true;
 						else
 							return false;
@@ -135,6 +138,13 @@ public class HttpUtility {
 				HttpsURLConnection.setDefaultHostnameVerifier(hnv);
 				
 				proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
+				
+				connection = (HttpsURLConnection) url.openConnection(proxy);
+				connection.setRequestMethod("POST");
+				connection.setRequestProperty("Connection", "Keep-Alive");
+				connection.setUseCaches(false);
+				connection.setDoInput(true);
+				connection.setDoOutput(true);
 				
 				buildQuery();
 				
@@ -157,7 +167,17 @@ public class HttpUtility {
 			
 		});
 		
-		return future.get();
+		try {
+			return future.get();
+		} catch (InterruptedException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		} catch (ExecutionException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	public static String executeHttpGet(String url) throws ClientProtocolException, URISyntaxException, IOException, InterruptedException, ExecutionException {

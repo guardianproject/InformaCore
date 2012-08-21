@@ -9,21 +9,17 @@ import java.util.Observable;
 
 import org.witness.informacam.utils.Constants.App;
 
-import android.util.Log;
-
 public class SelectionsArrayList extends Observable implements List<Selections> {
 	List<Selections> selections;
 	
 	@Override
 	public void setChanged() {
 		super.setChanged();
-		Log.d(App.LOG, "set as changed");
 	}
 	
 	@Override
 	public void notifyObservers() {
 		super.notifyObservers();
-		Log.d(App.LOG, "and notified observers");
 	}
 	
 	public SelectionsArrayList(ArrayList<Selections> selections) {
@@ -55,8 +51,7 @@ public class SelectionsArrayList extends Observable implements List<Selections> 
 		boolean addAll = selections.addAll(arg0);
 		if(addAll)
 			setChanged();
-		else
-			Log.e(App.LOG, "uh oh, i couldn't add");
+
 		notifyObservers();
 		return addAll;
 	}
@@ -191,8 +186,7 @@ public class SelectionsArrayList extends Observable implements List<Selections> 
 		boolean add = selections.add(object);
 		if(add)
 			setChanged();
-		else
-			Log.e(App.LOG, "what the fuck why did this not add?");
+
 		notifyObservers();
 		return add;
 	}

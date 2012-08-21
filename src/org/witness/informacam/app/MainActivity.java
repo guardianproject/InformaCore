@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -22,11 +25,13 @@ import org.witness.informacam.informa.InformaService.LocalBinder;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.transport.HttpUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
+import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
@@ -107,6 +112,13 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			onEulaAgreedTo();
     	} else
     		onEulaAgreedTo();
+    }
+    
+    private void doHttpTest() {
+    	Map<String, Object> kvp = new HashMap<String, Object>();
+    	kvp.put("hello", "world");
+    	
+    	HttpUtility.executeHttpsPost(this, "agtkuww4bund4pip.onion", kvp, null);
     }
     
     @SuppressWarnings("unused")
@@ -334,6 +346,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	@Override
 	public void onRouted() {
 		initInformaCam();
+		//doHttpTest();
 	}
 	
 	private void doShutdown() {

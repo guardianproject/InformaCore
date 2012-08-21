@@ -3,7 +3,6 @@ package org.witness.informacam.crypto;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +27,11 @@ import android.provider.BaseColumns;
 import android.util.Log;
 
 public class CertificateUtility {
+	
+	public static final void storeClientCertificate(Activity a, byte[] certificate) {
+		
+	}
+	
 	public static final void storeCertificate(Activity a, byte[] certificate) {
 		DatabaseHelper dh = new DatabaseHelper(a);
 		SQLiteDatabase db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(a).getString(Settings.Keys.CURRENT_LOGIN, ""));
