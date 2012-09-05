@@ -18,6 +18,7 @@ import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.j3m.J3M;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
@@ -35,6 +36,7 @@ import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import com.google.common.cache.LoadingCache;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
@@ -65,11 +67,11 @@ public class ImageConstructor {
 			int bottom,
 			String redactionCommand);
 	
-	public ImageConstructor(Context c, LoadingCache<Long, LogPack> annotationCache, long[] encryptList) {						
+	public ImageConstructor(Context c, LoadingCache<Long, LogPack> annotationCache, long[] encryptList, String originalImagePath) {						
 		try {
 			// XXX: create clone as flat file -- should not need to do this though :(
 			Uri originalUri = InformaService.getInstance().originalUri;
-			java.io.File clone = IOCipherService.getInstance().moveFromIOCipherToMemory(originalUri, originalUri.getLastPathSegment()); 
+			java.io.File clone = new File(originalImagePath); 
 						
 			// get all image regions and run through image constructor
 			List<Entry<Long, LogPack>> annotations = InformaService.getInstance().getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED, annotationCache);
@@ -77,35 +79,37 @@ public class ImageConstructor {
 			for(Entry<Long, LogPack> entry : annotations) {
 				LogPack lp = entry.getValue();
 				Log.d(Storage.LOG, lp.toString());
-				
-				String redactionMethod = lp.getString(Constants.Informa.Keys.Data.ImageRegion.FILTER);
-				if(!redactionMethod.equals(InformaTagger.class.getName())) {
-					String redactionCode = "";
-					
-					if(redactionMethod.equals(PixelizeObscure.class.getName()))
-						redactionCode = ImageEditor.Filters.PIXELIZE;
-					else if(redactionMethod.equals(SolidObscure.class.getName()))
-						redactionCode = ImageEditor.Filters.SOLID;
-					else if(redactionMethod.equals(CrowdPixelizeObscure.class.getName()))
-						redactionCode = ImageEditor.Filters.CROWD_PIXELIZE;
-					
-					String regionCoordinates = lp.getString(Constants.Informa.Keys.Data.ImageRegion.COORDINATES);
-					
-					int left = (int) Float.parseFloat(regionCoordinates.substring(regionCoordinates.indexOf(",") + 1, regionCoordinates.length() - 1));
-					int top = (int) Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(",")));
-					int right = (int) (left + Float.parseFloat(lp.getString(Constants.Informa.Keys.Data.ImageRegion.WIDTH)));
-					int bottom = (int) (top + Float.parseFloat(lp.getString(Constants.Informa.Keys.Data.ImageRegion.HEIGHT)));
-					
-					Log.d(App.LOG, "top: " + top + " left: " + left + " right " + right + " bottom " + bottom + " redaction " + redactionCode);
-					
-					byte[] redactionPack = redactRegion(clone.getAbsolutePath(), clone.getAbsolutePath(), left, right, top, bottom, redactionCode);
-										
-					JSONObject imageRegionData = new JSONObject();
-					imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.LENGTH, redactionPack.length);
-					imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.HASH, MediaHasher.hash(redactionPack, "SHA-1"));
-					imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.BYTES, Base64.encode(redactionPack, Base64.DEFAULT));
-					
-					lp.put(Constants.Informa.Keys.Data.ImageRegion.UNREDACTED_DATA, imageRegionData);
+				try {
+					String redactionMethod = lp.getString(Constants.Informa.Keys.Data.ImageRegion.FILTER);
+					if(!redactionMethod.equals(InformaTagger.class.getName())) {
+						String redactionCode = "";
+						
+						if(redactionMethod.equals(PixelizeObscure.class.getName()))
+							redactionCode = ImageEditor.Filters.PIXELIZE;
+						else if(redactionMethod.equals(SolidObscure.class.getName()))
+							redactionCode = ImageEditor.Filters.SOLID;
+						else if(redactionMethod.equals(CrowdPixelizeObscure.class.getName()))
+							redactionCode = ImageEditor.Filters.CROWD_PIXELIZE;
+						
+						String regionCoordinates = lp.getString(Constants.Informa.Keys.Data.ImageRegion.COORDINATES);
+						int left = (int) Float.parseFloat(regionCoordinates.substring(regionCoordinates.indexOf(",") + 1, regionCoordinates.length() - 1));
+						int top = (int) Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(",")));
+						int right = (int) (left + Float.parseFloat(lp.getString(Constants.Informa.Keys.Data.ImageRegion.WIDTH)));
+						int bottom = (int) (top + Float.parseFloat(lp.getString(Constants.Informa.Keys.Data.ImageRegion.HEIGHT)));
+						
+						Log.d(App.LOG, "top: " + top + " left: " + left + " right " + right + " bottom " + bottom + " redaction " + redactionCode);
+						
+						byte[] redactionPack = redactRegion(clone.getAbsolutePath(), clone.getAbsolutePath(), left, right, top, bottom, redactionCode);
+											
+						JSONObject imageRegionData = new JSONObject();
+						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.LENGTH, redactionPack.length);
+						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.HASH, MediaHasher.hash(redactionPack, "SHA-1"));
+						imageRegionData.put(Constants.Informa.Keys.Data.ImageRegion.BYTES, Base64.encode(redactionPack, Base64.DEFAULT));
+						
+						lp.put(Constants.Informa.Keys.Data.ImageRegion.UNREDACTED_DATA, imageRegionData);
+					}
+				} catch(JSONException e) {
+					continue;
 				}
 			}
 			
@@ -136,20 +140,22 @@ public class ImageConstructor {
 						
 						
 						// bundle up informadata
-						String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY)));
-						
+						// XXX: encryption is broken, to fix later
+						//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY)));
+						String informaMetadata = InformaService.getInstance().informa.bundle();
 						
 						// insert metadata
 						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.JPEG);
 						constructImage(clone.getAbsolutePath(), version.getAbsolutePath(), informaMetadata, informaMetadata.length());
 						
-						// XXX: move back to IOCipher and remove this version from public filestore
-						info.guardianproject.iocipher.File ioCipherVersion = IOCipherService.getInstance().moveFileToIOCipher(version, originalUri.getPathSegments().get(0), true);
-						
 						// save metadata in database
-						dh.setTable(db, Tables.Keys.MEDIA);
-						db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(ioCipherVersion.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
+
+						ContentValues cv = InformaService.getInstance().informa.initMetadata(version.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID)));
 						
+						dh.setTable(db, Tables.Keys.MEDIA);
+						db.insert(dh.getTable(), null, cv);
+						
+						J3M j3m = new J3M(InformaService.getInstance().informa.getPgpKeyFingerprint(), cv, version);
 						cursor.close();
 						
 					}

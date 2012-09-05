@@ -72,7 +72,7 @@ public class HttpUtility {
 					
 					if(file != null) {
 						dos.writeBytes(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
-						dos.writeBytes("Content-Disposition: form-data; name=\"InformaCamUpload\";filename=\"" + file.getName() + "\"" + Transport.Keys.LINE_END);
+						dos.writeBytes("Content-Disposition: form-data; name=\"InformaCamUpload\";filename=\"" + file.getName() + ".zip\"" + Transport.Keys.LINE_END);
 						dos.writeBytes("Content-Type: application/zip, application/octet-stream;");
 						
 						byte[] zippedFile = IOUtility.zipFile(file);

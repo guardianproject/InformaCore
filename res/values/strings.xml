@@ -39,6 +39,7 @@
     <string name="menu_detect">Detect Faces</string>    
     <string name="menu_panic">Panic</string>
  	<string name="menu_image_prefs">Image Prefs</string>
+    <string name="menu_save_send">Save and Send</string>
     <string name="menu_save">Save</string>
     <string name="menu_share">Share</string>
     <string name="menu_send_hash">Send Hash</string>

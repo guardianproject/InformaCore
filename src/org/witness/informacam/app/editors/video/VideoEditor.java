@@ -202,7 +202,7 @@ public class VideoEditor extends Activity implements
 	                	
 	                case 3: //completed
 	                	progressDialog.dismiss();
-	                	InformaService.getInstance().packageInforma();
+	                	InformaService.getInstance().packageInforma(recordingFile.getAbsolutePath());
 	                	
 	                	break;
 	                
@@ -934,6 +934,7 @@ public class VideoEditor extends Activity implements
 							{
 								activeRegionTrail = new RegionTrail(0,mDuration,this);
 								obscureTrails.add(activeRegionTrail);
+								InformaService.getInstance().onVideoRegionCreated(activeRegionTrail);
 							}
 							
 							activeRegionTrail.addRegion(activeRegion);						
@@ -1092,6 +1093,7 @@ public class VideoEditor extends Activity implements
     			activeRegionTrail = new RegionTrail(0,mDuration,this);
 				obscureTrails.add(activeRegionTrail);
 				activeRegionTrail.addRegion(region);
+				InformaService.getInstance().onVideoRegionCreated(activeRegionTrail);
 				updateRegionDisplay(mediaPlayer.getCurrentPosition());
 				
     			return true;
@@ -1535,6 +1537,7 @@ public class VideoEditor extends Activity implements
 				obscureTrails.add(activeRegionTrail);
 
 				activeRegionTrail.addRegion(newRegion);
+				InformaService.getInstance().onVideoRegionCreated(activeRegionTrail);
 				
 			}
 			

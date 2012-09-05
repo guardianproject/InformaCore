@@ -26,8 +26,7 @@ import org.witness.informacam.informa.SensorLogger.OnUpdateListener;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
-import org.witness.informacam.storage.IOCipherService.IOCipherServiceListener;
-import org.witness.informacam.transport.UploaderService;
+import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Status;
@@ -55,7 +54,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener, VideoRegionListener, IOCipherServiceListener {
+public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener, VideoRegionListener {
 	public static InformaService informaService;
 	private final IBinder binder = new LocalBinder();
 	
@@ -71,7 +70,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	
 	List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
 	
-	private LoadingCache<Long, LogPack> suckerCache, annotationCache;
+	public LoadingCache<Long, LogPack> suckerCache, annotationCache;
+	private List<LoadingCache<Long, LogPack>> caches;
 	ExecutorService ex;
 	
 	public Informa informa;
@@ -81,9 +81,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	long[] encryptList;
 	
 	String LOG = Constants.Informa.LOG;
-	
-	private boolean isBlocking = true; 
-	
+		
 	public interface InformaServiceListener {
 		public void onInformaPackageGenerated();
 	}
@@ -108,9 +106,30 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
 		if(vidMetadata.exists())
 			vidMetadata.delete();
+				
+		//Intent intent = new Intent(this, UploaderService.class);
+		//startService(intent);
+	}
+	
+	public void storeMediaCache() {
+		// save original to iocipher store and cache data by dumping it to flat file that can be inflated later
+		suspend();
+		try {
+			IOCipherService.getInstance().saveCache(originalUri, getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches);
+		} catch (JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}		
+	}
+	
+	public void inflateMediaCache() {
 		
-		Intent intent = new Intent(this, UploaderService.class);
-		startService(intent);
 	}
 	
 	public void setCurrentStatus(int status) {
@@ -266,31 +285,31 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	private void initCaches() {
+		caches = new ArrayList<LoadingCache<Long, LogPack>>();
+		
 		if(suckerCache != null)
 			suckerCache = null;
 		
 		suckerCache = CacheBuilder.newBuilder()
-				//.maximumSize(640) //64 bytes per entry, 200 entries = 128000
-				//.removalListener(new CacheAllocator())
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
 						return suckerCache.get(timestamp);
 					}
 				});
+		caches.add(suckerCache);
 		
 		if(annotationCache != null)
 			annotationCache = null;
 		
 		annotationCache = CacheBuilder.newBuilder()
-				//.maximumSize(640) //64 bytes per entry, 200 entries = 128000
-				//.removalListener(new CacheAllocator())
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
 						return annotationCache.get(timestamp);
 					}
 				});
+		caches.add(annotationCache);
 	}
 	
 	public void suspend() {
@@ -392,7 +411,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		this.originalUri = originalUri;
 	}
 	
-	public void packageInforma() {
+	public void packageInforma(final String originalImagePath) {
 		Thread packageInforma = new Thread(
 				new Runnable() {
 					@Override
@@ -404,16 +423,9 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 									suspend();
 
 									if(editor.getLocalClassName().equals(App.ImageEditor.TAG)) {
-										Log.d(Storage.LOG, "...waiting for image to resave...");
-										long time = System.currentTimeMillis();
-										do {
-											// do nothing!
-										} while(isBlocking);
-										Log.d(Storage.LOG, "saving took " + Math.abs(time - System.currentTimeMillis()) + " ms");
-										Log.d(Storage.LOG, "no longer blocking!");
-										ImageConstructor imageConstructor = new ImageConstructor(InformaService.this.getApplicationContext(), annotationCache, encryptList);
+										Log.d(App.LOG, "image filename: " + originalImagePath);
+										ImageConstructor imageConstructor = new ImageConstructor(InformaService.this.getApplicationContext(), annotationCache, encryptList, originalImagePath);
 									} else if(editor.getLocalClassName().equals(App.VideoEditor.TAG)) {
-										isBlocking = false;
 										VideoConstructor.getVideoConstructor().buildInformaVideo(InformaService.this.getApplicationContext(), annotationCache, encryptList);
 									}
 										
@@ -602,11 +614,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				
 			}).start();
 		
-	}
-	
-	@Override
-	public void onBitmapResaved() {
-		isBlocking = false;
 	}
 
 	private class Broadcaster extends BroadcastReceiver {

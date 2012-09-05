@@ -26,6 +26,7 @@ import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
@@ -106,6 +107,7 @@ public class Informa {
 		MediaHash mediaHash;
 		Set<MediaCapturePlayback> mediaCapturePlayback;
 		Set<Annotation> annotations;
+		int mediaType;
 		
 		public Data() {
 			mediaCapturePlayback = new HashSet<MediaCapturePlayback>();
@@ -259,10 +261,14 @@ public class Informa {
 			Log.d(Storage.LOG, "null cursor");
 	}
 	
+	public String getPgpKeyFingerprint() {
+		return intent.owner.publicKeyFingerprint;
+	}
+	
 	public ContentValues initMetadata(String versionPath, long trustedDestinationId) throws NoSuchAlgorithmException, IOException {
 		ContentValues cv = new ContentValues();
 		
-		cv.put(Media.Keys.TYPE, Media.Type.IMAGE);
+		cv.put(Media.Keys.TYPE, data.mediaType);
 		cv.put(Media.Keys.ORIGINAL_HASH, data.mediaHash.unredactedHash);
 		cv.put(Media.Keys.ANNOTATED_HASH, MediaHasher.hash(bundle().toString().getBytes(), "SHA-1"));
 		cv.put(Media.Keys.TIME_CAPTURED, genealogy.dateCreated);
@@ -278,6 +284,7 @@ public class Informa {
 		data.exif = new Exif(initialData.getValue());
 		genealogy.dateCreated = initialData.getKey();
 		data.mediaHash.unredactedHash = initialData.getValue().getString(Constants.Informa.Keys.Data.Description.ORIGINAL_HASH);
+		data.mediaType = initialData.getValue().getInt(Constants.Informa.Keys.Data.Description.MEDIA_TYPE);
 		return true;
 	}
 	

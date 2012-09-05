@@ -64,12 +64,11 @@ public class IOUtility {
 	}
 	
 	public final static byte[] getBytesFromFile(File file) {
-		byte[] bytes = new byte[(int) file.length()];
-		
 		try {
-			RandomAccessFile raf;
-			raf = new RandomAccessFile(file, "r");
-			raf.readFully(bytes);
+			java.io.FileInputStream fis = new java.io.FileInputStream(file);
+			byte[] bytes = new byte[fis.available()];
+			fis.read(bytes, 0, fis.available());
+			return bytes;
 		} catch (FileNotFoundException e) {
 			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
@@ -79,9 +78,6 @@ public class IOUtility {
 			e.printStackTrace();
 			return null;
 		}
-		
-		
-		return bytes;
 	}
 	
 	public final static byte[] zipFile(info.guardianproject.iocipher.File file) {
@@ -123,12 +119,11 @@ public class IOUtility {
 	}
 	
 	public final static byte[] getBytesFromFile(info.guardianproject.iocipher.File file) {
-		byte[] bytes = new byte[(int) file.length()];
-		
 		try {
-			RandomAccessFile raf;
-			raf = new RandomAccessFile(file, "r");
-			raf.readFully(bytes);
+			FileInputStream fis = new FileInputStream(file);
+			byte[] bytes = new byte[fis.available()];
+			fis.read(bytes, 0, fis.available());
+			return bytes;
 		} catch (FileNotFoundException e) {
 			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
@@ -138,9 +133,6 @@ public class IOUtility {
 			e.printStackTrace();
 			return null;
 		}
-		
-		
-		return bytes;
 	}
 	
 	public final static info.guardianproject.iocipher.File fileFromBytes(byte[] bytes, String fileName) {

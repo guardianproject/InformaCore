@@ -280,7 +280,9 @@ public class VideoConstructor {
 					
 					// bundle up informadata
 					byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
-					String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
+					// XXX: encryption is broken, to fix later
+					//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
+					String informaMetadata = InformaService.getInstance().informa.bundle();
 					
 					
 					// insert metadata

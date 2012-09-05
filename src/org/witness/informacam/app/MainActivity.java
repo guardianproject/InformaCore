@@ -198,9 +198,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchEditor() throws NoSuchAlgorithmException, IOException {
-    	if(mimeType.equals(Media.Type.MIME_TYPE_JPEG))
-    		mediaCaptureUri = IOCipherService.getInstance().moveFileToIOCipher(mediaCaptureUri, Integer.parseInt(sp.getString(Settings.Keys.DEFAULT_IMAGE_HANDLING, Integer.toString(Settings.OriginalImageHandling.LEAVE_ORIGINAL_ALONE))));
-    	
     	editorIntent.setData(mediaCaptureUri);
     	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
     }
@@ -232,10 +229,16 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if(resultCode == Activity.RESULT_OK) {
+    		Log.d(App.LOG, "hey i finished! with code " + requestCode);
+    		try {
+    			Log.d(App.LOG, data.toString());
+    		} catch(NullPointerException e) {
+    			Log.d(App.LOG, "no data, don't worry about it");
+    		}
+    		
     		switch(requestCode) {
-    		case App.Main.FROM_MEDIA_CAPTURE:
-    			mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
-    			
+    		
+    		case App.Main.FROM_MEDIA_CAPTURE:    			
     			Log.d(App.LOG, mediaCaptureFile.getAbsolutePath());
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
@@ -263,12 +266,13 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
     			break;
     		case App.Main.FROM_EDITOR:
-    			// TODO: add to upload queue...
-    			mProgressDialog.cancel();
+    			Log.d(App.LOG, "hey i finished!");
+    			// TODO: add to upload queue, restart informa...
+    			mProgressDialog.dismiss();
     			break;
     		}
     	} else if(resultCode == Activity.RESULT_CANCELED) {
-    		mProgressDialog.cancel();
+    		mProgressDialog.dismiss();
     		if(informaService != null)
 				informaService.suspend();
     	}

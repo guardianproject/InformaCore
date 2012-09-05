@@ -14,7 +14,7 @@
             android:src="@drawable/arrow_downwards" />        	
     </LinearLayout>
     <ListView
-        android:id="@+id/message_details_list"
+        android:id="@+id/media_details_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 </LinearLayout>

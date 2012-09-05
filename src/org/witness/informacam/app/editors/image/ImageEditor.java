@@ -23,7 +23,6 @@ import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
-import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
@@ -144,9 +143,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	
 	// Saved Image Uri
 	Uri savedImageUri;
-	
-	IOCipherService ioCipherService = IOCipherService.getInstance();
-	
+		
 	//handles threaded events for the UI thread
     private Handler mHandler = new Handler() {
 
@@ -245,7 +242,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				bmpFactoryOptions.inPreferredConfig = Bitmap.Config.RGB_565;
 				
 				// Parse the image
-				Bitmap loadedBitmap = BitmapFactory.decodeStream(ioCipherService.getFileStream(originalImageUri));
+				Bitmap loadedBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(originalImageUri));
 
 				// Hold onto the unscaled dimensions
 				originalImageWidth = bmpFactoryOptions.outWidth;
@@ -282,7 +279,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				// Decode it for real
 				bmpFactoryOptions.inJustDecodeBounds = false;
 				
-				loadedBitmap = BitmapFactory.decodeStream(ioCipherService.getFileStream(originalImageUri), null, bmpFactoryOptions);
+				loadedBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(originalImageUri), null, bmpFactoryOptions);
 				debug(App.LOG,"Was: " + loadedBitmap.getConfig());
 
 				if (loadedBitmap == null) {
@@ -308,22 +305,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 					}
 					
 					originalBitmap = loadedBitmap;
-					
-					new Thread(
-						new Runnable() {
-							@Override
-							public void run() {
-								// overwrite the original file and save it
-								try {
-									IOCipherService.getInstance().resaveBitmap(originalBitmap, originalImageUri);
-								} catch(IOException e) {
-									Log.d(App.LOG, e.toString());
-									e.printStackTrace();
-								}
-							}
-						}
-					).start();
-					
 					
 					setBitmap (loadedBitmap);
 					
@@ -959,13 +940,20 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
-        	case R.id.menu_save:
+        	case R.id.menu_save_send:
+        		InformaService.getInstance().storeMediaCache();
         		Intent intent = new Intent(this, AddressBookActivity.class)
         			.putExtra(App.ImageEditor.Keys.CHOOSE_TRUSTED_DESTINATION, true);
         		startActivityForResult(intent, App.ImageEditor.FROM_DESTINATION_CHOOSER);
         		
         		return true;
-        	
+        	case R.id.menu_save:
+        		InformaService.getInstance().storeMediaCache();
+        		getIntent().putExtra(App.ImageEditor.Keys.FINISH_ON, App.ImageEditor.SAVED_STATE);
+        		setResult(Activity.RESULT_OK, getIntent());
+        		finish();
+        		
+        		return true;
         	case R.id.menu_preview:
         		showPreview();
         		return true;
@@ -1164,13 +1152,13 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		try {
 			FileOutputStream fos = new FileOutputStream(savedImage.getAbsoluteFile());
-			imageBitmap.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, fos);
+			originalBitmap.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, fos);
 		} catch(IOException e) {
 			Log.d(App.LOG, "error saving tmp bitmap: " + e);
 		}
 				
 		updateMessage(getString(R.string.generating_metadata));
-        InformaService.getInstance().packageInforma();
+        InformaService.getInstance().packageInforma(savedImage.getAbsolutePath());
 		
 		cleanup();
     }

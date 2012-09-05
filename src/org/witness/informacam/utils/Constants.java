@@ -37,9 +37,10 @@ public class Constants {
 		}
 		
 		public final static class VideoEditor {
-			public final static int FROM_ANNOTATION_ACTIVITY = 474;
-			public final static int FROM_DESTINATION_CHOOSER = 475;
-			public static final int PACKAGE_GENERATED = 473;
+			public final static int FROM_ANNOTATION_ACTIVITY = App.ImageEditor.FROM_ANNOTATION_ACTIVITY;
+			public final static int FROM_DESTINATION_CHOOSER = App.ImageEditor.FROM_DESTINATION_CHOOSER;
+			public static final int PACKAGE_GENERATED = App.ImageEditor.PACKAGE_GENERATED;
+			public final static int SAVED_STATE = App.ImageEditor.SAVED_STATE;
 			
 			public final static int FACE_TIME_BUFFER = 2000;
 		    public final static int HUMAN_OFFSET_BUFFER = 50;
@@ -73,6 +74,7 @@ public class Constants {
 			public final static int FROM_ANNOTATION_ACTIVITY = 574;
 			public final static int FROM_DESTINATION_CHOOSER = 575;
 			public static final int PACKAGE_GENERATED = 573;
+			public static final int SAVED_STATE = 572;
 			
 			public final static String TAG = "app.editors.image.ImageEditor";
 			
@@ -218,6 +220,20 @@ public class Constants {
 			public final static int UPLOAD_FAILED = 1032;
 			public final static int NEVER_SCHEDULED_FOR_UPLOAD = 1033;
 			public final static int BASE_IMAGE_REQUIRED = 1034;
+		}
+		
+		public final static class Manifest {
+			public final static class Keys {
+				public final static String MEDIA_TYPE = Media.Keys.TYPE;
+				public final static String LAST_SAVED = "lastSaved";
+				public final static String ALIAS = Media.Keys.ALIAS;
+				public final static String TIME_CAPTURED = Media.Keys.TIME_CAPTURED;
+				public final static String SIZE = "mediaSize";
+				public final static String LOCATION_OF_ORIGINAL = Media.Keys.LOCATION_OF_ORIGINAL;
+				public final static String DURATION = Informa.Keys.Data.Exif.DURATION;
+				public final static String LENGTH = Informa.Keys.Data.Exif.IMAGE_LENGTH;
+				public final static String WIDTH = Informa.Keys.Data.Exif.IMAGE_WIDTH;
+			}
 		}
 	}
 	
@@ -637,6 +653,8 @@ public class Constants {
 		}
 		
 		public final static String TORRENT_MIME_TYPE = ".j3mtorrent";
+		public static final String DUMP_FOLDER = "j3m";
+		public static final String TORRENT_DESCRIPTOR_MIME_TYPE = ".j3mdescriptor";
 		
 		public final static class State {
 			public static final int IS_IDLE = 0;
@@ -650,6 +668,7 @@ public class Constants {
 	    	public static final String LENGTH = "chunk_length";
 	    	public static final String ENCRYPTION = "encryption";
 	    	public static final String BLOB = "blob";
+			public static final String NUM_CHUNKS = "num_chunks";
 		}
 	}
 }
