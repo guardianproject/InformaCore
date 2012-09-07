@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileInputStream;
@@ -229,16 +234,20 @@ public class IOCipherService extends Service {
 		
 	}
 
-	public void saveCache(final Uri originalUri, final LogPack originalMetadata, final List<LoadingCache<Long, LogPack>> caches) {
-		
-		Thread s = new Thread(new Runnable() {
+	public boolean saveCache(final LogPack originalMetadata, final List<LoadingCache<Long, LogPack>> caches) {
+		ExecutorService ex = Executors.newFixedThreadPool(10);
+		Future<Boolean> save = ex.submit(new Callable<Boolean>() {
+
 			@Override
-			public void run() {
+			public Boolean call() throws Exception {
 				String extension = Constants.Media.Type.JPEG;
+				File tmpFile = new File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 				
 				try {
-					if(originalMetadata.getInt(Data.Description.MEDIA_TYPE) == Media.Type.VIDEO)
+					if(originalMetadata.getInt(Data.Description.MEDIA_TYPE) == Media.Type.VIDEO) {
 						extension = Constants.Media.Type.MP4;
+						tmpFile = new File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.VIDEO_TMP);
+					}
 					
 					File rootFolder = new File(originalMetadata.getString(Data.Description.ORIGINAL_HASH));
 					if(!rootFolder.exists())
@@ -246,7 +255,7 @@ public class IOCipherService extends Service {
 					
 					File media = new File(rootFolder, "original" + extension);
 					if(!media.exists()) {
-						InputStream fis = IOCipherService.this.getContentResolver().openInputStream(originalUri);
+						java.io.FileInputStream fis = new java.io.FileInputStream(tmpFile);
 						byte[] mediaBytes = new byte[fis.available()];
 						fis.read(mediaBytes, 0, fis.available());
 						fis.close();
@@ -315,22 +324,47 @@ public class IOCipherService extends Service {
 					FileOutputStream fos = new FileOutputStream(manifestFile);
 					fos.write(manifestBytes, 0, manifestBytes.length);
 					fos.close();
+					return true;
 				} catch (JSONException e) {
 					Log.e(Storage.LOG, e.toString());
 					e.printStackTrace();
+					return false;
 				} catch (FileNotFoundException e) {
 					Log.e(Storage.LOG, e.toString());
 					e.printStackTrace();
+					return false;
 				} catch (IOException e) {
 					Log.e(Storage.LOG, e.toString());
 					e.printStackTrace();
+					return false;
 				}
 				
 			}
 			
 		});
 		
-		s.start();
+		try {
+			return save.get();
+		} catch (InterruptedException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			return false;
+		} catch (ExecutionException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public java.io.File cipherFileToJavaFile(String filepath, String newPath) {
+		File file = getFile(filepath);
+		try {
+			return this.moveFromIOCipherToMemory(Uri.fromFile(file), newPath);
+		} catch (IOException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 }

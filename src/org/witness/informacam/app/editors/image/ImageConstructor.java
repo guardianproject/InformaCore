@@ -70,7 +70,7 @@ public class ImageConstructor {
 	public ImageConstructor(Context c, LoadingCache<Long, LogPack> annotationCache, long[] encryptList, String originalImagePath) {						
 		try {
 			// XXX: create clone as flat file -- should not need to do this though :(
-			Uri originalUri = InformaService.getInstance().originalUri;
+			Uri originalUri = InformaService.getInstance().workingUri;
 			java.io.File clone = new File(originalImagePath); 
 						
 			// get all image regions and run through image constructor

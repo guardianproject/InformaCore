@@ -10,6 +10,10 @@
         android:title="@string/menu_save"
         android:icon="@drawable/ic_menu_save" />
     
+    <item android:id="@+id/menu_save_send"
+        android:title="@string/menu_save_send"
+        android:icon="@drawable/ic_menu_save" />
+    
     <item android:id="@+id/menu_clear_regions" 
     	android:title="@string/menu_clear_regions"
     	android:icon="@drawable/ic_menu_trash" />

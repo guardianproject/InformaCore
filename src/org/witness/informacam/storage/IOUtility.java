@@ -18,6 +18,7 @@ import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
@@ -187,6 +188,7 @@ public class IOUtility {
 			
 			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.VIDEO);
 			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
 						
 			return logPack;
 		} catch (IOException e) {
@@ -218,6 +220,7 @@ public class IOUtility {
 			
 			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.IMAGE);
 			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
+			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
 			
 			Log.d(App.LOG, logPack.toString());
 			

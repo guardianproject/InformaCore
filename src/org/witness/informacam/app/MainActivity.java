@@ -31,6 +31,7 @@ import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
+import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Time;
@@ -77,6 +78,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     ProgressDialog mProgressDialog;
     
     InformaService informaService = null;
+    boolean mustInitMetadata;
     
     private ServiceConnection sc = new ServiceConnection() {
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
@@ -184,7 +186,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     
     private void launchMediaManager() {
     	Intent intent = new Intent(this, MediaManagerActivity.class);
-    	startActivity(intent);
+    	startActivityForResult(intent, App.Main.FROM_MEDIA_MANAGER);
     }
     
     private void launchMessageCenter() {
@@ -197,7 +199,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	startActivity(intent);
     }
     
-    private void launchEditor() throws NoSuchAlgorithmException, IOException {
+    private void launchEditor() throws IOException {
     	editorIntent.setData(mediaCaptureUri);
     	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
     }
@@ -229,13 +231,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if(resultCode == Activity.RESULT_OK) {
-    		Log.d(App.LOG, "hey i finished! with code " + requestCode);
-    		try {
-    			Log.d(App.LOG, data.toString());
-    		} catch(NullPointerException e) {
-    			Log.d(App.LOG, "no data, don't worry about it");
-    		}
-    		
     		switch(requestCode) {
     		
     		case App.Main.FROM_MEDIA_CAPTURE:    			
@@ -263,12 +258,47 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 					}
     			}
     			
+    			mustInitMetadata = true;
     			new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
     			break;
     		case App.Main.FROM_EDITOR:
-    			Log.d(App.LOG, "hey i finished!");
     			// TODO: add to upload queue, restart informa...
     			mProgressDialog.dismiss();
+    			break;
+    		case App.Main.FROM_MEDIA_MANAGER:
+    			// copy original to what should be mediaCaptureFile and set mediaCaptureUri
+    			String filePointer = data.getStringExtra(Manifest.Keys.LOCATION_OF_ORIGINAL);
+    			String tempFile = null;
+    			
+    			if(filePointer.contains(Media.Type.JPEG)) {
+    				tempFile = Storage.FileIO.IMAGE_TMP;
+    				editorIntent = new Intent(this, ImageEditor.class);
+    			} else {
+    				tempFile = Storage.FileIO.VIDEO_TMP;
+    				editorIntent = new Intent(this, VideoEditor.class);
+    			}
+    			
+    			mediaCaptureFile = IOCipherService.getInstance().cipherFileToJavaFile(data.getStringExtra(Manifest.Keys.LOCATION_OF_ORIGINAL), tempFile);
+    			mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
+
+    			// init logs
+    			informaService.init();
+    			informaService.inflateMediaCache(filePointer.split("original.")[0] + "cache.json");
+    			
+    			// launch editor
+    			try {
+    				if(tempFile.equals(Storage.FileIO.IMAGE_TMP))
+    					launchEditor();
+    				else {
+    					// Guess what?  You have to run this through the media scanner if you want
+    					// it to load in the video editor activity!  doesn't that suck?!  (yes.)
+    					mustInitMetadata = false;
+    					new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
+    				}
+				} catch (IOException e) {
+					Log.e(App.LOG, e.toString());
+					e.printStackTrace();
+				}
     			break;
     		}
     	} else if(resultCode == Activity.RESULT_CANCELED) {
@@ -331,11 +361,13 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			@Override
 			public void run() {
 				try {
-					LogPack logPack = IOUtility.getMetadata(mediaCaptureUri, mediaCaptureFile.getAbsolutePath(), mimeType, MainActivity.this);
-    				informaService.onUpdate(Time.timestampToMillis(logPack.get(Exif.TIMESTAMP).toString()), logPack);
+					if(mustInitMetadata) {
+						LogPack logPack = IOUtility.getMetadata(mediaCaptureUri, mediaCaptureFile.getAbsolutePath(), mimeType, MainActivity.this);
+						informaService.onUpdate(Time.timestampToMillis(logPack.get(Exif.TIMESTAMP).toString()), logPack);
+						Log.d(App.LOG, "finished scanning the media:\n" + logPack.toString());
+					}
+    				
     				launchEditor();
-				} catch (NoSuchAlgorithmException e) {
-					e.printStackTrace();
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (JSONException e) {

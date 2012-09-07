@@ -102,6 +102,12 @@
     <string name="address_book_creation_date">Created on:</string>
     <string name="address_book_expiry_date">Expires on:</string>
     
+    <!--  MEDIA MANAGER -->
+    <string name="media_manager_taken_on">Taken on </string>
+    <string name="media_manager_last_saved">Last Saved on </string>
+    <string name="media_manager_open">Open</string>
+    <string name="media_manager_delete">Delete</string>
+    
 	<!--  LOG IN ACTIVITY -->
 	<string name="login">Log In</string>
 	<string name="login_text">Please enter your password to continue</string>

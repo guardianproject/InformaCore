@@ -36,6 +36,7 @@ import org.witness.informacam.app.editors.video.ShellUtils.ShellCallback;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
@@ -270,8 +271,11 @@ public class VideoEditor extends Activity implements
 			}
 			else
 			{
-			
-				recordingFile = new File(pullPathFromUri(originalVideoUri));
+				try {
+					recordingFile = new File(pullPathFromUri(originalVideoUri));
+				} catch(NullPointerException e) {
+					recordingFile = IOUtility.getFileFromUri(originalVideoUri, this);
+				}
 			}
 			
 			Log.d(App.LOG, "recording file: " + recordingFile.getAbsolutePath());
@@ -302,18 +306,6 @@ public class VideoEditor extends Activity implements
 		
 		// TODO: my additions to onCreate()
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
-				
-		/* TODO
-		sendBroadcast(new Intent()
-			.setAction(InformaConstants.Keys.Service.SET_CURRENT)
-			.putExtra(InformaConstants.Keys.CaptureEvent.MATCH_TIMESTAMP, System.currentTimeMillis())
-			.putExtra(InformaConstants.Keys.CaptureEvent.TYPE, InformaConstants.CaptureEvents.MEDIA_CAPTURED));
-		
-		br = new ArrayList<Broadcaster>();
-		br.add(new Broadcaster(new IntentFilter(Keys.Service.FINISH_ACTIVITY)));
-		br.add(new Broadcaster(new IntentFilter(Keys.Service.IMAGES_GENERATED)));
-		*/
-		
 	}
 	
 	private void loadMedia ()
@@ -1097,8 +1089,14 @@ public class VideoEditor extends Activity implements
 				updateRegionDisplay(mediaPlayer.getCurrentPosition());
 				
     			return true;
+    		case R.id.menu_save:
+    			InformaService.getInstance().storeMediaCache();
+        		getIntent().putExtra(App.VideoEditor.Keys.FINISH_ON, App.ImageEditor.SAVED_STATE);
+        		setResult(Activity.RESULT_OK, getIntent());
+        		finish();
+    			return true;
     			
-        	case R.id.menu_save:
+        	case R.id.menu_save_send:
         		//TODO: my additions to menu_save (saving happens here)
         		mediaPlayerIsPrepared = true;
         		

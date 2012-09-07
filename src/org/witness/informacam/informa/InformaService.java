@@ -10,8 +10,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.R;
 import org.witness.informacam.app.MainActivity;
 import org.witness.informacam.app.editors.image.ImageConstructor;
@@ -27,9 +29,11 @@ import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Status;
+import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -76,8 +80,9 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	
 	public Informa informa;
 	Activity editor;
+	boolean inflatedFromManifest = false;
 	
-	public Uri originalUri;
+	public Uri workingUri;
 	long[] encryptList;
 	
 	String LOG = Constants.Informa.LOG;
@@ -92,8 +97,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		}
 	}
 	
-	public void versionsCreated() {
-		// TODO: cleanup, add to upload queue, etc
+	private void cleanup() {
 		java.io.File imgTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 		if(imgTemp.exists())
 			imgTemp.delete();
@@ -106,6 +110,11 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
 		if(vidMetadata.exists())
 			vidMetadata.delete();
+	}
+	
+	public void versionsCreated() {
+		// TODO: cleanup, add to upload queue, etc
+		cleanup();
 				
 		//Intent intent = new Intent(this, UploaderService.class);
 		//startService(intent);
@@ -114,22 +123,70 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void storeMediaCache() {
 		// save original to iocipher store and cache data by dumping it to flat file that can be inflated later
 		suspend();
-		try {
-			IOCipherService.getInstance().saveCache(originalUri, getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches);
-		} catch (JSONException e) {
-			Log.e(Storage.LOG, e.toString());
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			Log.e(Storage.LOG, e.toString());
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			Log.e(Storage.LOG, e.toString());
-			e.printStackTrace();
-		}		
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					if(IOCipherService.getInstance().saveCache(getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches))
+						cleanup();
+				} catch (JSONException e) {
+					Log.e(Storage.LOG, e.toString());
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					Log.e(Storage.LOG, e.toString());
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					Log.e(Storage.LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+			
+		}).start();
 	}
 	
-	public void inflateMediaCache() {
-		
+	private LogPack JSONObjectToLogPack(JSONObject json) throws JSONException {
+		LogPack logPack = new LogPack();
+		Iterator<String> jIt = json.keys();
+		while(jIt.hasNext()) {
+			String key = jIt.next();
+			logPack.put(key, json.get(key));
+		}
+		Log.d(Storage.LOG, "parsed as " + logPack.toString());
+		return logPack;
+	}
+	
+	public void inflateMediaCache(String cacheFile) {
+		try {
+			String c = new String(IOUtility.getBytesFromFile(IOCipherService.getInstance().getFile(cacheFile)));
+			JSONObject cObj = (JSONObject) new JSONTokener(c).nextValue();
+			JSONArray caches = cObj.getJSONArray("cache");
+			
+			for(int i=0; i<caches.length(); i++) {
+				JSONObject cache = (JSONObject) caches.get(i);
+				if(cache.keys().next().equals("suckerCache")) {
+					JSONArray _suckerCache = cache.getJSONArray("suckerCache");
+					for(int s=0; s< _suckerCache.length(); s++) {
+						JSONObject _s = _suckerCache.getJSONObject(s);
+						String key = (String) _s.keys().next();
+						suckerCache.put(Long.parseLong(key), JSONObjectToLogPack(_s.getJSONObject(key)));
+					}
+				} else if(cache.keys().next().equals("annotationCache")) {
+					JSONArray _annotationCache = cache.getJSONArray("annotationCache");
+					for(int s=0; s< _annotationCache.length(); s++) {
+						JSONObject _s = _annotationCache.getJSONObject(s);
+						String key = (String) _s.keys().next();
+						annotationCache.put(Long.parseLong(key), JSONObjectToLogPack(_s.getJSONObject(key)));
+					}
+				}
+				
+			}
+			
+			inflatedFromManifest = true;
+		} catch(JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
 	}
 	
 	public void setCurrentStatus(int status) {
@@ -365,8 +422,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		
 		try {
 			LogPack lp = null;
-			
-			
+			//Log.d(Suckers.LOG, "LOGGING " + timestamp + " :\n" + logPack.toString());
 			switch(logPack.getInt(CaptureEvent.Keys.TYPE)) {
 			case CaptureEvent.SENSOR_PLAYBACK:
 				lp = suckerCache.getIfPresent(timestamp);
@@ -382,7 +438,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				suckerCache.put(timestamp, logPack);
 				break;
 			default:
-				Log.d(Suckers.LOG, "LOGGING " + timestamp + " :\n" + logPack.toString());
+				
 				lp = annotationCache.getIfPresent(timestamp);
 				if(lp != null) {
 					Iterator<String> lIt = lp.keys();
@@ -400,15 +456,24 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 
 	@Override
-	public void onInformaInit(Activity editor, Uri originalUri) {
+	public void onInformaInit(Activity editor, Uri workingUri) {
 		informa = new Informa(this);
 		try {
+			LogPack originalData = getMetadata();
 			informa.setDeviceCredentials(_phone.getSucker().forceReturn());
-			informa.setFileInformation(originalUri.toString());
-		} catch(JSONException e) {}
+			informa.setFileInformation(originalData.getString(Genealogy.LOCAL_MEDIA_PATH));
+		} catch(JSONException e) {} 
+		catch (InterruptedException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
 		
 		this.editor = editor;
-		this.originalUri = originalUri;
+		this.workingUri = workingUri;
+		Log.d(Storage.LOG, "workingUri : " + workingUri);
 	}
 	
 	public void packageInforma(final String originalImagePath) {

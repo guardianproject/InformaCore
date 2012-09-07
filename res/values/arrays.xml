@@ -48,11 +48,10 @@
 		<item>fa</item>
 	</string-array>
 	
-	<string-array name="media_manager_context_menu">
-    	<item>Share...</item>
-    	<item>View</item>
+	<string-array name="media_manager_actions">
+    	<item>Open</item>
     	<item>Rename</item>
-    	<item>Get Info</item>
+    	<item>Delete</item>
 	</string-array>
 	
 	<string-array name="address_book_actions">

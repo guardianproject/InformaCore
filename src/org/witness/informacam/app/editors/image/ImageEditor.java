@@ -206,7 +206,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		
 		// Passed in from CameraObscuraMainMenu
 		originalImageUri = getIntent().getData();
-		Log.d(App.LOG, originalImageUri.toString());
 		
 		// If originalImageUri is null, we are likely coming from another app via "share"
 		if (originalImageUri == null)

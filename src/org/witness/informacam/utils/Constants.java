@@ -24,10 +24,11 @@ public class Constants {
 		public final static class Main {
 			public final static int FROM_MEDIA_CAPTURE = 774;
 			public final static int FROM_EDITOR = 775;
+			public final static int FROM_MEDIA_MANAGER = 776;
 		}
 		
 		public final static class MediaManager {
-			
+			public final static int WITH_MEDIA_TO_OPEN = 574;
 		}
 		
 		public final static class AddressBook {
@@ -150,6 +151,14 @@ public class Constants {
 			public final static String CONTACT_EMAIL = "contactEmail";
 			public final static String CONTACT_ID = "contactID";
 			public static final String CONTACT_SELECTED = "contactSelectedAsTrustedDestination";
+		}
+	}
+	
+	public final static class MediaManager {
+		public final static class Actions {
+			public final static int OPEN_MEDIA = 0;
+			public final static int RENAME_MEDIA = 1;
+			public final static int DELETE_MEDIA = 2;
 		}
 	}
 	
