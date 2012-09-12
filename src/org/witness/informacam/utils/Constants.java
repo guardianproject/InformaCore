@@ -566,6 +566,7 @@ public class Constants {
 			public final static String LAST_BYTE_TRANSFERED = "lastByteTransfered";
 			
 			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
+			public static final String J3M = "j3m";
 		}
 		
 		public static final class Status {
@@ -598,6 +599,7 @@ public class Constants {
 			public final static class Keys {
 				public final static String CERTS = "certs";
 				public final static String TIME_MODIFIED = "timeModified";
+				public static final String PASSWORD = "password";
 			}
 		}
 		
@@ -637,7 +639,7 @@ public class Constants {
 		
 		public final static class Keys {
 			public final static String HYPHENS = "--";
-			public final static String BOUNDARY = "*****InformaCamData*134*72&^*1*";
+			public final static String BOUNDARY = "*****InformaCamData****";
 			public final static String LINE_END = "\r\n";
 			
 		}

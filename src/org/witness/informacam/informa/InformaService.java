@@ -113,11 +113,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	public void versionsCreated() {
-		// TODO: cleanup, add to upload queue, etc
 		cleanup();
-				
-		//Intent intent = new Intent(this, UploaderService.class);
-		//startService(intent);
 	}
 	
 	public void storeMediaCache() {

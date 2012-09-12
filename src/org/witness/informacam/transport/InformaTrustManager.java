@@ -6,11 +6,15 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.TrustManager;
 
@@ -26,6 +30,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
+import android.util.Base64;
 import android.util.Log;
 
 public class InformaTrustManager implements X509TrustManager {
@@ -39,8 +44,10 @@ public class InformaTrustManager implements X509TrustManager {
 	byte[] keyStored = null;
 	String pwd;
 	long lastUpdate;
+	Context c;
 	
-	public InformaTrustManager(Context context) {		
+	public InformaTrustManager(Context context) {
+		c = context;
 		dh = new DatabaseHelper(context);
 		db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(context).getString(Settings.Keys.CURRENT_LOGIN, ""));
 		
@@ -66,8 +73,60 @@ public class InformaTrustManager implements X509TrustManager {
 		}
 		
 		loadKeyStore();
+		
 		defaultTrustManager = getTrustManager(false);
 		appTrustManager = getTrustManager(true);
+	}
+	
+	public X509KeyManager[] getKeyManagers(long keyId) {
+		KeyManagerFactory kmf = null;
+		KeyManager[] km = null;
+		X509KeyManager[] xkm = null;
+		try {
+			kmf = KeyManagerFactory.getInstance("X509");
+			
+			KeyStore xks = KeyStore.getInstance("PKCS12");
+			
+			// TODO: get the right key for the right trusted destination!
+			dh.setTable(db, Tables.Keys.KEYRING);
+			Cursor kc = dh.getValue(db, new String[] {Crypto.Keystore.Keys.CERTS, Crypto.Keystore.Keys.PASSWORD}, Crypto.Keyring.Keys.ID, keyId);
+			if(kc != null && kc.moveToFirst()) {
+				byte[] kBytes =  Base64.decode(kc.getBlob(kc.getColumnIndex(Crypto.Keystore.Keys.CERTS)), Base64.DEFAULT);
+				ByteArrayInputStream bais = new ByteArrayInputStream(kBytes);
+				xks.load(bais, (kc.getString(kc.getColumnIndex(Crypto.Keystore.Keys.PASSWORD))).toCharArray());
+				
+				kc.close();
+				
+				kmf.init(xks, pwd.toCharArray());
+				km = kmf.getKeyManagers();
+				xkm = new X509KeyManager[km.length];
+				
+				for(int x=0;x<km.length;x++) {
+					X509KeyManager k = (X509KeyManager) km[x];
+					xkm[x] = k;
+				}
+			} else {
+				Log.e(Crypto.LOG, "cannot find this key for id " + keyId);
+			}
+			
+		} catch (NoSuchAlgorithmException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (UnrecoverableKeyException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (CertificateException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return xkm;
 	}
 	
 	private X509TrustManager getTrustManager(boolean withKeystore) {
@@ -99,6 +158,8 @@ public class InformaTrustManager implements X509TrustManager {
 			keyStore.load(null, null);
 			if(keyStored != null)
 				keyStore.load(new ByteArrayInputStream(keyStored), pwd.toCharArray());
+			
+			
 		} catch(CertificateException e) {
 			Log.e(Crypto.LOG, "certificate exception: " + e.toString());
 		} catch (NoSuchAlgorithmException e) {
@@ -110,8 +171,9 @@ public class InformaTrustManager implements X509TrustManager {
 	
 	private void storeCertificate(X509Certificate[] chain) {
 		try {
-			for(X509Certificate cert : chain)
+			for(X509Certificate cert : chain) {
 				keyStore.setCertificateEntry(cert.getSubjectDN().toString(), cert);
+			}
 		} catch(KeyStoreException e) {
 			Log.e(Crypto.LOG, "keystore exception: " + e.toString());
 		}

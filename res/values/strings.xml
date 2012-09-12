@@ -27,7 +27,7 @@
     <string name="mainactivity_knowledgebase">Knowledgebase</string>
     <string name="mainactivity_send_log">Send Log\u2026</string>
     <string name="mainactivity_log_out">Log Out</string>
-    <string name="mainactivity_log_in">Log In</string>
+    <string name="mainactivity_log_in">Log In</string>    
     
     <!--  IMAGE/VIDEO EDITORS -->
     <string name="saving">Saving\u2026</string>

@@ -40,7 +40,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 public class Informa {
 	Intent intent;
@@ -257,8 +256,7 @@ public class Informa {
 			intent.owner.ownershipType = Constants.Informa.Owner.INDIVIDUAL;	// TODO: FOR NOW...
 			
 			cursor.close();
-		} else
-			Log.d(Storage.LOG, "null cursor");
+		}
 	}
 	
 	public String getPgpKeyFingerprint() {
@@ -293,22 +291,18 @@ public class Informa {
 	}
 	
 	public boolean addToPlayback(List<Entry<Long, LogPack>> playback) throws JSONException {
-		Log.d(Storage.LOG, "adding to PLAYBACK");
 		for(Entry<Long, LogPack> e : playback) {
 			e.getValue().remove(CaptureEvent.Keys.TYPE);
 			data.mediaCapturePlayback.add(new MediaCapturePlayback(e.getKey(), e.getValue()));
 		}
-		Log.d(Storage.LOG, "PLAYBACK: done (total: " + playback.size() + ")");
 		return true;
 	}
 	
 	public boolean addToAnnotations(List<Entry<Long, LogPack>> annotations) throws JSONException {
-		Log.d(Storage.LOG, "adding to ANNOTATIONS");
 		for(Entry<Long, LogPack> e : annotations) {
 			e.getValue().remove(CaptureEvent.Keys.TYPE);
 			data.annotations.add(new Annotation(e.getKey(), e.getValue()));
 		}
-		Log.d(Storage.LOG, "ANNOTATIONS: done (total: " + annotations.size() + ")");
 		return true;
 	}
 	

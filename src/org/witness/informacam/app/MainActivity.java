@@ -26,6 +26,7 @@ import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.HttpUtility;
+import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
@@ -116,13 +117,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		onEulaAgreedTo();
     }
     
-    private void doHttpTest() {
-    	Map<String, Object> kvp = new HashMap<String, Object>();
-    	kvp.put("hello", "world");
-    	
-    	HttpUtility.executeHttpsPost(this, "agtkuww4bund4pip.onion", kvp, null);
-    }
-    
     @SuppressWarnings("unused")
 	private void initInformaCam() {
     	SignatureUtility signatureUtility = new SignatureUtility(MainActivity.this);
@@ -132,6 +126,9 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 		
 		Intent initVirtualStorage = new Intent(this, IOCipherService.class);
 		startService(initVirtualStorage);
+		
+		Intent intent = new Intent(this, UploaderService.class);
+		startService(intent);
     }
     
     @Override
@@ -140,6 +137,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	if(informaService != null)
     		doShutdown();
     }
+    
+    
     
     @Override
     public void onEulaAgreedTo() {
@@ -302,9 +301,14 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			break;
     		}
     	} else if(resultCode == Activity.RESULT_CANCELED) {
-    		mProgressDialog.dismiss();
-    		if(informaService != null)
-				informaService.suspend();
+    		if(mProgressDialog != null)
+    			mProgressDialog.dismiss();
+    		
+    		if(informaService != null) {
+    			try {
+    				informaService.suspend();
+    			} catch(NullPointerException e) {}
+    		}
     	}
     }
     

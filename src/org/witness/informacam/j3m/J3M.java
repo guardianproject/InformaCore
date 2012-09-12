@@ -7,14 +7,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 
+import net.sqlcipher.database.SQLiteDatabase;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.transport.HttpUtility;
+import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 
@@ -28,6 +37,9 @@ public class J3M {
 	int mediaType;
 	long timestampCreated;
 	
+	IOCipherService ioCipherService = IOCipherService.getInstance();
+	UploaderService uploaderService = UploaderService.getInstance();
+	
 	public J3M(String pgpKeyFingerprint, ContentValues cv, File file) {
 		this.file = file;
 		timestampCreated = cv.getAsLong(Media.Keys.TIME_CAPTURED);
@@ -40,9 +52,7 @@ public class J3M {
 			root = new File(Storage.FileIO.DUMP_FOLDER, MediaHasher.hash(file, "SHA-1"));
 			if(!root.exists())
 				root.mkdir();
-			
-			Log.d(LOG, root.getAbsolutePath());
-			
+						
 			fileBytes = new byte[(int) file.length()];
 			
 			InputStream fis = new FileInputStream(file);
@@ -58,8 +68,11 @@ public class J3M {
     		
     		j3mdescriptor = new J3MDescriptor(root);
     		j3mdescriptor.put("pgpKeyFingerprint", pgpKeyFingerprint);
-    		if(atomize())
+    		if(atomize()) {
     			j3mdescriptor.finalize();
+    			ioCipherService.copyFolder(root);
+    			ioCipherService.moveFileToIOCipher(file, root.getName(), true);
+    		}
 			
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(LOG, e.toString());
@@ -80,9 +93,6 @@ public class J3M {
 			int offset = chunk_count * mode;
 			
 			byte[] j3mBytes = new byte[(int) Math.min(mode, fileBytes.length - offset)];
-			Log.d(LOG, "total bytes: " + fileBytes.length);
-    		Log.d(LOG, "offset: " + offset);
-    		Log.d(LOG, "byte length: " + j3mBytes.length);
 			
 			// write offset + mode bytes to "blob" field as base 64 encoded string
 			System.arraycopy(fileBytes, offset, j3mBytes, 0, j3mBytes.length);
@@ -108,9 +118,7 @@ public class J3M {
 				e.printStackTrace();
 				return false;
 			}
-			
-			
-			Log.d(LOG, chunk_description.toString());
+						
 			chunk_count++;
 		}
 		
@@ -118,7 +126,7 @@ public class J3M {
 		try {
 			// update descriptor
 			j3mdescriptor.put("originalHash", root.getName());
-			j3mdescriptor.put("versionLocation", file.getAbsolutePath());
+			j3mdescriptor.put("versionLocation", "/" + root.getName() + "/" + file.getName());
 			j3mdescriptor.put("mediaType", mediaType);
 			j3mdescriptor.put("totalBytesExpected", file.length());
 			j3mdescriptor.put("j3mBytesExpected", getFileContentSize());
@@ -132,6 +140,10 @@ public class J3M {
 		
 
 		return true;
+	}
+	
+	public J3MDescriptor getDescriptor() {
+		return j3mdescriptor;
 	}
 	
 	private long getFileContentSize() {
@@ -161,6 +173,17 @@ public class J3M {
 				e.printStackTrace();
 			}
 			
+		}
+	}
+	
+	public final static class J3MPackage {
+		public String j3m, url;
+		public long pkcs12Id;
+		
+		public J3MPackage(J3M j3m, String url, long pkcs12Id) {
+			this.j3m = j3m.j3mdescriptor.toString();
+			this.pkcs12Id = pkcs12Id;
+			this.url = url;
 		}
 	}
 }

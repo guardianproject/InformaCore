@@ -25,6 +25,7 @@ import org.witness.informacam.app.mods.InformaSpinner;
 import org.witness.informacam.app.mods.InformaTextView;
 import org.witness.informacam.app.mods.Selections;
 import org.witness.informacam.crypto.CertificateUtility;
+import org.witness.informacam.crypto.CertificateUtility.ClientCertificateResponse;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.KeyUtility.KeyServerResponse;
 import org.witness.informacam.storage.DatabaseHelper;
@@ -240,12 +241,16 @@ public class WizardActivity extends Activity implements OnClickListener {
 			
 			KeyServerResponse ksr = null;
 			byte[] imgBytes = null;
+			byte[] certBytes = null;
+			byte[] pgpBytes = null;
 			String trustedDestinationURL = null;
+			String clientPassword = null;
+			ClientCertificateResponse ccr = null;
 			
 			for(String keyFile : folderContent) {
 				String ext = keyFile.substring(keyFile.lastIndexOf("."));
 				
-				if(!ext.equals(".png") && !ext.equals(".jpg")) {
+				if(ext.equals(".txt")) {
 					BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("installedKeys/" + keyFolder + "/" + keyFile)));
 					char[] buf = new char[1024];
 					int numRead = 0;
@@ -255,40 +260,58 @@ public class WizardActivity extends Activity implements OnClickListener {
 				
 					while((numRead = br.read(buf)) != -1) {
 						line = String.valueOf(buf, 0, numRead);
-						if(ext.equals(".txt")) {
-							String key = line.split("=")[0];
-							String value = line.split("=")[1];
-							
+						
+						String[] lines = line.split(";");
+						for(String l : lines) {
+							String key = l.split("=")[0];
+							String value = l.split("=")[1];
+						
 							if(key.equals(TrustedDestination.Keys.URL))
 								trustedDestinationURL = value;
+							if(key.equals(Crypto.Keystore.Keys.PASSWORD))
+								clientPassword = value;
+							
 							// TODO: if we add other key-values to the txt file, they can be caught here...
-						} else 
-							sb.append(line);
+						}
+						
 						buf = new char[1024];
 					}
 					
 					br.close();
-					
-					if(ext.equals(".asc")) {
-						PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(Base64.encodeToString(sb.toString().getBytes(), Base64.DEFAULT).getBytes());
-						ksr = new KeyUtility.KeyServerResponse(key);	
-					} else if(ext.equals(".pem"))
-						CertificateUtility.storeCertificate(this, sb.toString().getBytes());
-					else if(ext.equals(".p12"))
-						CertificateUtility.storeClientCertificate(this, sb.toString().getBytes());
+						
 				} else {
 					InputStream is = getAssets().open("installedKeys/" + keyFolder + "/" + keyFile);
-					imgBytes = new byte[is.available()];
-					is.read(imgBytes);
-					
-					imgBytes = Base64.encode(imgBytes, Base64.DEFAULT);
+					if(ext.equals(".png") || ext.equals(".jpg")) {
+						
+						imgBytes = new byte[is.available()];
+						is.read(imgBytes);
+						
+						imgBytes = Base64.encode(imgBytes, Base64.DEFAULT);
+					} else if(ext.equals(".p12")) {
+						certBytes = new byte[is.available()];
+						is.read(certBytes);
+						
+						certBytes = Base64.encode(certBytes, Base64.DEFAULT);
+					} else if(ext.equals(".asc")) {
+						pgpBytes = new byte[is.available()];
+						is.read(pgpBytes);
+						
+						pgpBytes = Base64.encode(pgpBytes, Base64.DEFAULT);
+						
+						PGPPublicKey key = KeyUtility.extractPublicKeyFromBytes(pgpBytes);
+						ksr = new KeyUtility.KeyServerResponse(key);
+					}
 				}
+					
 			}
 			
 			AddressBookDisplay abd = new AddressBookDisplay(WizardActivity.this, 0L, ksr.getString(PGP.Keys.PGP_DISPLAY_NAME), ksr.getString(PGP.Keys.PGP_EMAIL_ADDRESS), imgBytes, false);
 			abd.put(TrustedDestination.Keys.URL, trustedDestinationURL);
 			
-			KeyUtility.installNewKey(WizardActivity.this, ksr, abd);			
+			KeyUtility.installNewKey(WizardActivity.this, ksr, abd);
+			
+			ccr = new ClientCertificateResponse(certBytes, trustedDestinationURL, ksr.getLong(PGP.Keys.PGP_KEY_ID), clientPassword);
+			CertificateUtility.storeClientCertificate(WizardActivity.this, ccr, certBytes);
 		}
 	}
 	

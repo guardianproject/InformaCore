@@ -32,6 +32,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -48,7 +49,7 @@ import android.content.Context;
 import android.util.Log;
 
 public class HttpUtility {
-	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final File file) {
+	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final long pkc12Id, final File file) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<String> future = ex.submit(new Callable<String>() {
 			String result = Transport.Result.FAIL;
@@ -67,42 +68,44 @@ public class HttpUtility {
 				Iterator<Entry<String, Object>> it = postData.entrySet().iterator();
 				StringBuffer sb = new StringBuffer();
 				
+				connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Transport.Keys.BOUNDARY);
+				
 				try {
 					dos = new DataOutputStream(connection.getOutputStream());
-					
-					if(file != null) {
-						dos.writeBytes(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
-						dos.writeBytes("Content-Disposition: form-data; name=\"InformaCamUpload\";filename=\"" + file.getName() + ".zip\"" + Transport.Keys.LINE_END);
-						dos.writeBytes("Content-Type: application/zip, application/octet-stream;");
+										
+					while(it.hasNext()) {
+						Entry<String, Object> e = it.next();
 						
-						byte[] zippedFile = IOUtility.zipFile(file);
+						sb.append(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
+						
+						sb.append("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Transport.Keys.LINE_END);
+						sb.append("Content-Type: text/plain" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
+						sb.append(String.valueOf(e.getValue()) + Transport.Keys.LINE_END);
+						Log.d(Transport.LOG, sb.toString());
+						dos.writeBytes(sb.toString());
+					}
+					
+					// TODO: not this; the J3M is what we want to send
+					if(file != null) {
+						dos.writeBytes("Content-Disposition: form-data; name=\"InformaCamUpload\";filename=\"" + file.getName() + "\"" + Transport.Keys.LINE_END);
+						dos.writeBytes("Content-Type: text/plain;");
+						
+						
+						byte[] fileBytes = IOUtility.getBytesFromFile(file);
 						int index = 0;
 						int bufSize = 1024;
 						
 						do {
-							if((index + bufSize) > zippedFile.length)
-								bufSize = zippedFile.length - index;
-							dos.write(zippedFile, index, bufSize);
+							if((index + bufSize) > fileBytes.length)
+								bufSize = fileBytes.length - index;
+							dos.write(fileBytes, index, bufSize);
 							index += bufSize;
-						} while(index < zippedFile.length);
+						} while(index < fileBytes.length);
 						
 						dos.writeBytes(Transport.Keys.LINE_END);
-						dos.writeBytes(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.HYPHENS + Transport.Keys.LINE_END);
 					}
 					
-					while(it.hasNext()) {
-						Entry<String, Object> e = it.next();
-						
-						
-						sb.append(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
-						sb.append("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Transport.Keys.LINE_END);
-						sb.append("Content-Type: text/plain; charset=UTF-8" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
-						sb.append(URLEncoder.encode(String.valueOf(e.getValue()), "UTF-8") + Transport.Keys.LINE_END);
-						
-						Log.d(Transport.LOG, "attempting to send:\n" + sb.toString());
-						
-						dos.writeBytes(sb.toString());
-					}
+					dos.writeBytes(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.HYPHENS + Transport.Keys.LINE_END);
 					
 					dos.flush();
 					dos.close();
@@ -131,8 +134,16 @@ public class HttpUtility {
 				};
 				
 				itm = new InformaTrustManager(c);
+				
+				// TODO: perform logic to tell ITM which key it should use
+				
 				ssl = SSLContext.getInstance("TLS");
-				ssl.init(null, new TrustManager[] {itm}, new SecureRandom());
+				X509KeyManager[] x509KeyManager = null;
+				
+				if(pkc12Id != 0L)
+					x509KeyManager = itm.getKeyManagers(pkc12Id);
+				
+				ssl.init(x509KeyManager, new TrustManager[] {itm}, new SecureRandom());
 				
 				HttpsURLConnection.setDefaultSSLSocketFactory(ssl.getSocketFactory());
 				HttpsURLConnection.setDefaultHostnameVerifier(hnv);
@@ -140,6 +151,7 @@ public class HttpUtility {
 				proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
 				
 				connection = (HttpsURLConnection) url.openConnection(proxy);
+				
 				connection.setRequestMethod("POST");
 				connection.setRequestProperty("Connection", "Keep-Alive");
 				connection.setUseCaches(false);

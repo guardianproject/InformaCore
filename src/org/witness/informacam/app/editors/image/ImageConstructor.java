@@ -19,8 +19,10 @@ import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.j3m.J3M;
+import org.witness.informacam.j3m.J3M.J3MPackage;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
@@ -126,7 +128,7 @@ public class ImageConstructor {
 				// for each trusted destination
 				for(long td : encryptList) {
 					Log.d(Storage.LOG, "keyring id: " + td);
-					Cursor cursor = dh.getValue(db, new String[] {PGP.Keys.PGP_DISPLAY_NAME, PGP.Keys.PGP_EMAIL_ADDRESS, PGP.Keys.PGP_PUBLIC_KEY, Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID}, TrustedDestination.Keys.KEYRING_ID, td);
+					Cursor cursor = dh.getValue(db, null, TrustedDestination.Keys.KEYRING_ID, td);
 					
 					if(cursor != null && cursor.moveToFirst()) {
 						for(String s : cursor.getColumnNames())
@@ -149,15 +151,15 @@ public class ImageConstructor {
 						constructImage(clone.getAbsolutePath(), version.getAbsolutePath(), informaMetadata, informaMetadata.length());
 						
 						// save metadata in database
-
-						ContentValues cv = InformaService.getInstance().informa.initMetadata(version.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID)));
+						ContentValues cv = InformaService.getInstance().informa.initMetadata(MediaHasher.hash(version, "SHA-1") + "/" + version.getName(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID)));
 						
 						dh.setTable(db, Tables.Keys.MEDIA);
 						db.insert(dh.getTable(), null, cv);
 						
 						J3M j3m = new J3M(InformaService.getInstance().informa.getPgpKeyFingerprint(), cv, version);
-						cursor.close();
+						UploaderService.getInstance().addToQueue(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td));
 						
+						cursor.close();
 					}
 				}
 				

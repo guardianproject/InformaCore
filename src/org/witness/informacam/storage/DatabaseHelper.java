@@ -14,7 +14,7 @@ import org.witness.informacam.utils.Constants.TrustedDestination;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.BaseColumns;
-import android.util.Log;
+
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
 import net.sqlcipher.database.SQLiteOpenHelper;
@@ -74,7 +74,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 					PGP.Keys.PGP_EXPIRY_DATE + " integer, " +
 					PGP.Keys.PGP_DISPLAY_NAME + " text, " +
 					PGP.Keys.PGP_EMAIL_ADDRESS + " text, " +
-					Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID + " integer" +
+					Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID + " integer," +
+					TrustedDestination.Keys.URL + " text, " +
+					Crypto.Keystore.Keys.CERTS + " blob," +
+					Crypto.Keystore.Keys.PASSWORD + " text" +
 					")",
 					"CREATE TABLE " + Tables.Keys.KEYSTORE + " (" + BaseColumns._ID + " " +
 					"integer primary key autoincrement," +
@@ -130,9 +133,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 			" INNER JOIN " + queryTables[1] + 
 			" ON " + queryTables[0] + "." + matchKeys[0] + 
 			"=" + queryTables[1] + "." + matchKeys[1];
-		
-		Log.d(Storage.LOG, query);
-		
+				
 		Cursor c = db.rawQuery(query, null);
 		
 		if(c != null && c.getCount() > 0) {

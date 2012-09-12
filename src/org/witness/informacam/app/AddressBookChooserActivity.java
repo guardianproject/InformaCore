@@ -1,7 +1,6 @@
 package org.witness.informacam.app;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.json.JSONException;
 import org.witness.informacam.R;

@@ -13,9 +13,6 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion.Subject;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;

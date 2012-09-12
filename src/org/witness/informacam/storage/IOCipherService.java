@@ -296,7 +296,6 @@ public class IOCipherService extends Service {
 					cacheJSON.put("cache", cacheArray);
 					
 					String cacheString = cacheJSON.toString();
-					Log.d(Storage.LOG, cacheString);
 					
 					cacheFile = IOUtility.fileFromBytes(cacheString.getBytes(), cacheFile.getAbsolutePath());
 					
@@ -365,6 +364,52 @@ public class IOCipherService extends Service {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public void copyFolder(java.io.File _root) {
+		File root = new File(_root.getName());
+		try {
+			if(!root.exists())
+				root.mkdir();
+			
+			for(java.io.File _f : _root.listFiles()) {
+				File f = new File(root, _f.getName());
+								
+				if(_f.isDirectory()) {
+					File subF = new File(root, _f.getName());
+					if(!subF.exists()) {
+						subF.mkdir();
+					}
+					
+					for(java.io.File _s : _f.listFiles()) {
+						File s = new File(subF, _s.getName());
+						java.io.FileInputStream _fis = new java.io.FileInputStream(_s);
+						byte[] buf = new byte[_fis.available()];
+						_fis.read(buf);
+						_fis.close();
+						
+						FileOutputStream fos = new FileOutputStream(s);
+						fos.write(buf);
+						fos.flush();
+						fos.close();
+					}
+				} else {
+					java.io.FileInputStream _fis = new java.io.FileInputStream(_f);
+					byte[] buf = new byte[_fis.available()];
+					_fis.read(buf);
+					_fis.close();
+					
+					FileOutputStream fos = new FileOutputStream(f);
+					fos.write(buf);
+					fos.flush();
+					fos.close();
+				}
+				
+				
+				
+			}
+		} catch(FileNotFoundException e) {}
+		catch(IOException e) {}
 	}
 
 }

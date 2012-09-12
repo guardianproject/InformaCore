@@ -14,9 +14,12 @@ import java.util.Collection;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.app.Activity;
@@ -28,8 +31,39 @@ import android.util.Log;
 
 public class CertificateUtility {
 	
-	public static final void storeClientCertificate(Activity a, byte[] certificate) {
+	public static final class ClientCertificateResponse extends JSONObject {
+		public ClientCertificateResponse(byte[] certificate, String trustedDestinationURL, long keyringId, String password) {
+			try {
+				this.put(Crypto.Keystore.Keys.PASSWORD, password);
+				this.put(Crypto.Keyring.Keys.ID, keyringId);
+				this.put(TrustedDestination.Keys.URL, trustedDestinationURL);
+			} catch(JSONException e) {}
+		}
+	}
+	
+	public static final boolean storeClientCertificate(Activity a, ClientCertificateResponse ccr, byte[] certificate) {
+		boolean result = false;
+		DatabaseHelper dh = new DatabaseHelper(a);
+		SQLiteDatabase db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(a).getString(Settings.Keys.CURRENT_LOGIN, ""));
 		
+		ContentValues cv = new ContentValues();
+
+		dh.setTable(db, Tables.Keys.KEYRING);
+		try {
+			cv.put(Crypto.Keystore.Keys.CERTS, new String(certificate));
+			cv.put(Crypto.Keystore.Keys.PASSWORD, ccr.getString(Crypto.Keystore.Keys.PASSWORD));
+			cv.put(TrustedDestination.Keys.URL, ccr.getString(TrustedDestination.Keys.URL));
+			
+			db.update(dh.getTable(), cv, Crypto.Keyring.Keys.ID + " = ?", new String[] {String.valueOf(ccr.get(Crypto.Keyring.Keys.ID))});
+			result = true;
+		} catch (JSONException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		db.close();
+		dh.close();
+		return result;
 	}
 	
 	public static final void storeCertificate(Activity a, byte[] certificate) {
@@ -69,6 +103,7 @@ public class CertificateUtility {
 			keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
 		} catch(KeyStoreException e) {
 			Log.e(Crypto.LOG, "key store exception: " + e.toString());
+			e.printStackTrace();
 		}
 		
 		try {
@@ -100,12 +135,16 @@ public class CertificateUtility {
 			
 		} catch(CertificateException e) {
 			Log.e(Crypto.LOG, "certificate exception: " + e.toString());
+			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(Crypto.LOG, "no such algo exception: " + e.toString());
+			e.printStackTrace();
 		} catch (IOException e) {
 			Log.e(Crypto.LOG, "IOException: " + e.toString());
+			e.printStackTrace();
 		} catch (KeyStoreException e) {
 			Log.e(Crypto.LOG, "keystore exception: " + e.toString());
+			e.printStackTrace();
 			e.printStackTrace();
 		}
 		

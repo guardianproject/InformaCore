@@ -64,8 +64,10 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 	
 	@Override
 	public void onClick(View v) {
-		if(v == navigation)
+		if(v == navigation) {
+			setResult(Activity.RESULT_CANCELED);
 			finish();
+		}
 		
 	}
 
@@ -77,7 +79,7 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 	@Override
 	public void onMediaFocusedListener(int which) {
 		InformaChoosableAlert alert = new InformaChoosableAlert(MediaManagerActivity.this, getResources().getStringArray(R.array.media_manager_actions), media.get(which));
-		alert.setTitle("Media Manager");
+		alert.setTitle(getString(R.string.media_manager));
 		alert.show();
 	}
 

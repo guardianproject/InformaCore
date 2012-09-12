@@ -167,7 +167,6 @@ public class IOUtility {
 	public final static LogPack getVideoMetadata(Uri uri, String filepath, Context c) {
 		try {
 			LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
-			Log.d(Storage.LOG, "getting metadata for " + uri.toString());
 			MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 			retriever.setDataSource(c, uri);
 			
@@ -221,9 +220,7 @@ public class IOUtility {
 			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.IMAGE);
 			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
 			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
-			
-			Log.d(App.LOG, logPack.toString());
-			
+						
 			return logPack;
 		} catch (IOException e) {
 			return null;
