@@ -43,7 +43,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 					Media.Keys.SHARE_VECTOR + " integer, " + 
 					Media.Keys.MESSAGE_URL + " text, " +
 					Media.Keys.STATUS + " integer, " + 
-					Media.Keys.ALIAS + " text" +
+					Media.Keys.ALIAS + " text, " +
+					Media.Keys.J3M_MANIFEST + " blob, " +
+					Media.Keys.J3M_BASE + " text" +
 					")",
 					"CREATE TABLE " + Tables.Keys.TRUSTED_DESTINATIONS + " (" + BaseColumns._ID + " " +
 					"integer primary key autoincrement," +

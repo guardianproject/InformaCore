@@ -1,7 +1,5 @@
 package org.witness.informacam.transport;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -12,7 +10,6 @@ import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -24,8 +21,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -41,7 +36,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Transport;
 
@@ -49,7 +43,7 @@ import android.content.Context;
 import android.util.Log;
 
 public class HttpUtility {
-	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final long pkc12Id, final File file) {
+	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final String contentType1, final long pkc12Id, final byte[] file, final String fileName, final String contentType2) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<String> future = ex.submit(new Callable<String>() {
 			String result = Transport.Result.FAIL;
@@ -66,49 +60,57 @@ public class HttpUtility {
 			
 			private void buildQuery() {
 				Iterator<Entry<String, Object>> it = postData.entrySet().iterator();
-				StringBuffer sb = new StringBuffer();
 				
 				connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Transport.Keys.BOUNDARY);
-				
+				StringBuffer sb = new StringBuffer();
 				try {
 					dos = new DataOutputStream(connection.getOutputStream());
-										
+					
+					if(file != null && fileName != null) {
+						
+						sb.append(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
+						sb.append("Content-Disposition: form-data; name=\"InformaCamUpload\";filename=\"" + fileName + "\"" + Transport.Keys.LINE_END);
+						sb.append("Content-Type: " + contentType2 + ";" + Transport.Keys.LINE_END );
+						sb.append("Cache-Control: no-cache" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
+						dos.writeBytes(sb.toString());
+						
+						/*
+						int index = 0;
+						int bufSize = 1024;
+						
+						do {
+							if((index + bufSize) > file.length)
+								bufSize = file.length - index;
+							dos.write(file, index, bufSize);
+							index += bufSize;
+						} while(index < file.length);
+						*/
+						dos.write(file, 0, file.length);
+						dos.writeBytes(Transport.Keys.LINE_END);
+						
+						sb.append("..." + Transport.Keys.LINE_END);
+						Log.d(Transport.LOG, sb.toString());
+					}
+					
+					sb = new StringBuffer();
 					while(it.hasNext()) {
 						Entry<String, Object> e = it.next();
 						
 						sb.append(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
 						
 						sb.append("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Transport.Keys.LINE_END);
-						sb.append("Content-Type: text/plain" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
+						sb.append("Content-Type: " + contentType1 + "; charset=UTF-8" + Transport.Keys.LINE_END );
+						sb.append("Cache-Control: no-cache" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
 						sb.append(String.valueOf(e.getValue()) + Transport.Keys.LINE_END);
-						Log.d(Transport.LOG, sb.toString());
 						dos.writeBytes(sb.toString());
-					}
-					
-					// TODO: not this; the J3M is what we want to send
-					if(file != null) {
-						dos.writeBytes("Content-Disposition: form-data; name=\"InformaCamUpload\";filename=\"" + file.getName() + "\"" + Transport.Keys.LINE_END);
-						dos.writeBytes("Content-Type: text/plain;");
-						
-						
-						byte[] fileBytes = IOUtility.getBytesFromFile(file);
-						int index = 0;
-						int bufSize = 1024;
-						
-						do {
-							if((index + bufSize) > fileBytes.length)
-								bufSize = fileBytes.length - index;
-							dos.write(fileBytes, index, bufSize);
-							index += bufSize;
-						} while(index < fileBytes.length);
-						
-						dos.writeBytes(Transport.Keys.LINE_END);
 					}
 					
 					dos.writeBytes(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.HYPHENS + Transport.Keys.LINE_END);
 					
 					dos.flush();
 					dos.close();
+					
+					Log.d(Transport.LOG, sb.toString());
 				} catch (IOException e) {
 					Log.e(Transport.LOG, e.toString());
 					e.printStackTrace();
@@ -295,7 +297,5 @@ public class HttpUtility {
 		connection.disconnect();
 		
 		return sb.toString();
-	}
-	
-	// TODO: public static String executeHttpsPost(Context c, String urlString, boolean useProxy)
+	}	
 }

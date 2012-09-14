@@ -25,6 +25,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
@@ -48,8 +49,8 @@ public class SignatureUtility {
 	private String authKey = null;
 	
 	public SignatureUtility(Activity a) {
-		DatabaseHelper dh = new DatabaseHelper(a);
-		SQLiteDatabase db = dh.getReadableDatabase(PreferenceManager.getDefaultSharedPreferences(a).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		DatabaseHelper dh = DatabaseService.getInstance().getHelper();
+		SQLiteDatabase db = DatabaseService.getInstance().getDb();
 		
 		dh.setTable(db, Tables.Keys.SETUP);
 		Cursor k = dh.getValue(db, new String[] {Device.Keys.AUTH_KEY, Device.Keys.SECRET_KEY}, BaseColumns._ID, 1);
@@ -59,9 +60,6 @@ public class SignatureUtility {
 			} catch(PGPException e) {}
 			k.close();
 		}
-		
-		db.close();
-		dh.close();
 		
 		signatureUtility = this;
 	}

@@ -6,42 +6,47 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOCipherService;
-import org.witness.informacam.transport.HttpUtility;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Crypto;
+import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.content.ContentValues;
-import android.content.Context;
+import android.os.Handler;
 import android.util.Base64;
 import android.util.Log;
 
 public class J3M {
 	File file, root, j3mRoot;
 	J3MDescriptor j3mdescriptor;
+	
 	byte[] fileBytes;
 	static String LOG = Constants.J3M.LOG;
 	int chunk_num, chunk_count = 0;
 	int mode = Constants.J3M.Chunks.EXTRA_LARGE;
 	int mediaType;
 	long timestampCreated;
+	String pgpFingerprint;
 	
 	IOCipherService ioCipherService = IOCipherService.getInstance();
 	UploaderService uploaderService = UploaderService.getInstance();
 	
-	public J3M(String pgpKeyFingerprint, ContentValues cv, File file) {
+	public J3M(String pgpFingerprint, ContentValues cv, File file) {
 		this.file = file;
+		this.pgpFingerprint = pgpFingerprint;
 		timestampCreated = cv.getAsLong(Media.Keys.TIME_CAPTURED);
 		mediaType = cv.getAsInteger(Media.Keys.TYPE);
 		
@@ -67,7 +72,7 @@ public class J3M {
     			j3mRoot.mkdir();
     		
     		j3mdescriptor = new J3MDescriptor(root);
-    		j3mdescriptor.put("pgpKeyFingerprint", pgpKeyFingerprint);
+    		j3mdescriptor.put("pgpKeyFingerprint", pgpFingerprint);
     		if(atomize()) {
     			j3mdescriptor.finalize();
     			ioCipherService.copyFolder(root);
@@ -84,6 +89,10 @@ public class J3M {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
+	}
+	
+	public String getBase() {
+		return root.getName();
 	}
 	
 	private boolean atomize() {
@@ -155,6 +164,72 @@ public class J3M {
 		return size;
 	}
 	
+	public static final class J3MManifest extends JSONObject {
+		info.guardianproject.iocipher.File root;
+		
+		public J3MManifest(String rootName, String pgpFingerprint, int numChunks) {
+			root = new info.guardianproject.iocipher.File(rootName);			
+			
+			// XXX: why does iocipher not see the files?
+			info.guardianproject.iocipher.File j3m_root = new info.guardianproject.iocipher.File(root, "j3m");
+			IOCipherService.getInstance().walk(j3m_root);
+			
+			try {
+				put(Crypto.PGP.Keys.PGP_FINGERPRINT, pgpFingerprint);
+				put(Media.Keys.J3M_BASE, root.getName());
+				put(Media.Manifest.Keys.TOTAL_CHUNKS, numChunks);
+				put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
+			} catch (JSONException e) {
+				Log.e(Constants.J3M.LOG, e.toString()); 
+				e.printStackTrace();
+			}
+		}
+		
+		@SuppressWarnings("unchecked")
+		public J3MManifest(JSONObject j) {
+			try {
+				Log.d(Constants.J3M.LOG, "opened up manifest:\n" + j.toString());
+				Iterator<String> iIt = j.keys();
+				while(iIt.hasNext()) {
+					String key = iIt.next();
+					put(key, j.get(key));
+				}					
+			} catch (JSONException e) {
+				Log.e(Constants.J3M.LOG, e.toString());
+				e.printStackTrace();
+			}
+		}
+
+		public void save(Handler h) {
+			DatabaseHelper dh = DatabaseService.getInstance().getHelper();
+			SQLiteDatabase db = DatabaseService.getInstance().getDb();
+			
+			try {
+				Log.d(Constants.J3M.LOG, "saved over manifest?:\n" + this.toString());
+				
+				ContentValues cv = new ContentValues();
+				cv.put(Media.Keys.J3M_MANIFEST, toString());
+				
+				dh.setTable(db, Tables.Keys.MEDIA);
+				db.update(dh.getTable(), cv, Media.Keys.J3M_BASE + " =?", new String[] {getString(Media.Keys.J3M_BASE)});
+				
+				if(h != null) {
+					h.postDelayed(new Runnable() {
+						@Override
+						public void run() {
+							Log.d(Constants.J3M.LOG, "confirm: GREAT");
+						}
+					}, 3000);
+				}
+			} catch(JSONException e) {}
+			
+		}
+
+		public void save() {
+			save(null);
+		}
+	}
+	
 	public static final class J3MDescriptor extends JSONObject {
 		File j3mdescriptor, file, dump_folder;
 		
@@ -177,13 +252,18 @@ public class J3M {
 	}
 	
 	public final static class J3MPackage {
-		public String j3m, url;
+		public String pgpFingerprint;
+		public String j3m, url, root;
 		public long pkcs12Id;
+		public int chunk_num;
 		
 		public J3MPackage(J3M j3m, String url, long pkcs12Id) {
 			this.j3m = j3m.j3mdescriptor.toString();
+			this.pgpFingerprint = j3m.pgpFingerprint;
 			this.pkcs12Id = pkcs12Id;
 			this.url = url;
+			this.root = j3m.root.getName();
+			this.chunk_num = j3m.chunk_num;
 		}
 	}
 }

@@ -124,6 +124,7 @@ public class IOUtility {
 			FileInputStream fis = new FileInputStream(file);
 			byte[] bytes = new byte[fis.available()];
 			fis.read(bytes, 0, fis.available());
+			fis.close();
 			return bytes;
 		} catch (FileNotFoundException e) {
 			Log.e(App.LOG, e.toString());
@@ -138,22 +139,26 @@ public class IOUtility {
 	
 	public final static info.guardianproject.iocipher.File fileFromBytes(byte[] bytes, String fileName) {
 		info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(fileName);
+		return fileFromBytes(bytes, file);
+	}
+	
+	public final static info.guardianproject.iocipher.File fileFromBytes(byte[] bytes, info.guardianproject.iocipher.File file) {
 		
 		info.guardianproject.iocipher.FileOutputStream fos;
 		try {
-			fos = new info.guardianproject.iocipher.FileOutputStream(fileName);
+			fos = new info.guardianproject.iocipher.FileOutputStream(file);
 			fos.write(bytes);
 			fos.close();
 			return file;
 		} catch (FileNotFoundException e) {
 			Log.e(Storage.LOG, e.toString());
 			e.printStackTrace();
-			return null;
 		} catch (IOException e) {
 			Log.e(Storage.LOG, e.toString());
 			e.printStackTrace();
-			return null;
 		}
+		
+		return null;
 		
 	}
 	

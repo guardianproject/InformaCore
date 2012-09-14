@@ -14,6 +14,7 @@ import org.witness.informacam.app.adapters.AddressBookChooserAdapter;
 import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.AddressBookUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
@@ -128,18 +129,6 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	}
 	
 	@Override
-	public void onStop() {
-		super.onStop();
-		if(db != null) {
-			db.close();
-			dh.close();
-			
-			db = null;
-			dh = null;
-		}
-	}
-	
-	@Override
 	public void onClick(View v) {
 		if(v == navigation)
 			finish();
@@ -182,8 +171,8 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		h = new Handler();
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
-		dh = new DatabaseHelper(this);
-		db = dh.getWritableDatabase(sp.getString(Settings.Keys.CURRENT_LOGIN, ""));
+		dh = DatabaseService.getInstance().getHelper();
+		db = DatabaseService.getInstance().getDb();
 		
 		h.post(new Runnable() {
 			@Override

@@ -14,6 +14,8 @@ import java.util.concurrent.ExecutionException;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.R;
 import org.witness.informacam.app.Eula.OnEulaAgreedTo;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
@@ -23,10 +25,13 @@ import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.LocalBinder;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.j3m.J3M.J3MManifest;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.HttpUtility;
 import org.witness.informacam.transport.UploaderService;
+import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
@@ -119,16 +124,30 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     
     @SuppressWarnings("unused")
 	private void initInformaCam() {
-    	SignatureUtility signatureUtility = new SignatureUtility(MainActivity.this);
+    	Intent launchDatabaseService = new Intent(this, DatabaseService.class);
+    	startService(launchDatabaseService);
+    	h.postDelayed(new Runnable() {
+
+			@Override
+			public void run() {
+				SignatureUtility signatureUtility = new SignatureUtility(MainActivity.this);
+				
+				Intent launchInformaService = new Intent(MainActivity.this, InformaService.class);
+				bindService(launchInformaService, sc, Context.BIND_AUTO_CREATE);
+				
+				Intent initVirtualStorage = new Intent(MainActivity.this, IOCipherService.class);
+				startService(initVirtualStorage);
+				
+				Intent launchUploaderService = new Intent(MainActivity.this, UploaderService.class);
+				startService(launchUploaderService);
+				
+			}
+    		
+    	}, 500);
     	
-    	Intent launchInformaService = new Intent(this, InformaService.class);
-		bindService(launchInformaService, sc, Context.BIND_AUTO_CREATE);
-		
-		Intent initVirtualStorage = new Intent(this, IOCipherService.class);
-		startService(initVirtualStorage);
-		
-		Intent intent = new Intent(this, UploaderService.class);
-		startService(intent);
+    	
+    	
+    	
     }
     
     @Override
@@ -137,8 +156,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	if(informaService != null)
     		doShutdown();
     }
-    
-    
     
     @Override
     public void onEulaAgreedTo() {
@@ -262,7 +279,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			break;
     		case App.Main.FROM_EDITOR:
     			// TODO: add to upload queue, restart informa...
-    			mProgressDialog.dismiss();
+    			if(mProgressDialog != null)
+    				mProgressDialog.dismiss();
     			break;
     		case App.Main.FROM_MEDIA_MANAGER:
     			// copy original to what should be mediaCaptureFile and set mediaCaptureUri

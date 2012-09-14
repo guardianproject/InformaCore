@@ -21,6 +21,7 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
@@ -262,8 +263,8 @@ public class VideoConstructor {
 		long saveTime = System.currentTimeMillis();
 		InformaService.getInstance().informa.setSaveTime(saveTime);
 		
-		dh = new DatabaseHelper(c);
-		db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(c).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		dh = DatabaseService.getInstance().getHelper();
+		db = DatabaseService.getInstance().getDb();
 		
 		try {
 			dh.setTable(db, Tables.Keys.KEYRING);
@@ -299,9 +300,6 @@ public class VideoConstructor {
 					cursor.close();
 				}
 			}
-			
-			db.close();
-			dh.close();
 			
 			InformaService.getInstance().versionsCreated();
 		} catch(IOException e) {

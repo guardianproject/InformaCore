@@ -15,13 +15,12 @@ import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
 import org.witness.informacam.app.editors.filters.InformaTagger;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.SolidObscure;
-import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.j3m.J3M;
 import org.witness.informacam.j3m.J3M.J3MPackage;
 import org.witness.informacam.storage.DatabaseHelper;
-import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
@@ -42,7 +41,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
 
@@ -117,8 +115,8 @@ public class ImageConstructor {
 			
 			if(InformaService.getInstance().informa.addToAnnotations(annotations)) {
 				// then it is ok... time to encrypt
-				dh = new DatabaseHelper(c);
-				db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(c).getString(Settings.Keys.CURRENT_LOGIN, ""));
+				dh = DatabaseService.getInstance().getHelper();
+				db = DatabaseService.getInstance().getDb();
 				
 				long saveTime = System.currentTimeMillis();
 				InformaService.getInstance().informa.setSaveTime(saveTime);
@@ -153,18 +151,17 @@ public class ImageConstructor {
 						// save metadata in database
 						ContentValues cv = InformaService.getInstance().informa.initMetadata(MediaHasher.hash(version, "SHA-1") + "/" + version.getName(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID)));
 						
+						J3M j3m = new J3M(InformaService.getInstance().informa.getPgpKeyFingerprint(), cv, version);
+						cv.put(Media.Keys.J3M_BASE, j3m.getBase());
+						
 						dh.setTable(db, Tables.Keys.MEDIA);
 						db.insert(dh.getTable(), null, cv);
 						
-						J3M j3m = new J3M(InformaService.getInstance().informa.getPgpKeyFingerprint(), cv, version);
-						UploaderService.getInstance().addToQueue(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td));
+						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td));
 						
 						cursor.close();
 					}
 				}
-				
-				db.close();
-				dh.close();
 				
 				InformaService.getInstance().versionsCreated();
 			}

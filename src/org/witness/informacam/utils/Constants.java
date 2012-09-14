@@ -199,9 +199,11 @@ public class Constants {
 			public final static String SHARE_VECTOR = "shareVector";
 			public final static String MESSAGE_URL = "messageUrl";
 			public final static String STATUS = "transitStatus";
-			public final static String AUTH_TOKEN = "authToken";
+			public final static String AUTH_TOKEN = "auth_token";
 			public final static String ALIAS = "mediaAlias";
 			public static final String TIME_CAPTURED = Informa.CaptureEvent.Keys.MEDIA_CAPTURE_COMPLETE;
+			public static final String J3M_BASE = "j3mBase";
+			public static final String J3M_MANIFEST = "j3mManifest";
 		}
 		
 		public final static class DateFormats {
@@ -242,7 +244,14 @@ public class Constants {
 				public final static String DURATION = Informa.Keys.Data.Exif.DURATION;
 				public final static String LENGTH = Informa.Keys.Data.Exif.IMAGE_LENGTH;
 				public final static String WIDTH = Informa.Keys.Data.Exif.IMAGE_WIDTH;
+				public static final String AUTH_TOKEN = Transport.Manifest.Keys.AUTH_TOKEN;
+				public static final String LAST_TRANSFERRED = Transport.Manifest.Keys.LAST_TRANSFERRED;
+				public static final String TOTAL_CHUNKS = "totalJ3MChunks";
+				public static final String URL = TrustedDestination.Keys.URL;
+				public static final String CERTS = Transport.Keys.CERTS;
 			}
+
+			public static final String UPLOADED_FLAG = "uploadedFlag";
 		}
 	}
 	
@@ -567,6 +576,8 @@ public class Constants {
 			
 			public final static String UPLOAD_ATTEMPTS = "uploadAttempts";
 			public static final String J3M = "j3m";
+			public static final String AUTH_TOKEN = Media.Keys.AUTH_TOKEN;
+			public static final String CHECK_FOR_MISSING_TORRENTS = "checkForMissingTorrents";
 		}
 		
 		public static final class Status {
@@ -633,15 +644,42 @@ public class Constants {
 		public static final String LOG = "**************** InformaCam:TRANSPORT ****************";
 		
 		public final static class Result {
-			public final static String OK = "OK";
+			public final static String OK = "A_OK";
 			public final static String FAIL = "FAIL";
+			public final static class ErrorCodes {
+				public final static int AUTH_FAILURE = 1998;
+				public final static int DUPLICATE_J3M_TORRENT = 2000;
+				public final static int COULD_NOT_CREATE_FOLDER = 1999;
+			}
 		}
 		
 		public final static class Keys {
 			public final static String HYPHENS = "--";
 			public final static String BOUNDARY = "*****InformaCamData****";
 			public final static String LINE_END = "\r\n";
+			public static final String RESULT = "result";
+			public static final String BUNDLE = "bundle";
+			public final static String RES = "res";
+			public static final String URL = TrustedDestination.Keys.URL;
+			public static final String CERTS = Crypto.Keystore.Keys.CERTS;
+			public static final String ERROR_CODE = "error_code";
+			public static final String MISSING_TORRENTS = "missingTorrents";
 			
+		}
+
+		public final static class Manifest {
+			public final static class Keys {
+				public static final String LAST_TRANSFERRED = "lastJ3MTorrent";
+				public static final String AUTH_TOKEN = "auth_token";
+				public static final String TOTAL_CHUNKS = Media.Manifest.Keys.TOTAL_CHUNKS;
+				public static final String J3MBase = Media.Keys.J3M_BASE;
+			}
+		}
+
+		public static class MimeTypes {
+			public static final String JSON = "application/json";
+			public static final String TEXT = "text/plain";
+			public static final String OCTET_STREAM = "application/octet-stream";
 		}
 		
 		

@@ -453,7 +453,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 
 	@Override
 	public void onInformaInit(Activity editor, Uri workingUri) {
-		informa = new Informa(this);
+		informa = new Informa();
 		try {
 			LogPack originalData = getMetadata();
 			informa.setDeviceCredentials(_phone.getSucker().forceReturn());

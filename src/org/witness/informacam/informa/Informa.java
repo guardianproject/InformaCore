@@ -16,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
@@ -49,8 +50,6 @@ public class Informa {
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	
-	Context c;
-	SharedPreferences sp;
 	
 	public interface InformaListener {
 		public void onInformaInit(Activity editor, Uri originalUri);
@@ -323,12 +322,9 @@ public class Informa {
 		genealogy.dateSavedAsInformaDocument = saveTime;
 	}
 	
-	public Informa(Context c) {
-		this.c = c;
-		sp = PreferenceManager.getDefaultSharedPreferences(this.c);
-		
-		dh = new DatabaseHelper(c);
-		db = dh.getWritableDatabase(sp.getString(Settings.Keys.CURRENT_LOGIN, ""));
+	public Informa() {		
+		dh = DatabaseService.getInstance().getHelper();
+		db = DatabaseService.getInstance().getDb();
 		
 		intent = new Intent();
 		genealogy = new Genealogy();

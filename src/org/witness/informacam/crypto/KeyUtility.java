@@ -1,4 +1,3 @@
-
 package org.witness.informacam.crypto;
 
 import java.io.ByteArrayInputStream;

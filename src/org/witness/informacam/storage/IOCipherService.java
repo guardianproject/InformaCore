@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -78,8 +79,8 @@ public class IOCipherService extends Service {
     	java.io.File storageRoot = new java.io.File(getDir(Storage.IOCipher.ROOT, MODE_PRIVATE).getAbsolutePath(), Storage.IOCipher.STORE);
     	vfs = new VirtualFileSystem(storageRoot);
     	
-    	DatabaseHelper dh = new DatabaseHelper(this);
-    	SQLiteDatabase db = dh.getReadableDatabase(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.CURRENT_LOGIN, ""));
+    	DatabaseHelper dh = DatabaseService.getInstance().getHelper();
+    	SQLiteDatabase db = DatabaseService.getInstance().getDb();
     	
     	dh.setTable(db, Tables.Keys.SETUP);
     	Cursor c = dh.getValue(db, new String[] {Device.Keys.AUTH_KEY}, BaseColumns._ID, 1L);
@@ -87,12 +88,8 @@ public class IOCipherService extends Service {
     		vfs.mount(c.getString(c.getColumnIndex(Device.Keys.AUTH_KEY)));
     		c.close();
     		ioCipherService = this;
-    		db.close();
-        	dh.close();
     	} else {
     		vfs = null;
-    		db.close();
-        	dh.close();
     		Log.e(Storage.LOG, "could not mount virtual file system");
     		this.stopSelf();
     	}
@@ -120,6 +117,12 @@ public class IOCipherService extends Service {
 		}
 		
 		return file;
+	}
+	
+	public File getFile(File root, String file) {
+		Uri uri = Uri.fromFile(new File(root.getAbsolutePath() + file));
+		Log.d(Storage.LOG, "seeking file " + uri.toString());
+		return getFile(uri);
 	}
 	
 	public List<JSONObject> getSavedMedia() {
@@ -165,6 +168,14 @@ public class IOCipherService extends Service {
 		fos.close();
 		
 		return file;
+	}
+	
+	public List<File> walk(File root) {
+		File[] _f = root.listFiles();
+		Log.d(Storage.LOG, "walking folder " + root.getAbsolutePath());
+		for(File f : _f)
+			Log.d(Storage.LOG, f.getAbsolutePath() + " PERMISSION? " + f.canWrite());
+		return new ArrayList<File>(Arrays.asList(_f));
 	}
 	
 	public Uri moveFileToIOCipher(Uri originalUri, int defaultImageHandling) throws NoSuchAlgorithmException, IOException {
@@ -254,7 +265,7 @@ public class IOCipherService extends Service {
 						rootFolder.mkdir();
 					
 					File media = new File(rootFolder, "original" + extension);
-					if(!media.exists()) {
+					try {
 						java.io.FileInputStream fis = new java.io.FileInputStream(tmpFile);
 						byte[] mediaBytes = new byte[fis.available()];
 						fis.read(mediaBytes, 0, fis.available());
@@ -265,12 +276,13 @@ public class IOCipherService extends Service {
 						fos.write(mediaBytes);
 						fos.close();
 						fos = null;
+					} catch(FileNotFoundException e) { 
+						Log.d(Storage.LOG, "oh well the file already existeddddd");
 					}
+					
 					long lastSaved = System.currentTimeMillis();
 					
 					File cacheFile = new File(rootFolder, "cache.json");
-					if(cacheFile.exists())
-						cacheFile.delete();
 					
 					JSONArray cacheArray = new JSONArray();
 					for(LoadingCache<Long, LogPack> cache : caches) {
@@ -411,5 +423,4 @@ public class IOCipherService extends Service {
 		} catch(FileNotFoundException e) {}
 		catch(IOException e) {}
 	}
-
 }

@@ -21,6 +21,7 @@ import javax.net.ssl.TrustManager;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage.Tables;
@@ -44,12 +45,10 @@ public class InformaTrustManager implements X509TrustManager {
 	byte[] keyStored = null;
 	String pwd;
 	long lastUpdate;
-	Context c;
 	
 	public InformaTrustManager(Context context) {
-		c = context;
-		dh = new DatabaseHelper(context);
-		db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(context).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		dh = DatabaseService.getInstance().getHelper();
+		db = DatabaseService.getInstance().getDb();
 		
 		dh.setTable(db, Tables.Keys.SETUP);
 		Cursor c = dh.getValue(db, new String[] {Settings.Device.Keys.AUTH_KEY}, BaseColumns._ID, 1);
