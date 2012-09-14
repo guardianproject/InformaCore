@@ -24,6 +24,8 @@ import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnActionItemClickListener;
 
+import org.ffmpeg.android.ShellUtils;
+import org.ffmpeg.android.ShellUtils.ShellCallback;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.witness.informacam.R;
@@ -32,7 +34,6 @@ import org.witness.informacam.app.AnnotationActivity;
 import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
-import org.witness.informacam.app.editors.video.ShellUtils.ShellCallback;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
@@ -1183,7 +1184,7 @@ public class VideoEditor extends Activity implements
 					int current = 0;
 					
 					@Override
-					public void shellOut(char[] shellout) {
+					public void shellOut(String shellout) {
 						
 						String line = new String(shellout);
 						
@@ -1235,7 +1236,6 @@ public class VideoEditor extends Activity implements
 				         mHandler.sendMessage(msg);
 						}
 					}
-					
 				};
 				
 				int processVWidth = videoWidth;
@@ -1407,10 +1407,12 @@ public class VideoEditor extends Activity implements
 			{
 
 				@Override
-				public void shellOut(char[] msg) {
-					
+				public void shellOut(String shellLine) {
+					Log.d(VideoEditor.LOGTAG, shellLine);
 					
 				}
+
+				
 				
 			}, false, false);
 			Thread.sleep(killDelayMs); }
@@ -1491,6 +1493,7 @@ public class VideoEditor extends Activity implements
 		outFrameRate = Integer.parseInt(prefs.getString("pref_out_fps", DEFAULT_OUT_FPS).trim());
 		outBitRate = Integer.parseInt(prefs.getString("pref_out_rate", DEFAULT_OUT_RATE).trim());
 		outFormat = prefs.getString("pref_out_format", DEFAULT_OUT_FORMAT).trim();
+		Log.d(App.LOG, "OUTFORMAT SET TO: " + outFormat);
 		outAcodec =  prefs.getString("pref_out_acodec", DEFAULT_OUT_ACODEC).trim();
 		outVcodec =  prefs.getString("pref_out_vcodec", DEFAULT_OUT_VCODEC).trim();
 

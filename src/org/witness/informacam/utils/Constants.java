@@ -544,7 +544,7 @@ public class Constants {
 			public final static String DUMP_FOLDER = Environment.getExternalStorageDirectory() + "/InformaCam";
 			public final static String IMAGE_TMP = "informa_tmp.jpg";
 			public final static String VIDEO_TMP = "informa_tmp.mp4";
-			public final static String TMP_VIDEO_DATA_FILE_NAME = "informaCam_metadata.txt";
+			public final static String TMP_VIDEO_DATA_FILE_NAME = "informaCam_metadata.json";
 		}
 		
 		public final static class IOCipher {

@@ -14,33 +14,22 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Media;
-import org.witness.informacam.utils.Constants.Settings;
-import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
-import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
-import com.google.common.cache.LoadingCache;
-
 import android.app.Activity;
 import android.content.ContentValues;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
-import android.preference.PreferenceManager;
 
 public class Informa {
 	Intent intent;

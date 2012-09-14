@@ -14,38 +14,42 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.ffmpeg.android.BinaryInstaller;
+import org.ffmpeg.android.ShellUtils.ShellCallback;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
-import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Media;
-import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
+import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 import org.witness.informacam.utils.Constants.TrustedDestination;
-import org.witness.informacam.app.editors.video.BinaryInstaller;
 import org.witness.informacam.app.editors.video.ObscureRegion;
 import org.witness.informacam.app.editors.video.RegionTrail;
-import org.witness.informacam.app.editors.video.ShellUtils.ShellCallback;
-import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.j3m.J3M;
+import org.witness.informacam.j3m.J3M.J3MPackage;
 
 import com.google.common.cache.LoadingCache;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class VideoConstructor {
@@ -94,7 +98,7 @@ public class VideoConstructor {
 			while ((line = reader.readLine()) != null)
 			{
 				if (sc != null)
-					sc.shellOut(line.toCharArray());
+					sc.shellOut(line);
 			}
 
 			
@@ -260,71 +264,103 @@ public class VideoConstructor {
 	}
 	
 	public void buildInformaVideo(Context c, LoadingCache<Long, LogPack> annotationCache, long[] encryptList) {
+		
 		long saveTime = System.currentTimeMillis();
 		InformaService.getInstance().informa.setSaveTime(saveTime);
 		
-		dh = DatabaseService.getInstance().getHelper();
-		db = DatabaseService.getInstance().getDb();
-		
 		try {
-			dh.setTable(db, Tables.Keys.KEYRING);
+			dh = DatabaseService.getInstance().getHelper();
+			db = DatabaseService.getInstance().getDb();
 			
-			for(long td : encryptList) {
-				Cursor cursor = dh.getValue(db, new String[] {PGP.Keys.PGP_DISPLAY_NAME, PGP.Keys.PGP_EMAIL_ADDRESS, PGP.Keys.PGP_PUBLIC_KEY, Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID}, TrustedDestination.Keys.KEYRING_ID, td);
+			List<Entry<Long, LogPack>> annotations = InformaService.getInstance().getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED, annotationCache);
+			if(InformaService.getInstance().informa.addToAnnotations(annotations)) {
+				dh.setTable(db, Tables.Keys.KEYRING);
 				
-				if(cursor != null && cursor.moveToFirst()) {
-					String forName = cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_DISPLAY_NAME));
+				for(long td : encryptList) {
+					Cursor cursor = dh.getValue(db, null, TrustedDestination.Keys.KEYRING_ID, td);
 					
-					// add into intent
-					InformaService.getInstance().informa.setTrustedDestination(cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_EMAIL_ADDRESS)));
-					
-					
-					// bundle up informadata
-					byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
-					// XXX: encryption is broken, to fix later
-					//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
-					String informaMetadata = InformaService.getInstance().informa.bundle();
-					
-					
-					// insert metadata
-					File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.MKV);
-					constructVideo(version, informaMetadata);
-					
-					// XXX:  move back to IOCipher and remove this version from public filestore
-					info.guardianproject.iocipher.File ioCipherVersion = IOCipherService.getInstance().moveFileToIOCipher(version, MediaHasher.hash(clone, "SHA-1"), true);
-					
-					
-					dh.setTable(db, Tables.Keys.MEDIA);
-					db.insert(dh.getTable(), null, InformaService.getInstance().informa.initMetadata(ioCipherVersion.getAbsolutePath(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID))));
-					
-					cursor.close();
+					if(cursor != null && cursor.moveToFirst()) {
+						String forName = cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_DISPLAY_NAME));
+						
+						// add into intent
+						InformaService.getInstance().informa.setTrustedDestination(cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_EMAIL_ADDRESS)));
+						
+						
+						// bundle up informadata
+						byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
+						// XXX: encryption is broken, to fix later
+						//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
+						String informaMetadata = InformaService.getInstance().informa.bundle();
+						
+						
+						// insert metadata
+						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.MKV);
+						File mdFile = stringToFile(informaMetadata, Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
+						constructVideo(version, mdFile);
+						
+						// save metadata in database
+						ContentValues cv = InformaService.getInstance().informa.initMetadata(MediaHasher.hash(version, "SHA-1") + "/" + version.getName(), cursor.getLong(cursor.getColumnIndex(Crypto.Keyring.Keys.TRUSTED_DESTINATION_ID)));
+						
+						J3M j3m = new J3M(InformaService.getInstance().informa.getPgpKeyFingerprint(), cv, version);
+						cv.put(Media.Keys.J3M_BASE, j3m.getBase());
+						
+						dh.setTable(db, Tables.Keys.MEDIA);
+						db.insert(dh.getTable(), null, cv);
+						
+						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td));
+						
+						cursor.close();
+					}
 				}
 			}
-			
 			InformaService.getInstance().versionsCreated();
 		} catch(IOException e) {
+			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
 		} catch (JSONException e) {
+			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
 		}
 	}
 	
-	public void constructVideo(File video, String metadata) throws IOException, JSONException {
+	public void constructVideo(File video, File metadata) throws IOException, JSONException {
+		
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 		
-		File mdFile = stringToFile(metadata, Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
+		
+		
+		// TODO: this is the command that will write to mkv, but in the meanwhile...
 		
 		String[] ffmpegCommand = new String[] {
 			ffmpegBin, "-i", clone.getAbsolutePath(),
-			"-attach", mdFile.getAbsolutePath(),
+			"-attach", metadata.getAbsolutePath(),
 			"-metadata:s:2", "mimetype=text/plain",
 			"-vcodec", "copy",
 			"-acodec", "copy",
 			video.getAbsolutePath()
 		};
+		
+		
+		//ffmpeg -i output-1913075278.3gp -attach informaCam_metadata.json -metadata:s:2 mimetype=text/plain -acodec copy -vcodec copy outtt.mkv
+		
+		/*
+		String[] ffmpegCommand = new String[] {
+			ffmpegBin, "-i", clone.getAbsolutePath(),
+			"-vcodec", "copy",
+			"-acodec", "copy",
+			video.getAbsolutePath()
+		};
+		*/
 		
 		StringBuffer sb = new StringBuffer();
 		for(String f: ffmpegCommand) {
@@ -333,7 +369,18 @@ public class VideoConstructor {
 		Log.d(LOGTAG, "command to ffmpeg: " + sb.toString());
 		
 		try {
-			execProcess(ffmpegCommand, null);
+			execProcess(ffmpegCommand, new ShellCallback ()
+			{
+
+				@Override
+				public void shellOut(String shellLine) {
+					Log.d(VideoEditor.LOGTAG, shellLine);
+					
+				}
+
+				
+				
+			});
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

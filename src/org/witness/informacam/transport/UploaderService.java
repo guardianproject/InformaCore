@@ -70,7 +70,6 @@ public class UploaderService extends Service {
 				
 				@Override
 				public void run() {
-					Log.d(Transport.LOG, "oh hai uploader");
 					upload();
 				}
 				

@@ -27,32 +27,50 @@ import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants.Crypto;
-import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Settings.Device;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
-import android.app.Activity;
+import android.app.Service;
+import android.content.Intent;
 import android.database.Cursor;
-import android.preference.PreferenceManager;
+import android.os.Binder;
+import android.os.IBinder;
 import android.provider.BaseColumns;
-import android.util.Base64;
 import android.util.Log;
 
-
-public class SignatureUtility {
-	public static SignatureUtility signatureUtility;
+public class SignatureService extends Service {
+	private final IBinder binder = new LocalBinder();
+	private static SignatureService signatureService = null;
 	
 	private PGPSecretKey secretKey = null;
 	private PGPPrivateKey privateKey = null;
 	private PGPPublicKey publicKey = null;
 	private String authKey = null;
 	
-	public SignatureUtility(Activity a) {
+	public class LocalBinder extends Binder {
+		public SignatureService getService() {
+			return SignatureService.this;
+		}
+	}
+	
+	@Override
+	public IBinder onBind(Intent intent) {
+		return binder;
+	}
+	
+	public static SignatureService getInstance() {
+		return signatureService;
+	}
+	
+	@Override
+	public void onCreate() {
 		DatabaseHelper dh = DatabaseService.getInstance().getHelper();
 		SQLiteDatabase db = DatabaseService.getInstance().getDb();
 		
 		dh.setTable(db, Tables.Keys.SETUP);
+		
+		Log.d(Crypto.LOG, "current table: " + dh.getTable());
 		Cursor k = dh.getValue(db, new String[] {Device.Keys.AUTH_KEY, Device.Keys.SECRET_KEY}, BaseColumns._ID, 1);
 		if(k != null && k.moveToFirst()) {
 			try {
@@ -61,11 +79,7 @@ public class SignatureUtility {
 			k.close();
 		}
 		
-		signatureUtility = this;
-	}
-	
-	public static SignatureUtility getInstance() {
-		return signatureUtility;
+		signatureService = this;
 	}
 	
 	@SuppressWarnings("deprecation")

@@ -9,7 +9,6 @@ import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.informacam.crypto.SignatureUtility;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 

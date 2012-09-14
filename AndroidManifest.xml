@@ -56,6 +56,7 @@
                  <data android:mimeType="video/*" />
              </intent-filter>        
         </activity>
+        <activity android:name=".app.editors.video.VideoPreferences" />
         <activity android:name=".app.WizardActivity"
             android:theme="@style/Theme.CustomDialog"
             android:screenOrientation="portrait"
@@ -97,6 +98,7 @@
         <service android:name=".transport.UploaderService" android:enabled="true" />
         <service android:name=".storage.IOCipherService" android:enabled="true" />
         <service android:name=".storage.DatabaseService" android:enabled="true" />
+        <service android:name=".crypto.SignatureService" android:enabled="true" />
     </application>
 
 </manifest>

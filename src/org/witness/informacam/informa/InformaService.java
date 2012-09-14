@@ -107,9 +107,12 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			vidTemp.delete();
 		}
 		
+		/*
 		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
 		if(vidMetadata.exists())
 			vidMetadata.delete();
+		*/
+		
 	}
 	
 	public void versionsCreated() {
@@ -418,7 +421,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		
 		try {
 			LogPack lp = null;
-			//Log.d(Suckers.LOG, "LOGGING " + timestamp + " :\n" + logPack.toString());
 			switch(logPack.getInt(CaptureEvent.Keys.TYPE)) {
 			case CaptureEvent.SENSOR_PLAYBACK:
 				lp = suckerCache.getIfPresent(timestamp);
@@ -427,15 +429,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 					Iterator<String> lIt = lp.keys();
 					while(lIt.hasNext()) {
 						String key = lIt.next();
-						logPack.put(key, lp.get(key));
-							
+						logPack.put(key, lp.get(key));	
 					}
 				}
+				
 				suckerCache.put(timestamp, logPack);
 				break;
 			default:
-				
-				lp = annotationCache.getIfPresent(timestamp);
+				lp = annotationCache.getIfPresent(timestamp);				
 				if(lp != null) {
 					Iterator<String> lIt = lp.keys();
 					while(lIt.hasNext()) {
@@ -444,6 +445,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 							
 					}
 				}
+				
 				annotationCache.put(timestamp, logPack);
 				break;
 			}
