@@ -36,7 +36,7 @@ public class J3M {
 	byte[] fileBytes;
 	static String LOG = Constants.J3M.LOG;
 	int chunk_num, chunk_count = 0;
-	int mode = Constants.J3M.Chunks.EXTRA_LARGE;
+	int mode = 0;
 	int mediaType;
 	long timestampCreated;
 	String pgpFingerprint;
@@ -59,6 +59,7 @@ public class J3M {
 				root.mkdir();
 						
 			fileBytes = new byte[(int) file.length()];
+			mode = Constants.J3M.Chunks.EXTRA_EXTRA_LARGE;
 			
 			InputStream fis = new FileInputStream(file);
 			while(offset < fileBytes.length && (numRead = fis.read(fileBytes, offset, fileBytes.length - offset)) > 0)
@@ -73,6 +74,7 @@ public class J3M {
     		
     		j3mdescriptor = new J3MDescriptor(root);
     		j3mdescriptor.put("pgpKeyFingerprint", pgpFingerprint);
+    		
     		if(atomize()) {
     			j3mdescriptor.finalize();
     			ioCipherService.copyFolder(root);

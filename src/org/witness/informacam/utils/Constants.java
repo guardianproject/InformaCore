@@ -696,6 +696,7 @@ public class Constants {
 			public final static int MEDIUM = 4096;
 			public final static int LARGE = 12288;
 			public final static int EXTRA_LARGE = 36864;
+			public static final int EXTRA_EXTRA_LARGE = 100000;
 			public final static int ALL(int length) {
 				return length;
 			}

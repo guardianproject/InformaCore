@@ -127,9 +127,10 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 				Intent launchUploaderService = new Intent(MainActivity.this, UploaderService.class);
 				startService(launchUploaderService);
 				
+				/*
 				Intent launchSignatureUtility = new Intent(MainActivity.this, SignatureService.class);
 				startService(launchSignatureUtility);
-				
+				*/
 			}
     		
     	}, 500);
