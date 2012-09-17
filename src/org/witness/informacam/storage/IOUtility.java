@@ -189,10 +189,15 @@ public class IOUtility {
 			logPack.put(Exif.IMAGE_WIDTH, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
 			logPack.put(Exif.DURATION, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
 			
-			
 			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.VIDEO);
 			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
 			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
+			
+			Bitmap b = retriever.getFrameAtTime(Math.max(logPack.getLong(Exif.DURATION)/2, 0), MediaMetadataRetriever.OPTION_CLOSEST);
+			Matrix m = new Matrix();
+			m.postScale(80f/b.getWidth(), 80f/b.getHeight());
+			
+			logPack.put(Media.Manifest.Keys.THUMBNAIL, new String(Base64.encode(IOUtility.getBytesFromBitmap(b, 20))));
 						
 			return logPack;
 		} catch (IOException e) {
@@ -225,6 +230,12 @@ public class IOUtility {
 			logPack.put(Data.Description.MEDIA_TYPE, Media.Type.IMAGE);
 			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
 			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
+			
+			Bitmap b = BitmapFactory.decodeFile(filepath);
+			Matrix m = new Matrix();
+			m.postScale(80f/b.getWidth(), 80f/b.getHeight());
+			
+			logPack.put(Media.Manifest.Keys.THUMBNAIL, new String(Base64.encode(IOUtility.getBytesFromBitmap(b, 20))));
 						
 			return logPack;
 		} catch (IOException e) {

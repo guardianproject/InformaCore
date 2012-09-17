@@ -3,6 +3,7 @@ package org.witness.informacam.app.editors.video;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.TreeSet;
 
@@ -11,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.VideoRegion;
 
 import android.graphics.Bitmap;
@@ -59,18 +61,36 @@ public class RegionTrail {
 	
 	public RegionTrail (int startTime, int endTime, VideoEditor videoEditor)
 	{
+		this(startTime, endTime, videoEditor, null, null, false, System.currentTimeMillis());
+	}
+	
+	public RegionTrail(int startTime, int endTime, VideoEditor videoEditor, String obscureMode, List<ObscureRegion> videoTrail, boolean fromCache, long timestamp) {
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.videoEditor = videoEditor;
 		
+		if(obscureMode == null)
+			setObscureMode(OBSCURE_MODE_PIXELATE);
+		else
+			setObscureMode(obscureMode);
+		
+		
+		
 		mProps = new Properties();
-		mProps.put(VideoRegion.FILTER, this.getClass().getName());
-		mProps.put(VideoRegion.TIMESTAMP, System.currentTimeMillis());
+		mProps.put(VideoRegion.FILTER, this.obscureMode);
+		mProps.put(VideoRegion.TIMESTAMP, timestamp);
 		mProps.put(VideoRegion.START_TIME, startTime);
 		mProps.put(VideoRegion.END_TIME, endTime);
-		InformaService.getInstance().onVideoRegionCreated(this);
+		
+		if(videoTrail != null)
+			for(ObscureRegion or : videoTrail)
+				addRegion(or);
+		
+		// CANNOT OVERWRITE IF FROM A CACHE!
+		if(!fromCache)
+			InformaService.getInstance().onVideoRegionCreated(this);
 	}
-	
+
 	public int getStartTime() {
 		return startTime;
 	}
@@ -112,6 +132,7 @@ public class RegionTrail {
 			metadata.put(VideoRegion.Child.COORDINATES, "[" + or.getBounds().top + "," + or.getBounds().left + "]");
 			metadata.put(VideoRegion.Child.WIDTH, Integer.toString((int) Math.abs(or.getBounds().left - or.getBounds().right)));
 			metadata.put(VideoRegion.Child.HEIGHT, Integer.toString((int) Math.abs(or.getBounds().top - or.getBounds().bottom)));
+			metadata.put(VideoRegion.Child.TIMESTAMP, Integer.toString(or.timeStamp));
 			childMetadata.put(metadata);
 		}
 		
@@ -248,5 +269,11 @@ public class RegionTrail {
 	
 	public void setProperties(Properties mProps) {
 		this.mProps = mProps;
+	}
+
+	public void addSubject(String pseudonym, boolean informedConsentGiven, boolean persistFilter) {
+		mProps.setProperty(Data.VideoRegion.Subject.PSEUDONYM, pseudonym);
+		mProps.setProperty(Data.VideoRegion.Subject.INFORMED_CONSENT_GIVEN, String.valueOf(informedConsentGiven));
+		mProps.setProperty(Data.VideoRegion.Subject.PERSIST_FILTER, String.valueOf(persistFilter));
 	}
 }

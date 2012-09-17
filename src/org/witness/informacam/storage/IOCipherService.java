@@ -2,7 +2,6 @@ package org.witness.informacam.storage;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,12 +43,14 @@ import android.app.Service;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
+import android.util.Base64;
 import android.util.Log;
 
 public class IOCipherService extends Service {
@@ -102,26 +103,34 @@ public class IOCipherService extends Service {
 	}
 	
 	public File getFile(Uri uri) {
-		List<String> paths = uri.getPathSegments();
+		String fileName = uri.toString().split("file://")[1];		
+		return new File(fileName);
+	}
+	
+	public File saveFile(String filename) {
+		File file = getFile(filename);
 		
-		File file = null;
-		for(File dir : new File("/").listFiles()) {
-			if(dir.isDirectory() && dir.getName().equals(paths.get(0))) {
-				for(File f : dir.listFiles()) {
-					if(f.getName().equals(paths.get(1)))
-						file = f;
-					
-					if(file != null) break;
-				}
-			}
+		try {
+			info.guardianproject.iocipher.FileInputStream fis = new FileInputStream(file);
+			byte[] newBytes = new byte[fis.available()];
+			fis.read(newBytes);
+			fis.close();
+			
+			info.guardianproject.iocipher.FileOutputStream fos = new FileOutputStream(filename);
+			fos.write(newBytes);
+			fos.flush();
+			fos.close();
+			
+		} catch (IOException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
 		}
 		
 		return file;
 	}
 	
 	public File getFile(File root, String file) {
-		Uri uri = Uri.fromFile(new File(root.getAbsolutePath() + file));
-		Log.d(Storage.LOG, "seeking file " + uri.toString());
+		Uri uri = Uri.fromFile(new File(root.getAbsolutePath() + "/" + file));
 		return getFile(uri);
 	}
 	
@@ -170,7 +179,8 @@ public class IOCipherService extends Service {
 		return file;
 	}
 	
-	public List<File> walk(File root) {
+	public List<File> walk(File _root) {
+		File root = getFile(_root.getAbsolutePath());
 		File[] _f = root.listFiles();
 		Log.d(Storage.LOG, "walking folder " + root.getAbsolutePath());
 		for(File f : _f)
@@ -241,48 +251,70 @@ public class IOCipherService extends Service {
 		return ioCipherService;
 	}
 	
-	public void loadCache() {
-		
-	}
-
 	public boolean saveCache(final LogPack originalMetadata, final List<LoadingCache<Long, LogPack>> caches) {
-		ExecutorService ex = Executors.newFixedThreadPool(10);
+		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<Boolean> save = ex.submit(new Callable<Boolean>() {
 
 			@Override
 			public Boolean call() throws Exception {
 				String extension = Constants.Media.Type.JPEG;
-				File tmpFile = new File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
+				java.io.File tmpFile = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 				
 				try {
 					if(originalMetadata.getInt(Data.Description.MEDIA_TYPE) == Media.Type.VIDEO) {
 						extension = Constants.Media.Type.MP4;
-						tmpFile = new File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.VIDEO_TMP);
+						tmpFile = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.VIDEO_TMP);
 					}
 					
-					File rootFolder = new File(originalMetadata.getString(Data.Description.ORIGINAL_HASH));
-					if(!rootFolder.exists())
+					File rootFolder = getFile(originalMetadata.getString(Data.Description.ORIGINAL_HASH));
+					if(rootFolder == null) {
+						rootFolder = new File(originalMetadata.getString(Data.Description.ORIGINAL_HASH));
 						rootFolder.mkdir();
+					}
 					
-					File media = new File(rootFolder, "original" + extension);
-					try {
+					File media = getFile(rootFolder, "original" + extension);
+					final File thumbnail = getFile(rootFolder, "thumbnail.jpg");
+					
+					if(!media.exists()) {
 						java.io.FileInputStream fis = new java.io.FileInputStream(tmpFile);
 						byte[] mediaBytes = new byte[fis.available()];
 						fis.read(mediaBytes, 0, fis.available());
 						fis.close();
 						fis = null;
 						
+						media = new File(rootFolder, "original" + extension);
 						FileOutputStream fos = new FileOutputStream(media);
 						fos.write(mediaBytes);
 						fos.close();
 						fos = null;
-					} catch(FileNotFoundException e) { 
-						Log.d(Storage.LOG, "oh well the file already existeddddd");
+						
+						new Thread(new Runnable() {
+							@Override
+							public void run() {
+								try {
+								FileOutputStream fos = new FileOutputStream(thumbnail);
+								
+								byte[] b = Base64.decode(originalMetadata.getString(Manifest.Keys.THUMBNAIL).getBytes(), Base64.DEFAULT);
+								Bitmap bitmap = BitmapFactory.decodeByteArray(b, 0, b.length);
+								bitmap.compress(CompressFormat.JPEG, 30, fos);
+								fos.flush();
+								fos.close();
+								} catch(IOException e) {
+									e.printStackTrace();
+								} catch (JSONException e) {
+
+									e.printStackTrace();
+								}
+							}
+						}).start();
+						
 					}
 					
 					long lastSaved = System.currentTimeMillis();
 					
-					File cacheFile = new File(rootFolder, "cache.json");
+					File cacheFile = getFile(rootFolder, "cache.json");
+					if(cacheFile.exists())
+						cacheFile.delete();
 					
 					JSONArray cacheArray = new JSONArray();
 					for(LoadingCache<Long, LogPack> cache : caches) {
@@ -309,22 +341,28 @@ public class IOCipherService extends Service {
 					
 					String cacheString = cacheJSON.toString();
 					
-					cacheFile = IOUtility.fileFromBytes(cacheString.getBytes(), cacheFile.getAbsolutePath());
+					FileOutputStream fos = new FileOutputStream(cacheFile);
+					fos.write(cacheString.getBytes(), 0, cacheString.getBytes().length);
+					fos.flush();
+					fos.close();
 					
 					JSONObject manifest = new JSONObject();
 					
-					File manifestFile = new File(rootFolder, "manifest.json");
+					File manifestFile = getFile(rootFolder, "manifest.json");
 					
 					if(manifestFile.exists()) {
 						byte[] manifestBytes = IOUtility.getBytesFromFile(manifestFile);
 						manifest = (JSONObject) new JSONTokener(new String(manifestBytes)).nextValue();
 						manifestFile.delete();
 					} else {
+						manifestFile = new File(rootFolder, "manifest.json");
+						
 						manifest.put(Manifest.Keys.SIZE, media.length());
 						manifest.put(Manifest.Keys.LOCATION_OF_ORIGINAL, media.getAbsolutePath());
 						manifest.put(Manifest.Keys.LENGTH, originalMetadata.getInt(Manifest.Keys.LENGTH));
 						manifest.put(Manifest.Keys.WIDTH, originalMetadata.getInt(Manifest.Keys.WIDTH));
 						manifest.put(Manifest.Keys.MEDIA_TYPE, originalMetadata.getInt(Manifest.Keys.MEDIA_TYPE));
+						manifest.put(Manifest.Keys.THUMBNAIL, thumbnail.getAbsolutePath());
 						if(manifest.getInt(Manifest.Keys.MEDIA_TYPE) == Media.Type.VIDEO)
 							manifest.put(Manifest.Keys.DURATION, originalMetadata.getInt(Manifest.Keys.DURATION));
 					}
@@ -332,8 +370,9 @@ public class IOCipherService extends Service {
 					manifest.put(Manifest.Keys.LAST_SAVED, lastSaved);
 					
 					byte[] manifestBytes = manifest.toString().getBytes();
-					FileOutputStream fos = new FileOutputStream(manifestFile);
+					fos = new FileOutputStream(manifestFile);
 					fos.write(manifestBytes, 0, manifestBytes.length);
+					fos.flush();
 					fos.close();
 					return true;
 				} catch (JSONException e) {
@@ -378,7 +417,7 @@ public class IOCipherService extends Service {
 		}
 	}
 
-	public void copyFolder(java.io.File _root) {
+	public void copyFolder(java.io.File _root, boolean delete) {
 		File root = new File(_root.getName());
 		try {
 			if(!root.exists())
@@ -416,11 +455,24 @@ public class IOCipherService extends Service {
 					fos.flush();
 					fos.close();
 				}
-				
-				
-				
 			}
 		} catch(FileNotFoundException e) {}
 		catch(IOException e) {}
+	}
+	
+	public void copyFolder(java.io.File _root) {
+		copyFolder(_root, false);
+	}
+
+	public void delete(String baseName) {
+		File file = getFile(baseName);
+		Log.d(Storage.LOG, "getting file : " + file.getAbsolutePath());
+		
+		if(file.isDirectory()) {
+			Log.d(Storage.LOG, "file is directory");
+			for(File f : file.listFiles())
+				delete(f.getAbsolutePath());
+		} else if(!file.getName().equals(".") && !file.getName().equals(".."))
+			file.delete();
 	}
 }

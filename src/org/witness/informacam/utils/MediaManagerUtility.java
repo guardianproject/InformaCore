@@ -23,9 +23,13 @@ public class MediaManagerUtility {
 				put(Manifest.Keys.SIZE, manifest.getInt(Manifest.Keys.SIZE));
 				put(Manifest.Keys.LENGTH, manifest.getInt(Manifest.Keys.LENGTH));
 				put(Manifest.Keys.WIDTH, manifest.getInt(Manifest.Keys.WIDTH));
+				put(Manifest.Keys.MEDIA_TYPE, manifest.getInt(Manifest.Keys.MEDIA_TYPE));
 				
 				if(manifest.has(Manifest.Keys.DURATION))
 					put(Manifest.Keys.DURATION, manifest.getInt(Manifest.Keys.DURATION));
+				
+				if(manifest.has(Manifest.Keys.THUMBNAIL))
+					put(Manifest.Keys.THUMBNAIL, manifest.getString(Manifest.Keys.THUMBNAIL));
 				
 			} catch(JSONException e) {}
 		}

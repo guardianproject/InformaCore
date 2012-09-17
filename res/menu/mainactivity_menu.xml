@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_refresh" android:title="@string/mainactivity_refresh"
+        android:icon="@drawable/menu_refresh_selector" />
 	<item android:id="@+id/extras_about" android:title="@string/mainactivity_about"
 		android:icon="@drawable/menu_about_selector" />
 	<item android:id="@+id/extras_preferences" android:title="@string/mainactivity_preferences"

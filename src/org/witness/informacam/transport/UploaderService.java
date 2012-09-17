@@ -2,6 +2,8 @@ package org.witness.informacam.transport;
 
 import info.guardianproject.iocipher.File;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.j3m.J3M.J3MManifest;
 import org.witness.informacam.j3m.J3M.J3MPackage;
 import org.witness.informacam.storage.DatabaseHelper;
@@ -34,9 +37,12 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.graphics.Bitmap.CompressFormat;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.util.Log;
 
 public class UploaderService extends Service {
@@ -94,11 +100,6 @@ public class UploaderService extends Service {
 				}
 			}
 	);
-	
-	private void updateQueue() {
-		
-		queueMonitor.start();
-	}
 	
 	private void initUploadsFromDatabase() {
 		dh.setTable(db, Tables.Keys.MEDIA);
@@ -205,6 +206,7 @@ public class UploaderService extends Service {
 			j3mmanifest.put(Transport.Keys.CERTS, j3mPackage.pkcs12Id);
 			j3mmanifest.save();
 			queue.add(j3mmanifest);
+			queueMonitor.run();
 		} catch (JSONException e) {
 			Log.e(Transport.LOG, e.toString());
 			e.printStackTrace();
@@ -231,13 +233,98 @@ public class UploaderService extends Service {
 			JSONObject res = parseResult(result);
 			if(res != null) {
 				Log.d(Transport.LOG, "updated with a patch");
-			} else {
+			} else if(res.has(Transport.Keys.ERROR_CODE)){
 				switch(res.getInt(Transport.Keys.ERROR_CODE)) {
 				case Transport.Result.ErrorCodes.DUPLICATE_J3M_TORRENT:
 					return false;
+				case Transport.Result.ErrorCodes.NO_UPLOADS_MISSING:
+					return true;
 				}
+				
 			}
 			return true;
+		} catch(JSONException e) {
+			return false;
+		}
+	}
+	
+	private boolean getRequiredData(J3MManifest j3mManifest) {
+		try {
+			String host = j3mManifest.getString(Transport.Keys.URL);
+			long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
+			
+			Map<String, Object> postData = new HashMap<String, Object>();
+			postData.put(Transport.Keys.GET_REQUIREMENTS, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
+			
+			String result = HttpUtility.executeHttpsPost(this, host, postData, Transport.MimeTypes.TEXT, pkcs12Id);
+			Log.d(Transport.LOG, result);
+			JSONObject res = parseResult(result);
+			
+			if(res != null) {
+				JSONArray requirements = res.getJSONObject(Transport.Keys.BUNDLE).getJSONArray(Transport.Keys.REQUIREMENTS);
+				for(int r=0; r<requirements.length(); r++) {
+					switch(requirements.getInt(r)) {
+					case Transport.Result.ErrorCodes.BASE_IMAGE_REQUIRED:
+						dh.setTable(db, Tables.Keys.SETUP);
+						Cursor b = dh.getValue(db, new String[] {Settings.Device.Keys.BASE_IMAGE}, BaseColumns._ID, 1L);
+						if(b!= null && b.moveToFirst()) {
+							byte[] baseImage = b.getBlob(b.getColumnIndex(Settings.Device.Keys.BASE_IMAGE));
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							BitmapFactory.decodeByteArray(baseImage, 0, baseImage.length).compress(CompressFormat.JPEG, 100, baos);
+							b.close();
+							uploadSupportingData(j3mManifest, Transport.Keys.BASE_IMAGE, baos.toByteArray(), "baseImage.jpg");
+						} else {
+							Log.d(Transport.LOG, "could not get base image");
+						}
+					case Transport.Result.ErrorCodes.PGP_KEY_REQUIRED:
+						dh.setTable(db, Tables.Keys.SETUP);
+						Cursor p = dh.getValue(db, new String[] {Settings.Device.Keys.SECRET_KEY}, BaseColumns._ID, 1L);
+						if(p != null && p.moveToFirst()) {
+							byte[] secretKey = p.getBlob(p.getColumnIndex(Settings.Device.Keys.SECRET_KEY));
+							p.close();
+							
+							try {
+								byte publicKey[] = KeyUtility.extractSecretKey(secretKey).getPublicKey().getEncoded();
+								uploadSupportingData(j3mManifest, Transport.Keys.PGP_KEY_ENCODED, publicKey, "publicKey.asc");
+							} catch (IOException e) {
+								Log.e(Transport.LOG, "could not parse found pgp key\n" + e.toString());
+								e.printStackTrace();
+							}
+						} else {
+							Log.e(Transport.LOG, "could not find pgp key");
+						}
+					}
+				}
+				return true;
+			} else {
+				return false;
+			}
+		} catch(JSONException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	
+	private boolean uploadSupportingData(J3MManifest j3mManifest, String supportingDataType, byte[] chunk, String chunkName) {
+		try {
+			Map<String, Object> postData = new HashMap<String, Object>();
+			postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
+			postData.put(Uploader.Keys.SUPPORTING_DATA, supportingDataType);
+			
+			String url = j3mManifest.getString(Transport.Keys.URL);
+			long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
+			
+			String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
+			Log.d(Transport.LOG, result);
+			
+			JSONObject res = parseResult(result);
+			if(res != null) {
+				Log.d(Transport.LOG, "uploaded supporting data");
+				return true;
+			} else
+				return false;
 		} catch(JSONException e) {
 			return false;
 		}
@@ -248,8 +335,11 @@ public class UploaderService extends Service {
 			int lastTransferred = j3mManifest.getInt(Transport.Manifest.Keys.LAST_TRANSFERRED);
 			
 			String chunkName = (lastTransferred + 1) + "_.j3mtorrent";
-			byte[] chunk = IOUtility.getBytesFromFile(new File(j3mManifest.getString(Transport.Manifest.Keys.J3MBase) + "/j3m/" + chunkName)); 
+			byte[] chunk = IOUtility.getBytesFromFile(new File(j3mManifest.getString(Transport.Manifest.Keys.J3MBase) + "/j3m/" + chunkName));
 			
+			if(chunk == null)
+				return false;
+					
 			Map<String, Object> postData = new HashMap<String, Object>();
 			postData.put(Uploader.Keys.AUTH_TOKEN, j3mManifest.getString(Media.Manifest.Keys.AUTH_TOKEN));
 			postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
@@ -268,6 +358,11 @@ public class UploaderService extends Service {
 					if(queue.contains(j3mManifest)) {
 						queue.remove(j3mManifest);
 						Log.d(Transport.LOG, "manifest still in queue: " + j3mManifest.toString());
+					}
+					
+					JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
+					if(bundle.has(Transport.Keys.REQUIREMENTS)) {
+						
 					}
 				} else {
 					switch(res.getInt(Transport.Keys.ERROR_CODE)) {
@@ -353,5 +448,10 @@ public class UploaderService extends Service {
 		super.onDestroy();
 		saveQueueChanges();
 		Log.d(Uploader.LOG, "uploader service destroyed.");
+	}
+
+	public void restart() {
+		queueMonitor.run();
+		
 	}
 }

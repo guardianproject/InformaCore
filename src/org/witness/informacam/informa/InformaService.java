@@ -32,6 +32,7 @@ import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Status;
 import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.Constants.App;
@@ -350,7 +351,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
-						return suckerCache.get(timestamp);
+						return suckerCache.getUnchecked(timestamp);
 					}
 				});
 		caches.add(suckerCache);
@@ -362,7 +363,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				.build(new CacheLoader<Long, LogPack>() {
 					@Override
 					public LogPack load(Long timestamp) throws Exception {
-						return annotationCache.get(timestamp);
+						return annotationCache.getUnchecked(timestamp);
 					}
 				});
 		caches.add(annotationCache);
@@ -436,8 +437,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				suckerCache.put(timestamp, logPack);
 				break;
 			default:
-				lp = annotationCache.getIfPresent(timestamp);				
+				lp = annotationCache.getIfPresent(timestamp);
+				
 				if(lp != null) {
+					Log.d(Suckers.LOG, "already have " + timestamp + " :\n" + lp.toString());
 					Iterator<String> lIt = lp.keys();
 					while(lIt.hasNext()) {
 						String key = lIt.next();
@@ -514,6 +517,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	
 	@SuppressWarnings("unchecked")
 	private void changeRegion(JSONObject rep) {
+		Log.d(Storage.LOG, "region changed:\n" + rep.toString());
 		try {
 			long timestamp = 0L;
 			
@@ -524,46 +528,54 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			}
 			
 			rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
-			
-			LogPack logPack = annotationCache.get(timestamp);
-			Iterator<String> repIt = rep.keys();
-			while(repIt.hasNext()) {
-				String key = repIt.next();
-				logPack.put(key, rep.get(key));
+			Log.d(Storage.LOG, "GETTING FOR TIMESTAMP " + timestamp);
+			// 1347833634325
+			try {
+				LogPack logPack = annotationCache.getIfPresent(timestamp);
+				Iterator<String> repIt = rep.keys();
+				while(repIt.hasNext()) {
+					String key = repIt.next();
+					logPack.put(key, rep.get(key));
+				}
+				
+				//onUpdate(timestamp, logPack);
+			} catch(IllegalStateException e) {
+				Log.e(Storage.LOG, "recursive load?\n" + e.toString());
+				e.printStackTrace();
+			} catch(NullPointerException e) {
+				Log.e(Storage.LOG, e.toString());
+				e.printStackTrace();
 			}
 			
-			onUpdate(timestamp, logPack);
-		} catch(JSONException e) {}
-		catch (ExecutionException e) {
 			
-			e.printStackTrace();
-		}
+		} catch(JSONException e) {}
 	}
 	
 	@SuppressWarnings("unchecked")
 	private void removeRegion(JSONObject rep) {
+		long timestamp = 0L;
+		
 		try {
-			long timestamp = 0L;
-			
-			try {
-				timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
-			} catch(ClassCastException e) {
-				timestamp = Long.parseLong((String) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP));
-			}
-			
-			LogPack logPack = annotationCache.get(timestamp);
+			timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
+		} catch(ClassCastException e) {
+			timestamp = Long.parseLong((String) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP));
+		}
+		
+		try { 
+			LogPack logPack = annotationCache.getIfPresent(timestamp);
+
 			Iterator<String> repIt = rep.keys();
 			while(repIt.hasNext())
 				logPack.remove(repIt.next());
-			
-		} catch (ExecutionException e) {
-			Log.e(LOG, e.toString());
+		} catch(NullPointerException e) {
+			Log.e(Storage.LOG, e.toString());
 			e.printStackTrace();
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	private void addRegion(JSONObject rep) {
+		Log.d(Storage.LOG, "new region added:\n" + rep.toString());
 		try {
 			long timestamp = (Long) rep.remove(Constants.Informa.Keys.Data.ImageRegion.TIMESTAMP);
 			
@@ -576,6 +588,34 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			
 			onUpdate(timestamp, logPack);
 		} catch(JSONException e) {}
+	}
+	
+	public List<LogPack> getCachedRegions() {
+		List<LogPack> cachedRegions = null;
+		
+		try {
+			for(Entry<Long, LogPack> entry : getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED, annotationCache)) {
+				if(cachedRegions == null)
+					cachedRegions = new ArrayList<LogPack>();
+				
+				LogPack lp = entry.getValue();
+				lp.put(Data.ImageRegion.TIMESTAMP, entry.getKey());
+				
+				cachedRegions.add(lp);
+			}
+				
+		} catch (InterruptedException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return cachedRegions;
 	}
 
 	@Override
@@ -698,5 +738,5 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			}
 			
 		}
-	}	
+	}
 }

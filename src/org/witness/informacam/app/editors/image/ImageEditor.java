@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -19,7 +20,11 @@ import org.witness.informacam.R;
 import org.witness.informacam.app.AddressBookActivity;
 import org.witness.informacam.app.AnnotationActivity;
 import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
+import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
+import org.witness.informacam.app.editors.filters.InformaTagger;
+import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
+import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
@@ -28,6 +33,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 
@@ -307,7 +313,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 					
 					setBitmap (loadedBitmap);
 					
-					autodetect = true;
+					// TODO: handle this like in video; user should choose--
+					autodetect = false;
 
 					if (autodetect)
 					{
@@ -317,6 +324,59 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 					
 						doAutoDetectionThread();
 						
+					}
+					
+					// if applicable, get all image regions from savedCache and populate the screen with them
+					List<LogPack> cachedRegions = InformaService.getInstance().getCachedRegions();
+					if(cachedRegions != null) {
+						for(LogPack lp : cachedRegions) {
+							/*
+							 * {"regionWidth":"807.30005",
+							 * "subject_pseudonym":"computer readout",
+							 * "obfuscationType":"org.witness.informacam.app.editors.filters.InformaTagger",
+							 * "regionHeight":"807.3",
+							 * "subject_informedConsentGiven":"false",
+							 * "subject_persistFilter":"false",
+							 * "region_height":"807",
+							 * "initialCoordinates":"[302.5816,802.0591]",
+							 * "regionCoordinates":"[302.5816,802.0591]",
+							 * "region_width":"807","size":"10","captureEventType":274}
+							 */
+														
+							Log.d(App.LOG, lp.toString());
+							try {
+								String[] irCoords = lp.getString(Data.ImageRegion.COORDINATES).substring(1,lp.getString(Data.ImageRegion.COORDINATES).length() - 1).split(",");
+								float irTop = Float.parseFloat(irCoords[0]);
+								float irLeft = Float.parseFloat(irCoords[1]);
+								float irRight = irLeft + Float.parseFloat(lp.getString(Data.ImageRegion.WIDTH));
+								float irBottom = irTop + Float.parseFloat(lp.getString(Data.ImageRegion.HEIGHT));
+								
+								RegionProcesser rp = null;
+								String regionProcesserName = lp.getString(Data.ImageRegion.FILTER);
+								if(regionProcesserName.equals(PixelizeObscure.class.getName()))
+									rp = new PixelizeObscure();
+								else if(regionProcesserName.equals(CrowdPixelizeObscure.class.getName()))
+									rp = new CrowdPixelizeObscure();
+								else if(regionProcesserName.equals(SolidObscure.class.getName()))
+									rp = new SolidObscure();
+								else if(regionProcesserName.equals(InformaTagger.class.getName())) {
+									if(lp.has(Data.ImageRegion.Subject.PSEUDONYM)) {
+										rp = new InformaTagger(
+												lp.getString(Data.ImageRegion.Subject.PSEUDONYM),
+												Boolean.parseBoolean(lp.getString(Data.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
+												Boolean.parseBoolean(lp.getString(Data.ImageRegion.Subject.PERSIST_FILTER))
+										);
+									} else
+										rp = new InformaTagger();
+								}
+								
+								createImageRegion(irLeft, irTop, irRight, irBottom, false, true, rp, true, lp.getLong(Data.ImageRegion.TIMESTAMP));
+							} catch (JSONException e) {
+								Log.e(App.LOG, e.toString());
+								e.printStackTrace();
+							}
+							
+						}
 					}
 				}				
 			} catch (IOException e) {
@@ -815,12 +875,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		}
 		
 	}
-	
-	/*
-	 * Create new ImageRegion
-	 */
-	public void createImageRegion(float left, float top, float right, float bottom, boolean showPopup, boolean updateNow) {
-		
+	public ImageRegion createImageRegion(float left, float top, float right, float bottom, boolean showPopup, boolean updateNow, RegionProcesser rp, boolean fromCache, long timestamp) {
 		clearImageRegionsEditMode();
 		
 		ImageRegion imageRegion = new ImageRegion(
@@ -829,7 +884,10 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				top, 
 				right, 
 				bottom,
-				matrix);
+				matrix,
+				rp,
+				fromCache,
+				timestamp);
 
 		imageRegions.add(imageRegion);
 		
@@ -842,7 +900,16 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				}
 			});
 		}
-		InformaService.getInstance().onImageRegionCreated(imageRegion);
+		
+		return imageRegion;
+	}
+	
+	/*
+	 * Create new ImageRegion
+	 */
+	public ImageRegion createImageRegion(float left, float top, float right, float bottom, boolean showPopup, boolean updateNow) {
+		return createImageRegion(left, top, right, bottom, showPopup, updateNow, null, false, System.currentTimeMillis());
+		
 	}
 	
 	

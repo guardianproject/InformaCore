@@ -15,14 +15,12 @@
 	<ListPreference
 		android:title="@string/preferences_cache_label"
 		android:summary="@string/preferences_cache_text"
-		android:defaultValue="200"
 		android:entries="@array/password_cache"
 		android:entryValues="@array/password_cache_values"
 		android:key="informa.PasswordCacheTimeout" />
 	<ListPreference
 		android:title="@string/preferences_image_handling_label"
 		android:summary="@string/preferences_image_handling_text"
-		android:defaultValue="300"
 		android:entries="@array/default_image_handling"
 		android:entryValues="@array/default_image_handling_values"
 		android:key="informa.DefaultImageHandling" />

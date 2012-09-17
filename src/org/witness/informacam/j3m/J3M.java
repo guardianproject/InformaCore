@@ -77,7 +77,7 @@ public class J3M {
     		
     		if(atomize()) {
     			j3mdescriptor.finalize();
-    			ioCipherService.copyFolder(root);
+    			ioCipherService.copyFolder(root, true);
     			ioCipherService.moveFileToIOCipher(file, root.getName(), true);
     		}
 			

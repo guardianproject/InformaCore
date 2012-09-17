@@ -43,6 +43,10 @@ import android.content.Context;
 import android.util.Log;
 
 public class HttpUtility {
+	public static String executeHttpsPost(Context c, String host, Map<String, Object> postData, String contentType, long pkc12Id) {
+		return executeHttpsPost(c, host, postData, contentType, pkc12Id, null, null, null);
+	}	
+	
 	public static String executeHttpsPost(final Context c, final String host, final Map<String, Object> postData, final String contentType1, final long pkc12Id, final byte[] file, final String fileName, final String contentType2) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<String> future = ex.submit(new Callable<String>() {
@@ -297,5 +301,5 @@ public class HttpUtility {
 		connection.disconnect();
 		
 		return sb.toString();
-	}	
+	}
 }

@@ -19,6 +19,7 @@ import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.MediaManagerUtility.MediaManagerDisplay;
 
 import android.app.Activity;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -29,7 +30,7 @@ import android.widget.ListView;
 
 public class MediaManagerActivity extends Activity implements OnClickListener, OnRoutedListener, OnMediaFocusedListener, OnChoosableChosenListener {
 	
-	Handler h;
+	Handler h = new Handler();
 	
 	ImageButton navigation;
 	ListView media_manager_list;
@@ -40,8 +41,12 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		initLayout();
-		
 		MainRouter.show(this);
+	}
+	
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
 	}
 	
 	private void initLayout() {
@@ -73,7 +78,12 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 
 	@Override
 	public void onRouted() {
-		getMedia();
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				getMedia();
+			}
+		});
 	}
 
 	@Override
@@ -93,11 +103,28 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 				finish();
 			} catch(JSONException e) {
 				Log.e(App.LOG, e.toString());
+				e.printStackTrace();
 			}
 			break;
 		case MediaManager.Actions.RENAME_MEDIA:
 			break;
 		case MediaManager.Actions.DELETE_MEDIA:
+			try {
+				String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
+				Log.d(App.LOG, "deleting " + baseName);
+				IOCipherService.getInstance().delete(baseName);
+				h.post(new Runnable() {
+					@Override
+					public void run() {
+						getMedia();
+					}
+				});
+				// TODO: get rid of working copy in DB
+			} catch (JSONException e) {
+				Log.e(App.LOG, e.toString());
+				e.printStackTrace();
+			}
+			
 			break;
 		}
 		

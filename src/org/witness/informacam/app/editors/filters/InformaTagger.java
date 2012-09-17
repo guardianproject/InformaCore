@@ -22,6 +22,14 @@ public class InformaTagger implements RegionProcesser
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
 	}
 	
+	public InformaTagger(String pseudonym, boolean informedConsentGiven, boolean persistFilter) {
+		mProps = new Properties ();
+		mProps.put(ImageRegion.Subject.PSEUDONYM, pseudonym);
+		mProps.put(ImageRegion.Subject.INFORMED_CONSENT_GIVEN, String.valueOf(informedConsentGiven));
+		mProps.put(ImageRegion.Subject.PERSIST_FILTER, String.valueOf(persistFilter));
+		mProps.put(ImageRegion.FILTER, this.getClass().getName());
+	}
+	
 	@Override
 	public void processRegion (RectF rect, Canvas canvas,  Bitmap bitmap) 
 	{

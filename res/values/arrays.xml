@@ -36,9 +36,11 @@
 	
 	<string-array name="default_language">
 		<item>English</item>
+		<!-- 
 		<item>French</item>
 		<item>Arabic</item>
 		<item>Farsi</item>
+		 -->
 	</string-array>
 	
 	<string-array name="default_language_values">
@@ -51,6 +53,7 @@
 	<string-array name="media_manager_actions">
     	<item>Open</item>
     	<item>Rename</item>
+    	<item>Export\u2026</item>
     	<item>Delete</item>
 	</string-array>
 	

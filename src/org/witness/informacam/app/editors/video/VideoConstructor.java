@@ -97,8 +97,11 @@ public class VideoConstructor {
 			
 			while ((line = reader.readLine()) != null)
 			{
-				if (sc != null)
+				if (sc != null) {
+					Log.d(LOGTAG, "should be sending shellout " + line);
 					sc.shellOut(line);
+				} else
+					Log.d(LOGTAG, "why is sc NULL?");
 			}
 
 			
@@ -152,25 +155,25 @@ public class VideoConstructor {
     	
     	clone = outputFile;
     	
-    	//ffmpeg -v 10 -y -i /sdcard/org.witness.sscvideoproto/videocapture1042744151.mp4 -vcodec libx264 -b 3000k -s 720x480 -r 30 -acodec copy -f mp4 -vf 'redact=/data/data/org.witness.sscvideoproto/redact_unsort.txt' /sdcard/org.witness.sscvideoproto/new.mp4
     	
-    	//"-vf" , "redact=" + Environment.getExternalStorageDirectory().getPath() + "/" + PACKAGENAME + "/redact_unsort.txt",
+    	try {
+    		Log.d(LOGTAG, "video constructor called");
+			execProcess(ffmpegCommand, new ShellCallback ()
+			{
 
-    	
-    	// Need to make sure this will create a legitimate mp4 file
-    	//"-acodec", "ac3", "-ac", "1", "-ar", "16000", "-ab", "32k",
-    	
+				@Override
+				public void shellOut(String shellLine) {
+					Log.d(VideoEditor.LOGTAG, shellLine);
+					
+				}
 
-    	/*
-    	String[] ffmpegCommand = {"/data/data/"+PACKAGENAME+"/ffmpeg", "-v", "10", "-y", "-i", recordingFile.getPath(), 
-    					"-vcodec", "libx264", "-b", "3000k", "-vpre", "baseline", "-s", "720x480", "-r", "30",
-    					//"-vf", "drawbox=10:20:200:60:red@0.5",
-    					"-vf" , "\"movie="+ overlayImage.getPath() +" [logo];[in][logo] overlay=0:0 [out]\"",
-    					"-acodec", "copy",
-    					"-f", "mp4", savePath.getPath()+"/output.mp4"};
-    	*/
+				
+				
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     	
-    	execProcess(ffmpegCommand, sc);
 	    
 	}
 	
@@ -337,10 +340,6 @@ public class VideoConstructor {
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 		
-		
-		
-		// TODO: this is the command that will write to mkv, but in the meanwhile...
-		
 		String[] ffmpegCommand = new String[] {
 			ffmpegBin, "-i", clone.getAbsolutePath(),
 			"-attach", metadata.getAbsolutePath(),
@@ -349,18 +348,6 @@ public class VideoConstructor {
 			"-acodec", "copy",
 			video.getAbsolutePath()
 		};
-		
-		
-		//ffmpeg -i output-1913075278.3gp -attach informaCam_metadata.json -metadata:s:2 mimetype=text/plain -acodec copy -vcodec copy outtt.mkv
-		
-		/*
-		String[] ffmpegCommand = new String[] {
-			ffmpegBin, "-i", clone.getAbsolutePath(),
-			"-vcodec", "copy",
-			"-acodec", "copy",
-			video.getAbsolutePath()
-		};
-		*/
 		
 		StringBuffer sb = new StringBuffer();
 		for(String f: ffmpegCommand) {

@@ -1,0 +1,18 @@
+<LinearLayout style="@style/OverlayActivity"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+    	<org.witness.informacam.app.mods.InformaHeaderTextView style="@style/H1"
+    		android:layout_width="match_parent"
+    		android:layout_height="wrap_content"
+    		android:text="@string/mainactivity_about" />
+    </LinearLayout>
+    <TextView style="@style/P"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="this is where about text goes!" />
+</LinearLayout>

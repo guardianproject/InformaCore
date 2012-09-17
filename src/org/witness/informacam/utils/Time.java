@@ -32,6 +32,12 @@ public class Time {
 		return millisecondsToTimestamp(Math.min(ms, max));
 	}
 	
+	public final static String millisecondsToDatestamp(long ms) {
+		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+		Date d = new Date(ms);
+		return dateFormat.format(d);
+	}
+	
 	public final static String millisecondsToTimestamp(long ms) {
 		int s = (int) (ms/1000);
 		int hours = s/3600;

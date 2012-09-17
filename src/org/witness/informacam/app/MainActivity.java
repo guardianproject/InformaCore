@@ -51,6 +51,7 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -134,11 +135,16 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			}
     		
     	}, 500);
-    	
-    	
-    	
-    	
     }
+	
+	private void refreshUploads() {
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				UploaderService.getInstance().restart();
+			}
+		});
+	}
     
     @Override
     public void onDestroy() {
@@ -187,7 +193,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchKnowledgebase() {
-    	
+    	Intent intent = new Intent(this, KnowledgebaseActivity.class);
+    	startActivity(intent);
     }
     
     private void launchMediaManager() {
@@ -243,6 +250,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			Log.d(App.LOG, mediaCaptureFile.getAbsolutePath());
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
+    				mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
     			} else {
     				editorIntent = new Intent(this, VideoEditor.class);
     				mimeType = Media.Type.MIME_TYPE_MP4;
@@ -323,8 +331,9 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
     	
-    	return super.onCreateOptionsMenu(menu);
-    	// TODO: init menu pls
+    	MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.mainactivity_menu, menu);
+    	return true;
     }
     
     public boolean onOptionsItemSelected(MenuItem mi) {
@@ -342,6 +351,9 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		launchSendLog();
     		return true;
     	case R.id.extras_logout:
+    		return true;
+    	case R.id.menu_refresh:
+    		refreshUploads();
     		return true;
     	default:
     		return false;
@@ -394,7 +406,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	@Override
 	public void onRouted() {
 		initInformaCam();
-		//doHttpTest();
 	}
 	
 	private void doShutdown() {

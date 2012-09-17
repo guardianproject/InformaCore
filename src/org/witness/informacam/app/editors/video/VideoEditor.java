@@ -14,8 +14,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -28,6 +30,7 @@ import org.ffmpeg.android.ShellUtils;
 import org.ffmpeg.android.ShellUtils.ShellCallback;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.AddressBookActivity;
 import org.witness.informacam.app.AnnotationActivity;
@@ -41,6 +44,7 @@ import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.VideoRegion;
 import org.witness.informacam.utils.Constants.Media;
 
@@ -173,7 +177,7 @@ public class VideoEditor extends Activity implements
 	
 	private final static String DEFAULT_OUT_FPS = "15";
 	private final static String DEFAULT_OUT_RATE = "300";
-	private final static String DEFAULT_OUT_FORMAT = "3gp";
+	private final static String DEFAULT_OUT_FORMAT = "mp4";
 	private final static String DEFAULT_OUT_VCODEC = "libx264";
 	private final static String DEFAULT_OUT_ACODEC = "copy";
 	private final static String DEFAULT_OUT_WIDTH = "480";
@@ -225,7 +229,6 @@ public class VideoEditor extends Activity implements
 	private int mDuration;
 	
 	// TODO: my additions to global vars
-	private SharedPreferences sp;
 	private boolean mediaPlayerIsPrepared = true;
 	private boolean shouldStartPlaying = false;
 	private int currentCue = 1;
@@ -279,8 +282,8 @@ public class VideoEditor extends Activity implements
 				}
 			}
 			
-			Log.d(App.LOG, "recording file: " + recordingFile.getAbsolutePath());
-			Log.d(App.LOG, "original uri: " + originalVideoUri.toString());
+			//Log.d(App.LOG, "recording file: " + recordingFile.getAbsolutePath());
+			//Log.d(App.LOG, "original uri: " + originalVideoUri.toString());
 			
 			InformaService.getInstance().onInformaInit(VideoEditor.this, originalVideoUri);
 		}
@@ -302,11 +305,78 @@ public class VideoEditor extends Activity implements
 		bitmapPixel = BitmapFactory.decodeResource(getResources(),
                 R.drawable.ic_context_pixelate);
 		
-
-		showAutoDetectDialog();
+		List<LogPack> cachedRegions = InformaService.getInstance().getCachedRegions();
+		if(cachedRegions == null)
+			showAutoDetectDialog();
+		else {
+			for(LogPack lp : cachedRegions) {
+				// parse video regions and add them from cache
+				//Log.d(App.LOG, lp.toString());
+				/*
+				 * {"subject_pseudonym":"derp",
+				 * "obfuscationType":"identify",
+				 * "videoStartTime":"0",
+				 * "subject_informedConsentGiven":"false",
+				 * "subject_persistFilter":"false",
+				 * "videoTrail":[{"regionCoordinates":"[231.65845,372.00867]",
+				 * "region_height":"150","region_width":"150"},
+				 * {"regionCoordinates":"[263.29315,641.60297]",
+				 * "region_height":"150","region_width":"150"},
+				 * {"regionCoordinates":"[251.51776,923.19617]",
+				 * "region_height":"150","region_width":"150"},
+				 * ... etc
+				 * ],"videoEndTime":"4864","captureEventType":274}
+				 */
+				try {
+					int startTime = Integer.parseInt(lp.getString(Data.VideoRegion.START_TIME));
+					int endTime = Integer.parseInt(lp.getString(Data.VideoRegion.END_TIME));
+					String obfuscationType = lp.getString(Data.VideoRegion.FILTER);
+					
+					JSONArray vt = lp.getJSONArray(Data.VideoRegion.TRAIL);
+					List<ObscureRegion> videoTrail = null;
+					for(int v=0; v<vt.length(); v++) {
+						JSONObject trail = (JSONObject) vt.get(v);
+						
+						String[] irCoords = trail.getString(Data.VideoRegion.Child.COORDINATES).substring(1,trail.getString(Data.VideoRegion.Child.COORDINATES).length() - 1).split(",");
+						float irTop = Float.parseFloat(irCoords[0]);
+						float irLeft = Float.parseFloat(irCoords[1]);
+						float irRight = irLeft + Float.parseFloat(trail.getString(Data.VideoRegion.Child.WIDTH));
+						float irBottom = irTop + Float.parseFloat(trail.getString(Data.VideoRegion.Child.HEIGHT));
+						
+						if(videoTrail == null)
+							videoTrail = new ArrayList<ObscureRegion>();
+						
+						videoTrail.add(new ObscureRegion(
+								Integer.parseInt(trail.getString(Data.VideoRegion.Child.TIMESTAMP)), 
+								irLeft, 
+								irTop, 
+								irRight, 
+								irBottom)
+							);
+					}
+					
+					RegionTrail rt = new RegionTrail(startTime, endTime, this, lp.getString(Data.VideoRegion.FILTER), videoTrail, true, lp.getLong(Data.VideoRegion.TIMESTAMP));
+					rt.setObscureMode(obfuscationType);
+					if(lp.has(Data.VideoRegion.Subject.PSEUDONYM)) {
+						rt.addSubject(
+								lp.getString(Data.VideoRegion.Subject.PSEUDONYM),
+								Boolean.parseBoolean(lp.getString(Data.VideoRegion.Subject.INFORMED_CONSENT_GIVEN)),
+								Boolean.parseBoolean(lp.getString(Data.VideoRegion.Subject.PERSIST_FILTER))
+						);
+					}
+					
+					obscureTrails.add(rt);
+				} catch (NumberFormatException e) {
+					Log.e(App.LOG, e.toString());
+					e.printStackTrace();
+				} catch (JSONException e) {
+					Log.e(App.LOG, e.toString());
+					e.printStackTrace();
+				}
+				
+			}
+		}
 		
-		// TODO: my additions to onCreate()
-		sp = PreferenceManager.getDefaultSharedPreferences(this);
 	}
 	
 	private void loadMedia ()
@@ -324,7 +394,7 @@ public class VideoEditor extends Activity implements
 		mediaPlayer.setLooping(false);
 		mediaPlayer.setScreenOnWhilePlaying(true);
 		
-		Log.d(LOGTAG, "attempting to load: " + originalVideoUri.toString());
+		//(LOGTAG, "attempting to load: " + originalVideoUri.toString());
 		
 		try {
 			mediaPlayer.setDataSource(originalVideoUri.toString());
@@ -365,7 +435,6 @@ public class VideoEditor extends Activity implements
 				if(!metadataScraped) {
 					LogPack metadata = InformaService.getInstance().getMetadata();
 					if(metadata != null) {
-						// TODO: init values needed from this...
 						metadataScraped = true;
 					}
 						
@@ -381,7 +450,6 @@ public class VideoEditor extends Activity implements
 			
 			 updateVideoLayout ();
 			 mediaPlayer.seekTo(currentCue);
-			
 		}
 	
 	}
@@ -398,6 +466,7 @@ public class VideoEditor extends Activity implements
 		
 	
 		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
+		updateRegionDisplay(mediaPlayer.getCurrentPosition());
 	}
 	
 	@Override
@@ -485,7 +554,6 @@ public class VideoEditor extends Activity implements
 			playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_play));
 		}
 		
-		//TODO: my additions to onSeekComplete
 		currentCue = mediaPlayer.getCurrentPosition();
 	}
 
@@ -612,7 +680,6 @@ public class VideoEditor extends Activity implements
 		playPauseButton.setImageDrawable(this.getResources().getDrawable(android.R.drawable.ic_media_pause));
 		
 		mHandler.post(updatePlayProgress);
-		
 
 	}
 	
@@ -726,7 +793,6 @@ public class VideoEditor extends Activity implements
 	
 	private void validateRegionView() {
 		if (obscuredBmp == null && regionsView.getWidth() > 0 && regionsView.getHeight() > 0) {
-		//	Log.v(LOGTAG,"obscuredBmp is null, creating it now");
 			obscuredBmp = Bitmap.createBitmap(regionsView.getWidth(), regionsView.getHeight(), Bitmap.Config.ARGB_8888);
 			obscuredCanvas = new Canvas(obscuredBmp); 
 		    regionsView.setImageBitmap(obscuredBmp);			
@@ -1098,9 +1164,8 @@ public class VideoEditor extends Activity implements
     			return true;
     			
         	case R.id.menu_save_send:
-        		//TODO: my additions to menu_save (saving happens here)
         		mediaPlayerIsPrepared = true;
-        		
+        		InformaService.getInstance().storeMediaCache();
         		Intent keyChooser = new Intent(this, AddressBookActivity.class)
         			.putExtra(App.VideoEditor.Keys.CHOOSE_TRUSTED_DESTINATION, true);
         		
@@ -1109,7 +1174,6 @@ public class VideoEditor extends Activity implements
         		return true;   
         		
         	case R.id.menu_prefs:
-        		// TODO: my additions to menu_prefs
         		mediaPlayerIsPrepared = true;
         		showPrefs();
         		
@@ -1151,11 +1215,11 @@ public class VideoEditor extends Activity implements
     	progressDialog.setMax(100);
         progressDialog.setCancelable(true);
        
-    	 Message msg = mHandler.obtainMessage(2);
-         msg.getData().putString("status","cancelled");
-         progressDialog.setCancelMessage(msg);
+    	Message msg = mHandler.obtainMessage(2);
+        msg.getData().putString("status","cancelled");
+        progressDialog.setCancelMessage(msg);
     	
-         progressDialog.show();
+        progressDialog.show();
      	
 		// Convert to video
 		Thread thread = new Thread (runProcessVideo);
@@ -1172,23 +1236,22 @@ public class VideoEditor extends Activity implements
 			PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "My Tag");
 			wl.acquire();
 	        
+			Log.d(App.LOG, "STARTING TO PROCESS VIDEO!");
+			
 			try
 			{
 				if (ffmpeg == null)
 					ffmpeg = new VideoConstructor(VideoEditor.this.getBaseContext());
 	
 					
-				ShellUtils.ShellCallback sc = new ShellUtils.ShellCallback ()
+				ShellCallback sc = new ShellCallback ()
 				{
 					int total = 0;
 					int current = 0;
 					
 					@Override
 					public void shellOut(String shellout) {
-						
-						String line = new String(shellout);
-						
-						Log.d(LOGTAG, line);
+						Log.d(LOGTAG, shellout);
 						
 						//progressDialog.setMessage(new String(msg));
 						//Duration: 00:00:00.99,
@@ -1198,10 +1261,10 @@ public class VideoEditor extends Activity implements
 						String newStatus = null;
 						int progress = 0;
 						
-						if ((idx1 = line.indexOf("Duration:"))!=-1)
+						if ((idx1 = shellout.indexOf("Duration:"))!=-1)
 						{
-							int idx2 = line.indexOf(",", idx1);
-							String time = line.substring(idx1+10,idx2);
+							int idx2 = shellout.indexOf(",", idx1);
+							String time = shellout.substring(idx1+10,idx2);
 							
 							int hour = Integer.parseInt(time.substring(0,2));
 							int min = Integer.parseInt(time.substring(3,5));
@@ -1209,14 +1272,14 @@ public class VideoEditor extends Activity implements
 							
 							total = (hour * 60 * 60) + (min * 60) + sec;
 							
-							newStatus = line;
+							newStatus = shellout;
 							progress = 0;
 						}
-						else if ((idx1 = line.indexOf("time="))!=-1)
+						else if ((idx1 = shellout.indexOf("time="))!=-1)
 						{
-							int idx2 = line.indexOf(" ", idx1);
-							String time = line.substring(idx1+5,idx2);
-							newStatus = line;
+							int idx2 = shellout.indexOf(" ", idx1);
+							String time = shellout.substring(idx1+5,idx2);
+							newStatus = shellout;
 							
 							int hour = Integer.parseInt(time.substring(0,2));
 							int min = Integer.parseInt(time.substring(3,5));
@@ -1227,14 +1290,19 @@ public class VideoEditor extends Activity implements
 							progress = (int)( ((float)current) / ((float)total) *100f );
 						}
 						
-						if (newStatus != null)
-						{
-						 Message msg = mHandler.obtainMessage(1);
-				         msg.getData().putInt("progress", progress);
-				         msg.getData().putString("status", newStatus);
+						
+						
+						if (newStatus != null) {
+							Log.d(App.LOG, newStatus);
+							Message msg = mHandler.obtainMessage(1);
+							msg.getData().putInt("progress", progress);
+							msg.getData().putString("status", newStatus);
 				         
-				         mHandler.sendMessage(msg);
+							mHandler.sendMessage(msg);
+						} else {
+							Log.d(App.LOG, "no status?");
 						}
+						
 					}
 				};
 				
@@ -1249,7 +1317,15 @@ public class VideoEditor extends Activity implements
 				
 				// Could make some high/low quality presets	
 				ffmpeg.processVideo(redactSettingsFile, obscureTrails, recordingFile, saveFile, outFormat, 
-						mDuration, videoWidth, videoHeight, processVWidth, processVHeight, outFrameRate, outBitRate, outVcodec, outAcodec, sc);
+						mDuration, videoWidth, videoHeight, processVWidth, processVHeight, outFrameRate, outBitRate, outVcodec, outAcodec, new ShellCallback() {
+
+							@Override
+							public void shellOut(String shellLine) {
+								Log.d(LOGTAG, "fuck you:\n" + shellLine);
+								
+							}
+					
+				});
 			}
 			catch (Exception e)
 			{
@@ -1260,7 +1336,7 @@ public class VideoEditor extends Activity implements
 		     
 			if (!mCancelled)
 			{
-				addVideoToGallery(saveFile);
+				//addVideoToGallery(saveFile);
 				
 				Message msg = mHandler.obtainMessage(completeActionFlag);
 				msg.getData().putString("status","complete");
@@ -1271,19 +1347,6 @@ public class VideoEditor extends Activity implements
 		
 		
 	};
-	
-	private void addVideoToGallery (File videoToAdd)
-	{
-	
-     // force mediascanner to update file
-     		MediaScannerConnection.scanFile(
-     				this,
-     				new String[] {videoToAdd.getAbsolutePath()},
-     				new String[] {Media.Type.MIME_TYPE_MP4},
-     				null);
-
-//        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
-	}
 	
 	private void playVideo() {
 		
@@ -1466,7 +1529,7 @@ public class VideoEditor extends Activity implements
 		loadMedia();
 		
 		if(!mediaPlayerIsPrepared) {
-			Log.d(LOGTAG, "media is NOT prepared!");
+			//(LOGTAG, "media is NOT prepared!");
 			try {
 				mediaPlayer.setDisplay(surfaceHolder);
 				mediaPlayer.prepare();
@@ -1493,7 +1556,6 @@ public class VideoEditor extends Activity implements
 		outFrameRate = Integer.parseInt(prefs.getString("pref_out_fps", DEFAULT_OUT_FPS).trim());
 		outBitRate = Integer.parseInt(prefs.getString("pref_out_rate", DEFAULT_OUT_RATE).trim());
 		outFormat = prefs.getString("pref_out_format", DEFAULT_OUT_FORMAT).trim();
-		Log.d(App.LOG, "OUTFORMAT SET TO: " + outFormat);
 		outAcodec =  prefs.getString("pref_out_acodec", DEFAULT_OUT_ACODEC).trim();
 		outVcodec =  prefs.getString("pref_out_vcodec", DEFAULT_OUT_VCODEC).trim();
 
@@ -1748,7 +1810,6 @@ public class VideoEditor extends Activity implements
 	    retriever.setDataSource(recordingFile.getAbsolutePath());
     	
     	Bitmap b = retriever.getFrameAtTime(mediaPlayer.getCurrentPosition(), MediaMetadataRetriever.OPTION_CLOSEST);
-    	// TODO: crop to region bounds!
     	
     	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
@@ -1776,6 +1837,11 @@ public class VideoEditor extends Activity implements
     			
     			obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0))
     				.setProperties(mProp);
+    			obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)).setObscureMode(RegionTrail.OBSCURE_MODE_IDENTIFY);
+    			Log.d(App.LOG, obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)).getProperties().toString());
+    			
+    			InformaService.getInstance().onVideoRegionChanged(obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)));
+    			
 			} else if(requestCode == App.VideoEditor.FROM_DESTINATION_CHOOSER) {
 				completeActionFlag = 3;
         		processVideo();

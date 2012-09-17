@@ -16,6 +16,7 @@ import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.informa.InformaService;
+import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 
@@ -180,7 +181,15 @@ public class ImageRegion implements OnActionItemClickListener
 	public ImageRegion(
 			ImageEditor imageEditor, 
 			float left, float top, 
-			float right, float bottom, Matrix matrix) 
+			float right, float bottom, Matrix matrix) {
+		this(imageEditor, left, top, right, bottom, matrix, null, false, System.currentTimeMillis());
+	}
+	
+	
+	public ImageRegion(
+			ImageEditor imageEditor, 
+			float left, float top, 
+			float right, float bottom, Matrix matrix, RegionProcesser rp, boolean fromCache, long timestamp) 
 	{
 		//super(imageEditor);
 		super();
@@ -197,15 +206,19 @@ public class ImageRegion implements OnActionItemClickListener
 		
 		mBounds = new RectF(left, top, right, bottom);
 		
-		timestampOnGeneration = System.currentTimeMillis();
+		timestampOnGeneration = timestamp;
         
         //set default processor
-        this.setRegionProcessor(new PixelizeObscure());
+		if(rp == null)
+			this.setRegionProcessor(new PixelizeObscure());
+		else
+			this.setRegionProcessor(rp);
         
         // notify informa
-        InformaService.getInstance().onImageRegionCreated(this);
-    }		
-	
+		if(!fromCache)
+			InformaService.getInstance().onImageRegionCreated(this);
+    }
+
 	public void setMatrix (Matrix matrix)
 	{
 		mMatrix = matrix;

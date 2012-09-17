@@ -1,5 +1,8 @@
 package org.witness.informacam.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import android.media.ExifInterface;
 import android.os.Environment;
 import android.provider.BaseColumns;
@@ -158,7 +161,8 @@ public class Constants {
 		public final static class Actions {
 			public final static int OPEN_MEDIA = 0;
 			public final static int RENAME_MEDIA = 1;
-			public final static int DELETE_MEDIA = 2;
+			public final static int EXPORT_MEDIA = 2;
+			public final static int DELETE_MEDIA = 3;
 		}
 	}
 	
@@ -222,6 +226,11 @@ public class Constants {
 			
 			public final static int IMAGE = 400;
 			public final static int VIDEO = 401;
+			public final static Map<Integer, String> Names = new HashMap<Integer, String>();
+			static {
+				Names.put(IMAGE, "Image");
+				Names.put(VIDEO, "Video");
+			}
 		}
 		
 		public final static class Status {
@@ -249,6 +258,9 @@ public class Constants {
 				public static final String TOTAL_CHUNKS = "totalJ3MChunks";
 				public static final String URL = TrustedDestination.Keys.URL;
 				public static final String CERTS = Transport.Keys.CERTS;
+				public static final String THUMBNAIL = "mediaThumbnail";
+				public static final String FINGERPRINT = Crypto.Keyring.Keys.FINGERPRINT;
+				public static final String J3MBASE = Transport.Manifest.Keys.J3MBase;
 			}
 
 			public static final String UPLOADED_FLAG = "uploadedFlag";
@@ -514,6 +526,7 @@ public class Constants {
 						public final static String HEIGHT = Informa.Keys.Data.ImageRegion.HEIGHT;
 						public final static String TOP = Informa.Keys.Data.ImageRegion.TOP;
 						public final static String LEFT = Informa.Keys.Data.ImageRegion.LEFT;
+						public static final String TIMESTAMP = "regionTimestamp";
 					}
 					
 					public final static class Subject {
@@ -578,6 +591,7 @@ public class Constants {
 			public static final String J3M = "j3m";
 			public static final String AUTH_TOKEN = Media.Keys.AUTH_TOKEN;
 			public static final String CHECK_FOR_MISSING_TORRENTS = "checkForMissingTorrents";
+			public static final String SUPPORTING_DATA = "supportingData";
 		}
 		
 		public static final class Status {
@@ -650,6 +664,9 @@ public class Constants {
 				public final static int AUTH_FAILURE = 1998;
 				public final static int DUPLICATE_J3M_TORRENT = 2000;
 				public final static int COULD_NOT_CREATE_FOLDER = 1999;
+				public final static int BASE_IMAGE_REQUIRED = 1995;
+				public final static int PGP_KEY_REQUIRED = 1996;
+				public final static int NO_UPLOADS_MISSING = 1997;
 			}
 		}
 		
@@ -664,6 +681,12 @@ public class Constants {
 			public static final String CERTS = Crypto.Keystore.Keys.CERTS;
 			public static final String ERROR_CODE = "error_code";
 			public static final String MISSING_TORRENTS = "missingTorrents";
+			public static final String GET_MESSAGES = "getMessages";
+			public static final String MESSAGES = "messages";
+			public static final String BASE_IMAGE = "baseImage";
+			public static final String PGP_KEY_ENCODED = "pgpKeyEncoded";
+			public static final String REQUIREMENTS = "requirements";
+			public static final String GET_REQUIREMENTS = "getRequirements";
 			
 		}
 
