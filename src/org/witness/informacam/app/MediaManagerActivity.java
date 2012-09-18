@@ -20,6 +20,7 @@ import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.MediaManager;
 import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.Constants.Storage;
@@ -128,7 +129,12 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 				String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
 				
 				File originalMedia = IOCipherService.getInstance().getFile(((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
-				java.io.File clone = IOCipherService.getInstance().moveFromIOCipherToMemory(Uri.fromFile(originalMedia), System.currentTimeMillis() + "_tmp_" + originalMedia.getName());
+				
+				java.io.File clone = null;
+				if(((MediaManagerDisplay) obj).getInt(Media.Keys.TYPE) == Media.Type.IMAGE)
+					clone = IOCipherService.getInstance().exportImageFromIOCipherToMemory(originalMedia, System.currentTimeMillis() + "_tmp_" + originalMedia.getName());
+				else
+					clone = IOCipherService.getInstance().moveFromIOCipherToMemory(Uri.fromFile(originalMedia), System.currentTimeMillis() + "_tmp_" + originalMedia.getName());
 				
 				File originalCache = IOCipherService.getInstance().getFile(baseName + "/cache.json");
 				

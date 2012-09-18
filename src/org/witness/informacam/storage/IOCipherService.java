@@ -228,6 +228,33 @@ public class IOCipherService extends Service {
 		return IOUtility.fileFromBytes(fileBytes, rootFolder + "/" + forName);
 	}
 	
+	public java.io.File exportImageFromIOCipherToMemory(File original, String clonePath) {
+		java.io.File clone = new File(Storage.FileIO.DUMP_FOLDER, clonePath);
+		
+		try {
+			FileInputStream fis = new FileInputStream(original);
+			Bitmap b = BitmapFactory.decodeStream(fis);
+			
+			java.io.FileOutputStream fos = new java.io.FileOutputStream(clone);
+			b.compress(CompressFormat.JPEG, 100, fos);
+			fos.flush();
+			fos.close();
+			
+			fis.close();
+			return clone;
+		} catch (FileNotFoundException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		} catch (IOException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
+		
+		
+	}
+	
 	public void resaveBitmap(Bitmap bitmap, Uri uri) throws FileNotFoundException {
 		if(getFile(uri).exists())
 			getFile(uri).delete();
