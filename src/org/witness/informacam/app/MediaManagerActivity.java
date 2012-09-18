@@ -1,5 +1,8 @@
 package org.witness.informacam.app;
 
+import info.guardianproject.iocipher.File;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,17 +12,23 @@ import org.witness.informacam.R;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.adapters.MediaManagerAdapter;
 import org.witness.informacam.app.adapters.MediaManagerAdapter.OnMediaFocusedListener;
+import org.witness.informacam.app.editors.image.ImageConstructor.ImageConstructorListener;
+import org.witness.informacam.app.editors.video.VideoConstructor.VideoConstructorListener;
 import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.MediaManager;
 import org.witness.informacam.utils.Constants.Media.Manifest;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.MediaManagerUtility.MediaManagerDisplay;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -28,7 +37,7 @@ import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.ListView;
 
-public class MediaManagerActivity extends Activity implements OnClickListener, OnRoutedListener, OnMediaFocusedListener, OnChoosableChosenListener {
+public class MediaManagerActivity extends Activity implements OnClickListener, OnRoutedListener, OnMediaFocusedListener, OnChoosableChosenListener, ImageConstructorListener, VideoConstructorListener {
 	
 	Handler h = new Handler();
 	
@@ -108,6 +117,29 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 			break;
 		case MediaManager.Actions.RENAME_MEDIA:
 			break;
+		case MediaManager.Actions.EXPORT_MEDIA:
+			/* TODO:
+			 * 1) prompt to choose contact to make copy for ?
+			 * 2) make a version
+			 * 3) save to public IO
+			 * 4) export intent
+			 */
+			try {
+				String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
+				
+				File originalMedia = IOCipherService.getInstance().getFile(((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
+				java.io.File clone = IOCipherService.getInstance().moveFromIOCipherToMemory(Uri.fromFile(originalMedia), System.currentTimeMillis() + "_tmp_" + originalMedia.getName());
+				
+				File originalCache = IOCipherService.getInstance().getFile(baseName + "/cache.json");
+				
+				InformaService.getInstance().onInformaInitForExport(MediaManagerActivity.this, clone.getAbsolutePath(), originalCache, ((MediaManagerDisplay) obj).getInt(Manifest.Keys.MEDIA_TYPE));
+				
+			} catch(JSONException e) {}
+			catch (IOException e) {
+				Log.d(Storage.LOG, e.toString());
+				e.printStackTrace();
+			}
+			break;
 		case MediaManager.Actions.DELETE_MEDIA:
 			try {
 				String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
@@ -124,10 +156,36 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 				Log.e(App.LOG, e.toString());
 				e.printStackTrace();
 			}
-			
 			break;
 		}
+	}
+	
+	private void doExport(java.io.File versionForExport) {
+		Intent export = new Intent()
+			.setAction(Intent.ACTION_SEND)
+			.putExtra(Intent.EXTRA_TEXT, getString(R.string.media_manager_export_text))
+			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(versionForExport))
+			.setType("*/*");
+		startActivity(export);
+	}
+
+	@Override
+	public void onExportVersionCreated(java.io.File versionForExport) {
+		// returns the image for export intent
+		Log.d(App.LOG, "heyo we have a clone: " + versionForExport.getAbsolutePath());
+		doExport(versionForExport);
+	}
+
+	@Override
+	public void onExportVersionCreated(java.io.File versionForExport, String clonePath) {
+		// returns the video for export intent
+		Log.d(App.LOG, "heyo we have a clone: " + versionForExport.getAbsolutePath());
 		
+		// be sure to delete the file at the clone path!
+		java.io.File clone = new java.io.File(clonePath);
+		clone.delete();
+		
+		doExport(versionForExport);
 	}
 
 }

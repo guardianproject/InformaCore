@@ -1,5 +1,7 @@
 package org.witness.informacam.informa;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +38,7 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Status;
 import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
@@ -108,11 +111,9 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			vidTemp.delete();
 		}
 		
-		/*
 		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
 		if(vidMetadata.exists())
 			vidMetadata.delete();
-		*/
 		
 	}
 	
@@ -455,7 +456,74 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			
 		} catch (JSONException e) {}
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public void onInformaInitForExport(final Activity a, final String clonePath, info.guardianproject.iocipher.File cache, final int mediaType) {
+		initCaches();
+		inflateMediaCache(cache.getAbsolutePath());
+		
+		_phone = new PhoneSucker(InformaService.this);
+		informa = new Informa();
+		try {
+			LogPack originalData = getMetadata();
+			informa.setDeviceCredentials(_phone.getSucker().forceReturn());
+			_phone.getSucker().stopUpdates();
+			_phone = null;
+			
+			informa.setFileInformation(originalData.getString(Genealogy.LOCAL_MEDIA_PATH));
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						if(informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED, annotationCache))) {
+							if(informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK, suckerCache))) {
+								if(mediaType == Media.Type.IMAGE) {
+									ImageConstructor imageConstructor = new ImageConstructor(a, annotationCache, clonePath);
+								} else if(mediaType == Media.Type.VIDEO) {
+									try {
+										VideoConstructor vc = new VideoConstructor(a);
+										vc.buildInformaVideo(a, annotationCache, clonePath);
+									} catch(NullPointerException e) {
+										Log.e(Storage.LOG, e.toString());
+										e.printStackTrace();
+									} catch (FileNotFoundException e) {
+										Log.e(Storage.LOG, e.toString());
+										e.printStackTrace();
+									} catch (IOException e) {
+										Log.e(Storage.LOG, e.toString());
+										e.printStackTrace();
+									}
+									
+								}
+							}
+						}
+					}catch(JSONException e) {
+						Log.e(Storage.LOG, e.toString());
+						e.printStackTrace();
+					} catch (InterruptedException e) {
+						Log.e(Storage.LOG, e.toString());
+						e.printStackTrace();
+					} catch (ExecutionException e) {
+						Log.e(Storage.LOG, e.toString());
+						e.printStackTrace();
+					}
+				
+				}
+			}).start();
+			
+		} catch(JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
+	}
+	
 	@Override
 	public void onInformaInit(Activity editor, Uri workingUri) {
 		informa = new Informa();

@@ -43,6 +43,7 @@ public class Informa {
 	
 	public interface InformaListener {
 		public void onInformaInit(Activity editor, Uri originalUri);
+		public void onInformaInitForExport(Activity a, String clonePath, info.guardianproject.iocipher.File cache, int mediaType);
 	}
 	
 	private class InformaZipper extends JSONObject {

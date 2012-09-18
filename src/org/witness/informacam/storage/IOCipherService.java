@@ -162,10 +162,11 @@ public class IOCipherService extends Service {
 	}
 	
 	public java.io.File moveFromIOCipherToMemory(Uri uri, String filename) throws IOException {
-		FileInputStream fis = getFileStream(uri);
+		File file = getFile(uri);
+		FileInputStream fis = new FileInputStream(file);
 		
-		java.io.File file = new java.io.File(Storage.FileIO.DUMP_FOLDER, filename);
-		java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+		java.io.File _file = new java.io.File(Storage.FileIO.DUMP_FOLDER, filename);
+		java.io.FileOutputStream fos = new java.io.FileOutputStream(_file);
 		
 		int read = 0;
 		byte[] bytes = new byte[fis.available()];
@@ -176,7 +177,7 @@ public class IOCipherService extends Service {
 		fos.flush();
 		fos.close();
 		
-		return file;
+		return _file;
 	}
 	
 	public List<File> walk(File _root) {

@@ -46,6 +46,7 @@ import org.witness.informacam.j3m.J3M.J3MPackage;
 
 import com.google.common.cache.LoadingCache;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -68,6 +69,10 @@ public class VideoConstructor {
 	File clone;
 	
 	public static VideoConstructor videoConstructor;
+	
+	public interface VideoConstructorListener {
+		public void onExportVersionCreated(java.io.File versionForExport, String clonePath);
+	}
 
 	public VideoConstructor(Context _context) throws FileNotFoundException, IOException {
 		context = _context;
@@ -98,7 +103,7 @@ public class VideoConstructor {
 			while ((line = reader.readLine()) != null)
 			{
 				if (sc != null) {
-					Log.d(LOGTAG, "should be sending shellout " + line);
+					Log.d("FFMPEG", line);
 					sc.shellOut(line);
 				} else
 					Log.d(LOGTAG, "why is sc NULL?");
@@ -266,6 +271,39 @@ public class VideoConstructor {
 		}
 	}
 	
+	public void buildInformaVideo(Activity a, LoadingCache<Long, LogPack> annotationCache, String clonePath) {
+		try {
+			clone = new File(clonePath);
+			
+			long saveTime = System.currentTimeMillis();
+			InformaService.getInstance().informa.setSaveTime(saveTime);
+			
+			List<Entry<Long, LogPack>> annotations = InformaService.getInstance().getAllEventsByTypeWithTimestamp(CaptureEvent.REGION_GENERATED, annotationCache);
+			if(InformaService.getInstance().informa.addToAnnotations(annotations)) {
+				String informaMetadata = InformaService.getInstance().informa.bundle();
+				
+				File version = new File(clonePath.replace(".mp4", Media.Type.MKV));
+				File mdFile = stringToFile(informaMetadata, Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
+				constructVideo(version, mdFile);
+				
+				InformaService.getInstance().versionsCreated();
+				((VideoConstructorListener) a).onExportVersionCreated(version, clonePath);
+			}
+		} catch(JSONException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		}
+	}
+	
 	public void buildInformaVideo(Context c, LoadingCache<Long, LogPack> annotationCache, long[] encryptList) {
 		
 		long saveTime = System.currentTimeMillis();
@@ -294,7 +332,6 @@ public class VideoConstructor {
 						// XXX: encryption is broken, to fix later
 						//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
 						String informaMetadata = InformaService.getInstance().informa.bundle();
-						
 						
 						// insert metadata
 						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.MKV);
@@ -336,12 +373,11 @@ public class VideoConstructor {
 	}
 	
 	public void constructVideo(File video, File metadata) throws IOException, JSONException {
-		
 		String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 		
 		String[] ffmpegCommand = new String[] {
-			ffmpegBin, "-i", clone.getAbsolutePath(),
+			ffmpegBin, "-y", "-i", clone.getAbsolutePath(),
 			"-attach", metadata.getAbsolutePath(),
 			"-metadata:s:2", "mimetype=text/plain",
 			"-vcodec", "copy",
@@ -361,7 +397,7 @@ public class VideoConstructor {
 
 				@Override
 				public void shellOut(String shellLine) {
-					Log.d(VideoEditor.LOGTAG, shellLine);
+					Log.d("FFMPEG", shellLine);
 					
 				}
 
@@ -385,5 +421,4 @@ public class VideoConstructor {
 		}
 		
 	}
-
 }

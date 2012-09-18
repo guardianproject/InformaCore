@@ -112,6 +112,7 @@
     <string name="media_manager_last_saved">Last Saved on </string>
     <string name="media_manager_open">Open</string>
     <string name="media_manager_delete">Delete</string>
+    <string name="media_manager_export_text">This media was captured by InformaCam, powered by The Guardian Project.  We can be sure that the media and its metadata is 100% un-tampered-with up to its delivery to you.</string>
     
 	<!--  LOG IN ACTIVITY -->
 	<string name="login">Log In</string>
