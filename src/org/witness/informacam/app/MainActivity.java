@@ -250,6 +250,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			Log.d(App.LOG, mediaCaptureFile.getAbsolutePath());
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
+    				mimeType = Media.Type.MIME_TYPE_JPEG;
     				mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
     			} else {
     				editorIntent = new Intent(this, VideoEditor.class);

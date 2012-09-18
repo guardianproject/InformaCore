@@ -194,8 +194,11 @@ public class IOUtility {
 			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
 			
 			Bitmap b = retriever.getFrameAtTime(Math.max(logPack.getLong(Exif.DURATION)/2, 0), MediaMetadataRetriever.OPTION_CLOSEST);
-			Matrix m = new Matrix();
-			m.postScale(80f/b.getWidth(), 80f/b.getHeight());
+			
+			int scale = Math.min(8, logPack.getInt(Exif.IMAGE_WIDTH)/10);
+			Log.d(Storage.LOG, "image inSampleSize set to " + scale);
+			BitmapFactory.Options opts = new BitmapFactory.Options();
+			opts.inSampleSize = scale;
 			
 			logPack.put(Media.Manifest.Keys.THUMBNAIL, new String(Base64.encode(IOUtility.getBytesFromBitmap(b, 20))));
 						
@@ -231,9 +234,12 @@ public class IOUtility {
 			logPack.put(Data.Description.ORIGINAL_HASH, MediaHasher.hash(new File(filepath), "SHA-1"));
 			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
 			
-			Bitmap b = BitmapFactory.decodeFile(filepath);
-			Matrix m = new Matrix();
-			m.postScale(80f/b.getWidth(), 80f/b.getHeight());
+			int scale = Math.min(8, logPack.getInt(Exif.IMAGE_WIDTH)/10);
+			Log.d(Storage.LOG, "image inSampleSize set to " + scale);
+			BitmapFactory.Options opts = new BitmapFactory.Options();
+			opts.inSampleSize = scale;
+			
+			Bitmap b = BitmapFactory.decodeFile(filepath, opts);
 			
 			logPack.put(Media.Manifest.Keys.THUMBNAIL, new String(Base64.encode(IOUtility.getBytesFromBitmap(b, 20))));
 						
