@@ -133,8 +133,11 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		if(v == navigation)
 			finish();
 		else if(v == new_contact) {
+			/*
 			Intent intent = new Intent(this, AddressBookChooserActivity.class);
 			startActivityForResult(intent, App.AddressBook.FROM_CONTACT_CHOOSER);
+			*/
+			Toast.makeText(this, getString(R.string.address_book_chooser_placeholder), Toast.LENGTH_LONG).show();
 		} else if(v == select_contact) {
 			List<Long> encryptList = new ArrayList<Long>();
 			for(AddressBookDisplay adr : addresses) {

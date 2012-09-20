@@ -8,13 +8,16 @@ import android.graphics.Bitmap;
 
 public class MediaManagerUtility {
 	public static final class MediaManagerDisplay extends JSONObject {
-		String baseId;
+		public String baseId;
 		Bitmap thumbnail;
 		
 		public MediaManagerDisplay(JSONObject manifest) {
 			try {
 				if(manifest.has(Manifest.Keys.ALIAS))
 					this.put(Manifest.Keys.ALIAS, manifest.getString(Manifest.Keys.ALIAS));
+				else
+					this.put(Manifest.Keys.ALIAS, manifest.getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
+				
 				put(Manifest.Keys.LOCATION_OF_ORIGINAL, manifest.getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
 				
 				baseId = getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/original.")[0].substring(1);

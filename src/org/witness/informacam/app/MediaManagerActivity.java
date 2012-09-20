@@ -1,13 +1,16 @@
 package org.witness.informacam.app;
 
 import info.guardianproject.iocipher.File;
+import info.guardianproject.iocipher.FileOutputStream;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.R;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.adapters.MediaManagerAdapter;
@@ -16,8 +19,11 @@ import org.witness.informacam.app.editors.image.ImageConstructor.ImageConstructo
 import org.witness.informacam.app.editors.video.VideoConstructor.VideoConstructorListener;
 import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
+import org.witness.informacam.app.mods.InformaEditTextAlert;
+import org.witness.informacam.app.mods.InformaEditTextAlert.AlertInputListener;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
@@ -38,14 +44,13 @@ import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.ListView;
 
-public class MediaManagerActivity extends Activity implements OnClickListener, OnRoutedListener, OnMediaFocusedListener, OnChoosableChosenListener, ImageConstructorListener, VideoConstructorListener {
+public class MediaManagerActivity extends Activity implements OnClickListener, OnRoutedListener, OnMediaFocusedListener, OnChoosableChosenListener, ImageConstructorListener, VideoConstructorListener, AlertInputListener {
 	
 	Handler h = new Handler();
 	
 	ImageButton navigation;
 	ListView media_manager_list;
 	ArrayList<MediaManagerDisplay> media;
-	
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -83,7 +88,6 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 			setResult(Activity.RESULT_CANCELED);
 			finish();
 		}
-		
 	}
 
 	@Override
@@ -117,16 +121,28 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 			}
 			break;
 		case MediaManager.Actions.RENAME_MEDIA:
+			try {
+				InformaEditTextAlert ieta = new InformaEditTextAlert(MediaManagerActivity.this, obj);
+			
+				ieta.setTitle(getString(R.string.media_manager_rename));
+				ieta.setMessage(getString(R.string.media_manager_rename_prompt) + " " + ((MediaManagerDisplay) obj).getString(Manifest.Keys.ALIAS));
+				ieta.show();
+			} catch(JSONException e) {
+				Log.e(App.LOG, e.toString());
+			}
 			break;
 		case MediaManager.Actions.EXPORT_MEDIA:
 			/* TODO:
 			 * 1) prompt to choose contact to make copy for ?
+			 * 
+			 * DONE:
 			 * 2) make a version
 			 * 3) save to public IO
 			 * 4) export intent
 			 */
 			try {
-				String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
+				//String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
+				String baseName = ((MediaManagerDisplay) obj).baseId;
 				
 				File originalMedia = IOCipherService.getInstance().getFile(((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
 				
@@ -166,6 +182,42 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 		}
 	}
 	
+	@Override
+	public void onSubmit(Object obj, String input) {
+		try {
+			// save the manifest again
+			File manifestFile = IOCipherService.getInstance().getFile("/" + ((MediaManagerDisplay) obj).baseId + "/manifest.json");
+			JSONObject manifest = (JSONObject) new JSONTokener(new String(IOUtility.getBytesFromFile(manifestFile))).nextValue();
+			manifestFile.delete();
+			
+			manifest.put(Manifest.Keys.ALIAS, input);
+			manifest.put(Manifest.Keys.LAST_SAVED, System.currentTimeMillis());
+			
+			byte[] manifestBytes = manifest.toString().getBytes();
+			FileOutputStream fos = new FileOutputStream(manifestFile);
+			fos.write(manifestBytes, 0, manifestBytes.length);
+			fos.flush();
+			fos.close();
+			
+			// update list view
+			h.post(new Runnable() {
+				@Override
+				public void run() {
+					getMedia();
+				}
+			});
+		} catch(JSONException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		}
+	}
+	
 	private void doExport(java.io.File versionForExport) {
 		Intent export = new Intent()
 			.setAction(Intent.ACTION_SEND)
@@ -178,15 +230,12 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 	@Override
 	public void onExportVersionCreated(java.io.File versionForExport) {
 		// returns the image for export intent
-		Log.d(App.LOG, "heyo we have a clone: " + versionForExport.getAbsolutePath());
 		doExport(versionForExport);
 	}
 
 	@Override
 	public void onExportVersionCreated(java.io.File versionForExport, String clonePath) {
-		// returns the video for export intent
-		Log.d(App.LOG, "heyo we have a clone: " + versionForExport.getAbsolutePath());
-		
+		// returns the video for export intent		
 		// be sure to delete the file at the clone path!
 		java.io.File clone = new java.io.File(clonePath);
 		clone.delete();

@@ -63,9 +63,7 @@ public class MediaManagerAdapter extends BaseAdapter {
 		
 		try {
 			StringBuilder summary = new StringBuilder();
-			String mediaTitle = media.get(position).getString(Manifest.Keys.LOCATION_OF_ORIGINAL);
-			if(media.get(position).has(Manifest.Keys.ALIAS))
-				mediaTitle = media.get(position).getString(Manifest.Keys.ALIAS);
+			String mediaTitle = media.get(position).getString(Manifest.Keys.ALIAS);
 			
 			ImageButton mediaThumb = (ImageButton) convertView.findViewById(R.id.media_thumb);
 			if(media.get(position).has(Media.Manifest.Keys.THUMBNAIL)) {

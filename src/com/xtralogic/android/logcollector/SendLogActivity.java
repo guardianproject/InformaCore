@@ -35,7 +35,9 @@
 package com.xtralogic.android.logcollector;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.witness.informacam.R;
+import org.witness.informacam.utils.Constants.Storage;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -275,8 +278,23 @@ public class SendLogActivity extends Activity
                     log.insert(0, mAdditonalInfo);
                 }
                 
-                mSendIntent.putExtra(Intent.EXTRA_TEXT, log.toString());
-                startActivity(Intent.createChooser(mSendIntent, getString(R.string.chooser_title)));
+                // XXX:  Possible Failed Binder Transaction-- wouldn't it be better to log this to a file? -harlo
+                try {
+                	File logFile = new File(Storage.FileIO.DUMP_FOLDER, "error_log_" + System.currentTimeMillis() + ".txt");
+					FileWriter fw = new FileWriter(logFile);
+					fw.write(log.toString());
+					fw.close();
+					
+					mSendIntent
+						.putExtra(Intent.EXTRA_TEXT, logFile.getAbsolutePath())
+						.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(logFile));
+	                startActivity(Intent.createChooser(mSendIntent, getString(R.string.chooser_title)));
+				} catch (IOException e) {
+					Log.e(Storage.LOG, e.toString());
+					e.printStackTrace();
+				}
+                
+                
                 dismissProgressDialog();
                 dismissMainDialog();
                 finish();

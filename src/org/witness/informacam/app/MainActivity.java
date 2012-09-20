@@ -25,6 +25,7 @@ import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
+import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 import org.witness.informacam.utils.Constants.Media.Manifest;
@@ -352,6 +353,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		launchSendLog();
     		return true;
     	case R.id.extras_logout:
+    		doLogout();
     		return true;
     	case R.id.menu_refresh:
     		refreshUploads();
@@ -360,6 +362,11 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		return false;
     	}
     }
+
+	private void doLogout() {
+		sp.edit().putString(Settings.Keys.CURRENT_LOGIN, Settings.Login.PW_EXPIRY).commit();
+		finish();		
+	}
 
 	@Override
 	public void onClick(View v) {

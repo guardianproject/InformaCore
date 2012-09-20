@@ -330,6 +330,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void onDestroy() {
 		super.onDestroy();
 		Log.d(LOG, "InformaService stopped");
+		for(BroadcastReceiver b : br)
+			unregisterReceiver(b);
 	}
 			
 	@SuppressWarnings("unchecked")

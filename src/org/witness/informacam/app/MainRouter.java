@@ -1,5 +1,6 @@
 package org.witness.informacam.app;
 
+import org.witness.informacam.R;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Settings;
 
@@ -8,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 class MainRouter {
 	static interface OnRoutedListener {
@@ -28,9 +30,11 @@ class MainRouter {
 			activity.startActivity(intent);
 			return false;
 		} else {
-			((OnRoutedListener) activity).onRouted();
+			if(LoginActivity.validatePassword(activity, preferences.getString(Settings.Keys.CURRENT_LOGIN, "")))
+				((OnRoutedListener) activity).onRouted();
+			else
+				Toast.makeText(activity, activity.getString(R.string.error_password_mismatch), Toast.LENGTH_LONG).show();
 			return true;
 		}
 	}
-	
 }

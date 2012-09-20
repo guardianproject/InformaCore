@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" style="@style/OverlayActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+	<org.witness.informacam.app.mods.InformaHeaderTextView style="@style/H1"
+		android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:id="@+id/edittext_alert_title" />
+	</LinearLayout>
+	<org.witness.informacam.app.mods.InformaTextView style="@style/P"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_margin="6dip"
+	    android:id="@+id/edittext_alert_prompt" />
+	<org.witness.informacam.app.mods.InformaEditText style="@style/EditText_standard"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_margin="6dip"
+	    android:id="@+id/edittext_alert_holder" />
+	<org.witness.informacam.app.mods.InformaButton style="@style/Button_standard"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:id="@+id/edittext_alert_submit"
+	    android:text="@string/ok" />
+</LinearLayout>
