@@ -91,6 +91,19 @@ public class KeyUtility {
 		}
 	}
 	
+	public final static String getMyFingerprint(DatabaseHelper dh, SQLiteDatabase db) {
+		String fingerprint = null;
+		dh.setTable(db, Tables.Keys.SETUP);
+		Cursor c = dh.getValue(db, new String[] {Settings.Device.Keys.SECRET_KEY}, BaseColumns._ID, 1L);
+		if(c != null && c.moveToFirst()) {
+			PGPSecretKey sk = extractSecretKey(c.getBlob(c.getColumnIndex(Settings.Device.Keys.SECRET_KEY)));
+			fingerprint = new String(Hex.encode(sk.getPublicKey().getFingerprint()));
+			c.close();
+		}
+				
+		return fingerprint;
+	}
+	
 	public final static class KeyServerResponse extends JSONObject {
 		public KeyServerResponse(PGPPublicKey key, String displayName, String email) {
 			if(email == null) {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" style="@style/OverlayActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+		<org.witness.informacam.app.mods.InformaHeaderTextView style="@style/P"
+			android:layout_width="fill_parent"
+	    	android:layout_height="wrap_content"
+	    	android:text="@string/app_name" />
+	</LinearLayout>
+	<TextView style="@style/P"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="@string/notification_status" />
+	<ListView android:id="@+id/notification_upload_holder"
+	    android:layout_width="fill_parent"
+	    android:layout_height="200dip" />
+
+</LinearLayout>

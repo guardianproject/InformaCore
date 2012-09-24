@@ -101,25 +101,27 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 	}
 
 	@Override
-	public void onMediaFocusedListener(int which) {
+	public void onItemLongClick(int which) {
 		InformaChoosableAlert alert = new InformaChoosableAlert(MediaManagerActivity.this, getResources().getStringArray(R.array.media_manager_actions), media.get(which));
 		alert.setTitle(getString(R.string.media_manager));
 		alert.show();
+	}
+	
+	@Override
+	public void onItemClick(Object obj) {
+		try {
+			getIntent().putExtra(Manifest.Keys.LOCATION_OF_ORIGINAL, ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
+			setResult(Activity.RESULT_OK, getIntent());
+			finish();
+		} catch(JSONException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void onChoice(int which, Object obj) {
 		switch(which) {
-		case MediaManager.Actions.OPEN_MEDIA:
-			try {
-				getIntent().putExtra(Manifest.Keys.LOCATION_OF_ORIGINAL, ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL));
-				setResult(Activity.RESULT_OK, getIntent());
-				finish();
-			} catch(JSONException e) {
-				Log.e(App.LOG, e.toString());
-				e.printStackTrace();
-			}
-			break;
 		case MediaManager.Actions.RENAME_MEDIA:
 			try {
 				InformaEditTextAlert ieta = new InformaEditTextAlert(MediaManagerActivity.this, obj);

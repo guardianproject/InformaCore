@@ -347,7 +347,7 @@ public class VideoConstructor {
 						dh.setTable(db, Tables.Keys.MEDIA);
 						db.insert(dh.getTable(), null, cv);
 						
-						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td));
+						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td, forName));
 						
 						cursor.close();
 					}

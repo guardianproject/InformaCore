@@ -39,7 +39,7 @@ public class J3M {
 	int mode = 0;
 	int mediaType;
 	long timestampCreated;
-	String pgpFingerprint;
+	String pgpFingerprint, derivativeRoot;
 	
 	IOCipherService ioCipherService = IOCipherService.getInstance();
 	UploaderService uploaderService = UploaderService.getInstance();
@@ -49,6 +49,7 @@ public class J3M {
 		this.pgpFingerprint = pgpFingerprint;
 		timestampCreated = cv.getAsLong(Media.Keys.TIME_CAPTURED);
 		mediaType = cv.getAsInteger(Media.Keys.TYPE);
+		derivativeRoot = cv.getAsString(Media.Keys.DERIVATIVE_ROOT);
 		
 		int offset = 0;
 		int numRead = 0;
@@ -59,7 +60,7 @@ public class J3M {
 				root.mkdir();
 						
 			fileBytes = new byte[(int) file.length()];
-			mode = Constants.J3M.Chunks.EXTRA_EXTRA_LARGE;
+			mode = Constants.J3M.Chunks.EXTRA_EXTRA_EXTRA_LARGE;
 			
 			InputStream fis = new FileInputStream(file);
 			while(offset < fileBytes.length && (numRead = fis.read(fileBytes, offset, fileBytes.length - offset)) > 0)
@@ -91,6 +92,10 @@ public class J3M {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
+	}
+	
+	public String getThumbnail() {
+		return derivativeRoot + "/thumbnail.jpg";
 	}
 	
 	public String getBase() {
@@ -169,18 +174,24 @@ public class J3M {
 	public static final class J3MManifest extends JSONObject {
 		info.guardianproject.iocipher.File root;
 		
-		public J3MManifest(String rootName, String pgpFingerprint, int numChunks) {
-			root = new info.guardianproject.iocipher.File(rootName);			
+		public J3MManifest(J3MPackage j3mpackage, String authToken) {
+			root = new info.guardianproject.iocipher.File(j3mpackage.root);			
 			
 			// XXX: why does iocipher not see the files?
 			info.guardianproject.iocipher.File j3m_root = new info.guardianproject.iocipher.File(root, "j3m");
 			IOCipherService.getInstance().walk(j3m_root);
 			
 			try {
-				put(Crypto.PGP.Keys.PGP_FINGERPRINT, pgpFingerprint);
+				put(Media.Manifest.Keys.DERIVATIVE_ROOT, j3mpackage.derivativeRoot);
+				put(Transport.Keys.URL, j3mpackage.url);
+				put(Transport.Manifest.Keys.AUTH_TOKEN, authToken);
+				put(Transport.Keys.CERTS, j3mpackage.pkcs12Id);
+				put(Transport.Manifest.Keys.TRUSTED_DESTINATION_DISPLAY_NAME, j3mpackage.displayName);
+				put(Crypto.PGP.Keys.PGP_FINGERPRINT, j3mpackage.pgpFingerprint);
 				put(Media.Keys.J3M_BASE, root.getName());
-				put(Media.Manifest.Keys.TOTAL_CHUNKS, numChunks);
+				put(Media.Manifest.Keys.TOTAL_CHUNKS, j3mpackage.chunk_num);
 				put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
+				Log.d(Constants.J3M.LOG, "created new manifest:\n" + toString());
 			} catch (JSONException e) {
 				Log.e(Constants.J3M.LOG, e.toString()); 
 				e.printStackTrace();
@@ -254,18 +265,21 @@ public class J3M {
 	}
 	
 	public final static class J3MPackage {
-		public String pgpFingerprint;
-		public String j3m, url, root;
+		public String pgpFingerprint, derivativeRoot;
+		public String j3m, url, root, displayName, thumbnail;
 		public long pkcs12Id;
 		public int chunk_num;
 		
-		public J3MPackage(J3M j3m, String url, long pkcs12Id) {
+		public J3MPackage(J3M j3m, String url, long pkcs12Id, String displayName) {
 			this.j3m = j3m.j3mdescriptor.toString();
 			this.pgpFingerprint = j3m.pgpFingerprint;
 			this.pkcs12Id = pkcs12Id;
 			this.url = url;
 			this.root = j3m.root.getName();
 			this.chunk_num = j3m.chunk_num;
+			this.displayName = displayName;
+			this.thumbnail = j3m.getThumbnail();
+			this.derivativeRoot = j3m.derivativeRoot;
 		}
 	}
 }

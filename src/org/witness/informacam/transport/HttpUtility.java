@@ -78,17 +78,6 @@ public class HttpUtility {
 						sb.append("Cache-Control: no-cache" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
 						dos.writeBytes(sb.toString());
 						
-						/*
-						int index = 0;
-						int bufSize = 1024;
-						
-						do {
-							if((index + bufSize) > file.length)
-								bufSize = file.length - index;
-							dos.write(file, index, bufSize);
-							index += bufSize;
-						} while(index < file.length);
-						*/
 						dos.write(file, 0, file.length);
 						dos.writeBytes(Transport.Keys.LINE_END);
 						
@@ -98,14 +87,16 @@ public class HttpUtility {
 					
 					sb = new StringBuffer();
 					while(it.hasNext()) {
+						//sb = new StringBuffer();
 						Entry<String, Object> e = it.next();
 						
 						sb.append(Transport.Keys.HYPHENS + Transport.Keys.BOUNDARY + Transport.Keys.LINE_END);
-						
+
 						sb.append("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + Transport.Keys.LINE_END);
 						sb.append("Content-Type: " + contentType1 + "; charset=UTF-8" + Transport.Keys.LINE_END );
 						sb.append("Cache-Control: no-cache" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
 						sb.append(String.valueOf(e.getValue()) + Transport.Keys.LINE_END);
+						
 						dos.writeBytes(sb.toString());
 					}
 					
@@ -140,9 +131,7 @@ public class HttpUtility {
 				};
 				
 				itm = new InformaTrustManager(c);
-				
-				// TODO: perform logic to tell ITM which key it should use
-				
+								
 				ssl = SSLContext.getInstance("TLS");
 				X509KeyManager[] x509KeyManager = null;
 				

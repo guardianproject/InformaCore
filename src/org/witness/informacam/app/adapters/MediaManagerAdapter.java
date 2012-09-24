@@ -22,6 +22,7 @@ import android.app.Activity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.View.OnLongClickListener;
 import android.widget.BaseAdapter;
@@ -34,7 +35,8 @@ public class MediaManagerAdapter extends BaseAdapter {
 	Activity a;
 	
 	public interface OnMediaFocusedListener {
-		public void onMediaFocusedListener(int which);
+		public void onItemLongClick(int which);
+		public void onItemClick(Object obj);
 	}
 	
 	public MediaManagerAdapter(Activity a, ArrayList<MediaManagerDisplay> media) {
@@ -84,8 +86,18 @@ public class MediaManagerAdapter extends BaseAdapter {
 
 				@Override
 				public boolean onLongClick(View v) {
-					((OnMediaFocusedListener) a).onMediaFocusedListener(position);
+					((OnMediaFocusedListener) a).onItemLongClick(position);
 					return false;
+				}
+				
+			});
+			
+			mediaDetailsHolder.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					((OnMediaFocusedListener) a).onItemClick(media.get(position));
+					
 				}
 				
 			});

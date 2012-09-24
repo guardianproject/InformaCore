@@ -61,6 +61,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 public class InformaService extends Service implements OnUpdateListener, InformaListener, ImageRegionListener, VideoRegionListener {
 	public static InformaService informaService;
@@ -316,6 +317,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		Log.d(Constants.Informa.LOG, "InformaService running");
 		
 		toMainActivity = new Intent(this, MainActivity.class);
+		toMainActivity.putExtra(App.InformaService.Keys.FROM_NOTIFICATION, App.InformaService.Notifications.INIT);
 		nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		
 		br.add(new Broadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
@@ -399,9 +401,11 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	@SuppressWarnings("deprecation")
 	public void showNotification() {
 		Notification n = new Notification(
-				R.drawable.ic_ssc,
+				R.drawable.ic_launcher_ssc,
 				getString(R.string.app_name),
 				System.currentTimeMillis());
+		
+		n.contentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.informa_notification);
 		
 		PendingIntent pi = PendingIntent.getActivity(
 				this,

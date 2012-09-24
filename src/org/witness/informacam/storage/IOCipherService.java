@@ -183,9 +183,11 @@ public class IOCipherService extends Service {
 	public List<File> walk(File _root) {
 		File root = getFile(_root.getAbsolutePath());
 		File[] _f = root.listFiles();
+		/*
 		Log.d(Storage.LOG, "walking folder " + root.getAbsolutePath());
 		for(File f : _f)
 			Log.d(Storage.LOG, f.getAbsolutePath() + " PERMISSION? " + f.canWrite());
+		*/
 		return new ArrayList<File>(Arrays.asList(_f));
 	}
 	

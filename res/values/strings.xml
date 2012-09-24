@@ -21,6 +21,9 @@
     <string name="select">Select</string>
     <string name="add">Add</string>
     
+    <!--  NOTIFICATION BAR  -->
+    <string name="notification_status">Status:</string>
+    
     <!-- MAIN MENU -->
     <string name="mainactivity_preferences">Preferences</string>
     <string name="mainactivity_about">About InformaCam</string>
@@ -117,6 +120,20 @@
     <string name="media_manager_export_text">This media was captured by InformaCam, powered by The Guardian Project.  We can be sure that the media and its metadata is 100% un-tampered-with up to its delivery to you.</string>
     <string name="media_manager_rename">Rename\u2026</string>
     <string name="media_manager_rename_prompt">Change this media object\'s name from </string>
+    
+    <!--  MESSAGE CENTER  -->
+    <string name="message_center_from">from</string>
+    <string name="message_center_unknown">unknown</string>
+    <string name="message_center_conversation_with">Conversation with </string>
+    <string name="message_center_send">Send</string>
+    <string name="message_center_refresh">Refresh Messages for this Conversation</string>
+    <string name="message_center_last_checked">last checked: </string>
+   
+    
+    <!--  UPLOAD SERVICE -->
+    <string name="upload_service_uploading">Uploading\u2026</string>
+    <string name="upload_service_complete">complete</string>
+    <string name="upload_service_refresh">Refresh?</string>
     
 	<!--  LOG IN ACTIVITY -->
 	<string name="login">Log In</string>

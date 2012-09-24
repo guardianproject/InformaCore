@@ -80,6 +80,7 @@
         
         <activity android:name=".app.MediaManagerActivity" android:configChanges="orientation|keyboardHidden" />
         <activity android:name=".app.MessageCenterActivity" android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.MessageThreadActivity" android:configChanges="orientation|keyboardHidden" />
         <activity android:name=".app.AddressBookActivity" android:configChanges="orientation|keyboardHidden" />
         
         <activity android:name=".app.KnowledgebaseActivity" />

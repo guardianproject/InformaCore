@@ -11,6 +11,19 @@ public class Constants {
 	public final static class App {
 		public static final String LOG = "**************** InformaCam:UI Thread ****************";
 		
+		public static final class InformaService {
+			public static final class Keys {
+
+				public static final String FROM_NOTIFICATION = "fromNotification";
+				
+			}
+			
+			public static final class Notifications {
+				public static final int INIT = 1;
+				
+			}
+		}
+		
 		public final static class Eula {
 			
 		}
@@ -128,6 +141,20 @@ public class Constants {
 				
 			}
 		}
+
+		public static final class MessageCenter {
+			public final static class Actions {
+				public static final int VIEW_THREAD = 23;
+			}
+			
+			public static final class Keys {
+				public final static String THREAD_BASE = Media.Manifest.Keys.J3MBASE;
+				public static final String FROM_URL = Media.Manifest.Keys.URL;
+				public final static String CERT_ID = Media.Manifest.Keys.CERTS;
+				public static final String ALIAS = Media.Manifest.Keys.ALIAS;
+				
+			}
+		}
 	}
 	
 	public final static class Mods {
@@ -208,6 +235,7 @@ public class Constants {
 			public static final String TIME_CAPTURED = Informa.CaptureEvent.Keys.MEDIA_CAPTURE_COMPLETE;
 			public static final String J3M_BASE = "j3mBase";
 			public static final String J3M_MANIFEST = "j3mManifest";
+			public static final String DERIVATIVE_ROOT = Transport.Manifest.Keys.DERIVATIVE_ROOT;
 		}
 		
 		public final static class DateFormats {
@@ -261,6 +289,9 @@ public class Constants {
 				public static final String THUMBNAIL = "mediaThumbnail";
 				public static final String FINGERPRINT = Crypto.Keyring.Keys.FINGERPRINT;
 				public static final String J3MBASE = Transport.Manifest.Keys.J3MBase;
+				public static final String LAST_MESSAGES = "lastCheckedForMessages";
+				public static final String TRUSTED_DESTINATION_DISPLAY_NAME = TrustedDestination.Keys.DISPLAY_NAME;
+				public static final String DERIVATIVE_ROOT = Media.Keys.DERIVATIVE_ROOT;
 			}
 
 			public static final String UPLOADED_FLAG = "uploadedFlag";
@@ -687,15 +718,26 @@ public class Constants {
 			public static final String PGP_KEY_ENCODED = "pgpKeyEncoded";
 			public static final String REQUIREMENTS = "requirements";
 			public static final String GET_REQUIREMENTS = "getRequirements";
+			public static final String SUPPORTED_DATA_REQUIRED = "supportingDataRequired";
+			public static final String READ_ARRAY = "readArray";
+			public static final String CLIENT_PGP = Uploader.Keys.CLIENT_PGP;
+			public static final String PUT_MESSAGE = "putNewMessage";
+			
+			public static final class Message {
+				public static final String CONTENT = "content";
+				public static final String URL = "url";
+			}
 			
 		}
 
 		public final static class Manifest {
 			public final static class Keys {
+				public static final String DERIVATIVE_ROOT = Media.Keys.ORIGINAL_HASH;
 				public static final String LAST_TRANSFERRED = "lastJ3MTorrent";
 				public static final String AUTH_TOKEN = "auth_token";
 				public static final String TOTAL_CHUNKS = Media.Manifest.Keys.TOTAL_CHUNKS;
 				public static final String J3MBase = Media.Keys.J3M_BASE;
+				public static final String TRUSTED_DESTINATION_DISPLAY_NAME = Media.Manifest.Keys.TRUSTED_DESTINATION_DISPLAY_NAME;
 			}
 		}
 
@@ -720,6 +762,7 @@ public class Constants {
 			public final static int LARGE = 12288;
 			public final static int EXTRA_LARGE = 36864;
 			public static final int EXTRA_EXTRA_LARGE = 100000;
+			public static final int EXTRA_EXTRA_EXTRA_LARGE = 250000;
 			public final static int ALL(int length) {
 				return length;
 			}

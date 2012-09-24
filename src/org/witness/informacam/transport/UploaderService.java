@@ -1,15 +1,20 @@
 package org.witness.informacam.transport;
 
 import info.guardianproject.iocipher.File;
+import info.guardianproject.iocipher.R;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -20,6 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.app.MediaManagerActivity;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.j3m.J3M.J3MManifest;
 import org.witness.informacam.j3m.J3M.J3MPackage;
@@ -28,10 +34,15 @@ import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.Uploader;
+import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -44,6 +55,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 public class UploaderService extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -53,7 +65,11 @@ public class UploaderService extends Service {
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	
-	Queue<J3MManifest> queue;
+	Queue<Map<Integer, J3MManifest>> queue;
+	List<UploadNotifier> uploadNotifiers;
+	
+	NotificationManager nm;	
+	SecureRandom sr;
 	
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -83,7 +99,38 @@ public class UploaderService extends Service {
 					if(queue.isEmpty())
 						sleep();
 					else {
-						if(uploadChunk(queue.peek()))
+						Map<Integer, J3MManifest> jm = queue.peek();
+						
+						try {
+							Entry<Integer, J3MManifest> entry = jm.entrySet().iterator().next();
+							int queueId = entry.getKey();
+							J3MManifest j3mManifest = entry.getValue();
+							
+							UploadNotifier thisNotifier = null;
+							if(uploadNotifiers != null) {
+								for(UploadNotifier un : uploadNotifiers) {
+									if(un.serialVersionUID == queueId)
+										thisNotifier = un;
+										
+									if(thisNotifier != null) break;
+								}
+								
+							} else
+								uploadNotifiers = new ArrayList<UploadNotifier>();
+							
+							if(thisNotifier == null) {
+								thisNotifier = new UploadNotifier(jm);
+								uploadNotifiers.add(thisNotifier);
+								
+							} else {
+								thisNotifier.updateJ3MUpload(j3mManifest.getInt(Manifest.Keys.LAST_TRANSFERRED));
+							}
+						} catch(JSONException e) {
+								Log.e(Transport.LOG, e.toString());
+								e.printStackTrace();
+						}
+						
+						if(uploadChunk(jm))
 							upload();
 					}
 				}
@@ -97,6 +144,7 @@ public class UploaderService extends Service {
 					Log.d(Transport.LOG, "idle time: " + (System.currentTimeMillis() - timeIdle));
 					timeIdle = System.currentTimeMillis();
 					upload();
+					
 				}
 			}
 	);
@@ -115,43 +163,22 @@ public class UploaderService extends Service {
 					continue;
 				}
 				
+				if(jmd == null) {
+					uploads.moveToNext();
+					continue;
+				}
+					
 				try {
 					final J3MManifest j3mManifest = new J3MManifest((JSONObject) new JSONTokener(new String(jmd)).nextValue());
-					final int chunks_uploaded = j3mManifest.getInt(Media.Manifest.Keys.LAST_TRANSFERRED);
-					int total_chunks = j3mManifest.getInt(Media.Manifest.Keys.TOTAL_CHUNKS);
 					
-					if(chunks_uploaded != (total_chunks - 1)) {
-						new Thread(new Runnable() {
-							@Override
-							public void run() {
-								queue.add(j3mManifest);
-							}
-						}).start();
-						
-					} else {
-						Log.d(Transport.LOG, "actually you have all your uploads done");
-						if(!j3mManifest.has(Media.Manifest.UPLOADED_FLAG) || !j3mManifest.getBoolean(Media.Manifest.UPLOADED_FLAG)) {
-							List<Integer> missing = checkForMissingUploads(j3mManifest);
-							for(int m : missing) {
-								if(m > -1) {
-									if(uploadPatch(j3mManifest, m + "_.j3mtorrent")) {
-										j3mManifest.put(Media.Manifest.UPLOADED_FLAG, true);
-										j3mManifest.save();
-									}
-								} else {
-									int ec = -1 * m;
-									switch(ec) {
-									case Transport.Result.ErrorCodes.AUTH_FAILURE:	// upload was actually completed.
-										j3mManifest.put(Media.Manifest.UPLOADED_FLAG, true);
-										j3mManifest.save();
-										break;
-									}
-								}
-							}
-						} else {
-							Log.d(Transport.LOG, "this manifest hasn't seen the upload flag and/or is totally uploaded");
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							Map<Integer, J3MManifest> jm = new HashMap<Integer, J3MManifest>();
+							jm.put(sr.nextInt(), j3mManifest);
+							queue.add(jm);
 						}
-					}
+					}).start();
 				} catch (JSONException e) {
 					Log.e(Transport.LOG, e.toString());
 					e.printStackTrace();
@@ -197,15 +224,41 @@ public class UploaderService extends Service {
 		try {
 			JSONObject res = parseResult(result);
 			
-			J3MManifest j3mmanifest = new J3MManifest(j3mPackage.root, j3mPackage.pgpFingerprint, j3mPackage.chunk_num);
+			
 			String authToken = res.getJSONObject(Transport.Keys.BUNDLE).getString(Media.Manifest.Keys.AUTH_TOKEN);
 			
-			//j3mbase, totalchunks, lasttransferred included by default
-			j3mmanifest.put(Transport.Keys.URL, j3mPackage.url);
-			j3mmanifest.put(Transport.Manifest.Keys.AUTH_TOKEN, authToken);
-			j3mmanifest.put(Transport.Keys.CERTS, j3mPackage.pkcs12Id);
+			J3MManifest j3mmanifest = new J3MManifest(j3mPackage, authToken);
 			j3mmanifest.save();
-			queue.add(j3mmanifest);
+			
+			if(res.getJSONObject(Transport.Keys.BUNDLE).has(Transport.Keys.SUPPORTED_DATA_REQUIRED)) {
+				final JSONArray supportedDataRequired = res.getJSONObject(Transport.Keys.BUNDLE).getJSONArray(Transport.Keys.SUPPORTED_DATA_REQUIRED);
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						for(int s=0; s<supportedDataRequired.length(); s++) {
+							try {
+								switch((Integer) supportedDataRequired.get(s)) {
+								case Transport.Result.ErrorCodes.BASE_IMAGE_REQUIRED:
+									Log.d(Transport.LOG, "please update the base image");
+									// TODO: upload base image
+									break;
+								case Transport.Result.ErrorCodes.PGP_KEY_REQUIRED:
+									Log.d(Transport.LOG, "please update the pgp key");
+									// TODO: upload pgp key
+									break;
+								}
+							} catch(JSONException e) {
+								Log.e(Transport.LOG, e.toString());
+								e.printStackTrace();
+							}
+						}
+					}
+				}).start();
+			}
+			
+			Map<Integer, J3MManifest> jm = new HashMap<Integer, J3MManifest>();
+			jm.put(sr.nextInt(), j3mmanifest);
+			queue.add(jm);
 			queueMonitor.run();
 		} catch (JSONException e) {
 			Log.e(Transport.LOG, e.toString());
@@ -233,14 +286,6 @@ public class UploaderService extends Service {
 			JSONObject res = parseResult(result);
 			if(res != null) {
 				Log.d(Transport.LOG, "updated with a patch");
-			} else if(res.has(Transport.Keys.ERROR_CODE)){
-				switch(res.getInt(Transport.Keys.ERROR_CODE)) {
-				case Transport.Result.ErrorCodes.DUPLICATE_J3M_TORRENT:
-					return false;
-				case Transport.Result.ErrorCodes.NO_UPLOADS_MISSING:
-					return true;
-				}
-				
 			}
 			return true;
 		} catch(JSONException e) {
@@ -305,8 +350,7 @@ public class UploaderService extends Service {
 			return false;
 		}
 	}
-	
-	
+		
 	private boolean uploadSupportingData(J3MManifest j3mManifest, String supportingDataType, byte[] chunk, String chunkName) {
 		try {
 			Map<String, Object> postData = new HashMap<String, Object>();
@@ -330,45 +374,58 @@ public class UploaderService extends Service {
 		}
 	}
 	
-	private boolean uploadChunk(J3MManifest j3mManifest) {
+	private boolean uploadChunk(Map<Integer,J3MManifest> jm) {
 		try {
+			Entry<Integer, J3MManifest> entry = jm.entrySet().iterator().next();
+			
+			J3MManifest j3mManifest = entry.getValue();
+			
 			int lastTransferred = j3mManifest.getInt(Transport.Manifest.Keys.LAST_TRANSFERRED);
 			
 			String chunkName = (lastTransferred + 1) + "_.j3mtorrent";
-			byte[] chunk = IOUtility.getBytesFromFile(new File(j3mManifest.getString(Transport.Manifest.Keys.J3MBase) + "/j3m/" + chunkName));
-			
-			if(chunk == null)
-				return false;
+			byte[] chunk = null;
+			if((j3mManifest.getInt(Transport.Manifest.Keys.TOTAL_CHUNKS) -1) != lastTransferred) {
+				try {
+					chunk = IOUtility.getBytesFromFile(new File(j3mManifest.getString(Transport.Manifest.Keys.J3MBase) + "/j3m/" + chunkName));
+				} catch(Exception e) {
+					Log.d(Storage.LOG, "this error to match\n" + e.getMessage());
+					return false;
 					
-			Map<String, Object> postData = new HashMap<String, Object>();
-			postData.put(Uploader.Keys.AUTH_TOKEN, j3mManifest.getString(Media.Manifest.Keys.AUTH_TOKEN));
-			postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
-			
-			String url = j3mManifest.getString(Transport.Keys.URL);
-			long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
-			
-			String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
-			Log.d(Transport.LOG, result);
-			
-			JSONObject res = parseResult(result);
-			if(res != null) {
-				// if its already in the queue, pull it out
+				}
 				
-				if(res.getString(Transport.Keys.RESULT).equals(Transport.Result.OK)) {
-					if(queue.contains(j3mManifest)) {
-						queue.remove(j3mManifest);
-						Log.d(Transport.LOG, "manifest still in queue: " + j3mManifest.toString());
-					}
-					
-					JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
-					if(bundle.has(Transport.Keys.REQUIREMENTS)) {
+				if(chunk == null)
+					return false;
 						
+				Map<String, Object> postData = new HashMap<String, Object>();
+				postData.put(Uploader.Keys.AUTH_TOKEN, j3mManifest.getString(Media.Manifest.Keys.AUTH_TOKEN));
+				postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
+				
+				String url = j3mManifest.getString(Transport.Keys.URL);
+				long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
+				
+				String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
+				Log.d(Transport.LOG, result);
+				
+				JSONObject res = parseResult(result);
+				if(res != null) {
+					// if its already in the queue, pull it out
+					
+					if(res.getString(Transport.Keys.RESULT).equals(Transport.Result.OK)) {
+						if(queue.contains(jm)) {
+							queue.remove(jm);
+							Log.d(Transport.LOG, "manifest still in queue: " + j3mManifest.toString());
+						}
+						
+						JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
+						if(bundle.has(Transport.Keys.REQUIREMENTS)) {
+							
+						}
 					}
 				} else {
 					switch(res.getInt(Transport.Keys.ERROR_CODE)) {
 					case Transport.Result.ErrorCodes.DUPLICATE_J3M_TORRENT:
-						if(queue.contains(j3mManifest))
-							queue.remove(j3mManifest);
+						if(queue.contains(jm))
+							queue.remove(jm);
 						
 						lastTransferred++;
 						Log.d(Transport.LOG, "this one failed. last transferred upped to " + lastTransferred);
@@ -380,9 +437,32 @@ public class UploaderService extends Service {
 				// modify the new bytes and add to queue
 				j3mManifest.put(Transport.Manifest.Keys.LAST_TRANSFERRED, (lastTransferred + 1));
 				j3mManifest.save();
-				queue.add(j3mManifest);
+				
+				queue.add(jm);
 				Log.d(Transport.LOG, "queue size: " + queue.size());
 				return true;
+			} else if(!j3mManifest.has(Media.Manifest.UPLOADED_FLAG) || !j3mManifest.getBoolean(Media.Manifest.UPLOADED_FLAG)){
+				Log.d(Transport.LOG, "checking this j3m for missing uploads");
+				List<Integer> missing = checkForMissingUploads(j3mManifest);
+				for(int m : missing) {
+					if(m > -1) {
+						if(uploadPatch(j3mManifest, m + "_.j3mtorrent")) {
+							j3mManifest.put(Media.Manifest.UPLOADED_FLAG, true);
+							j3mManifest.save();
+						}
+					} else {
+						int ec = -1 * m;
+						switch(ec) {
+						case Transport.Result.ErrorCodes.AUTH_FAILURE:	// upload was actually completed.
+							j3mManifest.put(Media.Manifest.UPLOADED_FLAG, true);
+							j3mManifest.save();
+							break;
+						}
+					}
+				}
+				return true;
+			} else {
+				return false;
 			}
 		} catch(NullPointerException e) {
 			Log.e(Transport.LOG, e.toString());
@@ -416,23 +496,26 @@ public class UploaderService extends Service {
 	
 	@Override
 	public void onCreate() {
-		queue = new LinkedList<J3MManifest>();
+		queue = new LinkedList<Map<Integer, J3MManifest>>();
 		dh = databaseService.getHelper();
 		db = databaseService.getDb();
 		
 		queueMonitor.start();
 		initUploadsFromDatabase();
 		
+		nm = (NotificationManager) getApplicationContext().getSystemService(NOTIFICATION_SERVICE);
+		sr = new SecureRandom();
+		
 		uploaderService = this;
 	}
 	
 	private void saveQueueChanges() {
 		Log.d(Transport.LOG, "SAVING QUEUE CHANGES!");
-		Iterator<J3MManifest> qIt = queue.iterator();
+		Iterator<Map<Integer,J3MManifest>> qIt = queue.iterator();
 		dh.setTable(db, Tables.Keys.MEDIA);
 		while(qIt.hasNext()) {
 			try {
-				J3MManifest j3mManifest = qIt.next();
+				J3MManifest j3mManifest = qIt.next().entrySet().iterator().next().getValue();
 				ContentValues cv = new ContentValues();
 				cv.put(Media.Keys.J3M_MANIFEST, j3mManifest.toString());
 				db.update(dh.getTable(), cv, Media.Keys.J3M_BASE + "=?", new String[] {j3mManifest.getString(Media.Keys.J3M_BASE)});
@@ -453,5 +536,46 @@ public class UploaderService extends Service {
 	public void restart() {
 		queueMonitor.run();
 		
+	}
+	
+	public static void uploadSupportingData(Map<String, Object> postData, int pkcs12Id, String url) {
+		
+	}
+	
+	public class UploadNotifier  {
+		int percentUploaded = 0;
+		int lastUploaded, totalChunks, serialVersionUID;
+		String baseName;
+		
+		public UploadNotifier(Map<Integer, J3MManifest> jm) throws JSONException {
+			Entry<Integer, J3MManifest> entry = jm.entrySet().iterator().next();
+			
+			serialVersionUID = entry.getKey();
+			
+			lastUploaded = entry.getValue().getInt(Manifest.Keys.LAST_TRANSFERRED) + 1;
+			totalChunks = entry.getValue().getInt(Manifest.Keys.TOTAL_CHUNKS);
+			baseName = entry.getValue().getString(Manifest.Keys.J3MBASE);
+			refreshPercentUploaded();			
+		}
+		
+		public void updateJ3MUpload(int lastUploaded) {
+			this.lastUploaded = lastUploaded;
+			refreshPercentUploaded();
+		}
+		
+		public void setError() {
+			
+		}
+		
+		private String showPercentUploaded() {
+			StringBuffer sb = new StringBuffer();
+			sb.append(baseName + ":\n" + percentUploaded + "% " + getString(R.string.upload_service_complete));
+			return sb.toString();
+		}
+		
+		
+		private void refreshPercentUploaded() {
+			percentUploaded = (lastUploaded * 100)/totalChunks;
+		}
 	}
 }

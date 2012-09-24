@@ -139,12 +139,12 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
 	
 	private void refreshUploads() {
-		h.post(new Runnable() {
+		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				UploaderService.getInstance().restart();
 			}
-		});
+		}).start();
 	}
     
     @Override

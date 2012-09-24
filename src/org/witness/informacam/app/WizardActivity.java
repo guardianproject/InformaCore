@@ -9,6 +9,8 @@ import java.lang.reflect.Method;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -33,6 +35,7 @@ import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Informa;
+import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.App.Wizard;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
