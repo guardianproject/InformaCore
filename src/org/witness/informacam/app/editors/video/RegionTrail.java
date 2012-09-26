@@ -86,7 +86,6 @@ public class RegionTrail {
 			for(ObscureRegion or : videoTrail)
 				addRegion(or);
 		
-		// CANNOT OVERWRITE IF FROM A CACHE!
 		if(!fromCache)
 			InformaService.getInstance().onVideoRegionCreated(this);
 	}

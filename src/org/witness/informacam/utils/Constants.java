@@ -113,6 +113,7 @@ public class Constants {
 			public static final int DIALOG_DO_AUTODETECTION = 0;
 			public final static String MIME_TYPE_JPEG = Media.Type.MIME_TYPE_JPEG;
 			
+			
 			public final static class Color {
 				public final static int DRAW_COLOR = 0x00000000;
 				public final static int DETECTED_COLOR = 0x00000000;
@@ -186,10 +187,9 @@ public class Constants {
 	
 	public final static class MediaManager {
 		public final static class Actions {
-			public final static int OPEN_MEDIA = 0;
-			public final static int RENAME_MEDIA = 1;
-			public final static int EXPORT_MEDIA = 2;
-			public final static int DELETE_MEDIA = 3;
+			public final static int RENAME_MEDIA = 0;
+			public final static int EXPORT_MEDIA = 1;
+			public final static int DELETE_MEDIA = 2;
 		}
 	}
 	
