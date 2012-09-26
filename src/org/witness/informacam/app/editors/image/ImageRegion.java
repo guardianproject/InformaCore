@@ -15,6 +15,7 @@ import org.witness.informacam.app.editors.filters.InformaTagger;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.app.editors.filters.SolidObscure;
+import org.witness.informacam.app.editors.filters.StegoObscure;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.utils.Constants.App;
@@ -60,6 +61,7 @@ public class ImageRegion implements OnActionItemClickListener
 	public static final int PIXELATE = 1; // PixelizeObscure
 	public static final int BG_PIXELATE = 2; // BlurObscure
 	public static final int CONSENT = 3; // PixelizeObscure
+	public static final int STEGO_HIDE = 4;
 	
 	boolean selected = false;
 	
@@ -75,8 +77,8 @@ public class ImageRegion implements OnActionItemClickListener
 	int mObscureType = PIXELATE;
 
 	//the other of these strings and resources determines the order in the popup menu
-	private final static String[] mFilterLabels = {"Redact","Pixelate","CrowdPixel","Identify"};
-	private final static int[] mFilterIcons = {R.drawable.ic_context_fill,R.drawable.ic_context_pixelate,R.drawable.ic_context_pixelate, R.drawable.ic_context_id};
+	private final static String[] mFilterLabels = {"Redact","Pixelate","CrowdPixel","Identify","StegoHide"};
+	private final static int[] mFilterIcons = {R.drawable.ic_context_fill,R.drawable.ic_context_pixelate,R.drawable.ic_context_pixelate, R.drawable.ic_context_id, R.drawable.ic_lockbox};
 
 	public final Drawable unidentifiedBorder, identifiedBorder;
 	public Drawable imageRegionBorder;
@@ -500,6 +502,14 @@ public void updateRegionProcessor (int obscureType) {
 			
 				mImageEditor.launchAnnotationActivity(this);
 				break;
+			case ImageRegion.STEGO_HIDE:
+				Log.d(App.LOG, "STEGO HIDE!");
+				if(!(getRegionProcessor() instanceof StegoObscure)) {
+					setRegionProcessor(new StegoObscure());
+					mImageEditor.updateDisplayImage();
+				}
+				
+				mImageEditor.launchStegoHideActivity(this);
 			default:
 				setRegionProcessor(new PixelizeObscure());
 				break;

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout style="@style/OverlayActivity"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="1.0" >
+    <LinearLayout style="@style/H1Holder"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="0.15">
+    	<org.witness.informacam.app.mods.InformaHeaderTextView style="@style/H1"
+    		android:layout_width="match_parent"
+    		android:layout_height="wrap_content"
+    		android:text="@string/menu_region_identify" />
+    </LinearLayout>
+    <LinearLayout
+    	android:orientation="horizontal"
+    	android:layout_width="fill_parent"
+    	android:layout_height="0dip"
+    	android:layout_weight="0.25"
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip"
+    	android:paddingLeft="6dip"
+    	android:paddingRight="6dip" >
+    	<ImageView 
+    		android:layout_width="wrap_content"
+    		android:layout_height="wrap_content"
+    		android:id="@+id/imageRegionThumb"
+    		android:src="@drawable/ic_context_id"
+    		android:layout_marginRight="6dip" />
+    	<TextView style="@style/P"
+    		android:layout_width="wrap_content"
+    		android:layout_height="wrap_content"
+    		android:layout_marginRight="6dip"
+    		android:layout_marginLeft="3dip"
+    		android:text="@string/stego_hide_prompt" />
+    </LinearLayout>
+    <EditText
+    	android:layout_width="fill_parent"
+    	android:layout_height="wrap_content"
+    	android:layout_weight="0.45"
+    	android:paddingTop="10dip"
+    	android:layout_marginBottom="10dip"
+    	android:id="@+id/stegoMessageHolder" />    	
+    <org.witness.informacam.app.mods.InformaButton style="@style/Button_standard"
+    	android:layout_width="fill_parent"
+    	android:layout_height="0dip"
+    	android:layout_weight="0.15"
+    	android:text="@string/ok"
+    	android:id="@+id/stegoSubmit"
+    	android:paddingTop="10dip"
+    	android:paddingBottom="10dip" />
+</LinearLayout>

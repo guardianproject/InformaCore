@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.witness.informacam.R;
 import org.witness.informacam.app.AddressBookActivity;
 import org.witness.informacam.app.AnnotationActivity;
+import org.witness.informacam.app.StegoHideActivity;
 import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
 import org.witness.informacam.app.editors.filters.InformaTagger;
@@ -1190,6 +1191,23 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     	
     	startActivityForResult(informa, App.ImageEditor.FROM_ANNOTATION_ACTIVITY);
     	
+    }
+    
+    public void launchStegoHideActivity(ImageRegion ir) {
+    	Intent stego = new Intent(this, StegoHideActivity.class);
+    	stego.putExtra(App.ImageEditor.Keys.PROPERTIES, ir.getRegionProcessor().getProperties());
+    	stego.putExtra(Informa.Keys.Data.ImageRegion.INDEX, imageRegions.indexOf(ir));
+    	
+    	ir.getRegionProcessor().processRegion(new RectF(ir.getBounds()), obscuredCanvas, obscuredBmp);
+    	
+    	if(ir.getRegionProcessor().getBitmap() != null) {
+    		Bitmap b = ir.getRegionProcessor().getBitmap();
+    		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    		b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+    		stego.putExtra(Informa.Keys.Data.ImageRegion.THUMBNAIL, baos.toByteArray());
+    	}
+    	
+    	startActivityForResult(stego, App.ImageEditor.FROM_STEGO_HIDE);
     }
     
     private void saveImage() throws FileNotFoundException {

@@ -90,12 +90,15 @@
     <string name="annotation_hint">Name, pseudonym or alias</string>
     <string name="destination_chooser_prompt">Choose Recipients</string>
     
+    <string name="stego_hide_prompt">Type a message here to hide it steganographically in this part of the image.</string>
+    
     <!--  ERRORS -->
     <string name="error_media_mounted">Please insert an SD card to save media!</string>
     <string name="error_no_key_found_for_email">Sorry!  No public key found for </string>
     <string name="error_cannot_delete_contact">This contact cannot be deleted.</string>
     <string name="error_annotation_empty">You haven\'t annotated anything!</string>
     <string name="error_password_mismatch">Your password is incorrect.  Please try logging in again.</string>
+    <string name="error_stego_blank">You have a blank message!</string>
     
     <!--  ADDRESS BOOK AND CHOOSER -->
     <string name="address_book_new_contact">Add new contact\u2026</string>

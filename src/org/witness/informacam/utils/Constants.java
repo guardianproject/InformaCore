@@ -91,7 +91,8 @@ public class Constants {
 			public final static int FROM_ANNOTATION_ACTIVITY = 574;
 			public final static int FROM_DESTINATION_CHOOSER = 575;
 			public static final int PACKAGE_GENERATED = 573;
-			public static final int SAVED_STATE = 572;
+			public static final int FROM_STEGO_HIDE = 572;
+			public static final int SAVED_STATE = 571;
 			
 			public final static String TAG = "app.editors.image.ImageEditor";
 			
@@ -112,6 +113,7 @@ public class Constants {
 			// Constant for autodetection dialog
 			public static final int DIALOG_DO_AUTODETECTION = 0;
 			public final static String MIME_TYPE_JPEG = Media.Type.MIME_TYPE_JPEG;
+			
 			
 			public final static class Color {
 				public final static int DRAW_COLOR = 0x00000000;
@@ -508,6 +510,11 @@ public class Constants {
 				}
 				
 				public static final class ImageRegion {
+					public final static class Stego {
+						public static final String MESSAGE = "stegoMessage";
+
+					}
+
 					public final static String INDEX = "regionIndex";
 					public final static String THUMBNAIL = "regionThumbnail";
 					public static final String DATA = "region_data";

@@ -67,6 +67,9 @@
         <activity android:name=".app.LoginActivity"
             android:theme="@style/Theme.CustomDialog"
             android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.StegoHideActivity"
+            android:theme="@style/Theme.CustomDialog"
+            android:configChanges="orientation|keyboardHidden" />
         <activity android:name=".app.AnnotationActivity"
             android:theme="@style/Theme.CustomDialog"
             android:configChanges="orientation|keyboardHidden" />
