@@ -1847,10 +1847,6 @@ public class VideoEditor extends Activity implements
 			} else if(requestCode == App.VideoEditor.FROM_DESTINATION_CHOOSER) {
 				completeActionFlag = 3;
 				
-				// XXX: should i make sure the data source is set?
-				
-        		
-				//processVideo();
         		if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
         			InformaService.getInstance().setEncryptionList(data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST));
 			}

@@ -231,6 +231,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchMediaManager() {
+    	mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
+    	
     	Intent intent = new Intent(this, MediaManagerActivity.class);
     	startActivityForResult(intent, App.Main.FROM_MEDIA_MANAGER);
     }
