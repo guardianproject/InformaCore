@@ -10,6 +10,9 @@ import android.provider.BaseColumns;
 public class Constants {
 	public final static class App {
 		public static final String LOG = "**************** InformaCam:UI Thread ****************";
+		public static final class Services {
+			public static final int FROM_DATABASE_SERVICE = 1075;
+		}
 		
 		public static final class InformaService {
 			public static final class Keys {
@@ -41,6 +44,7 @@ public class Constants {
 			public final static int FROM_MEDIA_CAPTURE = 774;
 			public final static int FROM_EDITOR = 775;
 			public final static int FROM_MEDIA_MANAGER = 776;
+			public static final String SERVICE_STARTED = "serviceStarted";
 		}
 		
 		public final static class MediaManager {
@@ -296,6 +300,8 @@ public class Constants {
 
 			public static final String UPLOADED_FLAG = "uploadedFlag";
 		}
+
+		public static final String LOG = "**************** InformaCam:Media Services ****************";;
 	}
 	
 	public final static class Settings {

@@ -511,6 +511,12 @@ public class UploaderService extends Service {
 		sr = new SecureRandom();
 		
 		uploaderService = this;
+		
+	}
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_NOT_STICKY;
 	}
 	
 	private void saveQueueChanges() {

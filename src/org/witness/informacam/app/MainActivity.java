@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -29,6 +31,7 @@ import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 import org.witness.informacam.utils.Constants.Media.Manifest;
+import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
@@ -37,10 +40,14 @@ import com.xtralogic.android.logcollector.SendLogActivity;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -77,6 +84,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     InformaService informaService = null;
     boolean mustInitMetadata;
     
+    List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
+    
     private ServiceConnection sc = new ServiceConnection() {
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
     		LocalBinder lb = (LocalBinder) binder;
@@ -96,6 +105,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
         SQLiteDatabase.loadLibs(this);
         initLayout();
         
+        br.add(new Broadcaster(new IntentFilter(App.Main.SERVICE_STARTED)));
+		
         captureIntent = editorIntent = null;
         h = new Handler();
     }
@@ -103,6 +114,9 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     @Override
     public void onResume() {
     	super.onResume();
+    	
+    	for(BroadcastReceiver b : br)
+			registerReceiver(b, ((Broadcaster) b).intentFilter);
     	
     	final SharedPreferences eula = getSharedPreferences(Eula.PREFERENCES_EULA, Activity.MODE_PRIVATE);
     	if(!eula.getBoolean(Eula.PREFERENCE_EULA_ACCEPTED, false)) {
@@ -113,26 +127,44 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		onEulaAgreedTo();
     }
     
+    @Override
+    public void onPause() {
+    	super.onPause();
+    	
+    	for(BroadcastReceiver b : br)
+    		unregisterReceiver(b);
+    }
+    
 	private void initInformaCam() {
-    	Intent launchDatabaseService = new Intent(this, DatabaseService.class);
-    	startService(launchDatabaseService);
-    	h.postDelayed(new Runnable() {
-
+		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				Intent launchInformaService = new Intent(MainActivity.this, InformaService.class);
-				bindService(launchInformaService, sc, Context.BIND_AUTO_CREATE);
-				
-				Intent initVirtualStorage = new Intent(MainActivity.this, IOCipherService.class);
-				startService(initVirtualStorage);
-				
-				Intent launchUploaderService = new Intent(MainActivity.this, UploaderService.class);
-				startService(launchUploaderService);
-				
-				/*
-				Intent launchSignatureUtility = new Intent(MainActivity.this, SignatureService.class);
-				startService(launchSignatureUtility);
-				*/
+				Intent launchDatabaseService = new Intent(MainActivity.this, DatabaseService.class);
+		    	startService(launchDatabaseService);
+			}
+		}).start();
+    	
+    	h.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						Intent launchInformaService = new Intent(MainActivity.this, InformaService.class);
+						bindService(launchInformaService, sc, Context.BIND_AUTO_CREATE);
+						
+						Intent initVirtualStorage = new Intent(MainActivity.this, IOCipherService.class);
+						startService(initVirtualStorage);
+						
+						Intent launchUploaderService = new Intent(MainActivity.this, UploaderService.class);
+						startService(launchUploaderService);
+						
+						/*
+						Intent launchSignatureUtility = new Intent(MainActivity.this, SignatureService.class);
+						startService(launchSignatureUtility);
+						*/
+					}
+				}).start();
 			}
     		
     	}, 500);
@@ -275,12 +307,20 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			}
     			
     			mustInitMetadata = true;
-    			new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
+    			new Thread(new Runnable() {
+					@Override
+					public void run() {
+						new InformaMediaScanner(MainActivity.this, mediaCaptureFile);
+					}
+				}).start();
     			break;
     		case App.Main.FROM_EDITOR:
     			// TODO: add to upload queue, restart informa...
     			if(mProgressDialog != null)
     				mProgressDialog.dismiss();
+    			
+    			InformaService.getInstance().cleanup();
+    			
     			break;
     		case App.Main.FROM_MEDIA_MANAGER:
     			// copy original to what should be mediaCaptureFile and set mediaCaptureUri
@@ -310,7 +350,13 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     					// Guess what?  You have to run this through the media scanner if you want
     					// it to load in the video editor activity!  doesn't that suck?!  (yes.)
     					mustInitMetadata = false;
-    					new InformaMediaScanner((MainActivity) this, mediaCaptureFile);
+    					new Thread(new Runnable() {
+    						@Override
+    						public void run() {
+    							new InformaMediaScanner(MainActivity.this, mediaCaptureFile);
+    						}
+    					}).start();
+    					
     				}
 				} catch (IOException e) {
 					Log.e(App.LOG, e.toString());
@@ -418,5 +464,21 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	
 	private void doShutdown() {
 		unbindService(sc);
+	}
+	
+	private class Broadcaster extends BroadcastReceiver {
+		IntentFilter intentFilter;
+		
+		public Broadcaster(IntentFilter intentFilter) {
+			this.intentFilter = intentFilter;
+		}
+		
+		@Override
+		public void onReceive(Context c, Intent i) {
+			if(App.Main.SERVICE_STARTED.equals(i.getAction())) {
+				// TODO: launches?
+			}
+			
+		}
 	}
 }

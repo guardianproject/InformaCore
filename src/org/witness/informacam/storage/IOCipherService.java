@@ -102,6 +102,11 @@ public class IOCipherService extends Service {
 		super.onDestroy();
 	}
 	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_NOT_STICKY;
+	}
+	
 	public File getFile(Uri uri) {
 		String fileName = uri.toString().split("file://")[1];		
 		return new File(fileName);
@@ -145,6 +150,11 @@ public class IOCipherService extends Service {
 						} catch (JSONException e) {
 							Log.e(Storage.LOG, e.toString());
 							e.printStackTrace();
+							continue;
+						} catch (ClassCastException e) {
+							Log.e(Storage.LOG, e.toString());
+							e.printStackTrace();
+							continue;
 						}
 					}
 				}

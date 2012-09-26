@@ -394,19 +394,22 @@ public class VideoEditor extends Activity implements
 		mediaPlayer.setLooping(false);
 		mediaPlayer.setScreenOnWhilePlaying(true);
 		
-		//(LOGTAG, "attempting to load: " + originalVideoUri.toString());
+		Log.d(LOGTAG, "attempting to load: " + originalVideoUri.toString());
 		
 		try {
 			mediaPlayer.setDataSource(originalVideoUri.toString());
 			Log.d(LOGTAG, "setData done.");
 		} catch (IllegalArgumentException e) {
 			Log.e(LOGTAG, "setDataSource error: " + e.getMessage());
+			e.printStackTrace();
 			finish();
 		} catch (IllegalStateException e) {
 			Log.e(LOGTAG, "setDataSource error: " + e.getMessage());
+			e.printStackTrace();
 			finish();
 		} catch (IOException e) {
 			Log.e(LOGTAG, "setDataSource error: " + e.getMessage());
+			e.printStackTrace();
 			finish();
 		}
 		
@@ -444,12 +447,19 @@ public class VideoEditor extends Activity implements
 	
 			} catch (Exception e) {
 				Log.v(LOGTAG, "IllegalStateException " + e.getMessage());
-				finish();
+				e.printStackTrace();
+				if(!mediaPlayerIsPrepared)
+					finish();
 			}
 			 
 			
 			 updateVideoLayout ();
 			 mediaPlayer.seekTo(currentCue);
+			 mediaPlayerIsPrepared = true;
+			 
+			 if(completeActionFlag == 3) {
+				 processVideo();
+			 }
 		}
 	
 	}
@@ -471,7 +481,7 @@ public class VideoEditor extends Activity implements
 	
 	@Override
 	public boolean onError(MediaPlayer mp, int whatError, int extra) {
-		Log.e(LOGTAG, "onError Called");
+		Log.e(LOGTAG, "onError Called: " + whatError);
 		if (whatError == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 			Log.e(LOGTAG, "Media Error, Server Died " + extra);
 		} else if (whatError == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
@@ -1317,15 +1327,7 @@ public class VideoEditor extends Activity implements
 				
 				// Could make some high/low quality presets	
 				ffmpeg.processVideo(redactSettingsFile, obscureTrails, recordingFile, saveFile, outFormat, 
-						mDuration, videoWidth, videoHeight, processVWidth, processVHeight, outFrameRate, outBitRate, outVcodec, outAcodec, new ShellCallback() {
-
-							@Override
-							public void shellOut(String shellLine) {
-								Log.d(LOGTAG, "fuck you:\n" + shellLine);
-								
-							}
-					
-				});
+						mDuration, videoWidth, videoHeight, processVWidth, processVHeight, outFrameRate, outBitRate, outVcodec, outAcodec, sc);
 			}
 			catch (Exception e)
 			{
@@ -1844,8 +1846,11 @@ public class VideoEditor extends Activity implements
     			
 			} else if(requestCode == App.VideoEditor.FROM_DESTINATION_CHOOSER) {
 				completeActionFlag = 3;
-        		processVideo();
+				
+				// XXX: should i make sure the data source is set?
+				
         		
+				//processVideo();
         		if(data.hasExtra(Informa.Keys.Intent.ENCRYPT_LIST))
         			InformaService.getInstance().setEncryptionList(data.getLongArrayExtra(Informa.Keys.Intent.ENCRYPT_LIST));
 			}
