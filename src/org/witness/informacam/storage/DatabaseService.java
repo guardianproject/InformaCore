@@ -1,5 +1,6 @@
 package org.witness.informacam.storage;
 
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Settings;
 
 import net.sqlcipher.database.SQLiteDatabase;
@@ -42,6 +43,16 @@ public class DatabaseService extends Service {
 	public void onDestroy() {
 		db.close();
 		dh.close();
+	}
+	
+	@Override
+	public void onStart(Intent intent, int startId) {
+		this.sendBroadcast(new Intent().putExtra(App.Main.SERVICE_STARTED, App.Services.FROM_DATABASE_SERVICE));
+	}
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_STICKY;
 	}
 
 	public DatabaseHelper getHelper() {

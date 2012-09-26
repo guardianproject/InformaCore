@@ -18,11 +18,13 @@ import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data.VideoRegion;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.app.Activity;
@@ -172,21 +174,44 @@ public class Informa {
 		String obfuscationType;
 		Location location;
 		Subject subject;
+		
 		RegionBounds regionBounds;
+		// or
+		int videoStartTime, videoEndTime;
+		Set<RegionBounds> videoTrail;
 		
 		public Annotation(long timestamp, LogPack logPack) {
 			this.timestamp = timestamp;
 			try {
 				obfuscationType = logPack.getString(ImageRegion.FILTER);
-				regionBounds = new RegionBounds(
-						logPack.getString(ImageRegion.WIDTH),
-						logPack.getString(ImageRegion.HEIGHT),
-						logPack.getString(ImageRegion.COORDINATES));
+				
 				
 				if(logPack.has(ImageRegion.Subject.PSEUDONYM)) {
 					subject = new Subject(
 							logPack.getString(ImageRegion.Subject.PSEUDONYM), 
 							logPack.getString(ImageRegion.Subject.INFORMED_CONSENT_GIVEN));
+				}
+				
+				if(logPack.has(VideoRegion.START_TIME)) {
+					videoStartTime = logPack.getInt(VideoRegion.START_TIME);
+					videoEndTime = logPack.getInt(VideoRegion.END_TIME);
+					
+					videoTrail = new HashSet<RegionBounds>();
+					JSONArray vt = logPack.getJSONArray(VideoRegion.TRAIL);
+					for(int v=0; v<vt.length(); v++) {
+						JSONObject trail = vt.getJSONObject(v);
+						videoTrail.add(new RegionBounds(
+								trail.getString(VideoRegion.Child.WIDTH),
+								trail.getString(VideoRegion.Child.HEIGHT),
+								trail.getString(VideoRegion.Child.COORDINATES),
+								Integer.parseInt(trail.getString(VideoRegion.Child.TIMESTAMP))
+						));
+					}
+				} else {
+					regionBounds = new RegionBounds(
+							logPack.getString(ImageRegion.WIDTH),
+							logPack.getString(ImageRegion.HEIGHT),
+							logPack.getString(ImageRegion.COORDINATES));
 				}
 			} catch(JSONException e){}
 		}
@@ -207,8 +232,13 @@ public class Informa {
 	
 	public class RegionBounds extends InformaZipper {
 		JSONObject regionDimensions, regionCoordinates;
+		int timestamp;
 		
 		public RegionBounds(String regionWidth, String regionHeight, String regionCoordinates) {
+			this(regionWidth, regionHeight, regionCoordinates, -1);
+		}
+		
+		public RegionBounds(String regionWidth, String regionHeight, String regionCoordinates, int timestamp) {
 			regionDimensions = new JSONObject();
 			this.regionCoordinates = new JSONObject();
 			
@@ -219,6 +249,8 @@ public class Informa {
 				this.regionCoordinates.put(ImageRegion.LEFT, Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(","))));
 				this.regionCoordinates.put(ImageRegion.TOP, Float.parseFloat(regionCoordinates.substring(regionCoordinates.indexOf(",") + 1, regionCoordinates.length() - 1)));
 				
+				if(timestamp >= 0)
+					this.timestamp = timestamp;
 			} catch(JSONException e){}
 		}
 	}

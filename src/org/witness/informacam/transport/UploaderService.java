@@ -175,8 +175,12 @@ public class UploaderService extends Service {
 						@Override
 						public void run() {
 							Map<Integer, J3MManifest> jm = new HashMap<Integer, J3MManifest>();
-							jm.put(sr.nextInt(), j3mManifest);
-							queue.add(jm);
+							try {
+								jm.put(sr.nextInt(), j3mManifest);
+								queue.add(jm);
+							} catch(NullPointerException e) {
+								Log.e(Transport.LOG, e.toString());
+							}
 						}
 					}).start();
 				} catch (JSONException e) {
@@ -507,6 +511,12 @@ public class UploaderService extends Service {
 		sr = new SecureRandom();
 		
 		uploaderService = this;
+		
+	}
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_NOT_STICKY;
 	}
 	
 	private void saveQueueChanges() {

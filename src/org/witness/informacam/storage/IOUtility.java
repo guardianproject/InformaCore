@@ -52,15 +52,21 @@ public class IOUtility {
 	}
 	
 	public final static Bitmap getBitmapFromBytes(byte[] bytes, boolean isBase64) {
-		byte[] b = bytes;
-		if(isBase64)
-			b = Base64.decode(bytes);
-		
-		Bitmap bitmap = BitmapFactory.decodeByteArray(b,0,b.length);
-		Matrix m = new Matrix();
-		m.postScale(80f/bitmap.getWidth(), 80f/bitmap.getHeight());
-		
-		return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+		try {
+			byte[] b = bytes;
+			if(isBase64)
+				b = Base64.decode(bytes);
+			
+			Bitmap bitmap = BitmapFactory.decodeByteArray(b,0,b.length);
+			Matrix m = new Matrix();
+			m.postScale(80f/bitmap.getWidth(), 80f/bitmap.getHeight());
+			
+			return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+		} catch (NullPointerException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
 		
 	}
 	

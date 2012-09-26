@@ -91,13 +91,11 @@ public class MessageThreadActivity extends Activity implements OnClickListener, 
 	}
 	
 	private void refreshThreads() {
-		messageContent = null;
+		messageContent = new ArrayList<Map<Long, String>>();
 		File threadBase = IOCipherService.getInstance().getFile(threadBaseStr + "/messages");
 		List<File> messages = IOCipherService.getInstance().walk(threadBase);
 		for(File m : messages) {
 			if(!m.getName().equals(".") && !m.getName().equals("..")) {
-				if(messageContent == null)
-					messageContent = new ArrayList<Map<Long, String>>();
 				
 				Map<Long, String> msg = new HashMap<Long, String>();
 				try {

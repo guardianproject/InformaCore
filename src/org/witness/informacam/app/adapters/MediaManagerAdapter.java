@@ -71,7 +71,8 @@ public class MediaManagerAdapter extends BaseAdapter {
 			if(media.get(position).has(Media.Manifest.Keys.THUMBNAIL)) {
 				
 				byte[] b = IOUtility.getBytesFromFile(new File(media.get(position).getString(Media.Manifest.Keys.THUMBNAIL)));
-				mediaThumb.setImageBitmap(IOUtility.getBitmapFromBytes(b, false));
+				if(b != null)
+					mediaThumb.setImageBitmap(IOUtility.getBitmapFromBytes(b, false));
 			}
 			
 			summary.append(mediaTitle + "\n\n" + Media.Type.Names.get(media.get(position).getInt(Manifest.Keys.MEDIA_TYPE)) + "\n");

@@ -102,7 +102,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		}
 	}
 	
-	private void cleanup() {
+	public void cleanup() {
 		java.io.File imgTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 		if(imgTemp.exists())
 			imgTemp.delete();
@@ -130,8 +130,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			@Override
 			public void run() {
 				try {
-					if(IOCipherService.getInstance().saveCache(getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches))
-						cleanup();
+					IOCipherService.getInstance().saveCache(getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches);
+						
 				} catch (JSONException e) {
 					Log.e(Storage.LOG, e.toString());
 					e.printStackTrace();

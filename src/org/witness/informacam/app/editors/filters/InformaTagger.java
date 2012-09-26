@@ -13,13 +13,8 @@ public class InformaTagger implements RegionProcesser
 	Properties mProps;
 	private Bitmap mPreview;
 	
-	public InformaTagger ()
-	{
-		mProps = new Properties ();
-		mProps.put(ImageRegion.Subject.PSEUDONYM, "");
-		mProps.put(ImageRegion.Subject.INFORMED_CONSENT_GIVEN, "false");
-		mProps.put(ImageRegion.Subject.PERSIST_FILTER, "false");
-		mProps.put(ImageRegion.FILTER, this.getClass().getName());
+	public InformaTagger () {
+		this("", false, false);
 	}
 	
 	public InformaTagger(String pseudonym, boolean informedConsentGiven, boolean persistFilter) {

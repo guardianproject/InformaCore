@@ -163,19 +163,9 @@ public class VideoConstructor {
     	
     	try {
     		Log.d(LOGTAG, "video constructor called");
-			execProcess(ffmpegCommand, new ShellCallback ()
-			{
-
-				@Override
-				public void shellOut(String shellLine) {
-					Log.d(VideoEditor.LOGTAG, shellLine);
-					
-				}
-
-				
-				
-			});
+			execProcess(ffmpegCommand, sc);
 		} catch (Exception e) {
+			Log.e(LOGTAG, e.toString());
 			e.printStackTrace();
 		}
     	
