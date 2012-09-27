@@ -29,6 +29,7 @@ import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.stego.Calculator;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
@@ -1024,7 +1025,15 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
         	case R.id.menu_preview:
         		showPreview();
         		return true;
+        	case R.id.menu_getTotalStegoSpace:
+        		new Thread(new Runnable() {
+        			@Override
+        			public void run() {
+        				Calculator.getStegoSpaceOfEntireJpeg(originalBitmap);
+        			}
+        		}).start();
         		
+        		return true;
     		default:
     			return false;
     	}
@@ -1211,6 +1220,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     }
     
     private void saveImage() throws FileNotFoundException {
+    	// XXX: HEY!  IF USER DOESN'T WANT TO SAVE THIS, DON'T!
     	SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.Media.DateFormats.EXPORT_DATE_FORMAT);
 		Date date = new Date();
 		String dateString = dateFormat.format(date);
@@ -1270,6 +1280,22 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     			
     			InformaService.getInstance().onImageRegionChanged(ir);
     			    			
+    		} else if(requestCode == App.ImageEditor.FROM_STEGO_HIDE) {
+    			@SuppressWarnings("unchecked")
+				HashMap<String, Object> informaReturn = 
+    					(HashMap<String, Object>) data.getSerializableExtra(Informa.Keys.Data.ImageRegion.TAGGER_RETURN);    			
+        			Properties mProp = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0))
+        					.getRegionProcessor().getProperties();
+        			
+        			// iterate through returned hashmap and place these new properties in it.
+        			for(Map.Entry<String, Object> entry : informaReturn.entrySet())
+        				mProp.setProperty(entry.getKey(), entry.getValue().toString());
+
+        			
+        			ImageRegion ir = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0));
+        			ir.getRegionProcessor().setProperties(mProp);
+        			
+        			InformaService.getInstance().onImageRegionChanged(ir);
     		} else if(requestCode == App.ImageEditor.FROM_DESTINATION_CHOOSER) { 
     			mProgressDialog = new ProgressDialog(ImageEditor.this);
 				mProgressDialog.setCancelable(false);

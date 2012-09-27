@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
+	<item android:id="@+id/menu_getTotalStegoSpace"
+	    android:title="@string/menu_get_total_stego_space"
+	    android:icon="@drawable/ic_menu_preview" />
+	
     <item android:id="@+id/menu_preview"
         android:title="@string/menu_preview" 
         android:icon="@drawable/ic_menu_preview"/>

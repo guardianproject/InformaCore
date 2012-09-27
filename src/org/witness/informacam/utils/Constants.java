@@ -799,4 +799,8 @@ public class Constants {
 			public static final String NUM_CHUNKS = "num_chunks";
 		}
 	}
+	
+	public static final class Stego {
+		public final static String LOG = "**************** InformaCam:Stego ****************";
+	}
 }

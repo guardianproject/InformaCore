@@ -503,13 +503,14 @@ public void updateRegionProcessor (int obscureType) {
 				mImageEditor.launchAnnotationActivity(this);
 				break;
 			case ImageRegion.STEGO_HIDE:
-				Log.d(App.LOG, "STEGO HIDE!");
 				if(!(getRegionProcessor() instanceof StegoObscure)) {
+					Log.d(App.LOG, "STEGO HIDE!");
 					setRegionProcessor(new StegoObscure());
 					mImageEditor.updateDisplayImage();
 				}
 				
 				mImageEditor.launchStegoHideActivity(this);
+				break;
 			default:
 				setRegionProcessor(new PixelizeObscure());
 				break;
@@ -526,13 +527,14 @@ public void updateRegionProcessor (int obscureType) {
 
 	@Override
 	public void onItemClick(QuickAction source, int pos, int actionId) {
-		
+		Log.d(App.LOG, "I CLICKED AN ITEM " + pos);
 		if (pos == mFilterLabels.length) //meaing after the last one
 		{
         	mImageEditor.deleteRegion(ImageRegion.this);
 		}
 		else
 		{
+			
         	mObscureType = pos;
         	updateRegionProcessor(mObscureType);
         	

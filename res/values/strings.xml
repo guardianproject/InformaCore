@@ -47,6 +47,7 @@
     <string name="menu_save">Save</string>
     <string name="menu_share">Share</string>
     <string name="menu_send_hash">Send Hash</string>
+    <string name="menu_region_stegohide">StegoHide</string>
     <string name="menu_prefs">Preferences</string>
     <string name="menu_clear_regions">Clear All Regions</string>
     <string name="menu_region_pixelate">Pixelate</string>
@@ -54,6 +55,7 @@
     <string name="menu_region_redact">Redact</string>
     <string name="menu_region_identify">Annotate</string>
     <string name="menu_region_delete">Delete</string>
+    <string name="menu_get_total_stego_space">Get Image Stego Space</string>
     <string name="menu_minimize">Hide Menu</string>
     <string name="menu_hide_hints">Show/Hide Hints</string>
     <string name="welcomeSubMsg">now with video!</string>
