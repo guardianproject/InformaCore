@@ -4,10 +4,7 @@ import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.R;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Serializable;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -25,7 +20,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.witness.informacam.app.MediaManagerActivity;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.j3m.J3M.J3MManifest;
 import org.witness.informacam.j3m.J3M.J3MPackage;
@@ -40,22 +34,17 @@ import org.witness.informacam.utils.Constants.Uploader;
 import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.CompressFormat;
 import android.os.Binder;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
-import android.widget.RemoteViews;
+
 
 public class UploaderService extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -65,12 +54,8 @@ public class UploaderService extends Service {
 	DatabaseHelper dh;
 	SQLiteDatabase db;
 	
-	Queue<Map<Integer, J3MManifest>> queue;
-	List<UploadNotifier> uploadNotifiers;
-	
-	NotificationManager nm;	
-	SecureRandom sr;
-	
+	Queue<J3MManifest> queue;
+		
 	@Override
 	public IBinder onBind(Intent intent) {
 		return binder;
@@ -99,39 +84,17 @@ public class UploaderService extends Service {
 					if(queue.isEmpty())
 						sleep();
 					else {
-						Map<Integer, J3MManifest> jm = queue.peek();
+						J3MManifest j3mManifest = queue.peek();
 						
-						try {
-							Entry<Integer, J3MManifest> entry = jm.entrySet().iterator().next();
-							int queueId = entry.getKey();
-							J3MManifest j3mManifest = entry.getValue();
-							
-							UploadNotifier thisNotifier = null;
-							if(uploadNotifiers != null) {
-								for(UploadNotifier un : uploadNotifiers) {
-									if(un.serialVersionUID == queueId)
-										thisNotifier = un;
-										
-									if(thisNotifier != null) break;
-								}
-								
-							} else
-								uploadNotifiers = new ArrayList<UploadNotifier>();
-							
-							if(thisNotifier == null) {
-								thisNotifier = new UploadNotifier(jm);
-								uploadNotifiers.add(thisNotifier);
-								
-							} else {
-								thisNotifier.updateJ3MUpload(j3mManifest.getInt(Manifest.Keys.LAST_TRANSFERRED));
-							}
-						} catch(JSONException e) {
-								Log.e(Transport.LOG, e.toString());
-								e.printStackTrace();
+						if(!uploadChunk(j3mManifest)) {
+							// TODO: pop from queue with flag counter?
+							queue.remove(j3mManifest);
+							queue.add(j3mManifest);
 						}
 						
-						if(uploadChunk(jm))
-							upload();
+						
+						upload();
+						
 					}
 				}
 				
@@ -157,7 +120,6 @@ public class UploaderService extends Service {
 				byte[] jmd = null;
 				try {
 					jmd = uploads.getBlob(uploads.getColumnIndex(Media.Keys.J3M_MANIFEST));
-					Log.d(Transport.LOG, new String(jmd));
 				} catch(Exception e) {
 					uploads.moveToNext();
 					continue;
@@ -174,10 +136,8 @@ public class UploaderService extends Service {
 					new Thread(new Runnable() {
 						@Override
 						public void run() {
-							Map<Integer, J3MManifest> jm = new HashMap<Integer, J3MManifest>();
 							try {
-								jm.put(sr.nextInt(), j3mManifest);
-								queue.add(jm);
+								queue.add(j3mManifest);
 							} catch(NullPointerException e) {
 								Log.e(Transport.LOG, e.toString());
 							}
@@ -213,7 +173,6 @@ public class UploaderService extends Service {
 		} else {
 			// handle not having a result with some silly trickery
 			missing.add(-1 * res.getInt(Transport.Keys.ERROR_CODE));
-			Log.d(Transport.LOG, res.toString());
 		}
 		
 		return missing;
@@ -260,9 +219,7 @@ public class UploaderService extends Service {
 				}).start();
 			}
 			
-			Map<Integer, J3MManifest> jm = new HashMap<Integer, J3MManifest>();
-			jm.put(sr.nextInt(), j3mmanifest);
-			queue.add(jm);
+			queue.add(j3mmanifest);
 			queueMonitor.run();
 		} catch (JSONException e) {
 			Log.e(Transport.LOG, e.toString());
@@ -285,7 +242,6 @@ public class UploaderService extends Service {
 			long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
 			
 			String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
-			Log.d(Transport.LOG, result);
 			
 			JSONObject res = parseResult(result);
 			if(res != null) {
@@ -306,7 +262,6 @@ public class UploaderService extends Service {
 			postData.put(Transport.Keys.GET_REQUIREMENTS, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
 			
 			String result = HttpUtility.executeHttpsPost(this, host, postData, Transport.MimeTypes.TEXT, pkcs12Id);
-			Log.d(Transport.LOG, result);
 			JSONObject res = parseResult(result);
 			
 			if(res != null) {
@@ -323,7 +278,7 @@ public class UploaderService extends Service {
 							b.close();
 							uploadSupportingData(j3mManifest, Transport.Keys.BASE_IMAGE, baos.toByteArray(), "baseImage.jpg");
 						} else {
-							Log.d(Transport.LOG, "could not get base image");
+							Log.e(Transport.LOG, "could not get base image");
 						}
 					case Transport.Result.ErrorCodes.PGP_KEY_REQUIRED:
 						dh.setTable(db, Tables.Keys.SETUP);
@@ -365,11 +320,9 @@ public class UploaderService extends Service {
 			long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
 			
 			String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
-			Log.d(Transport.LOG, result);
 			
 			JSONObject res = parseResult(result);
 			if(res != null) {
-				Log.d(Transport.LOG, "uploaded supporting data");
 				return true;
 			} else
 				return false;
@@ -378,11 +331,8 @@ public class UploaderService extends Service {
 		}
 	}
 	
-	private boolean uploadChunk(Map<Integer,J3MManifest> jm) {
+	private boolean uploadChunk(J3MManifest j3mManifest) {
 		try {
-			Entry<Integer, J3MManifest> entry = jm.entrySet().iterator().next();
-			
-			J3MManifest j3mManifest = entry.getValue();
 			
 			int lastTransferred = j3mManifest.getInt(Transport.Manifest.Keys.LAST_TRANSFERRED);
 			
@@ -408,16 +358,14 @@ public class UploaderService extends Service {
 				long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
 				
 				String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
-				Log.d(Transport.LOG, result);
 				
 				JSONObject res = parseResult(result);
 				if(res != null) {
 					// if its already in the queue, pull it out
 					
 					if(res.getString(Transport.Keys.RESULT).equals(Transport.Result.OK)) {
-						if(queue.contains(jm)) {
-							queue.remove(jm);
-							Log.d(Transport.LOG, "manifest still in queue: " + j3mManifest.toString());
+						if(queue.contains(j3mManifest)) {
+							queue.remove(j3mManifest);
 						}
 						
 						JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
@@ -428,8 +376,8 @@ public class UploaderService extends Service {
 				} else {
 					switch(res.getInt(Transport.Keys.ERROR_CODE)) {
 					case Transport.Result.ErrorCodes.DUPLICATE_J3M_TORRENT:
-						if(queue.contains(jm))
-							queue.remove(jm);
+						if(queue.contains(j3mManifest))
+							queue.remove(j3mManifest);
 						
 						lastTransferred++;
 						Log.d(Transport.LOG, "this one failed. last transferred upped to " + lastTransferred);
@@ -442,7 +390,7 @@ public class UploaderService extends Service {
 				j3mManifest.put(Transport.Manifest.Keys.LAST_TRANSFERRED, (lastTransferred + 1));
 				j3mManifest.save();
 				
-				queue.add(jm);
+				queue.add(j3mManifest);
 				Log.d(Transport.LOG, "queue size: " + queue.size());
 				return true;
 			} else if(!j3mManifest.has(Media.Manifest.UPLOADED_FLAG) || !j3mManifest.getBoolean(Media.Manifest.UPLOADED_FLAG)){
@@ -475,6 +423,7 @@ public class UploaderService extends Service {
 			Log.e(Transport.LOG, e.toString());
 			e.printStackTrace();
 		}
+		
 		return false;
 	}
 	
@@ -491,8 +440,7 @@ public class UploaderService extends Service {
 				
 				return null;
 			}
-		}
-		catch(ClassCastException e) {
+		} catch(ClassCastException e) {
 			Log.e(Transport.LOG, "not json but here it is anyway:\n" + result);
 		}
 		return null;
@@ -500,15 +448,12 @@ public class UploaderService extends Service {
 	
 	@Override
 	public void onCreate() {
-		queue = new LinkedList<Map<Integer, J3MManifest>>();
+		queue = new LinkedList<J3MManifest>();
 		dh = databaseService.getHelper();
 		db = databaseService.getDb();
 		
 		queueMonitor.start();
 		initUploadsFromDatabase();
-		
-		nm = (NotificationManager) getApplicationContext().getSystemService(NOTIFICATION_SERVICE);
-		sr = new SecureRandom();
 		
 		uploaderService = this;
 		
@@ -520,12 +465,11 @@ public class UploaderService extends Service {
 	}
 	
 	private void saveQueueChanges() {
-		Log.d(Transport.LOG, "SAVING QUEUE CHANGES!");
-		Iterator<Map<Integer,J3MManifest>> qIt = queue.iterator();
+		Iterator<J3MManifest> qIt = queue.iterator();
 		dh.setTable(db, Tables.Keys.MEDIA);
 		while(qIt.hasNext()) {
 			try {
-				J3MManifest j3mManifest = qIt.next().entrySet().iterator().next().getValue();
+				J3MManifest j3mManifest = qIt.next();
 				ContentValues cv = new ContentValues();
 				cv.put(Media.Keys.J3M_MANIFEST, j3mManifest.toString());
 				db.update(dh.getTable(), cv, Media.Keys.J3M_BASE + "=?", new String[] {j3mManifest.getString(Media.Keys.J3M_BASE)});
