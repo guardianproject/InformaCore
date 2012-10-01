@@ -572,6 +572,13 @@ public class Constants {
 						public final static String PERSIST_FILTER = Informa.Keys.Data.ImageRegion.Subject.PERSIST_FILTER;
 					}
 				}
+
+				public static final class Forms {
+					public final static String NAMESPACE = "partnerFormNamespace";
+					public static final String FORM_DATA = "partnerFormData";
+					public static final String FORM_ALIAS = "partnerFormNameAlias";
+					public static final String MIME_TYPE = ".informaCamForm";
+				}
 			}
 		}
 	}

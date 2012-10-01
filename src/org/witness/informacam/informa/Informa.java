@@ -18,7 +18,6 @@ import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
@@ -93,17 +92,34 @@ public class Informa {
 		long dateCreated, dateSavedAsInformaDocument;
 	}
 	
+	public class Form extends InformaZipper {
+		String namespace;
+		JSONObject formData;
+		
+		public Form(LogPack form) {
+			try {
+				this.namespace = form.getString(Constants.Informa.Keys.Data.Forms.NAMESPACE);
+				this.formData = form.getJSONObject(Constants.Informa.Keys.Data.Forms.FORM_DATA);
+			} catch(JSONException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
 	public class Data extends InformaZipper {
 		Exif exif;
 		MediaHash mediaHash;
 		Set<MediaCapturePlayback> mediaCapturePlayback;
 		Set<Annotation> annotations;
+		Set<Form> appendedForms;
 		int mediaType;
 		
 		public Data() {
 			mediaCapturePlayback = new HashSet<MediaCapturePlayback>();
 			annotations = new HashSet<Annotation>();
 			mediaHash = new MediaHash();
+			appendedForms = new HashSet<Form>();
 		}
 	}
 	
@@ -324,6 +340,14 @@ public class Informa {
 		for(Entry<Long, LogPack> e : annotations) {
 			e.getValue().remove(CaptureEvent.Keys.TYPE);
 			data.annotations.add(new Annotation(e.getKey(), e.getValue()));
+		}
+		return true;
+	}
+	
+	public boolean addToForms(List<Entry<Long, LogPack>> forms) throws JSONException {
+		for(Entry<Long, LogPack> e : forms) {
+			e.getValue().remove(CaptureEvent.Keys.TYPE);
+			data.appendedForms.add(new Form(e.getValue()));;
 		}
 		return true;
 	}

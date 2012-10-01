@@ -11,6 +11,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -18,6 +20,7 @@ import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.utils.Constants.Informa.Keys.Data.Forms;
 import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;

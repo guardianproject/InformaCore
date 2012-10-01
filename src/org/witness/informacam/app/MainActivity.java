@@ -321,8 +321,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			if(mProgressDialog != null)
     				mProgressDialog.dismiss();
     			
-    			InformaService.getInstance().cleanup();
-    			
     			break;
     		case App.Main.FROM_MEDIA_MANAGER:
     			// copy original to what should be mediaCaptureFile and set mediaCaptureUri

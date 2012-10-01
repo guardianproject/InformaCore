@@ -25,9 +25,13 @@ import org.witness.informacam.app.editors.filters.InformaTagger;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.app.editors.filters.SolidObscure;
+import org.witness.informacam.app.mods.InformaChoosableAlert;
+import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.informa.forms.FormPackager;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
@@ -80,7 +84,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class ImageEditor extends Activity implements OnTouchListener, OnClickListener, InformaServiceListener {
+public class ImageEditor extends Activity implements OnTouchListener, OnClickListener, InformaServiceListener, OnChoosableChosenListener {
 	// Constants for Informa
 	
 	// Image Matrix
@@ -1006,6 +1010,17 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
+    		case R.id.menu_add_form:
+    			FormPackager fp = new FormPackager(getApplicationContext());
+    			if(fp.getNames().length > 0) {
+    				InformaChoosableAlert alert = new InformaChoosableAlert(ImageEditor.this, fp.getNames(), null);
+    				alert.setTitle(getString(R.string.add_form));
+    				alert.show();
+    			} else {
+    				Toast.makeText(this, getString(R.string.error_forms_none_installed), Toast.LENGTH_LONG).show();
+    			}
+    			return true;
+    		
         	case R.id.menu_save_send:
         		InformaService.getInstance().storeMediaCache();
         		Intent intent = new Intent(this, AddressBookActivity.class)
@@ -1327,5 +1342,11 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		getIntent().putExtra(App.ImageEditor.Keys.FINISH_ON, App.ImageEditor.PACKAGE_GENERATED);
 		setResult(Activity.RESULT_OK, getIntent());
 		finish();
+	}
+
+	@Override
+	public void onChoice(int which, Object obj) {
+		Log.d(App.LOG, "form choice: " + which);
+		// TODO: launch form editor
 	}
 }

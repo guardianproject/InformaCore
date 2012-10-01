@@ -414,6 +414,8 @@ public class IOCipherService extends Service {
 					fos.write(manifestBytes, 0, manifestBytes.length);
 					fos.flush();
 					fos.close();
+					
+					InformaService.getInstance().cleanup();
 					return true;
 				} catch (JSONException e) {
 					Log.e(Storage.LOG, e.toString());

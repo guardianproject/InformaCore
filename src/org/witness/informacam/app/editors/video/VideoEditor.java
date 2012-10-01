@@ -36,9 +36,13 @@ import org.witness.informacam.app.AddressBookActivity;
 import org.witness.informacam.app.AnnotationActivity;
 import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
+import org.witness.informacam.app.editors.image.ImageEditor;
 import org.witness.informacam.app.editors.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
+import org.witness.informacam.app.mods.InformaChoosableAlert;
+import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
+import org.witness.informacam.informa.forms.FormPackager;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
@@ -100,6 +104,7 @@ import android.view.View.OnTouchListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.MediaController;
+import android.widget.Toast;
 import android.widget.VideoView;
 
 public class VideoEditor extends Activity implements
@@ -107,7 +112,8 @@ public class VideoEditor extends Activity implements
 						OnBufferingUpdateListener, OnPreparedListener, OnSeekCompleteListener,
 						OnVideoSizeChangedListener, SurfaceHolder.Callback,
 						MediaController.MediaPlayerControl, OnTouchListener, OnClickListener,
-						InOutPlayheadSeekBarChangeListener, OnActionItemClickListener, InformaServiceListener {
+						InOutPlayheadSeekBarChangeListener, OnActionItemClickListener, InformaServiceListener,
+						OnChoosableChosenListener {
 
 	public static final String LOGTAG = App.LOG;
 
@@ -1154,6 +1160,16 @@ public class VideoEditor extends Activity implements
     public boolean onOptionsItemSelected(MenuItem item) {
 
     	switch (item.getItemId()) {
+	    	case R.id.menu_add_form:
+				FormPackager fp = new FormPackager(getApplicationContext());
+				if(fp.getNames().length > 0) {
+					InformaChoosableAlert alert = new InformaChoosableAlert(VideoEditor.this, fp.getNames(), null);
+					alert.setTitle(getString(R.string.add_form));
+					alert.show();
+				} else {
+					Toast.makeText(this, getString(R.string.error_forms_none_installed), Toast.LENGTH_LONG).show();
+				}
+				return true;
     	
     		case R.id.menu_new_region:
     			
@@ -1858,6 +1874,13 @@ public class VideoEditor extends Activity implements
 		getIntent().putExtra(App.VideoEditor.Keys.FINISH_ON, App.VideoEditor.PACKAGE_GENERATED);
 		setResult(Activity.RESULT_OK, getIntent());
 		finish();
+	}
+
+	@Override
+	public void onChoice(int which, Object obj) {
+		Log.d(App.LOG, "form choice: " + which);
+		// TODO: launch form editor
+		
 	}
 	
 	

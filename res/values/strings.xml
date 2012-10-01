@@ -61,6 +61,8 @@
     <string name="menu_preview">Preview</string>
     <string name="play_video">Play Video</string>
     <string name="share_video">Share Video</string>
+    <string name="add_form">Add a Form\u2026</string>
+    <string name="delete_form">Delete this Form</string>
     
     <string name="pref_out_fps_title">Output Framerate (fps)</string>
     <string name="pref_out_fps_summary">Frames per second to save output video at (15-30)</string>
@@ -96,6 +98,7 @@
     <string name="error_cannot_delete_contact">This contact cannot be deleted.</string>
     <string name="error_annotation_empty">You haven\'t annotated anything!</string>
     <string name="error_password_mismatch">Your password is incorrect.  Please try logging in again.</string>
+    <string name="error_forms_none_installed">You don\'t have any forms installed!</string>
     
     <!--  ADDRESS BOOK AND CHOOSER -->
     <string name="address_book_new_contact">Add new contact\u2026</string>

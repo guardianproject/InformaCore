@@ -4,7 +4,10 @@
     <item android:id="@+id/menu_new_region"
         android:title="@string/menu_detect"
         android:icon="@drawable/ic_menu_new_region" />
- 
+    
+    <item android:id="@+id/menu_add_form"
+        android:title="@string/add_form"
+        android:icon="@drawable/ic_send_log" />
 
     <item android:id="@+id/menu_save"
         android:title="@string/menu_save"
