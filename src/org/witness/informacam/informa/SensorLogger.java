@@ -9,12 +9,7 @@ import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
-
-import android.app.Activity;
-import android.content.Context;
-import android.util.Log;
 
 public class SensorLogger<T> {
 	public T _sucker;

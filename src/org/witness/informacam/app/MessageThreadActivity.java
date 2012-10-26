@@ -27,7 +27,6 @@ import org.witness.informacam.transport.HttpUtility;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
-import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
@@ -160,7 +159,6 @@ public class MessageThreadActivity extends Activity implements OnClickListener, 
 			if(res.getString(Transport.Keys.RESULT).equals(Transport.Result.FAIL)) {
 				// TODO: handle failed result?
 			}
-			Log.d(App.LOG, res.toString());
 			
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(App.LOG, e.toString());

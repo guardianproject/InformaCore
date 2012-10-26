@@ -1,5 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="video_framerate_values">
+        <item>15</item>
+        <item>30</item>
+    </string-array>
+    
+    <string-array name="video_framerate">
+        <item>15 fps</item>
+        <item>30 fps</item>
+    </string-array>
+    
+    <string-array name="video_bitrate_values">
+        <item>300</item>
+    </string-array>
+    
+    <string-array name="video_bitrate">
+        <item>300 kBps</item>
+    </string-array>
+    
+    <string-array name="video_dimensions_values">
+        <item>500</item>
+        <item>501</item>
+        <item>502</item>
+        <item>503</item>
+    </string-array>
+    
+    <string-array name="video_dimensions">
+        <item>Original dimensions</item>
+        <item>1280 x 720 px</item>
+        <item>480 x 360 px</item>
+        <item>176 x 144 px</item>
+    </string-array>
+    
 	<string-array name="password_cache">
 		<item>Always</item>
 		<item>Until after I save an image</item>
@@ -32,6 +64,11 @@
 	<string-array name="enable_encryption_values">
 	    <item>true</item>
 	    <item>false</item>
+	</string-array>
+	
+	<string-array name="enable_encryption_short">
+	    <item>Yes</item>
+	    <item>No</item>
 	</string-array>
 	
 	<string-array name="default_language">

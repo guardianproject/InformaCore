@@ -358,7 +358,7 @@ public class Informa {
 		try {
 			genealogy.createdOnDevice.imei = initPack.getString(Suckers.Phone.Keys.IMEI);
 		} catch(JSONException e) {
-			Log.d(Suckers.LOG, e.toString() + "\nprobably because this is a wifi-only device (no telephony manager)");
+			Log.e(Suckers.LOG, e.toString() + "\nprobably because this is a wifi-only device (no telephony manager)");
 			e.printStackTrace();
 		}
 		
@@ -367,7 +367,7 @@ public class Informa {
 			genealogy.createdOnDevice.bluetoothName = initPack.getString(Suckers.Phone.Keys.BLUETOOTH_DEVICE_NAME);
 			genealogy.createdOnDevice.deviceFingerprint = intent.owner.publicKeyFingerprint;
 		} catch(JSONException e) {
-			Log.d(Suckers.LOG, e.toString());
+			Log.e(Suckers.LOG, e.toString());
 			e.printStackTrace();
 		}
 		

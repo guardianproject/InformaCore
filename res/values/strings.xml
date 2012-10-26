@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <!--  LABELS -->
+
+    <!-- LABELS -->
     <string name="app_name">InformaCam</string>
     <string name="media_manager">Media Manager</string>
     <string name="message_center">Message Center</string>
     <string name="address_book">Address Book</string>
     <string name="camera">Camera</string>
     <string name="camcorder">Camcorder</string>
-    
-    <!--  BASIC STRINGS -->
-	<string name="yes">Yes</string>
-	<string name="no">No</string>
-	<string name="_continue">Continue</string>
-	<string name="cancel">Cancel</string>
-	<string name="ok">OK</string>
-	<string name="save">Save</string>
+
+    <!-- BASIC STRINGS -->
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="_continue">Continue</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="save">Save</string>
     <string name="back">Back</string>
     <string name="next">Next</string>
     <string name="done">Done</string>
     <string name="select">Select</string>
     <string name="add">Add</string>
-    
-    <!--  NOTIFICATION BAR  -->
+
+    <!-- NOTIFICATION BAR -->
     <string name="notification_status">Status:</string>
-    
+
     <!-- MAIN MENU -->
     <string name="mainactivity_preferences">Preferences</string>
     <string name="mainactivity_about">About InformaCam</string>
@@ -31,18 +32,17 @@
     <string name="mainactivity_send_log">Send Log\u2026</string>
     <string name="mainactivity_log_out">Log Out</string>
     <string name="mainactivity_log_in">Log In</string>
-    <string name="mainactivity_refresh">Refresh Uploads</string> 
-    
-    <!--  IMAGE/VIDEO EDITORS -->
+    <string name="mainactivity_refresh">Refresh Uploads</string>
+
+    <!-- IMAGE/VIDEO EDITORS -->
     <string name="saving">Saving\u2026</string>
     <string name="generating_metadata">Generating Metadata\u2026</string>
     <string name="encrypting_to_trusted_destinations">Encrypting to Trusted Destination(s)\u2026</string>
-    
     <string name="menu_this_image">This Image\u2026</string>
     <string name="menu_new_region">New Tag</string>
-    <string name="menu_detect">Detect Faces</string>    
+    <string name="menu_detect">Detect Faces</string>
     <string name="menu_panic">Panic</string>
- 	<string name="menu_image_prefs">Image Prefs</string>
+    <string name="menu_image_prefs">Image Prefs</string>
     <string name="menu_save_send">Save and Send</string>
     <string name="menu_save">Save</string>
     <string name="menu_share">Share</string>
@@ -63,44 +63,34 @@
     <string name="share_video">Share Video</string>
     <string name="add_form">Add a Form\u2026</string>
     <string name="delete_form">Delete this Form</string>
-    
     <string name="pref_out_fps_title">Output Framerate (fps)</string>
     <string name="pref_out_fps_summary">Frames per second to save output video at (15-30)</string>
-    
     <string name="pref_out_rate_title">Output Bitrate (kbps)</string>
     <string name="pref_out_rate_summary">Bitrate of video output (300-1500)</string>
-    
     <string name="pref_out_format_title">Output Format</string>
     <string name="pref_out_format_summary">File container format (mp4, 3gp, ogg)</string>
     <string name="pref_out_format_mp4">mp4</string>
     <string name="pref_out_format_3gp">3gp</string>
     <string name="pref_out_format_ogg">ogg</string>
-    
-     <string name="pref_out_vcodec_title">Output Video Codec</string>
+    <string name="pref_out_vcodec_title">Output Video Codec</string>
     <string name="pref_out_vcodec_summary">video codec (copy, libx264, etc)</string>
-    
-     <string name="pref_out_acodec_title">Output Audio Codec</string>
+    <string name="pref_out_acodec_title">Output Audio Codec</string>
     <string name="pref_out_acodec_summary">audio codec (copy, aac, mp3, etc)</string>
-    
-    
-    <string name="pref_out_vwidth_title">Custom Video Width (px)</string>
-    <string name="pref_out_vwidth_summary">custom video width for outputed video</string>
-    
-     <string name="pref_out_vheight_title">Custom Video Height (px)</string>
-    <string name="pref_out_vheight_summary">custom video height for outputed video</string>
-    
+    <string name="pref_out_vdimensions_title">Custom Video Dimensions (px)</string>
+    <string name="pref_out_vdimensions_summary">custom video dimensions for outputed video</string>
     <string name="annotation_hint">Name, pseudonym or alias</string>
     <string name="destination_chooser_prompt">Choose Recipients</string>
-    
-    <!--  ERRORS -->
+
+    <!-- ERRORS -->
     <string name="error_media_mounted">Please insert an SD card to save media!</string>
     <string name="error_no_key_found_for_email">Sorry!  No public key found for </string>
     <string name="error_cannot_delete_contact">This contact cannot be deleted.</string>
     <string name="error_annotation_empty">You haven\'t annotated anything!</string>
     <string name="error_password_mismatch">Your password is incorrect.  Please try logging in again.</string>
     <string name="error_forms_none_installed">You don\'t have any forms installed!</string>
-    
-    <!--  ADDRESS BOOK AND CHOOSER -->
+    <string name="error_orbot_nonresponsive">InformaCam cannot connect over Tor.  Are you sure Orbot is installed, setup, and running?</string>
+
+    <!-- ADDRESS BOOK AND CHOOSER -->
     <string name="address_book_new_contact">Add new contact\u2026</string>
     <string name="address_book_chooser_placeholder">This feature coming soon!</string>
     <string name="address_book_directions">You can add a new contact by either typing in the email address, picking from your contact list, or by importing a public key (.asc) from storage.</string>
@@ -114,8 +104,8 @@
     <string name="address_book_fingerprint">Fingerprint:</string>
     <string name="address_book_creation_date">Created on:</string>
     <string name="address_book_expiry_date">Expires on:</string>
-    
-    <!--  MEDIA MANAGER -->
+
+    <!-- MEDIA MANAGER -->
     <string name="media_manager_taken_on">Taken on </string>
     <string name="media_manager_last_saved">Last Saved on </string>
     <string name="media_manager_open">Open</string>
@@ -123,36 +113,35 @@
     <string name="media_manager_export_text">This media was captured by InformaCam, powered by The Guardian Project.  We can be sure that the media and its metadata is 100% un-tampered-with up to its delivery to you.</string>
     <string name="media_manager_rename">Rename\u2026</string>
     <string name="media_manager_rename_prompt">Change this media object\'s name from </string>
-    
-    <!--  MESSAGE CENTER  -->
+
+    <!-- MESSAGE CENTER -->
     <string name="message_center_from">from</string>
     <string name="message_center_unknown">unknown</string>
     <string name="message_center_conversation_with">Conversation with </string>
     <string name="message_center_send">Send</string>
     <string name="message_center_refresh">Refresh Messages for this Conversation</string>
     <string name="message_center_last_checked">last checked: </string>
-   
-    
-    <!--  UPLOAD SERVICE -->
+
+    <!-- UPLOAD SERVICE -->
     <string name="upload_service_uploading">Uploading\u2026</string>
     <string name="upload_service_complete">complete</string>
     <string name="upload_service_refresh">Refresh?</string>
-    
-	<!--  LOG IN ACTIVITY -->
-	<string name="login">Log In</string>
-	<string name="login_text">Please enter your password to continue</string>
-	<string name="login_fail">Your password is incorrect.  Please try again</string>
-    
-	<!--  EULA related -->
+
+    <!-- LOG IN ACTIVITY -->
+    <string name="login">Log In</string>
+    <string name="login_text">Please enter your password to continue</string>
+    <string name="login_fail">Your password is incorrect.  Please try again</string>
+
+    <!-- EULA related -->
     <string name="eula_title">You agree to:</string>
     <string name="eula_accept">Accept</string>
     <string name="eula_refuse">Refuse</string>
-    
-    <!--  WIZARD related -->
+
+    <!-- WIZARD related -->
     <string name="wizard_main_title">Setup Wizard</string>
     <string name="wizard_error_password_too_short">Please choose a password of 10 or more characters.</string>
-    
-    <!--  GLOBAL PREFERENCES related -->
+
+    <!-- GLOBAL PREFERENCES related -->
     <string name="preferences_label">InformaCam Preferences</string>
     <string name="preferences_show_hints_label">Show Hints?</string>
     <string name="preferences_show_hints_text">Show handy hints as you use the app.</string>
@@ -162,8 +151,10 @@
     <string name="preferences_image_handling_text">What should the app do with your original images?</string>
     <string name="preferences_language_label">Language</string>
     <string name="preferences_language_text">What language should the app use?</string>
-    
-    <!--  LOG COLLECTOR related -->
+    <string name="preferences_encrypt_label">Metadata Encryption</string>
+    <string name="preferences_encrypt_text">InformaCam can give you the option of signing and encrypting your metadata to Trusted Contacts in your Address Book.  Would you like to enable this feature?</string>
+
+    <!-- LOG COLLECTOR related -->
     <string name="app_name_lc">Log Collector</string>
     <string name="message_subject">Android device log</string>
     <string name="acquiring_log_progress_dialog_message">Acquiring log from the system\u2026</string>
@@ -171,14 +162,11 @@
     <string name="failed_to_get_log_message">"Failed to get the log from the system."</string>
     <string name="main_dialog_text">"This application will attempt to collect the device log.
 The collected log will be sent using an application of your choice.
-You also will have an opportunity to see and modify the data being sent."
-    </string>
-    <string name="device_info_fmt">
-Log Collector version: <xliff:g id="application_version">%s</xliff:g>\n
+You also will have an opportunity to see and modify the data being sent."</string>
+    <string name="device_info_fmt">Log Collector version: <xliff:g id="application_version">%s</xliff:g>\n
 Device model: <xliff:g id="device_model">%s</xliff:g>\n
 Firmware version: <xliff:g id="firmware_revision">%s</xliff:g>\n
 Kernel version: <xliff:g id="kernel_version">%s</xliff:g>\n
-Build number: <xliff:g id="build_number">%s</xliff:g>\n
-    </string>
+Build number: <xliff:g id="build_number">%s</xliff:g>\n</string>
 
 </resources>

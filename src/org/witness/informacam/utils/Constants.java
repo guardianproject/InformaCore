@@ -45,6 +45,8 @@ public class Constants {
 			public final static int FROM_EDITOR = 775;
 			public final static int FROM_MEDIA_MANAGER = 776;
 			public static final String SERVICE_STARTED = "serviceStarted";
+			public static final String MEDIA_CAPTURE_URI_SAVED_STATE = "mediaCaptureURI_SavedState";
+			public static final String MEDIA_CAPTURE_FILE_SAVED_STATE = "mediaCaptureFile_SavedState";
 		}
 		
 		public final static class MediaManager {
@@ -73,6 +75,33 @@ public class Constants {
 			}
 			
 			public final static String TAG = "app.editors.video.VideoEditor";
+			
+			public final static class Preferences {
+				public final static int DEFAULT_OUT_WIDTH = 480;
+				public static final int DEFAULT_OUT_HEIGHT = 320;
+				public final static int DEFAULT_OUT_FPS = 15;
+				public final static int DEFAULT_OUT_RATE = 300;
+				public final static String DEFAULT_OUT_FORMAT = "mp4";
+				public final static String DEFAULT_OUT_VCODEC = "libx264";
+				public final static String DEFAULT_OUT_ACODEC = "copy";
+				public static final String FRAME_RATE = "pref_out_fps";
+				public static final String BIT_RATE = "pref_out_rate";
+				public static final String FORMAT = "pref_out_format";
+				public static final String ACODEC = "pref_out_acodec";
+				public static final String VCODEC = "pref_out_vcodec";
+				public static final String WIDTH = "pref_out_vwidth";
+				public static final String HEIGHT= "pref_out_vheight";
+				public static final String DIMENSIONS = "pref_out_vdimensions";
+				
+				public static final class Dimensions {
+					public static final int ORIGINAL = 500;
+					public static final int HD = 501;
+					public static final int SD_H = 502;
+					public static final int SD_L = 503;
+				}
+				
+				
+			}
 			
 			public final static class Keys {
 				public final static String PROPERTIES = App.ImageEditor.Keys.PROPERTIES;
@@ -159,6 +188,10 @@ public class Constants {
 				public static final String ALIAS = Media.Manifest.Keys.ALIAS;
 				
 			}
+		}
+
+		public static class Preferences {
+			public final static String LOG = "**************** InformaCam:Prefs ****************";
 		}
 	}
 	
@@ -296,6 +329,7 @@ public class Constants {
 				public static final String LAST_MESSAGES = "lastCheckedForMessages";
 				public static final String TRUSTED_DESTINATION_DISPLAY_NAME = TrustedDestination.Keys.DISPLAY_NAME;
 				public static final String DERIVATIVE_ROOT = Media.Keys.DERIVATIVE_ROOT;
+				public static final String SHOULD_RETRY = "shouldRetryUpload";
 			}
 
 			public static final String UPLOADED_FLAG = "uploadedFlag";
@@ -700,6 +734,9 @@ public class Constants {
 	
 	public final static class Transport {
 		public static final String LOG = "**************** InformaCam:TRANSPORT ****************";
+		public static final class Errors {
+			public static final String CONNECTION = "connectionError";
+		}
 		
 		public final static class Result {
 			public final static String OK = "A_OK";
@@ -776,6 +813,7 @@ public class Constants {
 			public final static int EXTRA_LARGE = 36864;
 			public static final int EXTRA_EXTRA_LARGE = 100000;
 			public static final int EXTRA_EXTRA_EXTRA_LARGE = 250000;
+			public static final String TOO_LARGE_SENTENEL = "@*TOO_LRG*@";
 			public final static int ALL(int length) {
 				return length;
 			}

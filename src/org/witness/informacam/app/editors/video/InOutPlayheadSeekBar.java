@@ -7,7 +7,6 @@ package org.witness.informacam.app.editors.video;
 
 
 import org.witness.informacam.R;
-import org.witness.informacam.utils.Constants.App;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,13 +14,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.SeekBar;
 
 public class InOutPlayheadSeekBar extends SeekBar {
-
-	private String LOGTAG = App.LOG;
 	
 	public static final int NONE = 0;
 	public static final int THUMBIN = 1;

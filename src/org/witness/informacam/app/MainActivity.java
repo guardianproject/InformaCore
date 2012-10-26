@@ -29,9 +29,9 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 import org.witness.informacam.utils.Constants.Media.Manifest;
-import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
@@ -40,10 +40,8 @@ import com.xtralogic.android.logcollector.SendLogActivity;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -106,6 +104,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
         initLayout();
         
         br.add(new Broadcaster(new IntentFilter(App.Main.SERVICE_STARTED)));
+        br.add(new Broadcaster(new IntentFilter(Transport.Errors.CONNECTION)));
 		
         captureIntent = editorIntent = null;
         h = new Handler();
@@ -159,10 +158,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 						Intent launchUploaderService = new Intent(MainActivity.this, UploaderService.class);
 						startService(launchUploaderService);
 						
-						/*
 						Intent launchSignatureUtility = new Intent(MainActivity.this, SignatureService.class);
 						startService(launchSignatureUtility);
-						*/
 					}
 				}).start();
 			}
@@ -184,11 +181,19 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	super.onDestroy();
     	if(informaService != null)
     		doShutdown();
+    	
+    	checkForLogout();
     }
     
     @Override
     public void onEulaAgreedTo() {
     	MainRouter.show(this);
+    }
+    
+    private void checkForLogout() {
+    	int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, null));
+    	if(loginPref == Settings.LoginCache.ON_CLOSE)
+    		doLogout();
     }
     
     private void initLayout() {
@@ -260,7 +265,12 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		return;
     	}
     	
-    	informaService.init();
+    	h.post(new Runnable() {
+    		@Override
+    		public void run() {
+    			informaService.init();
+    		}
+    	});
     	
     	ContentValues values = new ContentValues();
     	values.put(MediaStore.Images.Media.TITLE, tempFile);
@@ -273,16 +283,32 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mediaCaptureUri);
     	}
     	
+    	
     	startActivityForResult(captureIntent, App.Main.FROM_MEDIA_CAPTURE);
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+    	try {
+    		outState.putString(App.Main.MEDIA_CAPTURE_URI_SAVED_STATE, mediaCaptureUri.toString());
+    		outState.putString(App.Main.MEDIA_CAPTURE_FILE_SAVED_STATE, mediaCaptureFile.getAbsolutePath());
+    	} catch(NullPointerException e) {}
+    	super.onSaveInstanceState(outState);
+    }
+    
+    @Override
+    public void onRestoreInstanceState(Bundle inState) {
+    	Log.d(App.LOG, "RESTORE INSTANCE STATE CALLED BTW");
+    	
     }
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if(resultCode == Activity.RESULT_OK) {
+    		
     		switch(requestCode) {
     		
     		case App.Main.FROM_MEDIA_CAPTURE:    			
-    			Log.d(App.LOG, mediaCaptureFile.getAbsolutePath());
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
     				mimeType = Media.Type.MIME_TYPE_JPEG;
@@ -309,17 +335,22 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			}
     			
     			mustInitMetadata = true;
-    			new Thread(new Runnable() {
+    			h.post(new Runnable() {
 					@Override
 					public void run() {
 						new InformaMediaScanner(MainActivity.this, mediaCaptureFile);
 					}
-				}).start();
+				});
     			break;
     		case App.Main.FROM_EDITOR:
     			// TODO: add to upload queue, restart informa...
     			if(mProgressDialog != null)
     				mProgressDialog.dismiss();
+    			
+    			int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, null));
+    			Log.d(App.LOG, "login pref= " + loginPref);
+    	    	if(loginPref == Settings.LoginCache.AFTER_SAVE)
+    	    		doLogout();
     			
     			break;
     		case App.Main.FROM_MEDIA_MANAGER:
@@ -350,12 +381,12 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     					// Guess what?  You have to run this through the media scanner if you want
     					// it to load in the video editor activity!  doesn't that suck?!  (yes.)
     					mustInitMetadata = false;
-    					new Thread(new Runnable() {
+    					h.post(new Runnable() {
     						@Override
     						public void run() {
     							new InformaMediaScanner(MainActivity.this, mediaCaptureFile);
     						}
-    					}).start();
+    					});
     					
     				}
 				} catch (IOException e) {
@@ -400,6 +431,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		return true;
     	case R.id.extras_logout:
     		doLogout();
+    		finish();
     		return true;
     	case R.id.menu_refresh:
     		refreshUploads();
@@ -410,8 +442,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
 
 	private void doLogout() {
-		sp.edit().putString(Settings.Keys.CURRENT_LOGIN, Settings.Login.PW_EXPIRY).commit();
-		finish();		
+		sp.edit().putString(Settings.Keys.CURRENT_LOGIN, Settings.Login.PW_EXPIRY).commit();		
 	}
 
 	@Override
@@ -442,7 +473,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 					if(mustInitMetadata) {
 						LogPack logPack = IOUtility.getMetadata(mediaCaptureUri, mediaCaptureFile.getAbsolutePath(), mimeType, MainActivity.this);
 						informaService.onUpdate(Time.timestampToMillis(logPack.get(Exif.TIMESTAMP).toString()), logPack);
-						Log.d(App.LOG, "finished scanning the media:\n" + logPack.toString());
 					}
     				
     				launchEditor();
@@ -477,6 +507,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 		public void onReceive(Context c, Intent i) {
 			if(App.Main.SERVICE_STARTED.equals(i.getAction())) {
 				// TODO: launches?
+			} else if(Transport.Errors.CONNECTION.equals(i.getAction())) {
+				Toast.makeText(MainActivity.this, getString(R.string.error_orbot_nonresponsive), Toast.LENGTH_LONG).show();
 			}
 			
 		}

@@ -9,8 +9,6 @@ import java.lang.reflect.Method;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -35,7 +33,6 @@ import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Informa;
-import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.App.Wizard;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
@@ -182,9 +179,7 @@ public class WizardActivity extends Activity implements OnClickListener {
 		byte[] imageBytes = new byte[b.capacity()];
 		try {
 			b.get(imageBytes, 0, imageBytes.length);
-		} catch(BufferUnderflowException e) {
-			Log.d(Crypto.LOG, "buffer underflow! (but this will always happen...)\n" + e.toString());
-		}
+		} catch(BufferUnderflowException e) {}
 		
 		ContentValues cv = new ContentValues();
 		cv.put(Device.Keys.BASE_IMAGE, imageBytes);
@@ -628,7 +623,6 @@ public class WizardActivity extends Activity implements OnClickListener {
 						ListView lv = new ListView(_c);
 						
 						for(String option : findKey(s, "values").split(",")) {
-							Log.d(App.LOG, "this option: " + option);
 							if(Character.toString(option.charAt(0)).equals("#")) {
 								Callback populate = new Callback(option.substring(1), null);
 								try {

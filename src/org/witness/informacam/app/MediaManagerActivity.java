@@ -6,7 +6,6 @@ import info.guardianproject.iocipher.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,7 +23,6 @@ import org.witness.informacam.app.mods.InformaEditTextAlert.AlertInputListener;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.MediaManager;
@@ -76,7 +74,6 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 	private void getMedia() {
 		media = new ArrayList<MediaManagerDisplay>();
 		for(JSONObject m : IOCipherService.getInstance().getSavedMedia()) {
-			Log.d(App.LOG, m.toString());
 			media.add(new MediaManagerDisplay(m));
 		}
 		media_manager_list.setAdapter(new MediaManagerAdapter(MediaManagerActivity.this, media));
@@ -160,14 +157,13 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 				
 			} catch(JSONException e) {}
 			catch (IOException e) {
-				Log.d(Storage.LOG, e.toString());
+				Log.e(Storage.LOG, e.toString());
 				e.printStackTrace();
 			}
 			break;
 		case MediaManager.Actions.DELETE_MEDIA:
 			try {
 				String baseName = ((MediaManagerDisplay) obj).getString(Manifest.Keys.LOCATION_OF_ORIGINAL).split("/")[1];
-				Log.d(App.LOG, "deleting " + baseName);
 				IOCipherService.getInstance().delete(baseName);
 				h.post(new Runnable() {
 					@Override

@@ -16,7 +16,6 @@ import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.informa.InformaService;
-import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 
@@ -26,7 +25,6 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -353,9 +351,6 @@ public class ImageRegion implements OnActionItemClickListener
 				
 				return false;
 			case MotionEvent.ACTION_POINTER_UP:
-
-				Log.v(LOGTAG, "second finger removed - pointer up!");
-
 				return moved;
 				
 			case MotionEvent.ACTION_UP:
@@ -480,11 +475,9 @@ public void updateRegionProcessor (int obscureType) {
 		
 		switch (obscureType) {
 			case ImageRegion.BG_PIXELATE:
-				Log.v(App.LOG,"obscureType: BGPIXELIZE");
 				setRegionProcessor(new CrowdPixelizeObscure());
 				break;
 			case ImageRegion.REDACT:
-				Log.v(App.LOG,"obscureType: SOLID");
 				setRegionProcessor(new SolidObscure());
 				break;
 			case ImageRegion.PIXELATE:

@@ -40,9 +40,14 @@ import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Transport;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 
 public class HttpUtility {
+	public interface HttpErrorListener {
+		public void onError(Exception e, String msg);
+	}
+	
 	public static String executeHttpsPost(Context c, String host, Map<String, Object> postData, String contentType, long pkc12Id) {
 		return executeHttpsPost(c, host, postData, contentType, pkc12Id, null, null, null);
 	}	
@@ -66,6 +71,7 @@ public class HttpUtility {
 				Iterator<Entry<String, Object>> it = postData.entrySet().iterator();
 				
 				connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Transport.Keys.BOUNDARY);
+				
 				StringBuffer sb = new StringBuffer();
 				try {
 					dos = new DataOutputStream(connection.getOutputStream());
@@ -77,8 +83,11 @@ public class HttpUtility {
 						sb.append("Content-Type: " + contentType2 + ";" + Transport.Keys.LINE_END );
 						sb.append("Cache-Control: no-cache" + Transport.Keys.LINE_END + Transport.Keys.LINE_END);
 						dos.writeBytes(sb.toString());
+						dos.flush();
 						
-						dos.write(file, 0, file.length);
+						dos.write(file);
+						dos.flush();
+
 						dos.writeBytes(Transport.Keys.LINE_END);
 						
 						sb.append("..." + Transport.Keys.LINE_END);
@@ -109,6 +118,7 @@ public class HttpUtility {
 				} catch (IOException e) {
 					Log.e(Transport.LOG, e.toString());
 					e.printStackTrace();
+					c.sendBroadcast(new Intent().setAction(Transport.Errors.CONNECTION));
 				}
 			}
 			
@@ -152,6 +162,7 @@ public class HttpUtility {
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
 				connection.setDoOutput(true);
+				
 				
 				buildQuery();
 				

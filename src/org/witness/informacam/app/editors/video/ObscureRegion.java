@@ -4,7 +4,6 @@ package org.witness.informacam.app.editors.video;
 import org.witness.informacam.utils.Constants.App;
 
 import android.graphics.RectF;
-import android.util.Log;
 
 public class ObscureRegion  {
 

@@ -9,34 +9,24 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.informa.LogPack;
-import org.witness.informacam.utils.Constants.Informa.Keys.Data.Forms;
 import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
-import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
-import org.witness.informacam.utils.Constants.Informa.CaptureEvent.Keys;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
-import org.witness.informacam.utils.Constants.Informa.Keys.Data.Description;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
-import org.witness.informacam.utils.Constants.Media.Type;
 
 import android.content.ContentUris;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -205,7 +195,6 @@ public class IOUtility {
 			Bitmap b = retriever.getFrameAtTime(Math.max(logPack.getLong(Exif.DURATION)/2, 0), MediaMetadataRetriever.OPTION_CLOSEST);
 			
 			int scale = Math.min(8, logPack.getInt(Exif.IMAGE_WIDTH)/10);
-			Log.d(Storage.LOG, "image inSampleSize set to " + scale);
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inSampleSize = scale;
 			
@@ -244,7 +233,6 @@ public class IOUtility {
 			logPack.put(Genealogy.LOCAL_MEDIA_PATH, filepath);
 			
 			int scale = Math.min(8, logPack.getInt(Exif.IMAGE_WIDTH)/10);
-			Log.d(Storage.LOG, "image inSampleSize set to " + scale);
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inSampleSize = scale;
 			

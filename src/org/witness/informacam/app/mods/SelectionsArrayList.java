@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Observable;
 
-import org.witness.informacam.utils.Constants.App;
-
 public class SelectionsArrayList extends Observable implements List<Selections> {
 	List<Selections> selections;
 	

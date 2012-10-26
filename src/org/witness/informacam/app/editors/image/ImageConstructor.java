@@ -15,6 +15,7 @@ import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
 import org.witness.informacam.app.editors.filters.InformaTagger;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.SolidObscure;
+import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.j3m.J3M;
@@ -41,7 +42,7 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
 
@@ -124,24 +125,25 @@ public class ImageConstructor {
 				
 				// for each trusted destination
 				for(long td : encryptList) {
-					Log.d(Storage.LOG, "keyring id: " + td);
 					Cursor cursor = dh.getValue(db, null, TrustedDestination.Keys.KEYRING_ID, td);
 					
 					if(cursor != null && cursor.moveToFirst()) {
-						for(String s : cursor.getColumnNames())
-							Log.d(Storage.LOG, s);
 						
 						String forName = cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_DISPLAY_NAME));
-						Log.d(Storage.LOG, forName);
 						
 						// add into intent
 						InformaService.getInstance().informa.setTrustedDestination(cursor.getString(cursor.getColumnIndex(PGP.Keys.PGP_EMAIL_ADDRESS)));
 						
 						
 						// bundle up informadata
-						// XXX: encryption is broken, to fix later
-						//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY)));
-						String informaMetadata = InformaService.getInstance().informa.bundle();
+						// TODO: encrypt if user wishes
+						String informaMetadata = null;
+						if(PreferenceManager.getDefaultSharedPreferences(c).getBoolean(Settings.Keys.USE_ENCRYPTION, false)) {
+							byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
+							informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
+						} else
+							informaMetadata = InformaService.getInstance().informa.bundle();
+						
 						
 						// insert metadata
 						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.JPEG);
@@ -156,6 +158,7 @@ public class ImageConstructor {
 						dh.setTable(db, Tables.Keys.MEDIA);
 						db.insert(dh.getTable(), null, cv);
 						
+						// TODO: upload ticket!
 						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td, forName));
 						
 						cursor.close();
@@ -178,7 +181,6 @@ public class ImageConstructor {
 	private void runRedaction(List<Entry<Long, LogPack>> annotations) {
 		for(Entry<Long, LogPack> entry : annotations) {
 			LogPack lp = entry.getValue();
-			Log.d(Storage.LOG, lp.toString());
 			try {
 				String redactionMethod = lp.getString(Constants.Informa.Keys.Data.ImageRegion.FILTER);
 				if(!redactionMethod.equals(InformaTagger.class.getName())) {
@@ -196,9 +198,7 @@ public class ImageConstructor {
 					int top = (int) Float.parseFloat(regionCoordinates.substring(1, regionCoordinates.indexOf(",")));
 					int right = (int) (left + Float.parseFloat(lp.getString(Constants.Informa.Keys.Data.ImageRegion.WIDTH)));
 					int bottom = (int) (top + Float.parseFloat(lp.getString(Constants.Informa.Keys.Data.ImageRegion.HEIGHT)));
-					
-					Log.d(App.LOG, "top: " + top + " left: " + left + " right " + right + " bottom " + bottom + " redaction " + redactionCode);
-					
+										
 					byte[] redactionPack = redactRegion(clone.getAbsolutePath(), clone.getAbsolutePath(), left, right, top, bottom, redactionCode);
 										
 					JSONObject imageRegionData = new JSONObject();

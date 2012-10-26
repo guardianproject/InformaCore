@@ -48,7 +48,6 @@ import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Base64;
 import android.util.Log;
@@ -227,15 +226,16 @@ public class IOCipherService extends Service {
 	}
 	
 	public File moveFileToIOCipher(java.io.File version, String rootFolder, boolean delete) {		
-		File ioCipherCloneFolder = new File(rootFolder);
+		File ioCipherCloneFolder = getFile(rootFolder);
 		if(!ioCipherCloneFolder.exists())
 			ioCipherCloneFolder.mkdir();
 		
 		byte[] fileBytes = IOUtility.getBytesFromFile(version);
 		String forName = version.getName();
 		
-		if(delete)
+		if(delete) {
 			version.delete();
+		}
 		
 		return IOUtility.fileFromBytes(fileBytes, rootFolder + "/" + forName);
 	}
@@ -415,7 +415,6 @@ public class IOCipherService extends Service {
 					fos.flush();
 					fos.close();
 					
-					InformaService.getInstance().cleanup();
 					return true;
 				} catch (JSONException e) {
 					Log.e(Storage.LOG, e.toString());
@@ -498,6 +497,9 @@ public class IOCipherService extends Service {
 					fos.close();
 				}
 			}
+			
+			if(delete)
+				_root.delete();
 		} catch(FileNotFoundException e) {}
 		catch(IOException e) {}
 	}
@@ -508,10 +510,8 @@ public class IOCipherService extends Service {
 
 	public void delete(String baseName) {
 		File file = getFile(baseName);
-		Log.d(Storage.LOG, "getting file : " + file.getAbsolutePath());
 		
 		if(file.isDirectory()) {
-			Log.d(Storage.LOG, "file is directory");
 			for(File f : file.listFiles())
 				delete(f.getAbsolutePath());
 		} else if(!file.getName().equals(".") && !file.getName().equals(".."))

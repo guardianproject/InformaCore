@@ -6,7 +6,6 @@ import net.sqlcipher.database.SQLiteException;
 import org.witness.informacam.R;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.utils.Constants.Settings;
-import org.witness.informacam.utils.Constants.Storage;
 
 import android.app.Activity;
 import android.content.Context;
@@ -14,7 +13,6 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;

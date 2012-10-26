@@ -4,24 +4,20 @@ import java.util.ArrayList;
 
 import org.json.JSONException;
 import org.witness.informacam.R;
-import org.witness.informacam.app.adapters.AddressBookAdapter.OnAddressFocusedListener;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
-import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 
 import android.app.Activity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View.OnLongClickListener;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class AddressBookChooserAdapter extends BaseAdapter {

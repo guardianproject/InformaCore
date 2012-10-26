@@ -26,7 +26,6 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
-import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Crypto.Signatures;
 import org.witness.informacam.utils.Constants.Settings.Device;
 import org.witness.informacam.utils.Constants.Storage.Tables;
@@ -37,7 +36,6 @@ import android.database.Cursor;
 import android.os.Binder;
 import android.os.IBinder;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 public class SignatureService extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -70,7 +68,6 @@ public class SignatureService extends Service {
 		
 		dh.setTable(db, Tables.Keys.SETUP);
 		
-		Log.d(Crypto.LOG, "current table: " + dh.getTable());
 		Cursor k = dh.getValue(db, new String[] {Device.Keys.AUTH_KEY, Device.Keys.SECRET_KEY}, BaseColumns._ID, 1);
 		if(k != null && k.moveToFirst()) {
 			try {

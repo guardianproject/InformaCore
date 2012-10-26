@@ -4,7 +4,6 @@
 
 package org.witness.informacam.app.editors.filters;
 
-import java.util.Date;
 import java.util.Properties;
 
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
@@ -12,7 +11,6 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.RectF;
-import android.util.Log;
 
 public class PixelizeObscure implements RegionProcesser {
 

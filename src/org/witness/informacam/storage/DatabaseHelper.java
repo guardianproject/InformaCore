@@ -7,7 +7,6 @@ import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
-import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 
@@ -16,7 +15,6 @@ import android.database.Cursor;
 import android.provider.BaseColumns;
 
 import net.sqlcipher.database.SQLiteDatabase;
-import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
 import net.sqlcipher.database.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {

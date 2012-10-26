@@ -32,6 +32,7 @@ import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Media;
+import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
@@ -39,6 +40,7 @@ import org.witness.informacam.utils.Constants.Storage.Tables;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.app.editors.video.ObscureRegion;
 import org.witness.informacam.app.editors.video.RegionTrail;
+import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.j3m.J3M;
@@ -51,6 +53,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class VideoConstructor {
@@ -91,29 +94,34 @@ public class VideoConstructor {
 		return videoConstructor;
 	}
 	
-	private static void execProcess(String[] cmds, ShellCallback sc) throws Exception {
+	private static void execProcess(String[] cmds, ShellCallback sc) {
 			ProcessBuilder pb = new ProcessBuilder(cmds);
 			pb.redirectErrorStream(true);
-	    	Process process = pb.start();      
+	    	Process process;
+			try {
+				process = pb.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+				
+				String line;
+				
+				while ((line = reader.readLine()) != null)
+				{
+					if (sc != null) {
+						Log.d("FFMPEG", line);
+						sc.shellOut(line);
+					} else
+						Log.d(LOGTAG, "why is sc NULL?");
+				}
+
+				
+			    if (process != null) {
+			    	process.destroy();        
+			    }
+			} catch (IOException e) {
+				Log.e(LOGTAG, e.toString());
+				e.printStackTrace();
+			}      
 	    	
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-	
-			String line;
-			
-			while ((line = reader.readLine()) != null)
-			{
-				if (sc != null) {
-					Log.d("FFMPEG", line);
-					sc.shellOut(line);
-				} else
-					Log.d(LOGTAG, "why is sc NULL?");
-			}
-
-			
-		    if (process != null) {
-		    	process.destroy();        
-		    }
-
 	}
 	
 	public class FFMPEGArg
@@ -318,10 +326,14 @@ public class VideoConstructor {
 						
 						
 						// bundle up informadata
-						byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
-						// XXX: encryption is broken, to fix later
-						//String informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
-						String informaMetadata = InformaService.getInstance().informa.bundle();
+
+						// TODO: encrypt if user wishes
+						String informaMetadata = null;
+						if(PreferenceManager.getDefaultSharedPreferences(c).getBoolean(Settings.Keys.USE_ENCRYPTION, false)) {
+							byte[] key = cursor.getBlob(cursor.getColumnIndex(PGP.Keys.PGP_PUBLIC_KEY));
+							informaMetadata = EncryptionUtility.encrypt(InformaService.getInstance().informa.bundle().getBytes(), key);
+						} else
+							informaMetadata = InformaService.getInstance().informa.bundle();
 						
 						// insert metadata
 						File version = new File(Storage.FileIO.DUMP_FOLDER, System.currentTimeMillis() + "_" + forName.replace(" ", "-") + Media.Type.MKV);

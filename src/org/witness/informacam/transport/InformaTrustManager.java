@@ -29,7 +29,6 @@ import org.witness.informacam.utils.Constants.Storage.Tables;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Base64;
 import android.util.Log;

@@ -26,6 +26,7 @@ import org.witness.informacam.j3m.J3M.J3MPackage;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.transport.HttpUtility.HttpErrorListener;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
@@ -45,8 +46,7 @@ import android.os.IBinder;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-
-public class UploaderService extends Service {
+public class UploaderService extends Service implements HttpErrorListener {
 	private final IBinder binder = new LocalBinder();
 	private static UploaderService uploaderService;
 	
@@ -89,7 +89,13 @@ public class UploaderService extends Service {
 						if(!uploadChunk(j3mManifest)) {
 							// TODO: pop from queue with flag counter?
 							queue.remove(j3mManifest);
-							queue.add(j3mManifest);
+							try {
+							if(j3mManifest.has(Manifest.Keys.SHOULD_RETRY) && j3mManifest.getBoolean(Manifest.Keys.SHOULD_RETRY))
+								queue.add(j3mManifest);
+							} catch(JSONException e) {
+								Log.e(Transport.LOG, e.toString());
+								e.printStackTrace();
+							}
 						}
 						
 						
@@ -164,7 +170,7 @@ public class UploaderService extends Service {
 		String url = j3mManifest.getString(Transport.Keys.URL);
 		long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
 		
-		String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, null, null, null);
+		String result = HttpUtility.executeHttpsPost(UploaderService.this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, null, null, null);
 		JSONObject res = parseResult(result);
 		if(res.getString(Transport.Keys.RESULT).equals(Transport.Result.OK)) {
 			JSONArray m = res.getJSONArray(Transport.Keys.MISSING_TORRENTS);
@@ -202,11 +208,9 @@ public class UploaderService extends Service {
 							try {
 								switch((Integer) supportedDataRequired.get(s)) {
 								case Transport.Result.ErrorCodes.BASE_IMAGE_REQUIRED:
-									Log.d(Transport.LOG, "please update the base image");
 									// TODO: upload base image
 									break;
 								case Transport.Result.ErrorCodes.PGP_KEY_REQUIRED:
-									Log.d(Transport.LOG, "please update the pgp key");
 									// TODO: upload pgp key
 									break;
 								}
@@ -245,7 +249,7 @@ public class UploaderService extends Service {
 			
 			JSONObject res = parseResult(result);
 			if(res != null) {
-				Log.d(Transport.LOG, "updated with a patch");
+				// TODO???
 			}
 			return true;
 		} catch(JSONException e) {
@@ -343,6 +347,8 @@ public class UploaderService extends Service {
 					chunk = IOUtility.getBytesFromFile(new File(j3mManifest.getString(Transport.Manifest.Keys.J3MBase) + "/j3m/" + chunkName));
 				} catch(Exception e) {
 					Log.d(Storage.LOG, "this error to match\n" + e.getMessage());
+					j3mManifest.put(Manifest.Keys.SHOULD_RETRY, false);
+					j3mManifest.save();
 					return false;
 					
 				}
@@ -380,7 +386,6 @@ public class UploaderService extends Service {
 							queue.remove(j3mManifest);
 						
 						lastTransferred++;
-						Log.d(Transport.LOG, "this one failed. last transferred upped to " + lastTransferred);
 						break;
 					}
 						
@@ -391,10 +396,8 @@ public class UploaderService extends Service {
 				j3mManifest.save();
 				
 				queue.add(j3mManifest);
-				Log.d(Transport.LOG, "queue size: " + queue.size());
 				return true;
 			} else if(!j3mManifest.has(Media.Manifest.UPLOADED_FLAG) || !j3mManifest.getBoolean(Media.Manifest.UPLOADED_FLAG)){
-				Log.d(Transport.LOG, "checking this j3m for missing uploads");
 				List<Integer> missing = checkForMissingUploads(j3mManifest);
 				for(int m : missing) {
 					if(m > -1) {
@@ -430,11 +433,9 @@ public class UploaderService extends Service {
 	private JSONObject parseResult(String result) {
 		try {
 			JSONObject res = ((JSONObject) new JSONTokener(result).nextValue()).getJSONObject(Transport.Keys.RES);
-			Log.d(Transport.LOG, res.toString());
 			return res;
 		} catch(JSONException e) {
 			try {
-				Log.e(Transport.LOG,"the result did not have a res object so probably a fail!");
 				return (JSONObject) new JSONTokener(result).nextValue();
 			} catch(JSONException e1) {
 				
@@ -488,8 +489,12 @@ public class UploaderService extends Service {
 	}
 
 	public void restart() {
-		queueMonitor.run();
+		//XXX: not sure if i should clear the queue...
+		if(!queue.isEmpty())
+			queue.clear();
 		
+		queueMonitor.run();
+		initUploadsFromDatabase();
 	}
 	
 	public static void uploadSupportingData(Map<String, Object> postData, int pkcs12Id, String url) {
@@ -531,5 +536,10 @@ public class UploaderService extends Service {
 		private void refreshPercentUploaded() {
 			percentUploaded = (lastUploaded * 100)/totalChunks;
 		}
+	}
+
+	@Override
+	public void onError(Exception e, String msg) {
+		Log.e(Transport.LOG, "HEY WE HAVE AN EXCEPTION PASSED\n" + msg);
 	}
 }

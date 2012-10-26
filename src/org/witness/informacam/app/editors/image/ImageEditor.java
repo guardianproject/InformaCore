@@ -5,9 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -31,8 +29,6 @@ import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.informa.forms.FormPackager;
-import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
 import org.witness.informacam.utils.Constants.Informa;
@@ -43,7 +39,6 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -68,8 +63,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
-import android.provider.MediaStore.Images;
-import android.provider.MediaStore.Images.Media;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -347,7 +340,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 							 * "region_width":"807","size":"10","captureEventType":274}
 							 */
 														
-							Log.d(App.LOG, lp.toString());
 							try {
 								String[] irCoords = lp.getString(Data.ImageRegion.COORDINATES).substring(1,lp.getString(Data.ImageRegion.COORDINATES).length() - 1).split(",");
 								float irTop = Float.parseFloat(irCoords[0]);
@@ -1154,19 +1146,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		}
     }
     
-    
-    
-    private void cleanup() {
-    	// TODO: handle original image
-    	
-    	// clean up temp files
-    	java.io.File tmpFile = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
-    	if(tmpFile.exists())
-    		tmpFile.delete();
-    	
-		//finish();
-    }
-
     /*
      * Handling screen configuration changes ourselves, we don't want the activity to restart on rotation
      */
@@ -1188,8 +1167,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     }    
     
     public void launchAnnotationActivity(ImageRegion ir) {
-    	Log.d(App.LOG, ir.getRegionProcessor().getProperties().toString());
-    	
     	Intent informa = new Intent(this, AnnotationActivity.class);
     	informa.putExtra(App.ImageEditor.Keys.PROPERTIES, ir.getRegionProcessor().getProperties());
     	informa.putExtra(Informa.Keys.Data.ImageRegion.INDEX, imageRegions.indexOf(ir));
@@ -1208,6 +1185,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
     }
     
     private void saveImage() throws FileNotFoundException {
+    	/*
     	SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.Media.DateFormats.EXPORT_DATE_FORMAT);
 		Date date = new Date();
 		String dateString = dateFormat.format(date);
@@ -1227,7 +1205,8 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		 //lossless?  good question - still a smaller version
 		imageFileOS = getContentResolver().openOutputStream(savedImageUri);
 		obscuredBmp.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, imageFileOS);
-		
+		*/
+    	
 		// create new file and save it
 		java.io.File savedImage = new java.io.File(Storage.FileIO.DUMP_FOLDER, App.ImageEditor.GALLERY_NAME);
 		
@@ -1235,13 +1214,11 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			FileOutputStream fos = new FileOutputStream(savedImage.getAbsoluteFile());
 			originalBitmap.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, fos);
 		} catch(IOException e) {
-			Log.d(App.LOG, "error saving tmp bitmap: " + e);
+			Log.e(App.LOG, "error saving tmp bitmap: " + e);
 		}
 				
 		updateMessage(getString(R.string.generating_metadata));
-        InformaService.getInstance().packageInforma(savedImage.getAbsolutePath());
-		
-		cleanup();
+        InformaService.getInstance().packageInforma(savedImage.getAbsolutePath());		
     }
     
     @Override
@@ -1346,7 +1323,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
 	@Override
 	public void onChoice(int which, Object obj) {
-		Log.d(App.LOG, "form choice: " + which);
 		// TODO: launch form editor
 	}
 }

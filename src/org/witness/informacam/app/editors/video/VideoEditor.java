@@ -14,7 +14,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -36,7 +35,6 @@ import org.witness.informacam.app.AddressBookActivity;
 import org.witness.informacam.app.AnnotationActivity;
 import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
-import org.witness.informacam.app.editors.image.ImageEditor;
 import org.witness.informacam.app.editors.video.InOutPlayheadSeekBar.InOutPlayheadSeekBarChangeListener;
 import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
@@ -46,6 +44,7 @@ import org.witness.informacam.informa.forms.FormPackager;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.VideoEditor.Preferences;
 import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
@@ -55,7 +54,6 @@ import org.witness.informacam.utils.Constants.Media;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -75,7 +73,6 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.media.MediaScannerConnection;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
@@ -180,14 +177,6 @@ public class VideoEditor extends Activity implements
 	String outVcodec = null;
 	int outVWidth = -1;
 	int outVHeight = -1;
-	
-	private final static String DEFAULT_OUT_FPS = "15";
-	private final static String DEFAULT_OUT_RATE = "300";
-	private final static String DEFAULT_OUT_FORMAT = "mp4";
-	private final static String DEFAULT_OUT_VCODEC = "libx264";
-	private final static String DEFAULT_OUT_ACODEC = "copy";
-	private final static String DEFAULT_OUT_WIDTH = "480";
-	private final static String DEFAULT_OUT_HEIGHT = "320";
 	
 
 	private Handler mHandler = new Handler()
@@ -311,79 +300,67 @@ public class VideoEditor extends Activity implements
 		bitmapPixel = BitmapFactory.decodeResource(getResources(),
                 R.drawable.ic_context_pixelate);
 		
-		List<LogPack> cachedRegions = InformaService.getInstance().getCachedRegions();
-		if(cachedRegions == null)
-			showAutoDetectDialog();
-		else {
-			for(LogPack lp : cachedRegions) {
-				// parse video regions and add them from cache
-				//Log.d(App.LOG, lp.toString());
-				/*
-				 * {"subject_pseudonym":"derp",
-				 * "obfuscationType":"identify",
-				 * "videoStartTime":"0",
-				 * "subject_informedConsentGiven":"false",
-				 * "subject_persistFilter":"false",
-				 * "videoTrail":[{"regionCoordinates":"[231.65845,372.00867]",
-				 * "region_height":"150","region_width":"150"},
-				 * {"regionCoordinates":"[263.29315,641.60297]",
-				 * "region_height":"150","region_width":"150"},
-				 * {"regionCoordinates":"[251.51776,923.19617]",
-				 * "region_height":"150","region_width":"150"},
-				 * ... etc
-				 * ],"videoEndTime":"4864","captureEventType":274}
-				 */
-				try {
-					int startTime = Integer.parseInt(lp.getString(Data.VideoRegion.START_TIME));
-					int endTime = Integer.parseInt(lp.getString(Data.VideoRegion.END_TIME));
-					String obfuscationType = lp.getString(Data.VideoRegion.FILTER);
-					
-					JSONArray vt = lp.getJSONArray(Data.VideoRegion.TRAIL);
-					List<ObscureRegion> videoTrail = null;
-					for(int v=0; v<vt.length(); v++) {
-						JSONObject trail = (JSONObject) vt.get(v);
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				List<LogPack> cachedRegions = InformaService.getInstance().getCachedRegions();
+				if(cachedRegions != null) {
+					for(LogPack lp : cachedRegions) {
+						try {
+							int startTime = Integer.parseInt(lp.getString(Data.VideoRegion.START_TIME));
+							int endTime = Integer.parseInt(lp.getString(Data.VideoRegion.END_TIME));
+							String obfuscationType = lp.getString(Data.VideoRegion.FILTER);
+							
+							JSONArray vt = lp.getJSONArray(Data.VideoRegion.TRAIL);
+							List<ObscureRegion> videoTrail = null;
+							for(int v=0; v<vt.length(); v++) {
+								JSONObject trail = (JSONObject) vt.get(v);
+								
+								String[] irCoords = trail.getString(Data.VideoRegion.Child.COORDINATES).substring(1,trail.getString(Data.VideoRegion.Child.COORDINATES).length() - 1).split(",");
+								float irTop = Float.parseFloat(irCoords[0]);
+								float irLeft = Float.parseFloat(irCoords[1]);
+								float irRight = irLeft + Float.parseFloat(trail.getString(Data.VideoRegion.Child.WIDTH));
+								float irBottom = irTop + Float.parseFloat(trail.getString(Data.VideoRegion.Child.HEIGHT));
+								
+								if(videoTrail == null)
+									videoTrail = new ArrayList<ObscureRegion>();
+								
+								videoTrail.add(new ObscureRegion(
+										Integer.parseInt(trail.getString(Data.VideoRegion.Child.TIMESTAMP)), 
+										irLeft, 
+										irTop, 
+										irRight, 
+										irBottom)
+									);
+							}
+							
+							RegionTrail rt = new RegionTrail(startTime, endTime, VideoEditor.this, lp.getString(Data.VideoRegion.FILTER), videoTrail, true, lp.getLong(Data.VideoRegion.TIMESTAMP));
+							rt.setObscureMode(obfuscationType);
+							if(lp.has(Data.VideoRegion.Subject.PSEUDONYM)) {
+								rt.addSubject(
+										lp.getString(Data.VideoRegion.Subject.PSEUDONYM),
+										Boolean.parseBoolean(lp.getString(Data.VideoRegion.Subject.INFORMED_CONSENT_GIVEN)),
+										Boolean.parseBoolean(lp.getString(Data.VideoRegion.Subject.PERSIST_FILTER))
+								);
+							}
+							
+							obscureTrails.add(rt);
+						} catch (NumberFormatException e) {
+							Log.e(App.LOG, e.toString());
+							e.printStackTrace();
+						} catch (JSONException e) {
+							Log.e(App.LOG, e.toString());
+							e.printStackTrace();
+						}
 						
-						String[] irCoords = trail.getString(Data.VideoRegion.Child.COORDINATES).substring(1,trail.getString(Data.VideoRegion.Child.COORDINATES).length() - 1).split(",");
-						float irTop = Float.parseFloat(irCoords[0]);
-						float irLeft = Float.parseFloat(irCoords[1]);
-						float irRight = irLeft + Float.parseFloat(trail.getString(Data.VideoRegion.Child.WIDTH));
-						float irBottom = irTop + Float.parseFloat(trail.getString(Data.VideoRegion.Child.HEIGHT));
-						
-						if(videoTrail == null)
-							videoTrail = new ArrayList<ObscureRegion>();
-						
-						videoTrail.add(new ObscureRegion(
-								Integer.parseInt(trail.getString(Data.VideoRegion.Child.TIMESTAMP)), 
-								irLeft, 
-								irTop, 
-								irRight, 
-								irBottom)
-							);
 					}
-					
-					RegionTrail rt = new RegionTrail(startTime, endTime, this, lp.getString(Data.VideoRegion.FILTER), videoTrail, true, lp.getLong(Data.VideoRegion.TIMESTAMP));
-					rt.setObscureMode(obfuscationType);
-					if(lp.has(Data.VideoRegion.Subject.PSEUDONYM)) {
-						rt.addSubject(
-								lp.getString(Data.VideoRegion.Subject.PSEUDONYM),
-								Boolean.parseBoolean(lp.getString(Data.VideoRegion.Subject.INFORMED_CONSENT_GIVEN)),
-								Boolean.parseBoolean(lp.getString(Data.VideoRegion.Subject.PERSIST_FILTER))
-						);
-					}
-					
-					obscureTrails.add(rt);
-				} catch (NumberFormatException e) {
-					Log.e(App.LOG, e.toString());
-					e.printStackTrace();
-				} catch (JSONException e) {
-					Log.e(App.LOG, e.toString());
-					e.printStackTrace();
 				}
 				
 			}
-		}
-		
+		}).start();
+		showAutoDetectDialog();
 	}
+		
 	
 	private void loadMedia ()
 	{
@@ -599,7 +576,7 @@ public class VideoEditor extends Activity implements
 		//Get the dimensions of the video
 	    int videoWidth = mediaPlayer.getVideoWidth();
 	    int videoHeight = mediaPlayer.getVideoHeight();
-	  //  Log.v(LOGTAG, "video size: " + videoWidth + "x" + videoHeight);
+	    Log.v(LOGTAG, "video size: " + videoWidth + "x" + videoHeight);
 	   
 	    if (videoWidth > 0 && videoHeight > 0)
 	    {
@@ -1270,7 +1247,7 @@ public class VideoEditor extends Activity implements
 					ffmpeg = new VideoConstructor(VideoEditor.this.getBaseContext());
 	
 					
-				ShellCallback sc = new ShellCallback ()
+				ShellUtils.ShellCallback sc = new ShellUtils.ShellCallback ()
 				{
 					int total = 0;
 					int current = 0;
@@ -1332,6 +1309,7 @@ public class VideoEditor extends Activity implements
 					}
 				};
 				
+				// TODO: is this the same?
 				int processVWidth = videoWidth;
 				int processVHeight = videoHeight;
 				
@@ -1571,14 +1549,14 @@ public class VideoEditor extends Activity implements
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
 		
-		outFrameRate = Integer.parseInt(prefs.getString("pref_out_fps", DEFAULT_OUT_FPS).trim());
-		outBitRate = Integer.parseInt(prefs.getString("pref_out_rate", DEFAULT_OUT_RATE).trim());
-		outFormat = prefs.getString("pref_out_format", DEFAULT_OUT_FORMAT).trim();
-		outAcodec =  prefs.getString("pref_out_acodec", DEFAULT_OUT_ACODEC).trim();
-		outVcodec =  prefs.getString("pref_out_vcodec", DEFAULT_OUT_VCODEC).trim();
+		outFrameRate = Integer.parseInt(prefs.getString(Preferences.FRAME_RATE, String.valueOf(Preferences.DEFAULT_OUT_FPS)).trim());
+		outBitRate = Integer.parseInt(prefs.getString(Preferences.BIT_RATE, String.valueOf(Preferences.DEFAULT_OUT_RATE)).trim());
+		outFormat = prefs.getString(Preferences.FORMAT, Preferences.DEFAULT_OUT_FORMAT).trim();
+		outAcodec =  prefs.getString(Preferences.ACODEC, Preferences.DEFAULT_OUT_ACODEC).trim();
+		outVcodec =  prefs.getString(Preferences.VCODEC, Preferences.DEFAULT_OUT_VCODEC).trim();
 
-		outVWidth =   Integer.parseInt(prefs.getString("pref_out_vwidth", DEFAULT_OUT_WIDTH).trim());
-		outVHeight =   Integer.parseInt(prefs.getString("pref_out_vheight", DEFAULT_OUT_HEIGHT).trim());
+		outVWidth =   prefs.getInt(Preferences.WIDTH, Preferences.DEFAULT_OUT_WIDTH);
+		outVHeight =  prefs.getInt(Preferences.HEIGHT, Preferences.DEFAULT_OUT_HEIGHT);
 		
 	}
 	
@@ -1753,6 +1731,10 @@ public class VideoEditor extends Activity implements
 	public void showPrefs ()
 	{
 		Intent intent = new Intent(this, VideoPreferences.class);
+		intent.putExtra(Preferences.BIT_RATE, outBitRate);
+		intent.putExtra(Preferences.FRAME_RATE, outFrameRate);
+		intent.putExtra(Preferences.WIDTH, mediaPlayer.getVideoWidth());
+		intent.putExtra(Preferences.HEIGHT, mediaPlayer.getVideoHeight());
 		startActivityForResult(intent,0);
 		
 	}

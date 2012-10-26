@@ -1,20 +1,13 @@
 package org.witness.informacam.utils;
 
-import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.j3m.J3M.J3MManifest;
-import org.witness.informacam.storage.DatabaseHelper;
-import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Media.Manifest;
-import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.util.Log;
 
 public class MessageCenterUtility {

@@ -1,10 +1,13 @@
 package org.witness.informacam.j3m;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 
@@ -60,6 +63,7 @@ public class J3M {
 				root.mkdir();
 						
 			fileBytes = new byte[(int) file.length()];
+			//mode = Constants.J3M.Chunks.ALL((int) file.length());
 			mode = Constants.J3M.Chunks.EXTRA_EXTRA_EXTRA_LARGE;
 			
 			InputStream fis = new FileInputStream(file);
@@ -67,7 +71,9 @@ public class J3M {
     			offset += numRead;
     		fis.close();
     		
-    		chunk_num = (int) Math.ceil(fileBytes.length/mode) + 1;
+    		chunk_num = 1;
+    		if(mode != fileBytes.length)
+    			chunk_num = (int) Math.ceil(fileBytes.length/mode) + 1;
     		
     		j3mRoot = new File(root, Constants.J3M.DUMP_FOLDER);
     		if(!j3mRoot.exists())
@@ -109,13 +115,14 @@ public class J3M {
 			int offset = chunk_count * mode;
 			
 			byte[] j3mBytes = new byte[(int) Math.min(mode, fileBytes.length - offset)];
+			// if 
 			
 			// write offset + mode bytes to "blob" field as base 64 encoded string
 			System.arraycopy(fileBytes, offset, j3mBytes, 0, j3mBytes.length);
 			try {
 				chunk_description.put(Constants.J3M.Metadata.SOURCE, file.getName());
 				chunk_description.put(Constants.J3M.Metadata.INDEX, chunk_count);
-				chunk_description.put(Constants.J3M.Metadata.BLOB, Base64.encodeToString(j3mBytes, Base64.DEFAULT));
+				chunk_description.put(Constants.J3M.Metadata.BLOB, j3mBytes.length > Constants.J3M.Chunks.EXTRA_EXTRA_EXTRA_LARGE ? Constants.J3M.Chunks.TOO_LARGE_SENTENEL : Base64.encodeToString(j3mBytes, Base64.DEFAULT));
 				chunk_description.put(Constants.J3M.Metadata.LENGTH, chunk_description.getString(Constants.J3M.Metadata.BLOB).length());
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
@@ -125,11 +132,41 @@ public class J3M {
 			
 			// save output
 			try {
-				FileWriter output = new FileWriter(new File(j3mRoot, chunk_count + "_.j3mtorrent"));
-				output.write(chunk_description.toString());
+				byte[] chunk_description_bytes = null;
+				if(chunk_description.getString(Constants.J3M.Metadata.BLOB).equals(Constants.J3M.Chunks.TOO_LARGE_SENTENEL)) {
+					
+					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+					chunk_description.put(Constants.J3M.Metadata.LENGTH, j3mBytes.length);
+					String cd = chunk_description.toString();
+					
+					ByteBuffer buf = ByteBuffer.allocateDirect((chunk_description.toString().length() + j3mBytes.length) - Constants.J3M.Chunks.TOO_LARGE_SENTENEL.length());
+					buf.put(cd.substring(0, cd.indexOf(Constants.J3M.Chunks.TOO_LARGE_SENTENEL)).getBytes());
+					
+					InputStream is = new ByteArrayInputStream(j3mBytes);
+					int b;
+					while((b = is.read()) != -1)
+						buf.put((byte) b);
+					
+					buf.put(cd.substring(cd.indexOf(Constants.J3M.Chunks.TOO_LARGE_SENTENEL) + Constants.J3M.Chunks.TOO_LARGE_SENTENEL.length()).getBytes());
+					buf.flip();
+					
+					chunk_description_bytes = buf.array();
+				} else
+					 chunk_description_bytes = chunk_description.toString().getBytes();
+				
+				FileOutputStream output = new FileOutputStream(new File(j3mRoot, chunk_count + "_.j3mtorrent"));
+				output.write(chunk_description_bytes);
 				output.flush();
 				output.close();
 			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+				return false;
+			} catch(OutOfMemoryError e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+				return false;
+			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 				return false;
@@ -167,7 +204,6 @@ public class J3M {
 		for(File f : j3mRoot.listFiles()) {
 			size += f.length();
 		}
-		Log.d(LOG, "file contents: " + size);
 		return size;
 	}
 	
@@ -191,7 +227,6 @@ public class J3M {
 				put(Media.Keys.J3M_BASE, root.getName());
 				put(Media.Manifest.Keys.TOTAL_CHUNKS, j3mpackage.chunk_num);
 				put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
-				Log.d(Constants.J3M.LOG, "created new manifest:\n" + toString());
 			} catch (JSONException e) {
 				Log.e(Constants.J3M.LOG, e.toString()); 
 				e.printStackTrace();
@@ -218,7 +253,6 @@ public class J3M {
 			SQLiteDatabase db = DatabaseService.getInstance().getDb();
 			
 			try {
-				Log.d(Constants.J3M.LOG, "saved over manifest?:\n" + this.toString());
 				
 				ContentValues cv = new ContentValues();
 				cv.put(Media.Keys.J3M_MANIFEST, toString());
@@ -230,7 +264,7 @@ public class J3M {
 					h.postDelayed(new Runnable() {
 						@Override
 						public void run() {
-							Log.d(Constants.J3M.LOG, "confirm: GREAT");
+							
 						}
 					}, 3000);
 				}

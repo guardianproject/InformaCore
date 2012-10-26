@@ -12,7 +12,6 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.RectF;
-import android.util.Log;
 
 public class CrowdPixelizeObscure implements RegionProcesser {
 

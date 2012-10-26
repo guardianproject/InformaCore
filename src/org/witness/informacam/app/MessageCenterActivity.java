@@ -95,13 +95,6 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 				fw.flush();
 				fw.close();
 				
-				h.post(new Runnable() {
-					@Override
-					public void run() {
-						// get the item that 
-					}
-				});
-				
 			} catch(JSONException e) {
 				Log.e(App.LOG, e.toString());
 				e.printStackTrace();
@@ -125,7 +118,6 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 				byte[] jmd = null;
 				try {
 					jmd = media.getBlob(media.getColumnIndex(Media.Keys.J3M_MANIFEST));
-					Log.d(Transport.LOG, new String(jmd));
 				} catch(Exception e) {
 					media.moveToNext();
 					continue;
@@ -138,7 +130,6 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 						final StringBuffer sb = new StringBuffer();
 						int oldMessages = 0;
 						for(File msg : receivedMessages) {
-							Log.d(App.LOG, "a msg: " + msg.getName());
 							if(!msg.getName().equals(".") && !msg.getName().equals("..")) {
 								sb.append(",\"" + msg.getName() + "\"");
 								oldMessages++;
@@ -158,7 +149,7 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 						
 						final int _oldMessages = oldMessages;
 						
-						new Thread(new Runnable() {
+						h.post(new Runnable() {
 							@Override
 							public void run() {
 								try {
@@ -172,10 +163,8 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 										postData.put(Transport.Keys.READ_ARRAY, "[" + sb.toString().substring(1) + "]");
 									
 									String query = HttpUtility.executeHttpsPost(MessageCenterActivity.this, url, postData, Transport.MimeTypes.TEXT, pkc12Id);
-									Log.d(App.LOG, query);
 									
 									JSONObject res = ((JSONObject) new JSONTokener(query).nextValue()).getJSONObject(Transport.Keys.RES);
-									Log.d(App.LOG, res.toString());
 									
 									if(res.getString(Transport.Keys.RESULT).equals(Transport.Result.OK) && res.has(Transport.Keys.BUNDLE))
 										parseMessages(j3mManifest, res.getJSONObject(Transport.Keys.BUNDLE).getJSONArray(Transport.Keys.MESSAGES), _oldMessages);
@@ -184,7 +173,7 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 									e.printStackTrace();
 								}
 							}
-						}).start();
+						});
 						
 					}
 					
@@ -211,7 +200,7 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 	@Override
 	public void onRouted() {
 		h = new Handler();
-		getMessages();
+		//getMessages();
 	}
 
 	@Override

@@ -24,4 +24,10 @@
 		android:entries="@array/default_image_handling"
 		android:entryValues="@array/default_image_handling_values"
 		android:key="informa.DefaultImageHandling" />
+	<ListPreference
+	    android:title="@string/preferences_encrypt_label"
+	    android:summary="@string/preferences_encrypt_text"
+	    android:entries="@array/enable_encryption_short"
+	    android:entryValues="@array/enable_encryption_values"
+	    android:key="informa.UseEncryption" />
 </PreferenceScreen>

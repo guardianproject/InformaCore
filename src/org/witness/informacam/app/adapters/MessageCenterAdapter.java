@@ -4,23 +4,15 @@ import info.guardianproject.iocipher.File;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.witness.informacam.R;
-import org.witness.informacam.app.adapters.MediaManagerAdapter.OnMediaFocusedListener;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Time;
-import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Media;
-import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.MessageCenterUtility.MessageCenterDisplay;
 
 import android.app.Activity;
-import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View.OnLongClickListener;
 import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
