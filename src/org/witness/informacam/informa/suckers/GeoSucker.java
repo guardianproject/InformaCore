@@ -7,10 +7,12 @@ import org.json.JSONObject;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.informa.SensorLogger;
+import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Suckers;
 
 import android.content.Context;
 import android.location.Criteria;
+import android.location.GpsStatus.NmeaListener;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -21,6 +23,7 @@ import android.util.Log;
 public class GeoSucker extends SensorLogger implements LocationListener {
 	LocationManager lm;
 	Criteria criteria;
+	long currentNmeaTime;
 	
 	@SuppressWarnings("unchecked")
 	public GeoSucker(InformaService is) {
@@ -34,6 +37,16 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		
 		if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER))
 			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+		
+		lm.addNmeaListener(new NmeaListener() {
+
+			@Override
+			public void onNmeaReceived(long timestamp, String nmea) {
+				//Log.d(Constants.Time.LOG, "but nmea says: " + timestamp);
+				currentNmeaTime = timestamp;
+			}
+			
+		});
 		
 		criteria = new Criteria();
 		criteria.setAccuracy(Criteria.NO_REQUIREMENT);
@@ -62,6 +75,10 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 	public LogPack forceReturn() {
 		double[] loc = updateLocation();
 		return new LogPack(Suckers.Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+	}
+	
+	public long getTime() {
+		return currentNmeaTime;
 	}
 	
 	private double[] updateLocation() {

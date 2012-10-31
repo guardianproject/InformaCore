@@ -183,7 +183,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void inflateMediaCache(String cacheFile) {
 		try {
 			String c = new String(IOUtility.getBytesFromFile(IOCipherService.getInstance().getFile(cacheFile)));
-			Log.d(Storage.LOG, c);
 			JSONObject cObj = (JSONObject) new JSONTokener(c).nextValue();
 			JSONArray caches = cObj.getJSONArray("cache");
 
@@ -446,6 +445,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	private void pushToSucker(SensorLogger<?> sucker, LogPack logPack) throws JSONException {
 		if(sucker.getClass().equals(PhoneSucker.class))
 			_phone.sendToBuffer(logPack);
+	}
+	
+	public long getCurrentTime() {
+		return ((GeoSucker) _geo).getTime();
+	}
+	
+	public void onUpdate(LogPack logPack) {
+		onUpdate(((GeoSucker) _geo).getTime(), logPack);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -871,7 +878,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 					BluetoothDevice bd = (BluetoothDevice) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 					LogPack logPack = new LogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());
 					logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());
-					suckerCache.put(System.currentTimeMillis(), logPack);
+					
+					suckerCache.put(((GeoSucker) _geo).getTime(), logPack);
 				} catch(JSONException e) {}
 			}
 

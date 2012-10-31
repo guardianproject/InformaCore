@@ -183,9 +183,12 @@ public class AddressBookUtility {
 	public static boolean installICTDPackage(Activity a, File _ictd, boolean isEncrypted) {
 		boolean result = false;
 		File ictd = _ictd;
+		File encryptedICTD = null;
+		
 		if(isEncrypted) {
 			// decrypt file
 			ictd = KeyUtility.decrypt(ictd);
+			encryptedICTD = ictd;
 		}
 
 		// unzip file to a folder
@@ -311,6 +314,9 @@ public class AddressBookUtility {
 
 			ccr = new ClientCertificateResponse(certBytes, trustedDestinationURL, ksr.getLong(PGP.Keys.PGP_KEY_ID), clientPassword);
 			CertificateUtility.storeClientCertificate(dh, db, a, ccr, certBytes);
+			
+			if(encryptedICTD != null)
+				encryptedICTD.delete();
 			
 			for(File keyFile : ictd.listFiles()[0].listFiles()) {
 				keyFile.delete();

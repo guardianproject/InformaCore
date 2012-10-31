@@ -11,6 +11,16 @@ import android.os.Environment;
 import android.provider.BaseColumns;
 
 public class Constants {
+	public final static class Time {
+		public final static String LOG = "**************** InformaCam: TIME ****************";
+		public static final class Keys {
+
+			public static final String RELATIVE_TIME = "mediaRelativeTimestamp";
+			
+		}
+	}
+	
+	
 	public final static class App {
 		public static final String LOG = "**************** InformaCam:UI Thread ****************";
 		public static final class Services {
@@ -355,6 +365,7 @@ public class Constants {
 			public final static String USE_PROXY = "useProxy";
 			public final static String DISPLAY_NAME = Informa.Keys.Owner.DISPLAY_NAME;
 			public final static String DEVICE_EMAIL = "ownerEmailAddress";
+			public static final String GLOBAL_TIME = "globalTimeFromDevice";
 		}
 		
 		public final static class Device {
@@ -479,6 +490,7 @@ public class Constants {
 			public final static int REGION_GENERATED = 274;
 			public final static int MEDIA_SAVED = 275;
 			public final static int SENSOR_PLAYBACK = 271;
+			public final static int TIMESTAMPS_RESOLVED= 270;
 			
 			public final static class Keys {
 				public final static String USER_ACTION = "userActionReported";

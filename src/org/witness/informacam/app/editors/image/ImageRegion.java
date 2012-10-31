@@ -180,7 +180,7 @@ public class ImageRegion implements OnActionItemClickListener
 			ImageEditor imageEditor, 
 			float left, float top, 
 			float right, float bottom, Matrix matrix) {
-		this(imageEditor, left, top, right, bottom, matrix, null, false, System.currentTimeMillis());
+		this(imageEditor, left, top, right, bottom, matrix, null, false, InformaService.getInstance().getCurrentTime());
 	}
 	
 	

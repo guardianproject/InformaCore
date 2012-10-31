@@ -31,7 +31,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.BaseColumns;
 
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -78,6 +77,8 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		new_contact.setOnClickListener(this);
 		
 		address_list = (ListView) findViewById(R.id.address_book_list);
+		
+		mProgressDialog = new ProgressDialog(this);
 	}
 	
 	private void initLayoutForChooser() {
@@ -133,6 +134,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 			finish();
 		else if(v == new_contact) {
 			AddressBookImporterDialog abid = new AddressBookImporterDialog(AddressBookActivity.this);
+			mProgressDialog = ProgressDialog.show(AddressBookActivity.this, "", "please wait...", false, false);
 			abid.show();
 			
 			//Toast.makeText(this, getString(R.string.address_book_chooser_placeholder), Toast.LENGTH_LONG).show();
@@ -207,10 +209,10 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 					
 			}
 		} else if(obj instanceof File) {
+			
 			h.post(new Runnable() {
 				@Override
 				public void run() {
-					mProgressDialog = ProgressDialog.show(AddressBookActivity.this, "", "please wait...", false, false);
 					boolean installed = AddressBookUtility.installICTDPackage(AddressBookActivity.this, (File) obj);
 					mProgressDialog.dismiss();
 					if(installed) {

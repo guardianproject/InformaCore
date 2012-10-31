@@ -28,6 +28,7 @@ public class SensorLogger<T> {
 		
 	public interface OnUpdateListener {
 		public void onUpdate(long timestamp, LogPack logPack);
+		public void onUpdate(LogPack logPack);
 	}
 	
 	public SensorLogger(InformaService is) {
@@ -98,6 +99,7 @@ public class SensorLogger<T> {
 
 	public void sendToBuffer(LogPack logPack) throws JSONException {
 		logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
-		((OnUpdateListener) is).onUpdate(System.currentTimeMillis(), logPack); 
+		// TODO: LOL put Nmea time
+		((OnUpdateListener) is).onUpdate(logPack); 
 	}
 }

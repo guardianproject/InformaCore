@@ -172,6 +172,7 @@ public class IOUtility {
 			return getVideoMetadata(mediaCaptureUri, absolutePath, c);
 	}
 	
+	// TODO: THIS WILL HAVE TO BE RESOLVED WITH GPS TIME.
 	public final static LogPack getVideoMetadata(Uri uri, String filepath, Context c) {
 		try {
 			LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);

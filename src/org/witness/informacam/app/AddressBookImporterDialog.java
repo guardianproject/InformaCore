@@ -109,8 +109,8 @@ public class AddressBookImporterDialog extends AlertDialog {
 							
 							@Override
 							public void onClick(View v) {
-								((OnChoosableChosenListener) a).onChoice(position, file);
 								abid.dismiss();
+								((OnChoosableChosenListener) a).onChoice(position, file);
 							}
 						});
 					}

@@ -83,8 +83,8 @@ public class InformaChoosableAlert extends AlertDialog {
 
 				@Override
 				public void onClick(View v) {
-					((OnChoosableChosenListener) context).onChoice(position, obj);
 					ica.dismiss();
+					((OnChoosableChosenListener) context).onChoice(position, obj);
 				}
 				
 			});

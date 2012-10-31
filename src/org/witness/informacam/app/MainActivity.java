@@ -27,12 +27,14 @@ import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Informa;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 import org.witness.informacam.utils.Constants.Media.Manifest;
+import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
@@ -238,7 +240,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     
     private void launchMediaManager() {
     	mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
-    	
     	Intent intent = new Intent(this, MediaManagerActivity.class);
     	startActivityForResult(intent, App.Main.FROM_MEDIA_MANAGER);
     }
@@ -258,8 +259,9 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
     }
     
-    private void launchMediaCapture(String tempFile) {
+    private void launchMediaCapture(final String tempFile) {
     	mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
+    	
     	
     	if(!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
     		Toast.makeText(this, getResources().getString(R.string.error_media_mounted), Toast.LENGTH_LONG).show();
@@ -273,19 +275,35 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		}
     	});
     	
-    	ContentValues values = new ContentValues();
-    	values.put(MediaStore.Images.Media.TITLE, tempFile);
-    	values.put(MediaStore.Images.Media.DESCRIPTION, tempFile);
+    	h.postDelayed(new Runnable() {
+    		@Override
+    		public void run() {
+    			try {
+    	    		LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.TIMESTAMPS_RESOLVED);
+    				logPack.put(Constants.Time.Keys.RELATIVE_TIME, System.currentTimeMillis());
+    				InformaService.getInstance().onUpdate(logPack);
+    				
+    				ContentValues values = new ContentValues();
+    		    	values.put(MediaStore.Images.Media.TITLE, tempFile);
+    		    	values.put(MediaStore.Images.Media.DESCRIPTION, tempFile);
+    		    	
+    		    	mediaCaptureFile = new File(Storage.FileIO.DUMP_FOLDER, tempFile);
+    		    	
+    		    	if(tempFile.equals(Storage.FileIO.IMAGE_TMP)) {
+    		    		mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
+    		    		captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mediaCaptureUri);
+    		    	}
+    		    	
+    		    	
+    		    	startActivityForResult(captureIntent, App.Main.FROM_MEDIA_CAPTURE);
+    			} catch (JSONException e) {
+    				Log.e(App.LOG, e.toString());
+    				e.printStackTrace();
+    			}
+    		}
+    	}, 200);
     	
-    	mediaCaptureFile = new File(Storage.FileIO.DUMP_FOLDER, tempFile);
     	
-    	if(tempFile.equals(Storage.FileIO.IMAGE_TMP)) {
-    		mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
-    		captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mediaCaptureUri);
-    	}
-    	
-    	
-    	startActivityForResult(captureIntent, App.Main.FROM_MEDIA_CAPTURE);
     }
     
     @Override

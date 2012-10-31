@@ -61,7 +61,7 @@ public class RegionTrail {
 	
 	public RegionTrail (int startTime, int endTime, VideoEditor videoEditor)
 	{
-		this(startTime, endTime, videoEditor, null, null, false, System.currentTimeMillis());
+		this(startTime, endTime, videoEditor, null, null, false, InformaService.getInstance().getCurrentTime());
 	}
 	
 	public RegionTrail(int startTime, int endTime, VideoEditor videoEditor, String obscureMode, List<ObscureRegion> videoTrail, boolean fromCache, long timestamp) {
