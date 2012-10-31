@@ -1,6 +1,9 @@
 package org.witness.informacam.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import android.media.ExifInterface;
@@ -288,10 +291,12 @@ public class Constants {
 			public final static String MIME_TYPE_MP4 = "video/mp4";
 			public final static String MIME_TYPE_MKV = "video/mkv";
 			public final static String J3M_TORRENT = J3M.TORRENT_MIME_TYPE;
+			public static final String ICTD = ".ictd";
 			
 			public final static int IMAGE = 400;
 			public final static int VIDEO = 401;
 			public final static Map<Integer, String> Names = new HashMap<Integer, String>();
+			
 			static {
 				Names.put(IMAGE, "Image");
 				Names.put(VIDEO, "Video");
@@ -641,7 +646,18 @@ public class Constants {
 		public final static class IOCipher {
 			public final static String STORE = "iocipher.db";
 			public static final String ROOT = "informaCamIoCipher";
+			public static final String DUMP_FOLDER = "informaCam";
 			
+		}
+		
+		public final static class ICTD {
+			public final static List<String> ZIP_OMITABLES;
+			static {
+				List<String> zip_omitables = new ArrayList<String>();
+				zip_omitables.add("__MACOSX");
+				zip_omitables.add("DS_Store");
+				ZIP_OMITABLES = Collections.unmodifiableList(zip_omitables);
+			}
 		}
 	}
 	

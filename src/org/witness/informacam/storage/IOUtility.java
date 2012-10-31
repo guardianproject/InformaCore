@@ -9,8 +9,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import org.bouncycastle.util.encoders.Base64;
@@ -301,5 +305,83 @@ public class IOUtility {
 	    	} else
 	    		return null;
     	}
+	}
+
+	public static Object unzip(File ictd) {
+		return unzip(ictd, false);
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static Object unzip(File ictd, boolean toIOCipher) {
+		Object rootFolder = null;
+		
+		if(toIOCipher) {
+			rootFolder = (info.guardianproject.iocipher.File) IOCipherService.getInstance().getFile(Storage.IOCipher.DUMP_FOLDER + "/" + ictd.getName().replace(".", "_"));
+			if(!((info.guardianproject.iocipher.File) rootFolder).exists())
+				((info.guardianproject.iocipher.File) rootFolder).mkdir();
+		} else {
+			rootFolder = (java.io.File) new File(Storage.FileIO.DUMP_FOLDER, ictd.getName().replace(".", "_"));
+			if(!((java.io.File) rootFolder).exists())
+				((java.io.File) rootFolder).mkdir();
+		}
+		try {
+			ZipFile zipFile = new ZipFile(ictd);
+			Enumeration entries = zipFile.entries();
+			while(entries.hasMoreElements()) {
+				ZipEntry entry = (ZipEntry) entries.nextElement();
+				
+				boolean isOmitable = false;
+				for(String omit : Storage.ICTD.ZIP_OMITABLES) {
+					if(entry.getName().contains(omit) || String.valueOf(entry.getName().charAt(0)).compareTo(".") == 0) {
+						isOmitable = true;
+					}
+					
+					if(isOmitable)
+						break;
+				}
+				
+				if(isOmitable)
+					continue;
+				
+				if(entry.isDirectory()) {
+					if(toIOCipher) {
+						IOCipherService.getInstance().getFile((info.guardianproject.iocipher.File) rootFolder, entry.getName());
+					} else {
+						(new java.io.File((java.io.File) rootFolder, entry.getName())).mkdir();
+					}
+					
+					continue;
+				}
+				
+				BufferedOutputStream bos = null;
+				if(toIOCipher) {
+					info.guardianproject.iocipher.File entryFile = IOCipherService.getInstance().getFile((info.guardianproject.iocipher.File) rootFolder, entry.getName());
+					bos = new BufferedOutputStream(new info.guardianproject.iocipher.FileOutputStream(entryFile));
+				} else {
+					java.io.File entryFile = new java.io.File((java.io.File) rootFolder, entry.getName());
+					bos = new BufferedOutputStream(new java.io.FileOutputStream(entryFile));
+				}
+				
+				InputStream is = zipFile.getInputStream(entry);
+				
+				byte[] buf = new byte[1024];
+				int ch;
+				while((ch = is.read(buf)) >= 0)
+					bos.write(buf, 0, ch);
+				
+				is.close();
+				bos.close();
+			}
+			
+			zipFile.close();
+		} catch (ZipException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return rootFolder;
 	}
 }

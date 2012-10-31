@@ -33,6 +33,7 @@
     <string name="mainactivity_log_out">Log Out</string>
     <string name="mainactivity_log_in">Log In</string>
     <string name="mainactivity_refresh">Refresh Uploads</string>
+    <string name="mainactivity_export_public_key">Export Device Key</string>
 
     <!-- IMAGE/VIDEO EDITORS -->
     <string name="saving">Saving\u2026</string>
@@ -104,6 +105,7 @@
     <string name="address_book_fingerprint">Fingerprint:</string>
     <string name="address_book_creation_date">Created on:</string>
     <string name="address_book_expiry_date">Expires on:</string>
+    <string name="address_book_select_ictd">Select an .ictd file\u2026</string>
 
     <!-- MEDIA MANAGER -->
     <string name="media_manager_taken_on">Taken on </string>

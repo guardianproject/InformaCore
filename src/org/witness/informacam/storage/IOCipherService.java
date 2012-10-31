@@ -87,6 +87,12 @@ public class IOCipherService extends Service {
     	if(c != null && c.moveToFirst()) {
     		vfs.mount(c.getString(c.getColumnIndex(Device.Keys.AUTH_KEY)));
     		c.close();
+    		
+    		
+    		File dumpFolder = getFile(Storage.IOCipher.DUMP_FOLDER);
+    		if(!dumpFolder.exists())
+    			dumpFolder.mkdir();
+    		
     		ioCipherService = this;
     	} else {
     		vfs = null;
@@ -147,10 +153,12 @@ public class IOCipherService extends Service {
 						try {
 							media.add((JSONObject) new JSONTokener(new String(IOUtility.getBytesFromFile(f))).nextValue());
 						} catch (JSONException e) {
+							Log.d(Storage.LOG, "cannot parse as json:\n" + new String(IOUtility.getBytesFromFile(f)));
 							Log.e(Storage.LOG, e.toString());
 							e.printStackTrace();
 							continue;
 						} catch (ClassCastException e) {
+							Log.d(Storage.LOG, "cannot parse as json:\n" + new String(IOUtility.getBytesFromFile(f)));
 							Log.e(Storage.LOG, e.toString());
 							e.printStackTrace();
 							continue;

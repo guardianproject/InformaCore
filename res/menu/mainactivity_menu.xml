@@ -2,6 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/menu_refresh" android:title="@string/mainactivity_refresh"
         android:icon="@drawable/menu_refresh_selector" />
+    <item android:id="@+id/menu_export_public_key" android:title="@string/mainactivity_export_public_key"
+        android:icon="@drawable/menu_export_key_selector" />
 	<item android:id="@+id/extras_about" android:title="@string/mainactivity_about"
 		android:icon="@drawable/menu_about_selector" />
 	<item android:id="@+id/extras_preferences" android:title="@string/mainactivity_preferences"

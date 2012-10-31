@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.ffmpeg.android.BinaryInstaller;
-import org.ffmpeg.android.ShellUtils.ShellCallback;
+import org.ffmpeg.android.ShellUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
@@ -76,6 +76,10 @@ public class VideoConstructor {
 	public interface VideoConstructorListener {
 		public void onExportVersionCreated(java.io.File versionForExport, String clonePath);
 	}
+	
+	public interface VideoConstructorShellListener {
+		public void onUpdate(String msg);
+	}
 
 	public VideoConstructor(Context _context) throws FileNotFoundException, IOException {
 		context = _context;
@@ -94,7 +98,7 @@ public class VideoConstructor {
 		return videoConstructor;
 	}
 	
-	private static void execProcess(String[] cmds, ShellCallback sc) {
+	private static void execProcess(String[] cmds, ShellUtils.ShellCallback sc) {
 			ProcessBuilder pb = new ProcessBuilder(cmds);
 			pb.redirectErrorStream(true);
 	    	Process process;
@@ -140,7 +144,7 @@ public class VideoConstructor {
 	
 	public void processVideo(File redactSettingsFile, 
 			ArrayList<RegionTrail> obscureRegionTrails, File inputFile, File outputFile, String format, int mDuration,
-			int iWidth, int iHeight, int oWidth, int oHeight, int frameRate, int kbitRate, String vcodec, String acodec, ShellCallback sc) throws Exception {
+			int iWidth, int iHeight, int oWidth, int oHeight, int frameRate, int kbitRate, String vcodec, String acodec, ShellUtils.ShellCallback sc) throws Exception {
 		
 		float widthMod = ((float)oWidth)/((float)iWidth);
 		float heightMod = ((float)oHeight)/((float)iHeight);
@@ -156,7 +160,7 @@ public class VideoConstructor {
     	String ffmpegBin = new File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " +ffmpegBin);
     	
-    	String[] ffmpegCommand = {ffmpegBin, "-v", "10", "-y", "-i", inputFile.getPath(), 
+    	String[] ffmpegCommand = {ffmpegBin, "-v", "verbose", "-y", "-i", inputFile.getPath(), 
 				"-vcodec", vcodec, 
 				"-b", kbitRate+"k", 
 				"-s",  oWidth + "x" + oHeight, 
@@ -394,7 +398,7 @@ public class VideoConstructor {
 		Log.d(LOGTAG, "command to ffmpeg: " + sb.toString());
 		
 		try {
-			execProcess(ffmpegCommand, new ShellCallback ()
+			execProcess(ffmpegCommand, new ShellUtils.ShellCallback ()
 			{
 
 				@Override

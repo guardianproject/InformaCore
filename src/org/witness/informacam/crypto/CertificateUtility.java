@@ -46,6 +46,17 @@ public class CertificateUtility {
 		DatabaseHelper dh = new DatabaseHelper(a);
 		SQLiteDatabase db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(a).getString(Settings.Keys.CURRENT_LOGIN, ""));
 		
+		result = storeClientCertificate(dh, db, a, ccr, certificate);
+		
+		db.close();
+		dh.close();
+		
+		return result;
+	}
+	
+	public static final boolean storeClientCertificate(DatabaseHelper dh, SQLiteDatabase db, Activity a, ClientCertificateResponse ccr, byte[] certificate) {
+		boolean result = false;
+		
 		ContentValues cv = new ContentValues();
 
 		dh.setTable(db, Tables.Keys.KEYRING);
@@ -61,14 +72,24 @@ public class CertificateUtility {
 			e.printStackTrace();
 		}
 		
-		db.close();
-		dh.close();
 		return result;
 	}
 	
-	public static final void storeCertificate(Activity a, byte[] certificate) {
+	public static final boolean storeCertificate(Activity a, byte[] certificate) {
+		boolean result = false;
 		DatabaseHelper dh = new DatabaseHelper(a);
 		SQLiteDatabase db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(a).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		
+		result = storeCertificate(dh, db, a, certificate);
+		
+		db.close();
+		dh.close();
+		
+		return result; 
+	}
+	
+	public static final boolean storeCertificate(DatabaseHelper dh, SQLiteDatabase db, Activity a, byte[] certificate) {
+		boolean result = false;
 		
 		byte[] keysStored = null;
 		long lastUpdate = System.currentTimeMillis();
@@ -82,7 +103,7 @@ public class CertificateUtility {
 			pwd = c.getString(c.getColumnIndex(Settings.Device.Keys.AUTH_KEY));
 			c.close();
 		} else
-			return;
+			return result;
 		
 		dh.setTable(db, Tables.Keys.KEYSTORE);
 		Cursor d = dh.getValue(db, new String[] {
@@ -133,6 +154,8 @@ public class CertificateUtility {
 			else
 				db.update(dh.getTable(), cv, BaseColumns._ID + " = ?", new String[] {Long.toString(1)});
 			
+			result = true;
+			
 		} catch(CertificateException e) {
 			Log.e(Crypto.LOG, "certificate exception: " + e.toString());
 			e.printStackTrace();
@@ -148,8 +171,7 @@ public class CertificateUtility {
 			e.printStackTrace();
 		}
 		
-		db.close();
-		dh.close();
+		return result;
 	}
 	
 }

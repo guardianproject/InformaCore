@@ -1,11 +1,19 @@
 package org.witness.informacam.crypto;
 
+import info.guardianproject.iocipher.FileInputStream;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -28,12 +36,16 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
@@ -47,11 +59,14 @@ import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.DatabaseService;
+import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.transport.HttpUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Crypto.PGP;
 import org.witness.informacam.utils.Constants.Settings.Device;
@@ -181,8 +196,22 @@ public class KeyUtility {
 		return key;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static boolean installNewKey(Activity c, KeyServerResponse ksr, AddressBookDisplay abd) {
+		boolean result = false;
+		DatabaseHelper dh = new DatabaseHelper(c);
+		SQLiteDatabase db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(c).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		
+		result = installNewKey(dh, db, c, ksr, abd);
+		
+		db.close();
+		dh.close();
+		
+		return result;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static boolean installNewKey(DatabaseHelper dh, SQLiteDatabase db, Activity c, KeyServerResponse ksr, AddressBookDisplay abd) {
+		boolean result = false;
 		ContentValues key = new ContentValues();
 		Iterator<String> kIt = ksr.keys();
 		while(kIt.hasNext()) {
@@ -207,9 +236,6 @@ public class KeyUtility {
 			}
 		}
 		
-		DatabaseHelper dh = new DatabaseHelper(c);
-		SQLiteDatabase db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(c).getString(Settings.Keys.CURRENT_LOGIN, ""));
-		
 		dh.setTable(db, Tables.Keys.KEYRING);
 		db.insert(dh.getTable(), null, key);
 		
@@ -228,12 +254,12 @@ public class KeyUtility {
 				
 				abd.remove(AddressBook.Keys.CONTACT_PHOTO);
 				db.insert(dh.getTable(), null, td);
+				result = true;
 			} catch(JSONException e){}
 		}
 		
-		db.close();
-		dh.close();
-		return true;
+		
+		return result;
 	}
 	
 	private static String generatePassword(byte[] baseImage) throws NoSuchAlgorithmException {
@@ -354,8 +380,7 @@ public class KeyUtility {
 		dh.close();
 		return false;
 	}
-	
-	
+		
 	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
 		int buffSize = 1 <<16;
 		BouncyCastleProvider bc = new BouncyCastleProvider();
@@ -425,5 +450,165 @@ public class KeyUtility {
 			e.printStackTrace();
 		}
     	return null;
+	}
+
+	public static File exportPublicKey() {
+		File publicKeyFile = null;
+		DatabaseHelper dh = DatabaseService.getInstance().getHelper();
+		SQLiteDatabase db = DatabaseService.getInstance().getDb();
+		
+		dh.setTable(db, Tables.Keys.SETUP);
+		Cursor c = dh.getValue(db, new String[] {Settings.Device.Keys.SECRET_KEY}, BaseColumns._ID, 1L);
+		
+		if(c != null && c.moveToFirst()) {
+			PGPSecretKey sk = extractSecretKey(c.getBlob(c.getColumnIndex(Settings.Device.Keys.SECRET_KEY)));
+			PGPPublicKey pk = sk.getPublicKey();
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ArmoredOutputStream aos = new ArmoredOutputStream(baos);
+			
+			publicKeyFile = new File(Storage.FileIO.DUMP_FOLDER, new String(Hex.encode(pk.getFingerprint()) + ".asc"));
+			try {
+				aos.write(pk.getEncoded());
+				aos.flush();
+				aos.close();
+				
+				FileOutputStream fos = new FileOutputStream(publicKeyFile);
+				fos.write(baos.toByteArray());
+				fos.flush();
+				fos.close();
+				
+				baos.close();
+
+			} catch (IOException e) {
+				Log.e(Crypto.LOG, e.toString());
+				e.printStackTrace();
+			}
+			
+			c.close();
+		}
+		
+		return publicKeyFile;
+	}
+
+	
+	public static File decrypt(File file) {
+		File decryptedFile = new File(Storage.FileIO.DUMP_FOLDER, file.getName());
+		
+		try {
+			java.io.FileInputStream fis = new java.io.FileInputStream(file);
+			byte[] bytes = new byte[fis.available()];
+			fis.read(bytes);
+			fis.close();
+			
+			FileOutputStream fos = new FileOutputStream(decryptedFile);
+			fos.write(decrypt(bytes));
+			fos.flush();
+			fos.close();
+			
+			return decryptedFile;
+		} catch (FileNotFoundException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
+		
+	}
+	
+	@SuppressWarnings("deprecation")
+	public static byte[] decrypt(byte[] bytes) {
+		byte[] decryptedBytes = null;
+		PGPSecretKey sk = null;
+		PGPPrivateKey pk = null;
+		
+		try {
+			DatabaseHelper dh = DatabaseService.getInstance().getHelper();
+			SQLiteDatabase db = DatabaseService.getInstance().getDb();
+			BouncyCastleProvider bc = new BouncyCastleProvider();
+			
+			dh.setTable(db, Tables.Keys.SETUP);
+			Cursor c = dh.getValue(db, new String[] {Settings.Device.Keys.SECRET_KEY, Settings.Device.Keys.AUTH_KEY}, BaseColumns._ID, 1L);
+			if(c != null && c.moveToFirst()) {
+				sk = extractSecretKey(c.getBlob(c.getColumnIndex(Settings.Device.Keys.SECRET_KEY)));
+				pk = sk.extractPrivateKey(c.getString(c.getColumnIndex(Settings.Device.Keys.AUTH_KEY)).toCharArray(), bc);
+				c.close();
+			}
+			
+			if(sk == null || pk == null) {
+				Log.e(Crypto.LOG, "secret key or private key is null");
+				return null;
+			}
+			
+			InputStream is = PGPUtil.getDecoderStream(new ByteArrayInputStream(bytes));
+			
+			PGPObjectFactory pgpF = new PGPObjectFactory(is);
+			PGPEncryptedDataList edl;
+			
+			Object o = pgpF.nextObject();
+			
+			if(o instanceof PGPEncryptedDataList)
+				edl = (PGPEncryptedDataList) o;
+			else
+				edl = (PGPEncryptedDataList) pgpF.nextObject();
+			
+			Iterator it = edl.getEncryptedDataObjects();
+			PGPPublicKeyEncryptedData ed = null;
+			ed = (PGPPublicKeyEncryptedData) it.next();
+			if(ed == null) {
+				Log.e(Crypto.LOG, "No PGPPublicKeyEncryptedData found.");
+				return null;
+			}
+			
+			InputStream clearStream = ed.getDataStream(pk, bc);
+			pgpF = new PGPObjectFactory(clearStream);
+			
+			PGPLiteralData ld = null;
+			o = pgpF.nextObject();
+			try {
+				PGPCompressedData cd = (PGPCompressedData) o;
+				InputStream compressedStream = new BufferedInputStream(cd.getDataStream());
+				pgpF = new PGPObjectFactory(compressedStream);
+
+				Object message = pgpF.nextObject();
+
+				if(message instanceof PGPLiteralData) {
+					ld = (PGPLiteralData) message;
+				}
+			} catch(ClassCastException e) {
+				ld = (PGPLiteralData) o;
+			}
+			
+			if(ld == null)
+				return null;
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			BufferedOutputStream bos = new BufferedOutputStream(baos);
+			
+			InputStream ldis = ld.getInputStream();
+			int ch;
+			
+			while((ch = ldis.read()) >= 0)
+				bos.write(ch);
+			
+			bos.flush();
+			bos.close();
+			
+			decryptedBytes = baos.toByteArray();
+			baos.close();
+
+		} catch (IOException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (PGPException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		
+		return decryptedBytes;
 	}
 }

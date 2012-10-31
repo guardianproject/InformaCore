@@ -17,6 +17,7 @@ import org.witness.informacam.app.Eula.OnEulaAgreedTo;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.editors.image.ImageEditor;
 import org.witness.informacam.app.editors.video.VideoEditor;
+import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.LocalBinder;
@@ -436,10 +437,22 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	case R.id.menu_refresh:
     		refreshUploads();
     		return true;
+    	case R.id.menu_export_public_key:
+    		exportDeviceKey();
+    		return true;
     	default:
     		return false;
     	}
     }
+
+	private void exportDeviceKey() {
+		Intent export = new Intent()
+			.setAction(Intent.ACTION_SEND)
+			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(KeyUtility.exportPublicKey()))
+			.setType("*/*");
+		startActivity(export);
+		
+	}
 
 	private void doLogout() {
 		sp.edit().putString(Settings.Keys.CURRENT_LOGIN, Settings.Login.PW_EXPIRY).commit();		

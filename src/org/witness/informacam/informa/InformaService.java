@@ -183,6 +183,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void inflateMediaCache(String cacheFile) {
 		try {
 			String c = new String(IOUtility.getBytesFromFile(IOCipherService.getInstance().getFile(cacheFile)));
+			Log.d(Storage.LOG, c);
 			JSONObject cObj = (JSONObject) new JSONTokener(c).nextValue();
 			JSONArray caches = cObj.getJSONArray("cache");
 

@@ -1,5 +1,6 @@
 package org.witness.informacam.app;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,14 +25,13 @@ import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.app.ProgressDialog;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -50,7 +50,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	SQLiteDatabase db;
 	DatabaseHelper dh;
 	
-	SharedPreferences sp;
+	ProgressDialog mProgressDialog;
 	
 	boolean isSelecting = false;
 	ArrayList<AddressBookDisplay> addresses;
@@ -132,11 +132,10 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		if(v == navigation)
 			finish();
 		else if(v == new_contact) {
-			/*
-			Intent intent = new Intent(this, AddressBookChooserActivity.class);
-			startActivityForResult(intent, App.AddressBook.FROM_CONTACT_CHOOSER);
-			*/
-			Toast.makeText(this, getString(R.string.address_book_chooser_placeholder), Toast.LENGTH_LONG).show();
+			AddressBookImporterDialog abid = new AddressBookImporterDialog(AddressBookActivity.this);
+			abid.show();
+			
+			//Toast.makeText(this, getString(R.string.address_book_chooser_placeholder), Toast.LENGTH_LONG).show();
 		} else if(v == select_contact) {
 			List<Long> encryptList = new ArrayList<Long>();
 			for(AddressBookDisplay adr : addresses) {
@@ -162,16 +161,8 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	}
 	
 	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(resultCode == Activity.RESULT_OK && requestCode == App.AddressBook.FROM_CONTACT_CHOOSER) {
-			getAddresses();
-		}
-	}
-
-	@Override
 	public void onRouted() {
 		h = new Handler();
-		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		
 		dh = DatabaseService.getInstance().getHelper();
 		db = DatabaseService.getInstance().getDb();
@@ -195,26 +186,42 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 	}
 
 	@Override
-	public void onChoice(int which, Object obj) {
-		AddressBookDisplay abd = (AddressBookDisplay) obj;
-		switch(which) {
-		case AddressBook.Actions.DELETE_CONTACT:
-			try {
-				if(abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE)) {
-					AddressBookUtility.deleteContact(abd.getLong(BaseColumns._ID), abd.getString(AddressBook.Keys.CONTACT_EMAIL));
-					getAddresses();
-				} else {
-					Toast.makeText(this, getString(R.string.error_cannot_delete_contact), Toast.LENGTH_LONG).show();
+	public void onChoice(int which, final Object obj) {
+		if(obj instanceof AddressBookDisplay) {
+			AddressBookDisplay abd = (AddressBookDisplay) obj;
+			switch(which) {
+			case AddressBook.Actions.DELETE_CONTACT:
+				try {
+					if(abd.getBoolean(TrustedDestination.Keys.IS_DELETABLE)) {
+						AddressBookUtility.deleteContact(abd.getLong(BaseColumns._ID), abd.getString(AddressBook.Keys.CONTACT_EMAIL));
+						getAddresses();
+					} else {
+						Toast.makeText(this, getString(R.string.error_cannot_delete_contact), Toast.LENGTH_LONG).show();
+					}
+				} catch (JSONException e) {}
+				break;
+			case AddressBook.Actions.REFRESH_KEY:
+				break;
+			case AddressBook.Actions.VIEW_DETAILS:
+				break;
+					
+			}
+		} else if(obj instanceof File) {
+			h.post(new Runnable() {
+				@Override
+				public void run() {
+					mProgressDialog = ProgressDialog.show(AddressBookActivity.this, "", "please wait...", false, false);
+					boolean installed = AddressBookUtility.installICTDPackage(AddressBookActivity.this, (File) obj);
+					mProgressDialog.dismiss();
+					if(installed) {
+						getAddresses();
+					} else {
+						Toast.makeText(AddressBookActivity.this, "Could not install this.", Toast.LENGTH_LONG).show();
+					}
 				}
-			} catch (JSONException e) {}
-			break;
-		case AddressBook.Actions.REFRESH_KEY:
-			break;
-		case AddressBook.Actions.VIEW_DETAILS:
-			break;
-				
+			});
+			
 		}
-		
 	}
 
 }
