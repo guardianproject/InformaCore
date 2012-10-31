@@ -255,8 +255,19 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchEditor() throws IOException {
-    	editorIntent.setData(mediaCaptureUri);
-    	startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
+    	h.postDelayed(new Runnable() {
+    		@Override
+    		public void run() {
+    			if(informaService.getCurrentTime() <= 0) {
+    				Log.d(App.LOG, "GPS NOT READY YET...");
+    				h.postDelayed(this, 200);
+    				return;
+    			}
+    			
+    			editorIntent.setData(mediaCaptureUri);
+    			startActivityForResult(editorIntent, App.Main.FROM_EDITOR);
+    		}
+    	}, 200);
     }
     
     private void launchMediaCapture(final String tempFile) {

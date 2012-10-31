@@ -416,6 +416,7 @@ public class IOCipherService extends Service {
 					}
 					
 					manifest.put(Manifest.Keys.LAST_SAVED, lastSaved);
+					Log.d(Storage.LOG, manifest.toString());
 					
 					byte[] manifestBytes = manifest.toString().getBytes();
 					fos = new FileOutputStream(manifestFile);
