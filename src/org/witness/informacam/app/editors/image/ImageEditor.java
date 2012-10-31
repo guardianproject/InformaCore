@@ -184,11 +184,10 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		long timestampNow = System.currentTimeMillis();
 		LogPack logPack = new LogPack(CaptureEvent.Keys.TYPE, CaptureEvent.MEDIA_OPENED);
 		
 		InformaService.getInstance()
-			.onUpdate(timestampNow, logPack);
+			.onUpdate(logPack);
         
 		setContentView(R.layout.imageviewer);
 		

@@ -278,10 +278,16 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	h.postDelayed(new Runnable() {
     		@Override
     		public void run() {
+    			if(informaService.getCurrentTime() <= 0) {
+    				Log.d(App.LOG, "GPS NOT READY YET...");
+    				h.postDelayed(this, 200);
+    				return;
+    			}
+    			
     			try {
     	    		LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.TIMESTAMPS_RESOLVED);
     				logPack.put(Constants.Time.Keys.RELATIVE_TIME, System.currentTimeMillis());
-    				InformaService.getInstance().onUpdate(logPack);
+    				informaService.onUpdate(logPack);
     				
     				ContentValues values = new ContentValues();
     		    	values.put(MediaStore.Images.Media.TITLE, tempFile);
@@ -362,7 +368,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 				});
     			break;
     		case App.Main.FROM_EDITOR:
-    			// TODO: add to upload queue, restart informa...
     			if(mProgressDialog != null)
     				mProgressDialog.dismiss();
     			
@@ -537,7 +542,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 		@Override
 		public void onReceive(Context c, Intent i) {
 			if(App.Main.SERVICE_STARTED.equals(i.getAction())) {
-				// TODO: launches?
 			} else if(Transport.Errors.CONNECTION.equals(i.getAction())) {
 				Toast.makeText(MainActivity.this, getString(R.string.error_orbot_nonresponsive), Toast.LENGTH_LONG).show();
 			}

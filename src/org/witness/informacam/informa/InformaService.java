@@ -46,6 +46,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.Time;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 
 import com.google.common.cache.CacheBuilder;
@@ -178,6 +179,26 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			logPack.put(key, json.get(key));
 		}
 		return logPack;
+	}
+	
+	public long[] getInitialGPSTimestamp() {
+		long[] relativeTimestamps = new long[2];
+		try {
+			Entry<Long, LogPack> initialTimestamp = getAllEventsByTypeWithTimestamp(CaptureEvent.TIMESTAMPS_RESOLVED, annotationCache).iterator().next();
+			Log.d(Storage.LOG, initialTimestamp.toString());
+			relativeTimestamps[0] = initialTimestamp.getKey();
+			relativeTimestamps[1] = initialTimestamp.getValue().getLong(Time.Keys.RELATIVE_TIME);
+		} catch (JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
+		return relativeTimestamps;
 	}
 
 	public void inflateMediaCache(String cacheFile) {
@@ -452,7 +473,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	public void onUpdate(LogPack logPack) {
-		onUpdate(((GeoSucker) _geo).getTime(), logPack);
+		long ts = ((GeoSucker) _geo).getTime();
+		onUpdate(ts, logPack);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -588,6 +610,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
+					// TODO: GPS TIME PLS
 					SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.Media.DateFormats.EXPORT_DATE_FORMAT);
 					Date date = new Date();
 					String dateString = dateFormat.format(date);

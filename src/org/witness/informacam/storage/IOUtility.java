@@ -28,6 +28,7 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
+import org.witness.informacam.utils.Time;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -183,7 +184,7 @@ public class IOUtility {
 	    	Cursor videoCursor = c.getContentResolver().query(uri, columnsToSelect, null, null, null );
 	    	if (videoCursor != null && videoCursor.getCount() == 1 ) {
 		        videoCursor.moveToFirst();
-		        logPack.put(Exif.TIMESTAMP, videoCursor.getString(videoCursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN)));
+		        logPack.put(Exif.TIMESTAMP, Time.resolveTimestampWithGPSTime(videoCursor.getString(videoCursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN))));
 		        
 		        videoCursor.close();
 	    	}
@@ -220,7 +221,7 @@ public class IOUtility {
 			LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.METADATA_CAPTURED);
 			ExifInterface ei = new ExifInterface(filepath);
 			
-			logPack.put(Exif.TIMESTAMP, ei.getAttribute(Exif.TIMESTAMP));
+			logPack.put(Exif.TIMESTAMP, Time.resolveTimestampWithGPSTime(ei.getAttribute(Exif.TIMESTAMP)));
 			logPack.put(Exif.APERTURE, ei.getAttribute(Exif.APERTURE));
 			logPack.put(Exif.EXPOSURE, ei.getAttribute(Exif.EXPOSURE));
 			logPack.put(Exif.FLASH, ei.getAttributeInt(Exif.FLASH, Informa.Keys.NOT_REPORTED));

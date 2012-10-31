@@ -233,10 +233,8 @@ public class VideoEditor extends Activity implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		long timestampNow = System.currentTimeMillis();
 		LogPack logPack = new LogPack(CaptureEvent.Keys.TYPE, CaptureEvent.MEDIA_OPENED);
-		
-		InformaService.getInstance().onUpdate(timestampNow, logPack);
+		InformaService.getInstance().onUpdate(logPack);
 
 		setContentView(R.layout.videoeditor);
 

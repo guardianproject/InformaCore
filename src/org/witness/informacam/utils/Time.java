@@ -6,7 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.Media;
+
+import android.util.Log;
 
 public class Time {
 	public final static long timestampToMillis(String ts, String dateFormat) throws ParseException {
@@ -22,6 +25,30 @@ public class Time {
 		} catch(ParseException e) {
 			return Long.parseLong(ts);
 		}
+	}
+	
+	public final static long resolveTimestampWithGPSTime(String timestampString) {
+		long assumedTimestamp = 0L;
+		try {
+			assumedTimestamp= Long.parseLong(timestampString);
+		} catch(NumberFormatException e) {
+			try {
+				assumedTimestamp = timestampToMillis(timestampString);
+			} catch (ParseException e1) {
+				Log.e(Constants.Time.LOG, e1.toString());
+				e1.printStackTrace();
+			}
+		}
+		
+		long[] relativeTimestamps = InformaService.getInstance().getInitialGPSTimestamp();
+		
+		long difference = relativeTimestamps[0] - relativeTimestamps[1];
+		
+		Log.d(Constants.Time.LOG, "timestamp reported: " + assumedTimestamp);
+		Log.d(Constants.Time.LOG, "rel timestamps: " + relativeTimestamps[0] + ", " + relativeTimestamps[1] + "(offset: " + difference + ")");
+		Log.d(Constants.Time.LOG, "real timestamp?: " + (assumedTimestamp + difference));
+		
+		return (assumedTimestamp + difference);
 	}
 	
 	public final static long timestampToMillis(String ts) throws ParseException {
