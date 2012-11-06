@@ -1305,6 +1305,12 @@ public class VideoEditor extends Activity implements
 						}
 						
 					}
+
+					@Override
+					public void processComplete(int exitValue) {
+						// TODO Auto-generated method stub
+						
+					}
 				};
 				
 				// TODO: is this the same?
@@ -1466,6 +1472,12 @@ public class VideoEditor extends Activity implements
 				@Override
 				public void shellOut(String shellLine) {
 					Log.d(VideoEditor.LOGTAG, shellLine);
+					
+				}
+
+				@Override
+				public void processComplete(int exitValue) {
+					// TODO Auto-generated method stub
 					
 				}
 

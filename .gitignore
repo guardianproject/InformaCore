@@ -6,3 +6,4 @@ src/com/xtralogic/.svn/*
 src/com/xtralogic/android/.svn/*
 src/com/xtralogic/android/logcollector/.svn/*
 assets/installedKeys/*
+.classpath
