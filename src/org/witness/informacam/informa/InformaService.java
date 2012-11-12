@@ -147,14 +147,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 
 	public void storeMediaCache() {
 		// save original to iocipher store and cache data by dumping it to flat file that can be inflated later
-		suspend();
+		
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 				try {
 					IOCipherService.getInstance().saveCache(getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches);
-
+					suspend();
 				} catch (JSONException e) {
 					Log.e(Storage.LOG, e.toString());
 					e.printStackTrace();
@@ -237,7 +237,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void setCurrentStatus(int status) {
 		informaCurrentStatus = status;
 		informaCurrentStatusString = getResources().getStringArray(R.array.informa_statuses)[informaCurrentStatus];
-		showNotification();
+		//showNotification();
 	}
 
 	@Override
@@ -473,8 +473,12 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	public void onUpdate(LogPack logPack) {
-		long ts = ((GeoSucker) _geo).getTime();
-		onUpdate(ts, logPack);
+		try {
+			long ts = ((GeoSucker) _geo).getTime();
+			onUpdate(ts, logPack);
+		} catch(NullPointerException e) {
+			
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -647,8 +651,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			}).start();
 		}
 
-
-
 		Thread packageInforma = new Thread(
 				new Runnable() {
 					@Override
@@ -657,7 +659,6 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 							if(informa.setInitialData(getEventByTypeWithTimestamp(CaptureEvent.METADATA_CAPTURED, annotationCache)))
 								if(informa.addToPlayback(getAllEventsByTypeWithTimestamp(CaptureEvent.SENSOR_PLAYBACK, suckerCache))) {
 									((InformaServiceListener) editor).onInformaPackageGenerated();
-									suspend();
 
 									if(editor.getLocalClassName().equals(App.ImageEditor.TAG)) {
 										@SuppressWarnings("unused")
@@ -673,6 +674,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 						} catch (ExecutionException e) {
 							e.printStackTrace();
 						}
+						
+						suspend();
 					}
 				});
 		packageInforma.start();

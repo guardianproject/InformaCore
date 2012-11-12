@@ -87,6 +87,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     
     List<BroadcastReceiver> br = new ArrayList<BroadcastReceiver>();
     
+    private int GPS_WAITING = 0;
+    
     private ServiceConnection sc = new ServiceConnection() {
     	public void onServiceConnected(ComponentName cn, IBinder binder) {
     		LocalBinder lb = (LocalBinder) binder;
@@ -260,7 +262,24 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		public void run() {
     			if(informaService.getCurrentTime() <= 0) {
     				Log.d(App.LOG, "GPS NOT READY YET...");
-    				h.postDelayed(this, 200);
+    				GPS_WAITING++;
+    				
+    				if(GPS_WAITING > App.Main.GPS_WAIT_MAX) {
+    					h.post(new Runnable() {
+    						@Override
+    						public void run() {
+    							try {
+    								mProgressDialog.cancel();
+    							} catch(NullPointerException e) {}
+    							ErrorHandler.show(MainActivity.this, getString(R.string.error_gps_nonresponsive));
+    						}
+    					});
+    					
+    				} else {
+    					
+    					h.postDelayed(this, 200);
+    				}
+    				
     				return;
     			}
     			
@@ -271,7 +290,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void launchMediaCapture(final String tempFile) {
-    	mProgressDialog = ProgressDialog.show(this, "", "please wait...", false, false);
+    	mProgressDialog = ProgressDialog.show(this, "", getString(R.string.please_wait), false, false);
     	
     	
     	if(!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
@@ -291,7 +310,24 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		public void run() {
     			if(informaService.getCurrentTime() <= 0) {
     				Log.d(App.LOG, "GPS NOT READY YET...");
-    				h.postDelayed(this, 200);
+    				GPS_WAITING++;
+    				
+    				if(GPS_WAITING > App.Main.GPS_WAIT_MAX) {
+    					h.post(new Runnable() {
+    						@Override
+    						public void run() {
+    							try {
+    								mProgressDialog.cancel();
+    							} catch(NullPointerException e) {}
+    							ErrorHandler.show(MainActivity.this, getString(R.string.error_gps_nonresponsive));
+    						}
+    					});
+    					
+    				} else {
+    					
+    					h.postDelayed(this, 200);
+    				}
+    				
     				return;
     			}
     			

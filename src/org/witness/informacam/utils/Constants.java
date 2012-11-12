@@ -60,6 +60,7 @@ public class Constants {
 			public static final String SERVICE_STARTED = "serviceStarted";
 			public static final String MEDIA_CAPTURE_URI_SAVED_STATE = "mediaCaptureURI_SavedState";
 			public static final String MEDIA_CAPTURE_FILE_SAVED_STATE = "mediaCaptureFile_SavedState";
+			public static final int GPS_WAIT_MAX = 16;
 		}
 		
 		public final static class MediaManager {

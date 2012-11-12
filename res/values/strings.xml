@@ -21,6 +21,7 @@
     <string name="done">Done</string>
     <string name="select">Select</string>
     <string name="add">Add</string>
+    <string name="please_wait">Please wait \u2026</string>
 
     <!-- NOTIFICATION BAR -->
     <string name="notification_status">Status:</string>
@@ -90,7 +91,8 @@
     <string name="error_password_mismatch">Your password is incorrect.  Please try logging in again.</string>
     <string name="error_forms_none_installed">You don\'t have any forms installed!</string>
     <string name="error_orbot_nonresponsive">InformaCam cannot connect over Tor.  Are you sure Orbot is installed, setup, and running?</string>
-
+	<string name="error_gps_nonresponsive">InformaCam cannot read your GPS coordinates.  Are you sure you have GPS turned on?</string>
+	
     <!-- ADDRESS BOOK AND CHOOSER -->
     <string name="address_book_new_contact">Add new contact\u2026</string>
     <string name="address_book_chooser_placeholder">This feature coming soon!</string>
