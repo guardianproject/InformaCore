@@ -14,11 +14,9 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.R;
-import org.witness.informacam.app.WizardActivity;
 import org.witness.informacam.app.mods.Selections;
 import org.witness.informacam.crypto.CertificateUtility;
 import org.witness.informacam.crypto.KeyUtility;
@@ -26,7 +24,6 @@ import org.witness.informacam.crypto.CertificateUtility.ClientCertificateRespons
 import org.witness.informacam.crypto.KeyUtility.KeyServerResponse;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
-import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.AddressBook;
 import org.witness.informacam.utils.Constants.Crypto;
@@ -205,8 +202,15 @@ public class AddressBookUtility {
 		
 		DatabaseHelper dh = DatabaseService.getInstance().getHelper();
 		SQLiteDatabase db = DatabaseService.getInstance().getDb();
-
-		for(File keyFile : ictd.listFiles()[0].listFiles()) {
+		
+		File[] keyFiles;
+		if(!ictd.isDirectory()) {
+			keyFiles = ictd.listFiles()[0].listFiles();
+		} else {
+			keyFiles = ictd.listFiles();
+		}
+		
+		for(File keyFile : keyFiles) {
 			
 			String ext = null;
 			
@@ -318,9 +322,11 @@ public class AddressBookUtility {
 			if(encryptedICTD != null)
 				encryptedICTD.delete();
 			
-			for(File keyFile : ictd.listFiles()[0].listFiles()) {
-				keyFile.delete();
-			}
+			try {
+				for(File keyFile : ictd.listFiles()[0].listFiles()) {
+					keyFile.delete();
+				}
+			} catch(NullPointerException e) {}
 			
 			for(File folder : ictd.listFiles())
 				folder.delete();

@@ -19,8 +19,10 @@ import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.witness.informacam.utils.Constants.Crypto;
 
 import android.util.Base64;
+import android.util.Log;
 
 public class EncryptionUtility {
 	
@@ -63,11 +65,13 @@ public class EncryptionUtility {
 			
 			is.close();
 			
+			baos.flush();
 			String encrypted = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
 			
 			aos.close();
 			baos.close();
 			
+			Log.d(Crypto.LOG, encrypted);
 			return encrypted;
 		} catch (NoSuchProviderException e) {
 			e.printStackTrace();

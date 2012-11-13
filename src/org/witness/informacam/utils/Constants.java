@@ -654,6 +654,7 @@ public class Constants {
 			public final static String IMAGE_TMP = "informa_tmp.jpg";
 			public final static String VIDEO_TMP = "informa_tmp.mp4";
 			public final static String TMP_VIDEO_DATA_FILE_NAME = "informaCam_metadata.json";
+			public static final String ICTD_TEMP = "informacam.ictd";
 		}
 		
 		public final static class IOCipher {

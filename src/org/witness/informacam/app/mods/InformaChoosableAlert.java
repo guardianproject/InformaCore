@@ -25,6 +25,7 @@ public class InformaChoosableAlert extends AlertDialog {
 	
 	public interface OnChoosableChosenListener {
 		public void onChoice(int which, Object obj);
+		public void onCancel();
 	}
 	
 	public InformaChoosableAlert(Activity context, String[] choices, Object obj) {
@@ -42,6 +43,7 @@ public class InformaChoosableAlert extends AlertDialog {
 		
 		choiceTitle = (TextView) inner.findViewById(R.id.choice_title);
 		ica = this;
+		
 	}
 	
 	
@@ -55,6 +57,12 @@ public class InformaChoosableAlert extends AlertDialog {
 		choiceTitle.setText(title);
 		choiceTitle.setVisibility(View.VISIBLE);
 		
+	}
+	
+	@Override
+	public void onBackPressed() {
+		ica.dismiss();
+		((OnChoosableChosenListener) context).onCancel();
 	}
 	
 	public class ChoiceAdapter extends BaseAdapter {

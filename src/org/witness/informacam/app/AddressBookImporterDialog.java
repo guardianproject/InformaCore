@@ -51,6 +51,12 @@ public class AddressBookImporterDialog extends AlertDialog {
 		
 	}
 	
+	@Override
+	public void onBackPressed() {
+		((OnChoosableChosenListener) a).onCancel();
+		abid.dismiss();
+	}
+	
 	public class DirListAdapter extends BaseAdapter {
 		List<File> files;
 		File dir;

@@ -241,4 +241,10 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 		doExport(versionForExport);
 	}
 
+	@Override
+	public void onCancel() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

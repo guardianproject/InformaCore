@@ -1324,4 +1324,10 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	public void onChoice(int which, Object obj) {
 		// TODO: launch form editor
 	}
+
+	@Override
+	public void onCancel() {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -81,7 +81,19 @@
         <activity android:name=".app.MediaManagerActivity" android:configChanges="orientation|keyboardHidden" />
         <activity android:name=".app.MessageCenterActivity" android:configChanges="orientation|keyboardHidden" />
         <activity android:name=".app.MessageThreadActivity" android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.AddressBookActivity" android:configChanges="orientation|keyboardHidden" />
+        <activity android:name=".app.AddressBookActivity" android:configChanges="orientation|keyboardHidden">
+			<intent-filter>
+			    <category android:name="android.intent.category.DEFAULT" />
+			    <action android:name="android.intent.action.VIEW" />
+			    <data android:mimeType="application/*" host="*" android:pathPattern=".*.ictd" android:scheme="content" />
+			</intent-filter>
+			
+			<intent-filter>
+			    <category android:name="android.intent.category.DEFAULT" />
+			    <action android:name="android.intent.action.VIEW" />
+			    <data android:mimeType="application/*" host="*" android:pathPattern=".*.ictd" android:scheme="file" />
+			</intent-filter>
+		</activity>
         
         <activity android:name=".app.KnowledgebaseActivity" />
         <activity android:name=".app.PreferencesActivity" />

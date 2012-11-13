@@ -1874,6 +1874,13 @@ public class VideoEditor extends Activity implements
 		// TODO: launch form editor
 		
 	}
+
+
+	@Override
+	public void onCancel() {
+		// TODO Auto-generated method stub
+		
+	}
 	
 	
 }
