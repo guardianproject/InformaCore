@@ -1029,7 +1029,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
         	case R.id.menu_preview:
         		showPreview();
         		return true;
-        		
     		default:
     			return false;
     	}

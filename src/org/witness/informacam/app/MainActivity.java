@@ -198,7 +198,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     private void checkForLogout() {
     	int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, null));
     	if(loginPref == Settings.LoginCache.ON_CLOSE)
-    		doLogout();
+    		MainRouter.doLogout(MainActivity.this);
     }
     
     private void initLayout() {
@@ -218,26 +218,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	
     	address_book = (Button) findViewById(R.id.address_book_button);
     	address_book.setOnClickListener(this);
-    }
-    
-    private void launchPreferences() {
-    	Intent intent = new Intent(this, PreferencesActivity.class);
-    	startActivity(intent);
-    }
-    
-    private void launchSendLog() {
-    	Intent intent = new Intent(this, SendLogActivity.class);
-    	startActivity(intent);
-    }
-    
-    private void launchAbout() {
-    	Intent intent = new Intent(this, AboutActivity.class);
-    	startActivity(intent);
-    }
-    
-    private void launchKnowledgebase() {
-    	Intent intent = new Intent(this, KnowledgebaseActivity.class);
-    	startActivity(intent);
     }
     
     private void launchMediaManager() {
@@ -421,7 +401,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, null));
     			Log.d(App.LOG, "login pref= " + loginPref);
     	    	if(loginPref == Settings.LoginCache.AFTER_SAVE)
-    	    		doLogout();
+    	    		MainRouter.doLogout(MainActivity.this);
     			
     			break;
     		case App.Main.FROM_MEDIA_MANAGER:
@@ -489,44 +469,31 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     public boolean onOptionsItemSelected(MenuItem mi) {
     	switch(mi.getItemId()) {
     	case R.id.extras_about:
-    		launchAbout();
+    		MainRouter.launchAbout(MainActivity.this);
     		return true;
     	case R.id.extras_preferences:
-    		launchPreferences();
+    		MainRouter.launchPreferences(MainActivity.this);
     		return true;
     	case R.id.extras_knowledgebase:
-    		launchKnowledgebase();
+    		MainRouter.launchKnowledgebase(MainActivity.this);
     		return true;
     	case R.id.extras_send_log:
-    		launchSendLog();
+    		MainRouter.launchSendLog(MainActivity.this);
     		return true;
     	case R.id.extras_logout:
-    		doLogout();
+    		MainRouter.doLogout(MainActivity.this);
     		finish();
     		return true;
     	case R.id.menu_refresh:
     		refreshUploads();
     		return true;
     	case R.id.menu_export_public_key:
-    		exportDeviceKey();
+    		MainRouter.exportDeviceKey(MainActivity.this);
     		return true;
     	default:
     		return false;
     	}
     }
-
-	private void exportDeviceKey() {
-		Intent export = new Intent()
-			.setAction(Intent.ACTION_SEND)
-			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(KeyUtility.exportPublicKey()))
-			.setType("*/*");
-		startActivity(export);
-		
-	}
-
-	private void doLogout() {
-		sp.edit().putString(Settings.Keys.CURRENT_LOGIN, Settings.Login.PW_EXPIRY).commit();		
-	}
 
 	@Override
 	public void onClick(View v) {

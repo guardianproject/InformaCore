@@ -1,11 +1,9 @@
 package org.witness.informacam.app;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +19,6 @@ import org.witness.informacam.app.mods.InformaChoosableAlert;
 import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
-import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.AddressBookUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
@@ -33,16 +30,16 @@ import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.BaseColumns;
-import android.provider.MediaStore;
-import android.provider.MediaStore.MediaColumns;
 
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -109,7 +106,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 						if(installed) {
 							getAddresses();
 						} else {
-							Toast.makeText(AddressBookActivity.this, "Could not install this.", Toast.LENGTH_LONG).show();
+							Toast.makeText(AddressBookActivity.this, getString(R.string.error_invalid_ictd), Toast.LENGTH_LONG).show();
 						}
 						parseICTD();
 					}
@@ -144,6 +141,41 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 		address_list = (ListView) findViewById(R.id.address_book_list);
 		isSelecting = true;
 	}
+	
+	@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	
+    	MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.mainactivity_menu, menu);
+        menu.removeItem(R.id.menu_refresh);
+    	return true;
+    }
+    
+    public boolean onOptionsItemSelected(MenuItem mi) {
+    	switch(mi.getItemId()) {
+    	case R.id.extras_about:
+    		MainRouter.launchAbout(AddressBookActivity.this);
+    		return true;
+    	case R.id.extras_preferences:
+    		MainRouter.launchPreferences(AddressBookActivity.this);
+    		return true;
+    	case R.id.extras_knowledgebase:
+    		MainRouter.launchKnowledgebase(AddressBookActivity.this);
+    		return true;
+    	case R.id.extras_send_log:
+    		MainRouter.launchSendLog(AddressBookActivity.this);
+    		return true;
+    	case R.id.extras_logout:
+    		MainRouter.doLogout(AddressBookActivity.this);
+    		finish();
+    		return true;
+    	case R.id.menu_export_public_key:
+    		MainRouter.exportDeviceKey(AddressBookActivity.this);
+    		return true;
+    	default:
+    		return false;
+    	}
+    }
 
 	private void getAddresses() {
 		dh.setTable(db, Tables.Keys.TRUSTED_DESTINATIONS);
@@ -185,7 +217,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 			finish();
 		else if(v == new_contact) {
 			AddressBookImporterDialog abid = new AddressBookImporterDialog(AddressBookActivity.this);
-			mProgressDialog = ProgressDialog.show(AddressBookActivity.this, "", "please wait...", false, false);
+			mProgressDialog = ProgressDialog.show(AddressBookActivity.this, "", getString(R.string.please_wait), false, false);
 			abid.show();
 
 			//Toast.makeText(this, getString(R.string.address_book_chooser_placeholder), Toast.LENGTH_LONG).show();
@@ -269,7 +301,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 					if(installed) {
 						getAddresses();
 					} else {
-						Toast.makeText(AddressBookActivity.this, "Could not install this.", Toast.LENGTH_LONG).show();
+						Toast.makeText(AddressBookActivity.this, getString(R.string.error_invalid_ictd), Toast.LENGTH_LONG).show();
 					}
 				}
 			});

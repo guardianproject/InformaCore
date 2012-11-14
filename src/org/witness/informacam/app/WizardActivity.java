@@ -254,7 +254,6 @@ public class WizardActivity extends Activity implements OnClickListener {
 					int numRead = 0;
 					
 					String line;
-					StringBuilder sb = new StringBuilder();
 				
 					while((numRead = br.read(buf)) != -1) {
 						line = String.valueOf(buf, 0, numRead);
@@ -484,6 +483,7 @@ public class WizardActivity extends Activity implements OnClickListener {
 			return a;
 		}
 		
+		@SuppressWarnings("unused")
 		public ArrayList<View> getContent() throws JSONException {
 			ArrayList<View> views = new ArrayList<View>();
 			String content = currentFrame.getString(frameContent);

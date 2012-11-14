@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout style="@style/NavHolder"
+        android:id="@+id/navigation_holder">
+
+        <ImageButton
+            android:id="@+id/navigation_button"
+            style="@style/NavButton_standard"
+            android:src="@drawable/arrow_back" />
+
+        <TextView
+            android:id="@+id/navigation_label"
+            style="@style/NavH1"
+            android:text="@string/mainactivity_knowledgebase" />
+    </LinearLayout>
+    
+    <WebView android:id="@+id/knowledgebase_holder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+    
+
+</LinearLayout>

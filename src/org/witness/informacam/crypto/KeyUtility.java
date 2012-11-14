@@ -1,7 +1,5 @@
 package org.witness.informacam.crypto;
 
-import info.guardianproject.iocipher.FileInputStream;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -60,7 +57,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
-import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.transport.HttpUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.AddressBook;
@@ -86,6 +82,7 @@ public class KeyUtility {
 		public void onKeyFound(KeyServerResponse keyServerResponse);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static PGPSecretKey extractSecretKey(byte[] keyblock) {
 		PGPSecretKey secretKey = null;
 		try {
@@ -120,6 +117,7 @@ public class KeyUtility {
 	}
 	
 	public final static class KeyServerResponse extends JSONObject {
+		@SuppressWarnings("unchecked")
 		public KeyServerResponse(PGPPublicKey key, String displayName, String email) {
 			if(email == null) {
 				Iterator<String> uIt = key.getUserIDs();
@@ -381,6 +379,7 @@ public class KeyUtility {
 		return false;
 	}
 		
+	@SuppressWarnings({ "deprecation", "unchecked" })
 	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
 		int buffSize = 1 <<16;
 		BouncyCastleProvider bc = new BouncyCastleProvider();
@@ -467,7 +466,7 @@ public class KeyUtility {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ArmoredOutputStream aos = new ArmoredOutputStream(baos);
 			
-			publicKeyFile = new File(Storage.FileIO.DUMP_FOLDER, new String(Hex.encode(pk.getFingerprint()) + ".asc"));
+			publicKeyFile = new File(Storage.FileIO.DUMP_FOLDER, "icPublicKey_" + System.currentTimeMillis() + ".asc");
 			try {
 				aos.write(pk.getEncoded());
 				aos.flush();
@@ -513,13 +512,16 @@ public class KeyUtility {
 		} catch (IOException e) {
 			Log.e(Crypto.LOG, e.toString());
 			e.printStackTrace();
+		} catch (NullPointerException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
 		}
 		
 		return null;
 		
 	}
 	
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "rawtypes" })
 	public static byte[] decrypt(byte[] bytes) {
 		byte[] decryptedBytes = null;
 		PGPSecretKey sk = null;

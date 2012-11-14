@@ -37,6 +37,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
@@ -78,6 +81,41 @@ public class MediaManagerActivity extends Activity implements OnClickListener, O
 		}
 		media_manager_list.setAdapter(new MediaManagerAdapter(MediaManagerActivity.this, media));
 	}
+	
+	@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	
+    	MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.mainactivity_menu, menu);
+        menu.removeItem(R.id.menu_refresh);
+    	return true;
+    }
+    
+    public boolean onOptionsItemSelected(MenuItem mi) {
+    	switch(mi.getItemId()) {
+    	case R.id.extras_about:
+    		MainRouter.launchAbout(MediaManagerActivity.this);
+    		return true;
+    	case R.id.extras_preferences:
+    		MainRouter.launchPreferences(MediaManagerActivity.this);
+    		return true;
+    	case R.id.extras_knowledgebase:
+    		MainRouter.launchKnowledgebase(MediaManagerActivity.this);
+    		return true;
+    	case R.id.extras_send_log:
+    		MainRouter.launchSendLog(MediaManagerActivity.this);
+    		return true;
+    	case R.id.extras_logout:
+    		MainRouter.doLogout(MediaManagerActivity.this);
+    		finish();
+    		return true;
+    	case R.id.menu_export_public_key:
+    		MainRouter.exportDeviceKey(MediaManagerActivity.this);
+    		return true;
+    	default:
+    		return false;
+    	}
+    }
 	
 	@Override
 	public void onClick(View v) {

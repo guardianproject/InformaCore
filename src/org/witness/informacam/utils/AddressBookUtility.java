@@ -185,6 +185,9 @@ public class AddressBookUtility {
 		if(isEncrypted) {
 			// decrypt file
 			ictd = KeyUtility.decrypt(ictd);
+			if(ictd == null)
+				return result;
+			
 			encryptedICTD = ictd;
 		}
 

@@ -38,6 +38,9 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
@@ -72,6 +75,49 @@ public class MessageCenterActivity extends Activity implements OnClickListener, 
 		
 	}
 	
+	@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	
+    	MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.mainactivity_menu, menu);
+        
+    	return true;
+    }
+    
+    public boolean onOptionsItemSelected(MenuItem mi) {
+    	switch(mi.getItemId()) {
+    	case R.id.extras_about:
+    		MainRouter.launchAbout(MessageCenterActivity.this);
+    		return true;
+    	case R.id.extras_preferences:
+    		MainRouter.launchPreferences(MessageCenterActivity.this);
+    		return true;
+    	case R.id.extras_knowledgebase:
+    		MainRouter.launchKnowledgebase(MessageCenterActivity.this);
+    		return true;
+    	case R.id.extras_send_log:
+    		MainRouter.launchSendLog(MessageCenterActivity.this);
+    		return true;
+    	case R.id.extras_logout:
+    		MainRouter.doLogout(MessageCenterActivity.this);
+    		finish();
+    		return true;
+    	case R.id.menu_refresh:
+    		refreshUploads();
+    		return true;
+    	case R.id.menu_export_public_key:
+    		MainRouter.exportDeviceKey(MessageCenterActivity.this);
+    		return true;
+    	default:
+    		return false;
+    	}
+    }
+	
+	private void refreshUploads() {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private void updateList() {
 		messageCenterList.setAdapter(new MessageCenterAdapter(MessageCenterActivity.this, mcd));
 	}
