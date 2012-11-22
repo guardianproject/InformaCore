@@ -29,6 +29,7 @@ import org.witness.informacam.crypto.CertificateUtility.ClientCertificateRespons
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.KeyUtility.KeyServerResponse;
 import org.witness.informacam.storage.DatabaseHelper;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.AddressBookUtility.AddressBookDisplay;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
@@ -46,6 +47,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -385,6 +387,13 @@ public class WizardActivity extends Activity implements OnClickListener {
 			switch(requestCode) {
 			case Wizard.FROM_BASE_IMAGE_CAPTURE:
 				storeDeviceKey((Bitmap) data.getExtras().get("data"));
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						IOUtility.destroy(WizardActivity.this, IOUtility.getLastImageUri(WizardActivity.this));
+					}
+				}).start();
+				
 				break;
 			}
 		}

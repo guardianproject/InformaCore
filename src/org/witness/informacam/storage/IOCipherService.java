@@ -358,7 +358,7 @@ public class IOCipherService extends Service {
 						
 					}
 					
-					long lastSaved = System.currentTimeMillis();
+					long lastSaved = InformaService.getInstance().getCurrentTime();
 					
 					File cacheFile = getFile(rootFolder, "cache.json");
 					if(cacheFile.exists())

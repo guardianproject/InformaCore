@@ -316,17 +316,17 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     				logPack.put(Constants.Time.Keys.RELATIVE_TIME, System.currentTimeMillis());
     				informaService.onUpdate(logPack);
     				
-    				ContentValues values = new ContentValues();
-    		    	values.put(MediaStore.Images.Media.TITLE, tempFile);
-    		    	values.put(MediaStore.Images.Media.DESCRIPTION, tempFile);
-    		    	
     		    	mediaCaptureFile = new File(Storage.FileIO.DUMP_FOLDER, tempFile);
     		    	
+    		    	/*
     		    	if(tempFile.equals(Storage.FileIO.IMAGE_TMP)) {
-    		    		mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
+    		    		ContentValues tempVals = new ContentValues();
+    		    		tempVals.put(MediaStore.Images.ImageColumns.TITLE, String.valueOf(System.currentTimeMillis()));
+    		    		
+    		    		mediaCaptureUri = MainActivity.this.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, tempVals);
     		    		captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mediaCaptureUri);
     		    	}
-    		    	
+    		    	*/
     		    	
     		    	startActivityForResult(captureIntent, App.Main.FROM_MEDIA_CAPTURE);
     			} catch (JSONException e) {
@@ -360,32 +360,44 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     		
     		switch(requestCode) {
     		
-    		case App.Main.FROM_MEDIA_CAPTURE:    			
+    		case App.Main.FROM_MEDIA_CAPTURE:
+    			
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
     				mimeType = Media.Type.MIME_TYPE_JPEG;
-    				mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
+    				// the uri is the last image uri.  because there is NO BETTER WAY OF DOING THIS on most devices. (wtf?)
+    				mediaCaptureUri = IOUtility.getLastImageUri(this);
     			} else {
     				editorIntent = new Intent(this, VideoEditor.class);
     				mimeType = Media.Type.MIME_TYPE_MP4;
     				mediaCaptureUri = data.getData();
-    				FileOutputStream fos;
-					try {
-						fos = new FileOutputStream(mediaCaptureFile);
-						InputStream media = getContentResolver().openInputStream(mediaCaptureUri);
-						byte buf[] = new byte[1024];
-						int len;
-						while((len = media.read(buf)) > 0)
-							fos.write(buf, 0, len);
-						fos.close();
-						media.close();
-					} catch (FileNotFoundException e) {
-						Log.e(App.LOG, e.toString());
-					} catch (IOException e) {
-						Log.e(App.LOG, e.toString());
-					}
+    				
     			}
     			
+    			FileOutputStream fos;
+				try {
+					fos = new FileOutputStream(mediaCaptureFile);
+					InputStream media = getContentResolver().openInputStream(mediaCaptureUri);
+					byte buf[] = new byte[1024];
+					int len;
+					while((len = media.read(buf)) > 0)
+						fos.write(buf, 0, len);
+					fos.close();
+					media.close();
+					
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							IOUtility.destroy(MainActivity.this, mediaCaptureUri);
+						}
+					}).start();
+					
+				} catch (FileNotFoundException e) {
+					Log.e(App.LOG, e.toString());
+				} catch (IOException e) {
+					Log.e(App.LOG, e.toString());
+				}
+    			    			
     			mustInitMetadata = true;
     			h.post(new Runnable() {
 					@Override
@@ -402,7 +414,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			Log.d(App.LOG, "login pref= " + loginPref);
     	    	if(loginPref == Settings.LoginCache.AFTER_SAVE)
     	    		MainRouter.doLogout(MainActivity.this);
-    			
+    	    	    			
     			break;
     		case App.Main.FROM_MEDIA_MANAGER:
     			// copy original to what should be mediaCaptureFile and set mediaCaptureUri

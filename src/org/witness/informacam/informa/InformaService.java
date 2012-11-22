@@ -116,16 +116,19 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		java.io.File imgTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 		if(imgTemp.exists()) {
 			imgTemp.delete();
+			Log.d(Storage.LOG, "removing " + imgTemp.getAbsolutePath());
 		}
 
 		java.io.File vidTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.VIDEO_TMP);
 		if(vidTemp.exists()) {
 			vidTemp.delete();
+			Log.d(Storage.LOG, "removing " + vidTemp.getAbsolutePath());
 		}
 
 		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
 		if(vidMetadata.exists()) {
 			vidMetadata.delete();
+			Log.d(Storage.LOG, "removing " + vidMetadata.getAbsolutePath());
 		}
 
 		// TODO: clean up extra if user wishes...
@@ -153,8 +156,11 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			@Override
 			public void run() {
 				try {
-					IOCipherService.getInstance().saveCache(getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches);
-					suspend();
+					if(IOCipherService.getInstance().saveCache(getEventByType(CaptureEvent.METADATA_CAPTURED, annotationCache), caches)) {
+						cleanup();
+						suspend();
+					} else
+						suspend();
 				} catch (JSONException e) {
 					Log.e(Storage.LOG, e.toString());
 					e.printStackTrace();
@@ -369,6 +375,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			registerReceiver(b, ((Broadcaster) b).intentFilter);
 
 		iPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.DEFAULT_IMAGE_HANDLING, null));
+		setCurrentStatus(Status.STOPPED);
 
 		informaService = this;
 	}
@@ -388,7 +395,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		_geo = new GeoSucker(InformaService.this);
 		_phone = new PhoneSucker(InformaService.this);
 		_acc = new AccelerometerSucker(InformaService.this);
-		this.setCurrentStatus(Status.RUNNING);
+		setCurrentStatus(Status.RUNNING);
 	}
 
 	private void initCaches() {
@@ -900,13 +907,15 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		@Override
 		public void onReceive(Context c, Intent i) {
 			if(BluetoothDevice.ACTION_FOUND.equals(i.getAction())) {
-				try {
-					BluetoothDevice bd = (BluetoothDevice) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					LogPack logPack = new LogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());
-					logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());
-					
-					suckerCache.put(((GeoSucker) _geo).getTime(), logPack);
-				} catch(JSONException e) {}
+				if(InformaService.this.getStatus() == Status.RUNNING) {
+					try {
+						BluetoothDevice bd = (BluetoothDevice) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+						LogPack logPack = new LogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());
+						logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());
+
+						suckerCache.put(((GeoSucker) _geo).getTime(), logPack);
+					} catch(JSONException e) {}
+				}
 			}
 
 		}

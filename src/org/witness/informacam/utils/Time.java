@@ -14,6 +14,7 @@ import android.util.Log;
 public class Time {
 	public final static long timestampToMillis(String ts, String dateFormat) throws ParseException {
 		//2012:06:12 10:42:04
+		Log.d(Constants.Time.LOG, "timestamp: " + ts);
 		if(dateFormat == null)
 			dateFormat = Media.DateFormats.EXIF_DATE_FORMAT;
 		
@@ -23,8 +24,13 @@ public class Time {
 			Date d = (Date) df.parse(ts);
 			return d.getTime();
 		} catch(ParseException e) {
-			return Long.parseLong(ts);
+			Log.e(Constants.Time.LOG, e.toString());
+			e.printStackTrace();
+		} catch(NullPointerException e) {
+			Log.e(Constants.Time.LOG, e.toString());
+			e.printStackTrace();
 		}
+		return Long.parseLong(ts);
 	}
 	
 	public final static long resolveTimestampWithGPSTime(String timestampString) {

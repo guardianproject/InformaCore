@@ -2,10 +2,14 @@ package org.witness.informacam.utils;
 
 import java.io.File;
 
+import org.witness.informacam.utils.Constants.Storage;
+
 import android.app.Activity;
+import android.content.Context;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
+import android.util.Log;
 
 public class InformaMediaScanner implements MediaScannerConnectionClient {
 	private MediaScannerConnection msc;
@@ -31,6 +35,17 @@ public class InformaMediaScanner implements MediaScannerConnectionClient {
 	@Override
 	public void onScanCompleted(String path, Uri uri) {
 		((OnMediaScannedListener) a).onMediaScanned(uri);
+	}
+	
+	public static void doScanForDeletion(Context c, final File file) {
+		MediaScannerConnection.scanFile(c, new String[] {file.getAbsolutePath()}, null, new MediaScannerConnection.OnScanCompletedListener() {
+			
+			@Override
+			public void onScanCompleted(String path, Uri uri) {
+				file.delete();
+				Log.d(Storage.LOG, "FUCKING GOOD BYE, " + path);
+			}
+		});
 	}
 
 }

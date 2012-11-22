@@ -208,6 +208,8 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 				address_list.setAdapter(new AddressBookChooserAdapter(AddressBookActivity.this, addresses));
 			else
 				address_list.setAdapter(new AddressBookAdapter(AddressBookActivity.this, addresses));
+		} else {
+			ErrorHandler.show(this, getString(R.string.error_no_trusted_destinations));
 		}
 	}
 
@@ -219,9 +221,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 			AddressBookImporterDialog abid = new AddressBookImporterDialog(AddressBookActivity.this);
 			mProgressDialog = ProgressDialog.show(AddressBookActivity.this, "", getString(R.string.please_wait), false, false);
 			abid.show();
-
-			//Toast.makeText(this, getString(R.string.address_book_chooser_placeholder), Toast.LENGTH_LONG).show();
-		} else if(v == select_contact) {
+		} else if(v == select_contact && addresses != null) {
 			List<Long> encryptList = new ArrayList<Long>();
 			for(AddressBookDisplay adr : addresses) {
 
@@ -239,7 +239,7 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 				encryptListArray[l] = encryptList.get(l);
 
 			getIntent().putExtra(Informa.Keys.Intent.ENCRYPT_LIST, encryptListArray);
-			setResult(Activity.RESULT_OK,getIntent());
+			setResult(Activity.RESULT_OK, getIntent());
 			finish();
 		}
 

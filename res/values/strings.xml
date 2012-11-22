@@ -92,7 +92,8 @@
     <string name="error_forms_none_installed">You don\'t have any forms installed!</string>
     <string name="error_orbot_nonresponsive">InformaCam cannot connect over Tor.  Are you sure Orbot is installed, setup, and running?</string>
 	<string name="error_gps_nonresponsive">InformaCam cannot read your GPS coordinates.  Are you sure you have GPS turned on?</string>
-	<string name="error_invalid_ictd">Sorry.  InformaCam could not install this ICTD file to your address book.  Please contact whoever gave you this ICTD file.</string>
+	<string name="error_invalid_ictd">Sorry. InformaCam could not install this ICTD file to your address book.  Please contact whoever gave you this ICTD file.</string>
+	<string name="error_no_trusted_destinations">Your address book is empty.  Please obtain and install an ICTD file from a Trusted Destination.</string>
 	
     <!-- ADDRESS BOOK AND CHOOSER -->
     <string name="address_book_new_contact">Add new contact\u2026</string>

@@ -11,7 +11,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -21,6 +24,7 @@ import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONException;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.utils.Constants.Informa.Keys.Genealogy;
+import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Informa;
@@ -30,15 +34,20 @@ import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
 import org.witness.informacam.utils.Time;
 
+import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -47,6 +56,53 @@ public class IOUtility {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
 		return baos.toByteArray();
+	}
+	
+	public final static boolean destroy(Activity c, Uri uri) {
+		return destroy(c, uri, null);
+	}
+	
+	public final static boolean destroy(Activity c, Uri uri, String[] filesToKeep) {
+		boolean result = false;
+		Log.d(Storage.LOG, "WANTS TO DESTROY " + uri.toString());
+		
+		ContentResolver cr = c.getContentResolver();
+		Cursor uri_cursor = cr.query(uri, new String[] { MediaStore.Files.FileColumns.DATA }, null, null, null);
+		if(uri_cursor != null && uri_cursor.moveToFirst()) {
+			String deletion = uri_cursor.getString(uri_cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA));
+			if(filesToKeep == null || !Arrays.asList(filesToKeep).contains(deletion)) {
+				Log.d(Storage.LOG, "obliterating " + deletion);
+				File del = new File(deletion);
+				
+				// TODO: write over file with random shit, refresh media scanner, and delete
+				try {
+					java.io.FileOutputStream fos = new java.io.FileOutputStream(del);
+					
+					int len = 480;
+					int width = 360;
+					
+					int[] colors = new int[len * width];
+					Arrays.fill(colors, Color.BLACK);
+					
+					Bitmap b = Bitmap.createBitmap(colors, len, width, Bitmap.Config.ARGB_8888);
+					b.compress(CompressFormat.JPEG, 10, fos);
+					fos.flush();
+					fos.close();
+					
+					InformaMediaScanner.doScanForDeletion(c, del);
+				} catch(IOException e) {
+					Log.e(Storage.LOG, e.toString());
+					e.printStackTrace();
+				}
+				
+				
+			}
+			
+			uri_cursor.close();
+			
+		}
+				
+		return result;
 	}
 	
 	public final static Bitmap getBitmapFromBytes(byte[] bytes, boolean isBase64) {
@@ -385,5 +441,18 @@ public class IOUtility {
 		}
 		
 		return rootFolder;
+	}
+
+	// TODO: there should be some checks in here to make sure that the image returned is the one you want...
+	public static Uri getLastImageUri(Activity a) {
+		Uri uri = null;
+		
+		ContentResolver cr = a.getContentResolver();
+		Cursor c = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new String[] {MediaStore.Images.Media.DATA, BaseColumns._ID}, null, null, BaseColumns._ID + " DESC");
+		if(c != null && c.moveToFirst()) {
+			uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(c.getLong(c.getColumnIndex(BaseColumns._ID))));
+			c.close();
+		}
+		return uri;
 	}
 }
