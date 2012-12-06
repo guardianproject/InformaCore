@@ -34,6 +34,7 @@ public class Time {
 	}
 	
 	public final static long resolveTimestampWithGPSTime(String timestampString) {
+		Log.d(Constants.Time.LOG, "starting with: " + timestampString);
 		long assumedTimestamp = 0L;
 		try {
 			assumedTimestamp= Long.parseLong(timestampString);

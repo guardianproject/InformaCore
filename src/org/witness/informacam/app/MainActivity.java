@@ -390,14 +390,16 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 					new Thread(new Runnable() {
 						@Override
 						public void run() {
-							IOUtility.destroy(MainActivity.this, mediaCaptureUri);
+							IOUtility.destroy(MainActivity.this, mediaCaptureUri, new String[] {mediaCaptureFile.getAbsolutePath()});
 						}
 					}).start();
 					
 				} catch (FileNotFoundException e) {
 					Log.e(App.LOG, e.toString());
+					e.printStackTrace();
 				} catch (IOException e) {
 					Log.e(App.LOG, e.toString());
+					e.printStackTrace();
 				}
     			    			
     			mustInitMetadata = true;

@@ -70,6 +70,7 @@ public class IOUtility {
 		Cursor uri_cursor = cr.query(uri, new String[] { MediaStore.Files.FileColumns.DATA }, null, null, null);
 		if(uri_cursor != null && uri_cursor.moveToFirst()) {
 			String deletion = uri_cursor.getString(uri_cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA));
+			Log.d(Storage.LOG, "this deletion: " + deletion);
 			if(filesToKeep == null || !Arrays.asList(filesToKeep).contains(deletion)) {
 				Log.d(Storage.LOG, "obliterating " + deletion);
 				File del = new File(deletion);
