@@ -194,7 +194,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     }
     
     private void checkForLogout() {
-    	int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, null));
+    	int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, String.valueOf(Settings.LoginCache.ALWAYS)));
+    	
     	if(loginPref == Settings.LoginCache.ON_CLOSE)
     		MainRouter.doLogout(MainActivity.this);
     }
