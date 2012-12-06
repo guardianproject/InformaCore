@@ -4,14 +4,16 @@
         android:icon="@drawable/menu_refresh_selector" />
     <item android:id="@+id/menu_export_public_key" android:title="@string/mainactivity_export_public_key"
         android:icon="@drawable/menu_export_key_selector" />
-	<item android:id="@+id/extras_about" android:title="@string/mainactivity_about"
-		android:icon="@drawable/menu_about_selector" />
+    <item android:id="@+id/extras_import_form" android:title="@string/mainactivity_import_form"
+		android:icon="@drawable/menu_send_log_selector" />
 	<item android:id="@+id/extras_preferences" android:title="@string/mainactivity_preferences"
 		android:icon="@drawable/menu_preferences_selector" />
 	<item android:id="@+id/extras_knowledgebase" android:title="@string/mainactivity_knowledgebase"
 		android:icon="@drawable/menu_knowledgebase_selector" />
 	<item android:id="@+id/extras_send_log" android:title="@string/mainactivity_send_log"
 		android:icon="@drawable/menu_send_log_selector" />
+	<item android:id="@+id/extras_about" android:title="@string/mainactivity_about"
+		android:icon="@drawable/menu_about_selector" />
 	<item android:id="@+id/extras_logout" android:title="@string/mainactivity_log_out"
 		android:icon="@drawable/menu_log_out_selector" />
 </menu>

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import android.media.ExifInterface;
+import android.net.Uri;
 import android.os.Environment;
 import android.provider.BaseColumns;
 
@@ -303,6 +304,7 @@ public class Constants {
 			public final static String MIME_TYPE_MKV = "video/mkv";
 			public final static String J3M_TORRENT = J3M.TORRENT_MIME_TYPE;
 			public static final String ICTD = ".ictd";
+			public static final String XML = ".xml";
 			
 			public final static int IMAGE = 400;
 			public final static int VIDEO = 401;
@@ -346,6 +348,7 @@ public class Constants {
 				public static final String TRUSTED_DESTINATION_DISPLAY_NAME = TrustedDestination.Keys.DISPLAY_NAME;
 				public static final String DERIVATIVE_ROOT = Media.Keys.DERIVATIVE_ROOT;
 				public static final String SHOULD_RETRY = "shouldRetryUpload";
+				public static final String WHOLE_UPLOAD = J3M.Metadata.WHOLE_UPLOAD;
 			}
 
 			public static final String UPLOADED_FLAG = "uploadedFlag";
@@ -356,6 +359,11 @@ public class Constants {
 	
 	public final static class Settings {
 		public static final String LOG = "**************** InformaCam:Settings ****************";
+		
+		public static final class Uploader {
+			public final static String MODE = "informa.UploadMode";
+		}
+		
 		public static final class Keys {
 			public final static String CURRENT_LOGIN = "currentLogIn";
 			public final static String EULA_ACCEPTED = "eulaAccepted";
@@ -661,6 +669,7 @@ public class Constants {
 			public final static String STORE = "iocipher.db";
 			public static final String ROOT = "informaCamIoCipher";
 			public static final String DUMP_FOLDER = "informaCam";
+			public static final String FORM_ROOT = "installed_forms";
 			
 		}
 		
@@ -843,11 +852,20 @@ public class Constants {
 			public final static int EXTRA_LARGE = 36864;
 			public static final int EXTRA_EXTRA_LARGE = 100000;
 			public static final int EXTRA_EXTRA_EXTRA_LARGE = 250000;
-			public static final String TOO_LARGE_SENTENEL = "@*TOO_LRG*@";
-			public final static int ALL(int length) {
-				return length;
-			}
+			public static final int WHOLE = -1;
 		}
+		
+		public static final Map<Integer, Integer> CHUNKS;
+		static {
+			Map<Integer, Integer> chunks = new HashMap<Integer, Integer>();
+			chunks.put(Chunks.WHOLE, 600);
+			chunks.put(Chunks.EXTRA_EXTRA_EXTRA_LARGE, 601);
+			chunks.put(Chunks.EXTRA_LARGE, 602);
+			chunks.put(Chunks.MEDIUM, 603);
+			CHUNKS = Collections.unmodifiableMap(chunks);
+		}
+		
+		
 		
 		public final static String TORRENT_MIME_TYPE = ".j3mtorrent";
 		public static final String DUMP_FOLDER = "j3m";
@@ -866,6 +884,13 @@ public class Constants {
 	    	public static final String ENCRYPTION = "encryption";
 	    	public static final String BLOB = "blob";
 			public static final String NUM_CHUNKS = "num_chunks";
+			public static final String WHOLE_UPLOAD = "whole_upload";
 		}
+	}
+
+	public static final class Forms {
+		public final static String LOG = "**************** InformaCam: FORMS ****************";
+		public static final String TITLE = "form_title";
+		public static final String DEF = "formdef_path";
 	}
 }

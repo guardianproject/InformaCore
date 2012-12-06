@@ -311,7 +311,6 @@ public class AddressBookActivity extends Activity implements OnClickListener, On
 
 	@Override
 	public void onCancel() {
-		Log.d(App.LOG, "UM CANCEL DIALOG?");
 		try {
 			mProgressDialog.dismiss();
 		} catch(NullPointerException e) {

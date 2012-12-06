@@ -36,7 +36,11 @@ public class InformaChoosableAlert extends AlertDialog {
 		
 		li = LayoutInflater.from(context);
 		inner = li.inflate(R.layout.choosablealert_listview, null);
+		
 		this.setView(inner);
+		
+		InformaButton submit = (InformaButton) inner.findViewById(R.id.choice_submit);
+		submit.setVisibility(View.GONE);
 		
 		choiceList = (ListView) inner.findViewById(R.id.choice_list);
 		choiceList.setAdapter(new ChoiceAdapter());

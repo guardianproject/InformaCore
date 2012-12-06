@@ -1,6 +1,7 @@
 package org.witness.informacam.app;
 
-import info.guardianproject.iocipher.R;
+import org.witness.informacam.R;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;

@@ -1,13 +1,11 @@
 package org.witness.informacam.j3m;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 
@@ -57,32 +55,34 @@ public class J3M {
 		int offset = 0;
 		int numRead = 0;
 		
+		// TODO: not on the flash, pls.  move to IOCipher.
 		try {
 			root = new File(Storage.FileIO.DUMP_FOLDER, MediaHasher.hash(file, "SHA-1"));
 			if(!root.exists())
 				root.mkdir();
 						
 			fileBytes = new byte[(int) file.length()];
-			//mode = Constants.J3M.Chunks.ALL((int) file.length());
-			mode = Constants.J3M.Chunks.EXTRA_EXTRA_EXTRA_LARGE;
 			
-			InputStream fis = new FileInputStream(file);
-			while(offset < fileBytes.length && (numRead = fis.read(fileBytes, offset, fileBytes.length - offset)) > 0)
-    			offset += numRead;
-    		fis.close();
-    		
-    		chunk_num = 1;
-    		if(mode != fileBytes.length)
-    			chunk_num = (int) Math.ceil(fileBytes.length/mode) + 1;
-    		
-    		j3mRoot = new File(root, Constants.J3M.DUMP_FOLDER);
+			// TODO: mode is going to be in preferences!
+			mode = uploaderService.getMode();
+			
+			j3mRoot = new File(root, Constants.J3M.DUMP_FOLDER);
     		if(!j3mRoot.exists())
     			j3mRoot.mkdir();
     		
     		j3mdescriptor = new J3MDescriptor(root);
     		j3mdescriptor.put("pgpKeyFingerprint", pgpFingerprint);
     		
-    		if(atomize()) {
+    		if(mode != Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE)) {
+				InputStream fis = new FileInputStream(file);
+				while(offset < fileBytes.length && (numRead = fis.read(fileBytes, offset, fileBytes.length - offset)) > 0)
+					offset += numRead;
+				fis.close();
+
+				chunk_num = (int) Math.ceil(fileBytes.length/mode) + 1;
+			}
+    		
+    		if(mode == Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE) || atomize()) {
     			j3mdescriptor.finalize();
     			ioCipherService.copyFolder(root, true);
     			ioCipherService.moveFileToIOCipher(file, root.getName(), true);
@@ -115,14 +115,13 @@ public class J3M {
 			int offset = chunk_count * mode;
 			
 			byte[] j3mBytes = new byte[(int) Math.min(mode, fileBytes.length - offset)];
-			// if 
 			
 			// write offset + mode bytes to "blob" field as base 64 encoded string
 			System.arraycopy(fileBytes, offset, j3mBytes, 0, j3mBytes.length);
 			try {
 				chunk_description.put(Constants.J3M.Metadata.SOURCE, file.getName());
 				chunk_description.put(Constants.J3M.Metadata.INDEX, chunk_count);
-				chunk_description.put(Constants.J3M.Metadata.BLOB, j3mBytes.length > Constants.J3M.Chunks.EXTRA_EXTRA_EXTRA_LARGE ? Constants.J3M.Chunks.TOO_LARGE_SENTENEL : Base64.encodeToString(j3mBytes, Base64.DEFAULT));
+				chunk_description.put(Constants.J3M.Metadata.BLOB, Base64.encodeToString(j3mBytes, Base64.DEFAULT));
 				chunk_description.put(Constants.J3M.Metadata.LENGTH, chunk_description.getString(Constants.J3M.Metadata.BLOB).length());
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
@@ -130,29 +129,9 @@ public class J3M {
 				return false;
 			}
 			
-			// save output
 			try {
 				byte[] chunk_description_bytes = null;
-				if(chunk_description.getString(Constants.J3M.Metadata.BLOB).equals(Constants.J3M.Chunks.TOO_LARGE_SENTENEL)) {
-					
-					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
-					chunk_description.put(Constants.J3M.Metadata.LENGTH, j3mBytes.length);
-					String cd = chunk_description.toString();
-					
-					ByteBuffer buf = ByteBuffer.allocateDirect((chunk_description.toString().length() + j3mBytes.length) - Constants.J3M.Chunks.TOO_LARGE_SENTENEL.length());
-					buf.put(cd.substring(0, cd.indexOf(Constants.J3M.Chunks.TOO_LARGE_SENTENEL)).getBytes());
-					
-					InputStream is = new ByteArrayInputStream(j3mBytes);
-					int b;
-					while((b = is.read()) != -1)
-						buf.put((byte) b);
-					
-					buf.put(cd.substring(cd.indexOf(Constants.J3M.Chunks.TOO_LARGE_SENTENEL) + Constants.J3M.Chunks.TOO_LARGE_SENTENEL.length()).getBytes());
-					buf.flip();
-					
-					chunk_description_bytes = buf.array();
-				} else
-					 chunk_description_bytes = chunk_description.toString().getBytes();
+				chunk_description_bytes = chunk_description.toString().getBytes();
 				
 				FileOutputStream output = new FileOutputStream(new File(j3mRoot, chunk_count + "_.j3mtorrent"));
 				output.write(chunk_description_bytes);
@@ -166,33 +145,51 @@ public class J3M {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 				return false;
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return false;
-			}
-						
+			} 
+			
 			chunk_count++;
 		}
 		
+		if(setDescriptor()) {
+			if(mode != Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE)) {
+				try {
+					j3mdescriptor.put("j3mBytesExpected", getFileContentSize());
+					j3mdescriptor.put(Constants.J3M.Metadata.NUM_CHUNKS, chunk_num);
+				} catch(JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			} else {
+				try {
+					j3mdescriptor.put(Constants.J3M.Metadata.WHOLE_UPLOAD, true);
+				} catch(JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+			
+			return true;
+		}
 		
+		return false;
+	}
+	
+	public boolean setDescriptor() {
 		try {
 			// update descriptor
 			j3mdescriptor.put("originalHash", root.getName());
 			j3mdescriptor.put("versionLocation", "/" + root.getName() + "/" + file.getName());
 			j3mdescriptor.put("mediaType", mediaType);
 			j3mdescriptor.put("totalBytesExpected", file.length());
-			j3mdescriptor.put("j3mBytesExpected", getFileContentSize());
 			j3mdescriptor.put("timestampCreated", timestampCreated);
-			j3mdescriptor.put(Constants.J3M.Metadata.NUM_CHUNKS, chunk_num);
+			
+			return true;
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return false;
 		}
 		
-
-		return true;
+		return false;
 	}
 	
 	public J3MDescriptor getDescriptor() {
@@ -225,8 +222,13 @@ public class J3M {
 				put(Transport.Manifest.Keys.TRUSTED_DESTINATION_DISPLAY_NAME, j3mpackage.displayName);
 				put(Crypto.PGP.Keys.PGP_FINGERPRINT, j3mpackage.pgpFingerprint);
 				put(Media.Keys.J3M_BASE, root.getName());
-				put(Media.Manifest.Keys.TOTAL_CHUNKS, j3mpackage.chunk_num);
-				put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
+				
+				if(j3mpackage.j3m.has(Constants.J3M.Metadata.NUM_CHUNKS)) {
+					put(Media.Manifest.Keys.TOTAL_CHUNKS, j3mpackage.chunk_num);
+					put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
+				} else
+					put(Media.Manifest.Keys.WHOLE_UPLOAD, true);
+			
 			} catch (JSONException e) {
 				Log.e(Constants.J3M.LOG, e.toString()); 
 				e.printStackTrace();
@@ -300,12 +302,13 @@ public class J3M {
 	
 	public final static class J3MPackage {
 		public String pgpFingerprint, derivativeRoot;
-		public String j3m, url, root, displayName, thumbnail;
+		public String url, root, displayName, thumbnail;
 		public long pkcs12Id;
 		public int chunk_num;
+		public J3MDescriptor j3m;
 		
 		public J3MPackage(J3M j3m, String url, long pkcs12Id, String displayName) {
-			this.j3m = j3m.j3mdescriptor.toString();
+			this.j3m = j3m.j3mdescriptor;
 			this.pgpFingerprint = j3m.pgpFingerprint;
 			this.pkcs12Id = pkcs12Id;
 			this.url = url;

@@ -1,11 +1,10 @@
 package org.witness.informacam.app.adapters;
 
-import info.guardianproject.iocipher.R;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.witness.informacam.R;
 import org.witness.informacam.utils.Time;
 
 import android.content.Context;

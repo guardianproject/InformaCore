@@ -104,4 +104,18 @@
 	    <item>Stopped</item>
 	    <item>Uploading media\u2026</item>
 	</string-array>
+	
+	<string-array name="upload_modes">
+	    <item>Maximum speed</item>
+	    <item>Medium speed</item>
+	    <item>Slow speed</item>
+	    <item>Excrutiatingly slow speed</item>
+	</string-array>
+	
+	<string-array name="upload_mode_values">
+	    <item>600</item>
+	    <item>601</item>
+	    <item>602</item>
+	    <item>603</item>
+	</string-array>
 </resources>

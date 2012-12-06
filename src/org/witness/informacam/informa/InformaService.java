@@ -101,6 +101,8 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 
 	String LOG = Constants.Informa.LOG;
 	private int iPref;
+	
+	public ArrayList<JSONObject> attachedForms = null;
 
 	public interface InformaServiceListener {
 		public void onInformaPackageGenerated();
@@ -142,6 +144,10 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			break;
 		}
 
+	}
+	
+	public void attachForm(ArrayList<JSONObject> forms) {
+		attachedForms = forms;
 	}
 
 	public void versionsCreated() {

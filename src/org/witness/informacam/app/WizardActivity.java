@@ -390,7 +390,12 @@ public class WizardActivity extends Activity implements OnClickListener {
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
-						IOUtility.destroy(WizardActivity.this, IOUtility.getLastImageUri(WizardActivity.this));
+						try {
+							IOUtility.destroy(WizardActivity.this, IOUtility.getLastImageUri(WizardActivity.this));
+						} catch(NullPointerException e) {
+							e.printStackTrace();
+							Log.e(App.LOG, "did not get lastImageUri");
+						}
 					}
 				}).start();
 				

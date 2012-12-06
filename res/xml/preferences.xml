@@ -30,4 +30,10 @@
 	    android:entries="@array/enable_encryption_short"
 	    android:entryValues="@array/enable_encryption_values"
 	    android:key="informa.UseEncryption" />
+	<ListPreference
+	    android:title="@string/preferences_upload_mode_label"
+	    android:summary="@string/preferences_upload_mode_text"
+	    android:entries="@array/upload_modes"
+	    android:entryValues="@array/upload_mode_values"
+	    android:key="informa.UploadMode" />
 </PreferenceScreen>

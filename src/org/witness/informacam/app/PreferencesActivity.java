@@ -1,10 +1,10 @@
 package org.witness.informacam.app;
 
+import org.witness.informacam.R;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Settings;
 
-import info.guardianproject.iocipher.R;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.ListPreference;

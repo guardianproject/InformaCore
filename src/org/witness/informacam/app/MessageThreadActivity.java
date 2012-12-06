@@ -9,13 +9,13 @@ import java.util.Map;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileOutputStream;
-import info.guardianproject.iocipher.R;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.R;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.adapters.MessageThreadAdapter;
 import org.witness.informacam.crypto.KeyUtility;

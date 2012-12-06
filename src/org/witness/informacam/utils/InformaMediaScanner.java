@@ -37,13 +37,13 @@ public class InformaMediaScanner implements MediaScannerConnectionClient {
 		((OnMediaScannedListener) a).onMediaScanned(uri);
 	}
 	
-	public static void doScanForDeletion(Context c, final File file) {
+	public static void doScanForDeletion(final Context c, final File file) {
 		MediaScannerConnection.scanFile(c, new String[] {file.getAbsolutePath()}, null, new MediaScannerConnection.OnScanCompletedListener() {
 			
 			@Override
 			public void onScanCompleted(String path, Uri uri) {
 				file.delete();
-				Log.d(Storage.LOG, "FUCKING GOOD BYE, " + path);
+				c.getContentResolver().delete(uri, null, null);
 			}
 		});
 	}

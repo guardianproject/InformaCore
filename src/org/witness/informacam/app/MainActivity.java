@@ -17,11 +17,12 @@ import org.witness.informacam.app.Eula.OnEulaAgreedTo;
 import org.witness.informacam.app.MainRouter.OnRoutedListener;
 import org.witness.informacam.app.editors.image.ImageEditor;
 import org.witness.informacam.app.editors.video.VideoEditor;
-import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.LocalBinder;
 import org.witness.informacam.informa.LogPack;
+import org.witness.informacam.informa.forms.FormUtils;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
@@ -39,13 +40,10 @@ import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
 
-import com.xtralogic.android.logcollector.SendLogActivity;
-
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -67,7 +65,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickListener, OnMediaScannedListener, OnRoutedListener {
+public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickListener, OnMediaScannedListener, OnRoutedListener, OnChoosableChosenListener {
 
     SharedPreferences sp;
     
@@ -365,8 +363,11 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     			if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
     				editorIntent = new Intent(this, ImageEditor.class);
     				mimeType = Media.Type.MIME_TYPE_JPEG;
-    				// the uri is the last image uri.  because there is NO BETTER WAY OF DOING THIS on most devices. (wtf?)
-    				mediaCaptureUri = IOUtility.getLastImageUri(this);
+    			
+    				// on some devices, the uri is the last image uri (not returned by data).  because there is NO BETTER WAY OF DOING THIS on most devices. (wtf?)
+					mediaCaptureUri = IOUtility.getLastImageUri(this);
+    				
+    				Log.d(App.LOG, "OUR PHOTO IS: " + mediaCaptureUri.toString());
     			} else {
     				editorIntent = new Intent(this, VideoEditor.class);
     				mimeType = Media.Type.MIME_TYPE_MP4;
@@ -502,10 +503,20 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
     	case R.id.menu_export_public_key:
     		MainRouter.exportDeviceKey(MainActivity.this);
     		return true;
+    	case R.id.extras_import_form:
+    		importForm();
+    		return true;
     	default:
     		return false;
     	}
     }
+
+	private void importForm() {
+		FormImporterDialog fid = new FormImporterDialog(MainActivity.this);
+		mProgressDialog = ProgressDialog.show(this, "", getString(R.string.please_wait));
+		fid.show();
+		
+	}
 
 	@Override
 	public void onClick(View v) {
@@ -571,6 +582,33 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			} else if(Transport.Errors.CONNECTION.equals(i.getAction())) {
 				Toast.makeText(MainActivity.this, getString(R.string.error_orbot_nonresponsive), Toast.LENGTH_LONG).show();
 			}
+			
+		}
+	}
+
+	@Override
+	public void onChoice(int which, final Object obj) {
+		if(obj instanceof File) {
+			h.post(new Runnable() {
+				@Override
+				public void run() {
+					boolean installed = FormUtils.importAndParse(MainActivity.this, (File) obj);
+					mProgressDialog.dismiss();
+					if(!installed)
+						Toast.makeText(MainActivity.this, getString(R.string.error_xml_invalid), Toast.LENGTH_LONG).show();
+					else
+						Toast.makeText(MainActivity.this, getString(R.string.forms_import_ok), Toast.LENGTH_LONG).show();
+				}
+			});
+		}
+		
+	}
+
+	@Override
+	public void onCancel() {
+		try {
+			mProgressDialog.dismiss();
+		} catch(NullPointerException e) {
 			
 		}
 	}

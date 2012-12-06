@@ -39,7 +39,6 @@
                  <category android:name="android.intent.category.ALTERNATIVE" /> 
                  <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
                  
-                 <data android:mimeType="image/*" />
              </intent-filter>        
         </activity>
         <activity android:name=".app.editors.image.ImagePreview" />
@@ -53,7 +52,6 @@
                  <category android:name="android.intent.category.ALTERNATIVE" /> 
                  <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
                  
-                 <data android:mimeType="video/*" />
              </intent-filter>        
         </activity>
         <activity android:name=".app.editors.video.VideoPreferences" />
