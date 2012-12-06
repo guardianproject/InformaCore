@@ -83,6 +83,14 @@ class Eula {
                     refuse(activity);
                 }
             });
+            builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+				
+				@Override
+				public void onCancel(DialogInterface dialog) {
+					refuse(activity);
+					
+				}
+			});
             builder.setMessage(readEula(activity));
             builder.create().show();
             return false;
@@ -97,7 +105,7 @@ class Eula {
     private static void refuse(Activity activity) {
         activity.finish();
     }
-
+    
     private static CharSequence readEula(Activity activity) {
         BufferedReader in = null;
         try {
