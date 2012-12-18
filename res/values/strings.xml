@@ -57,6 +57,11 @@
     <string name="menu_region_redact">Redact</string>
     <string name="menu_region_identify">Annotate</string>
     <string name="menu_region_delete">Delete</string>
+    <string name="menu_set_in_point">Set In Point</string>
+    <string name="menu_set_out_point">Set Out Point</string>
+    <string name="menu_remove_trail">Remove Trail</string>
+    <string name="menu_do_tween">Do Tween</string>
+    <string name="menu_remove_keyframe">Remove Keyframe</string>
     <string name="menu_minimize">Hide Menu</string>
     <string name="menu_hide_hints">Show/Hide Hints</string>
     <string name="welcomeSubMsg">now with video!</string>
@@ -96,6 +101,7 @@
 	<string name="error_invalid_ictd">Sorry. InformaCam could not install this ICTD file to your address book.  Please contact whoever gave you this ICTD file.</string>
 	<string name="error_no_trusted_destinations">Your address book is empty.  Please obtain and install an ICTD file from a Trusted Destination.</string>
 	<string name="error_xml_invalid">Sorry. This XML file is not valid for InformaCam.</string>
+	<string name="error_media_null">Sorry. Media was null.</string>
 	
 	<!-- FORMS/XML/JAVAROSA ETC -->
 	<string name="forms_import_ok">OK. Your form has been imported.</string>

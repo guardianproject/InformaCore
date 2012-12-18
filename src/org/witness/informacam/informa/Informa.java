@@ -1,5 +1,10 @@
 package org.witness.informacam.informa;
 
+import info.guardianproject.iocipher.File;
+import info.guardianproject.odkparser.Constants.Form;
+import info.guardianproject.odkparser.FormWrapper;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.security.NoSuchAlgorithmException;
@@ -11,12 +16,16 @@ import java.util.Set;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
+import org.javarosa.core.model.FormDef;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
+import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -92,34 +101,18 @@ public class Informa {
 		long dateCreated, dateSavedAsInformaDocument;
 	}
 	
-	public class Form extends InformaZipper {
-		String namespace;
-		JSONObject formData;
-		
-		public Form(LogPack form) {
-			try {
-				this.namespace = form.getString(Constants.Informa.Keys.Data.Forms.NAMESPACE);
-				this.formData = form.getJSONObject(Constants.Informa.Keys.Data.Forms.FORM_DATA);
-			} catch(JSONException e) {
-				e.printStackTrace();
-			}
-		}
-		
-	}
 	
 	public class Data extends InformaZipper {
 		Exif exif;
 		MediaHash mediaHash;
 		Set<MediaCapturePlayback> mediaCapturePlayback;
 		Set<Annotation> annotations;
-		Set<Form> appendedForms;
 		int mediaType;
 		
 		public Data() {
 			mediaCapturePlayback = new HashSet<MediaCapturePlayback>();
 			annotations = new HashSet<Annotation>();
 			mediaHash = new MediaHash();
-			appendedForms = new HashSet<Form>();
 		}
 	}
 	
@@ -202,10 +195,10 @@ public class Informa {
 				obfuscationType = logPack.getString(ImageRegion.FILTER);
 				
 				
-				if(logPack.has(ImageRegion.Subject.PSEUDONYM)) {
+				if(logPack.has(ImageRegion.Subject.FORM_NAMESPACE)) {
 					subject = new Subject(
-							logPack.getString(ImageRegion.Subject.PSEUDONYM), 
-							logPack.getString(ImageRegion.Subject.INFORMED_CONSENT_GIVEN));
+							logPack.getString(ImageRegion.Subject.FORM_NAMESPACE),
+							logPack.getString(ImageRegion.Subject.FORM_DATA));
 				}
 				
 				if(logPack.has(VideoRegion.START_TIME)) {
@@ -234,15 +227,19 @@ public class Informa {
 	}
 	
 	public class Subject extends InformaZipper {
-		int[] customCodes;
-		String alias;
+		JSONObject form_data;
+		String form_namespace;
 		
-		public Subject(String alias, String consentGiven) {
-			this.alias = alias;
-			if(new Boolean(consentGiven)) {
-				this.customCodes = new int[1];
-				this.customCodes[0] = Constants.Informa.Consent.GENERAL;
-			}
+		public Subject(String form_namespace, String form_data) {
+			
+			try {
+				this.form_namespace = form_namespace;
+				
+				this.form_data = new JSONObject();
+				this.form_data.put(ImageRegion.Subject.FORM_DATA, FormWrapper.parseXMLAnswersAsJSON(IOUtility.getBytesFromFile(new File(form_data))));
+			} catch (JSONException e) {}
+			
+			Log.d(Storage.LOG, this.form_data.toString());
 		}
 	}
 	
@@ -340,14 +337,6 @@ public class Informa {
 		for(Entry<Long, LogPack> e : annotations) {
 			e.getValue().remove(CaptureEvent.Keys.TYPE);
 			data.annotations.add(new Annotation(e.getKey(), e.getValue()));
-		}
-		return true;
-	}
-	
-	public boolean addToForms(List<Entry<Long, LogPack>> forms) throws JSONException {
-		for(Entry<Long, LogPack> e : forms) {
-			e.getValue().remove(CaptureEvent.Keys.TYPE);
-			data.appendedForms.add(new Form(e.getValue()));;
 		}
 		return true;
 	}

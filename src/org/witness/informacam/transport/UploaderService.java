@@ -235,6 +235,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private boolean getRequiredData(J3MManifest j3mManifest) {
 		try {
 			String host = j3mManifest.getString(Transport.Keys.URL);
@@ -313,6 +314,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 		}
 	}
 
+	@SuppressWarnings("null")
 	private boolean uploadWhole(J3MManifest j3mManifest) {
 		byte[] file = null;
 		String filename = Transport.Manifest.Keys.J3MBase + "/original";
@@ -321,14 +323,18 @@ public class UploaderService extends Service implements HttpErrorListener {
 		long pkcs12Id = 0;
 
 		Map<String, Object> postData = new HashMap<String, Object>();
-
-
+		
 		try {
+			j3mManifest.put(Media.Manifest.Keys.WHOLE_UPLOAD, true);
+			if(j3mManifest.has(Media.Manifest.Keys.LAST_TRANSFERRED))
+				j3mManifest.remove(Media.Manifest.Keys.LAST_TRANSFERRED);
+			
 			url = j3mManifest.getString(Transport.Keys.URL);
 			pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
 
 			postData.put(Uploader.Keys.AUTH_TOKEN, j3mManifest.getString(Media.Manifest.Keys.AUTH_TOKEN));
 			postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
+			postData.put(Uploader.Keys.WHOLE_UPLOAD, true);
 		} catch(JSONException e) {
 			return false;
 		}
@@ -363,8 +369,6 @@ public class UploaderService extends Service implements HttpErrorListener {
 						queue.remove(j3mManifest);
 					}
 
-					int lastTransferred = j3mManifest.getInt(Transport.Manifest.Keys.LAST_TRANSFERRED);
-					j3mManifest.put(Transport.Manifest.Keys.LAST_TRANSFERRED, (lastTransferred + 1));
 					j3mManifest.save();
 
 					JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
@@ -390,6 +394,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 	}
 
+	@SuppressWarnings("null")
 	private boolean uploadChunk(J3MManifest j3mManifest) {
 		try {
 
@@ -518,12 +523,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 					J3MManifest j3mManifest = queue.peek();
 
-					if(
-							(j3mManifest.has(Media.Manifest.Keys.WHOLE_UPLOAD) && !uploadWhole(j3mManifest)) ||
-							(!uploadChunk(j3mManifest))
-							) {
-
-						// TODO: pop from queue with flag counter?
+					if(!upload(j3mManifest)) {
 						queue.remove(j3mManifest);
 						try {
 							if(j3mManifest.has(Manifest.Keys.SHOULD_RETRY) && j3mManifest.getBoolean(Manifest.Keys.SHOULD_RETRY))
@@ -543,6 +543,13 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 	}
 
+	private boolean upload(J3MManifest j3mManifest) {
+		if(getMode() == J3M.Chunks.WHOLE)
+			return this.uploadWhole(j3mManifest);
+		else
+			return this.uploadChunk(j3mManifest);
+	}
+	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return START_NOT_STICKY;

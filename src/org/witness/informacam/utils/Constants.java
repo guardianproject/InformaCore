@@ -1,5 +1,7 @@
 package org.witness.informacam.utils;
 
+import info.guardianproject.odkparser.Constants.Form;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -375,6 +377,7 @@ public class Constants {
 			public final static String DISPLAY_NAME = Informa.Keys.Owner.DISPLAY_NAME;
 			public final static String DEVICE_EMAIL = "ownerEmailAddress";
 			public static final String GLOBAL_TIME = "globalTimeFromDevice";
+			public static final String DCIM_MANAGEMENT_TYPE = "dcimManagementType";
 		}
 		
 		public final static class Device {
@@ -383,6 +386,7 @@ public class Constants {
 				public final static String SECRET_KEY = "deviceSecretKey";
 				public final static String AUTH_KEY = "deviceAuthKey";
 				public final static String BASE_IMAGE = "deviceBaseImage";
+				public static final String DCIM_MAP = "dcimMap";
 			}
 		}
 		
@@ -594,9 +598,18 @@ public class Constants {
 					public final static String HASH = "imageRegionHash";
 					
 					public final static class Subject {
-						public final static String PSEUDONYM = "subject_pseudonym";
-						public final static String INFORMED_CONSENT_GIVEN = "subject_informedConsentGiven";
-						public final static String PERSIST_FILTER = "subject_persistFilter";
+						public final static String FORM_NAMESPACE = "form_namespace";
+						public static final String FORM_DATA = "form_data";
+						public static final String FORM_DEF_PATH = "formDefPath";
+						
+						public static final String[] OmitWhileUpdating = {
+							FORM_NAMESPACE,
+							FORM_DEF_PATH,
+							FORM_DATA,
+							Form.Extras.DEFAULT_THUMB,
+							Form.Extras.EXPORT_MODE,
+							Form.Extras.MAX_QUESTIONS_PER_PAGE
+						};
 					}
 				}
 				
@@ -627,17 +640,10 @@ public class Constants {
 					}
 					
 					public final static class Subject {
-						public final static String PSEUDONYM = Informa.Keys.Data.ImageRegion.Subject.PSEUDONYM;
-						public final static String INFORMED_CONSENT_GIVEN = Informa.Keys.Data.ImageRegion.Subject.INFORMED_CONSENT_GIVEN;
-						public final static String PERSIST_FILTER = Informa.Keys.Data.ImageRegion.Subject.PERSIST_FILTER;
+						public final static String FORM_NAMESPACE = Informa.Keys.Data.ImageRegion.Subject.FORM_NAMESPACE;
+						public static final String FORM_DATA = Informa.Keys.Data.ImageRegion.Subject.FORM_DATA;
+						public static final String FORM_DEF_PATH = Informa.Keys.Data.ImageRegion.Subject.FORM_DEF_PATH;
 					}
-				}
-
-				public static final class Forms {
-					public final static String NAMESPACE = "partnerFormNamespace";
-					public static final String FORM_DATA = "partnerFormData";
-					public static final String FORM_ALIAS = "partnerFormNameAlias";
-					public static final String MIME_TYPE = ".informaCamForm";
 				}
 			}
 		}
@@ -709,6 +715,7 @@ public class Constants {
 			public static final String AUTH_TOKEN = Media.Keys.AUTH_TOKEN;
 			public static final String CHECK_FOR_MISSING_TORRENTS = "checkForMissingTorrents";
 			public static final String SUPPORTING_DATA = "supportingData";
+			public static final String WHOLE_UPLOAD = "whole_upload";
 		}
 		
 		public static final class Status {

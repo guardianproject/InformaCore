@@ -2,6 +2,7 @@ package org.witness.informacam.storage;
 
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Settings;
+import org.witness.informacam.utils.Constants.Storage;
 
 import net.sqlcipher.database.SQLiteDatabase;
 import android.app.Service;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class DatabaseService extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -36,6 +38,7 @@ public class DatabaseService extends Service {
 	public void onCreate() {
 		dh = new DatabaseHelper(this);
 		db = dh.getWritableDatabase(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.CURRENT_LOGIN, ""));
+		Log.d(Storage.LOG, "starting database service");
 		databaseService = this;
 	}
 	
@@ -43,6 +46,8 @@ public class DatabaseService extends Service {
 	public void onDestroy() {
 		db.close();
 		dh.close();
+		Log.d(Storage.LOG, "stopping database service");
+		super.onDestroy();
 	}
 	
 	@Override

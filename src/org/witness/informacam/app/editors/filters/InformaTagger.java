@@ -2,29 +2,47 @@ package org.witness.informacam.app.editors.filters;
 
 import java.util.Properties;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.witness.informacam.utils.FormUtility;
+import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Forms;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.ImageRegion;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.RectF;
+import android.util.Log;
 
 public class InformaTagger implements RegionProcesser
 {
 	Properties mProps;
 	private Bitmap mPreview;
 	
-	public InformaTagger () {
-		this("", false, false);
-	}
-	
-	public InformaTagger(String pseudonym, boolean informedConsentGiven, boolean persistFilter) {
+	public InformaTagger(int obscureType) throws JSONException {
+		JSONObject form = FormUtility.getAnnotationPlugins(obscureType).get(obscureType);
+
 		mProps = new Properties ();
-		mProps.put(ImageRegion.Subject.PSEUDONYM, pseudonym);
-		mProps.put(ImageRegion.Subject.INFORMED_CONSENT_GIVEN, String.valueOf(informedConsentGiven));
-		mProps.put(ImageRegion.Subject.PERSIST_FILTER, String.valueOf(persistFilter));
+		mProps.put(ImageRegion.Subject.FORM_NAMESPACE, form.getString(Forms.TITLE));
+		mProps.put(ImageRegion.Subject.FORM_DEF_PATH, form.getString(Forms.DEF));
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
 	}
 	
+	public InformaTagger(String formNamespace, String formDefPath) {
+		this(formNamespace, formDefPath, null);
+	}
+	
+	public InformaTagger(String formNamespace, String formDefPath, String formData) {
+		mProps = new Properties ();
+		mProps.put(ImageRegion.Subject.FORM_NAMESPACE, formNamespace);
+		mProps.put(ImageRegion.Subject.FORM_DEF_PATH, formDefPath);
+		mProps.put(ImageRegion.FILTER, this.getClass().getName());
+		
+		if(formData != null)
+			mProps.put(ImageRegion.Subject.FORM_DATA, formData);
+		
+	}
+
 	@Override
 	public void processRegion (RectF rect, Canvas canvas,  Bitmap bitmap) 
 	{

@@ -457,7 +457,7 @@ public class KeyUtility {
 		SQLiteDatabase db = DatabaseService.getInstance().getDb();
 		
 		dh.setTable(db, Tables.Keys.SETUP);
-		Cursor c = dh.getValue(db, new String[] {Settings.Device.Keys.SECRET_KEY}, BaseColumns._ID, 1L);
+		Cursor c = dh.getValue(db, new String[] {Settings.Device.Keys.SECRET_KEY, Settings.Device.Keys.BASE_IMAGE}, BaseColumns._ID, 1L);
 		
 		if(c != null && c.moveToFirst()) {
 			PGPSecretKey sk = extractSecretKey(c.getBlob(c.getColumnIndex(Settings.Device.Keys.SECRET_KEY)));
@@ -465,6 +465,8 @@ public class KeyUtility {
 			
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ArmoredOutputStream aos = new ArmoredOutputStream(baos);
+			
+			
 			
 			publicKeyFile = new File(Storage.FileIO.DUMP_FOLDER, "icPublicKey_" + System.currentTimeMillis() + ".asc");
 			try {
@@ -475,10 +477,15 @@ public class KeyUtility {
 				FileOutputStream fos = new FileOutputStream(publicKeyFile);
 				fos.write(baos.toByteArray());
 				fos.flush();
-				fos.close();
 				
 				baos.close();
-
+				
+				// NOW add b64-encoded base image
+				byte[] base_image = c.getBlob(c.getColumnIndex(Settings.Device.Keys.BASE_IMAGE));
+				fos.write(base_image);
+				fos.flush();
+				
+				fos.close();
 			} catch (IOException e) {
 				Log.e(Crypto.LOG, e.toString());
 				e.printStackTrace();

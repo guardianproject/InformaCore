@@ -1,39 +1,38 @@
 package org.witness.informacam.app.editors.image;
 
+import info.guardianproject.iocipher.File;
+import info.guardianproject.odkparser.Constants.Form;
+import info.guardianproject.odkparser.ui.FormHolder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.AddressBookActivity;
-import org.witness.informacam.app.AnnotationActivity;
 import org.witness.informacam.app.editors.detect.GoogleFaceDetection;
 import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
 import org.witness.informacam.app.editors.filters.InformaTagger;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
 import org.witness.informacam.app.editors.filters.SolidObscure;
-import org.witness.informacam.app.mods.InformaChoosableAlert;
-import org.witness.informacam.app.mods.InformaChoosableAlert.OnChoosableChosenListener;
 import org.witness.informacam.app.mods.InformaMultiChoosableAlert;
-import org.witness.informacam.app.mods.InformaMultiChoosableAlert.OnMultipleSelectedListener;
 import org.witness.informacam.app.mods.Selections;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.InformaService.InformaServiceListener;
 import org.witness.informacam.informa.LogPack;
-import org.witness.informacam.informa.forms.FormPackager;
-import org.witness.informacam.informa.forms.FormUtils;
+import org.witness.informacam.storage.IOCipherService;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.ImageEditor.Mode;
 import org.witness.informacam.utils.Constants.Informa;
@@ -41,6 +40,8 @@ import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.Exif;
+import org.witness.informacam.utils.FormUtility;
+import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -82,7 +83,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class ImageEditor extends Activity implements OnTouchListener, OnClickListener, InformaServiceListener, OnChoosableChosenListener, OnMultipleSelectedListener {
+public class ImageEditor extends Activity implements OnTouchListener, OnClickListener, InformaServiceListener {
 	// Constants for Informa
 
 	// Image Matrix
@@ -360,14 +361,10 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 								else if(regionProcesserName.equals(SolidObscure.class.getName()))
 									rp = new SolidObscure();
 								else if(regionProcesserName.equals(InformaTagger.class.getName())) {
-									if(lp.has(Data.ImageRegion.Subject.PSEUDONYM)) {
-										rp = new InformaTagger(
-												lp.getString(Data.ImageRegion.Subject.PSEUDONYM),
-												Boolean.parseBoolean(lp.getString(Data.ImageRegion.Subject.INFORMED_CONSENT_GIVEN)),
-												Boolean.parseBoolean(lp.getString(Data.ImageRegion.Subject.PERSIST_FILTER))
-												);
-									} else
-										rp = new InformaTagger();
+									rp = new InformaTagger(
+											lp.getString(Data.ImageRegion.Subject.FORM_NAMESPACE), 
+											lp.getString(Data.ImageRegion.Subject.FORM_DEF_PATH),
+											lp.getString(Data.ImageRegion.Subject.FORM_DATA));
 								}
 
 								createImageRegion(irLeft, irTop, irRight, irBottom, false, true, rp, true, lp.getLong(Data.ImageRegion.TIMESTAMP));
@@ -1007,7 +1004,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
 		switch (item.getItemId()) {
 		case R.id.menu_add_form:
-			ArrayList<Selections> forms = FormUtils.getAsSelections(this);
+			ArrayList<Selections> forms = FormUtility.getAsSelections(this);
 			if(forms != null) {
 				InformaMultiChoosableAlert imca = new InformaMultiChoosableAlert(ImageEditor.this, forms);
 				imca.setTitle(getString(R.string.add_form));
@@ -1170,9 +1167,15 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	}    
 
 	public void launchAnnotationActivity(ImageRegion ir) {
-		Intent informa = new Intent(this, AnnotationActivity.class);
-		informa.putExtra(App.ImageEditor.Keys.PROPERTIES, ir.getRegionProcessor().getProperties());
-		informa.putExtra(Informa.Keys.Data.ImageRegion.INDEX, imageRegions.indexOf(ir));
+		Intent launch_form = new Intent(this, FormHolder.class);
+		
+		launch_form.putExtra(Form.Extras.DEF_PATH, IOUtility.getBytesFromFile(new File((String) ir.getRegionProcessor().getProperties().get(Informa.Keys.Data.ImageRegion.Subject.FORM_DEF_PATH))));
+		if(ir.getRegionProcessor().getProperties().containsKey(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA))
+			launch_form.putExtra(Form.Extras.PREVIOUS_ANSWERS, IOUtility.getBytesFromFile(new File((String) ir.getRegionProcessor().getProperties().get(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA))));
+		
+		launch_form.putExtra(Informa.Keys.Data.ImageRegion.INDEX, imageRegions.indexOf(ir));
+		launch_form.putExtra(Form.Extras.MAX_QUESTIONS_PER_PAGE, 2);
+		launch_form.putExtra(Form.Extras.EXPORT_MODE, Form.ExportMode.XML_BAOS);
 
 		ir.getRegionProcessor().processRegion(new RectF(ir.getBounds()), obscuredCanvas, obscuredBmp);
 
@@ -1180,36 +1183,14 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			Bitmap b = ir.getRegionProcessor().getBitmap();
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			b.compress(Bitmap.CompressFormat.JPEG, 50, baos);
-			informa.putExtra(Informa.Keys.Data.ImageRegion.THUMBNAIL, baos.toByteArray());
+			launch_form.putExtra(Form.Extras.DEFAULT_THUMB, baos.toByteArray());
 		}
 
-		startActivityForResult(informa, App.ImageEditor.FROM_ANNOTATION_ACTIVITY);
+		startActivityForResult(launch_form, App.ImageEditor.FROM_ANNOTATION_ACTIVITY);
 
 	}
 
-	private void saveImage() throws FileNotFoundException {
-		/*
-    	SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.Media.DateFormats.EXPORT_DATE_FORMAT);
-		Date date = new Date();
-		String dateString = dateFormat.format(date);
-
-		ContentValues cv = new ContentValues();
-		cv.put(Images.Media.DATE_ADDED, dateString);
-		cv.put(Images.Media.DATE_TAKEN, dateString);
-		cv.put(Images.Media.DATE_MODIFIED, dateString);
-		cv.put(Images.Media.DESCRIPTION, Exif.DESCRIPTION);
-		cv.put(Images.Media.TITLE, Exif.TITLE);
-
-		savedImageUri = getContentResolver().insert(Media.EXTERNAL_CONTENT_URI, cv);
-		obscuredBmp = createObscuredBitmap(imageBitmap.getWidth(),imageBitmap.getHeight(), false);
-
-		OutputStream imageFileOS;
-
-		 //lossless?  good question - still a smaller version
-		imageFileOS = getContentResolver().openOutputStream(savedImageUri);
-		obscuredBmp.compress(CompressFormat.JPEG, App.ImageEditor.QUALITY, imageFileOS);
-		 */
-
+	private void saveImage() throws FileNotFoundException {		
 		// create new file and save it
 		java.io.File savedImage = new java.io.File(Storage.FileIO.DUMP_FOLDER, App.ImageEditor.GALLERY_NAME);
 
@@ -1230,18 +1211,49 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
 		if(resultCode == Activity.RESULT_OK) {
 			if(requestCode == App.ImageEditor.FROM_ANNOTATION_ACTIVITY) {
-				// replace corresponding image region
-				@SuppressWarnings("unchecked")
-				HashMap<String, Object> informaReturn = 
-				(HashMap<String, Object>) data.getSerializableExtra(Informa.Keys.Data.ImageRegion.TAGGER_RETURN);    			
+				// replace corresponding image region				   			
 				Properties mProp = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0))
 						.getRegionProcessor().getProperties();
 
 				// iterate through returned hashmap and place these new properties in it.
-				for(Map.Entry<String, Object> entry : informaReturn.entrySet())
-					mProp.setProperty(entry.getKey(), entry.getValue().toString());
-
-
+				Iterator<String> props = data.getExtras().keySet().iterator();
+				while(props.hasNext()) {
+					String prop = props.next();
+					if(prop.equals(Form.Extras.PREVIOUS_ANSWERS)) {
+						// this is raw xml data-- burn this to iocipher file and set its path as mProp
+						File form_file = null;
+						byte[] xml = data.getByteArrayExtra(prop);
+						
+						if(mProp.containsKey(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA))
+							form_file = IOCipherService.getInstance().getFile((String) mProp.get(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA));
+						else {
+							try {
+								form_file = IOCipherService.getInstance().getFile(Storage.IOCipher.DUMP_FOLDER + "/" + System.currentTimeMillis() + MediaHasher.hash(xml, "SHA-1") + ".xml");
+							} catch (NoSuchAlgorithmException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+						
+						if(form_file != null) {
+							try {
+								info.guardianproject.iocipher.FileOutputStream form_answers = new info.guardianproject.iocipher.FileOutputStream(form_file);
+								
+								form_answers.write(xml);
+								form_answers.flush();
+								form_answers.close();
+								
+								mProp.setProperty(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA, form_file.getAbsolutePath());
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							
+						}
+					} else if(!Arrays.asList(Informa.Keys.Data.ImageRegion.Subject.OmitWhileUpdating).contains(prop))
+						mProp.setProperty(prop, String.valueOf(data.getExtras().get(prop)));
+				}
+				
 				ImageRegion ir = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0));
 				ir.getRegionProcessor().setProperties(mProp);
 
@@ -1324,26 +1336,4 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		finish();
 	}
 	
-
-	@Override
-	public void onChoice(int which, Object obj) {
-		// TODO
-	}
-
-	@Override
-	public void onCancel() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onMultipleSelected(ArrayList<Selections> selections) {
-		if(selections != null && selections.size() > 0) {
-			ArrayList<JSONObject> forms = new ArrayList<JSONObject>();
-			for(Selections s : selections)
-				forms.add((JSONObject) s.getExtras());
-			InformaService.getInstance().attachForm(forms);
-		}
-		
-	}
 }

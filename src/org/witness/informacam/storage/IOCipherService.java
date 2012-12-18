@@ -112,9 +112,19 @@ public class IOCipherService extends Service {
 		return START_NOT_STICKY;
 	}
 	
+	public File getFile(String filepath) {
+		return getFile(Uri.fromFile(new File(filepath)));
+	}
+	
 	public File getFile(Uri uri) {
-		String fileName = uri.toString().split("file://")[1];		
+		String fileName = uri.toString().split("file://")[1];
+		Log.d(Storage.LOG, "touch " + fileName);
 		return new File(fileName);
+	}
+	
+	public File getFile(File root, String file) {
+		Uri uri = Uri.fromFile(new File(root.getAbsolutePath() + "/" + file));
+		return getFile(uri);
 	}
 	
 	public File saveFile(String filename) {
@@ -137,11 +147,6 @@ public class IOCipherService extends Service {
 		}
 		
 		return file;
-	}
-	
-	public File getFile(File root, String file) {
-		Uri uri = Uri.fromFile(new File(root.getAbsolutePath() + "/" + file));
-		return getFile(uri);
 	}
 	
 	public List<JSONObject> getSavedMedia() {
@@ -168,10 +173,6 @@ public class IOCipherService extends Service {
 			}
 		}
 		return media;
-	}
-	
-	public File getFile(String filepath) {
-		return getFile(Uri.fromFile(new File(filepath)));
 	}
 	
 	public FileInputStream getFileStream(Uri uri) throws IOException {
