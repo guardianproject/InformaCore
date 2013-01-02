@@ -23,17 +23,20 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.j3m.J3M.J3MManifest;
-import org.witness.informacam.j3m.J3M.J3MPackage;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.HttpUtility.HttpErrorListener;
+import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.J3M;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Transport;
+import org.witness.informacam.utils.Constants.TrustedDestination;
 import org.witness.informacam.utils.Constants.Uploader;
 import org.witness.informacam.utils.Constants.Media.Manifest;
 import org.witness.informacam.utils.Constants.Storage.Tables;
@@ -96,25 +99,42 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 		sp.edit().putInt(Settings.Uploader.MODE, mode).commit();
 	}
+	
+	private void clearUploads() {
+		dh.setTable(db, Tables.Keys.MEDIA);
+		Cursor uploads = dh.getValue(db, null, null, null);
+		if(uploads != null && uploads.moveToFirst()) {
+			while(!uploads.isAfterLast()) {
+				dh.removeValue(db, new String[] {BaseColumns._ID}, new Object[] {uploads.getLong(uploads.getColumnIndex(BaseColumns._ID))});
+				uploads.moveToNext();
+			}
+			uploads.close();
+		}
+	}
 
 	private void initUploadsFromDatabase() {
 		dh.setTable(db, Tables.Keys.MEDIA);
 		Cursor uploads = dh.getValue(db, new String[] {Media.Keys.J3M_MANIFEST}, null, null);
 		if(uploads != null && uploads.moveToFirst()) {
+			Log.d(Transport.LOG, uploads.getColumnCount() + " uploads.");
 			while(!uploads.isAfterLast()) {
 				byte[] jmd = null;
 				try {
 					jmd = uploads.getBlob(uploads.getColumnIndex(Media.Keys.J3M_MANIFEST));
 				} catch(Exception e) {
+					Log.e(Transport.LOG, e.toString());
+					e.printStackTrace();
 					uploads.moveToNext();
 					continue;
 				}
-
+				
+				
+				
 				if(jmd == null) {
 					uploads.moveToNext();
 					continue;
 				}
-
+				
 				try {
 					final J3MManifest j3mManifest = new J3MManifest((JSONObject) new JSONTokener(new String(jmd)).nextValue());
 
@@ -163,46 +183,21 @@ public class UploaderService extends Service implements HttpErrorListener {
 		return missing;
 	}
 
-	public void requestTicket(J3MPackage j3mPackage) {
+	public void requestTicket(J3MManifest manifest) {
 		Map<String, Object> postData = new HashMap<String, Object>();
 
-		postData.put(Uploader.Keys.J3M, j3mPackage.j3m.toString());
-		String result = HttpUtility.executeHttpsPost(this, j3mPackage.url, postData, Transport.MimeTypes.JSON, j3mPackage.pkcs12Id, null, null, null);
-
 		try {
+			postData.put(Uploader.Keys.J3M, manifest.getJSONObject(J3M.Keys.DESCRIPTOR).toString());
+			String result = HttpUtility.executeHttpsPost(this, manifest.getString(J3M.Keys.URL), postData, Transport.MimeTypes.JSON, manifest.getLong(J3M.Keys.PKCS12_ID), null, null, null);
+			Log.d(Transport.LOG, result);
+			
 			JSONObject res = parseResult(result);
-
-
 			String authToken = res.getJSONObject(Transport.Keys.BUNDLE).getString(Media.Manifest.Keys.AUTH_TOKEN);
 
-			J3MManifest j3mmanifest = new J3MManifest(j3mPackage, authToken);
-			j3mmanifest.save();
+			manifest.put(J3M.Keys.AUTH_TOKEN, authToken);
+			manifest.save();
 
-			if(res.getJSONObject(Transport.Keys.BUNDLE).has(Transport.Keys.SUPPORTED_DATA_REQUIRED)) {
-				final JSONArray supportedDataRequired = res.getJSONObject(Transport.Keys.BUNDLE).getJSONArray(Transport.Keys.SUPPORTED_DATA_REQUIRED);
-				new Thread(new Runnable() {
-					@Override
-					public void run() {
-						for(int s=0; s<supportedDataRequired.length(); s++) {
-							try {
-								switch((Integer) supportedDataRequired.get(s)) {
-								case Transport.Result.ErrorCodes.BASE_IMAGE_REQUIRED:
-									// TODO: upload base image
-									break;
-								case Transport.Result.ErrorCodes.PGP_KEY_REQUIRED:
-									// TODO: upload pgp key
-									break;
-								}
-							} catch(JSONException e) {
-								Log.e(Transport.LOG, e.toString());
-								e.printStackTrace();
-							}
-						}
-					}
-				}).start();
-			}
-
-			queue.add(j3mmanifest);
+			queue.add(manifest);
 		} catch (JSONException e) {
 			Log.e(Transport.LOG, e.toString());
 			e.printStackTrace();
@@ -323,25 +318,23 @@ public class UploaderService extends Service implements HttpErrorListener {
 		long pkcs12Id = 0;
 
 		Map<String, Object> postData = new HashMap<String, Object>();
-		
+
 		try {
-			j3mManifest.put(Media.Manifest.Keys.WHOLE_UPLOAD, true);
-			if(j3mManifest.has(Media.Manifest.Keys.LAST_TRANSFERRED))
-				j3mManifest.remove(Media.Manifest.Keys.LAST_TRANSFERRED);
-			
 			url = j3mManifest.getString(Transport.Keys.URL);
-			pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
+			pkcs12Id = j3mManifest.getLong(J3M.Keys.PKCS12_ID);
 
 			postData.put(Uploader.Keys.AUTH_TOKEN, j3mManifest.getString(Media.Manifest.Keys.AUTH_TOKEN));
 			postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
 			postData.put(Uploader.Keys.WHOLE_UPLOAD, true);
 		} catch(JSONException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
 			return false;
 		}
 
 
 		try {
-			file = IOUtility.getBytesFromFile(new File(j3mManifest.getString(filename)));
+			file = IOUtility.getBytesFromFile(new File(j3mManifest.getString(Media.Manifest.Keys.WHOLE_UPLOAD_PATH)));
 		} catch(Exception e) {
 			Log.d(Storage.LOG, "this error to match\n" + e.getMessage());
 			try {
@@ -353,11 +346,14 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 		}
 
-		if(file == null)
+		if(file == null) {
+			Log.d(Transport.LOG, "file is null. exiting.");
 			return false;
+		}
 
 		String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, file, filename, Transport.MimeTypes.OCTET_STREAM);
-
+		Log.d(Transport.LOG, result);
+		
 		JSONObject res = parseResult(result);
 
 		try {
@@ -372,13 +368,12 @@ public class UploaderService extends Service implements HttpErrorListener {
 					j3mManifest.save();
 
 					JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
-					if(bundle.has(Transport.Keys.REQUIREMENTS)) {
-
-					}
+					Log.d(Transport.LOG, bundle.toString());
 				}
 			} else {
 				switch(res.getInt(Transport.Keys.ERROR_CODE)) {
 				case Transport.Result.ErrorCodes.DUPLICATE_J3M_TORRENT:
+					//j3mManifest.put(name, false);
 					if(queue.contains(j3mManifest))
 						queue.remove(j3mManifest);
 
@@ -422,7 +417,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 				postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
 
 				String url = j3mManifest.getString(Transport.Keys.URL);
-				long pkcs12Id = j3mManifest.getLong(Transport.Keys.CERTS);
+				long pkcs12Id = j3mManifest.getLong(J3M.Keys.PKCS12_ID);
 
 				String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
 
@@ -436,9 +431,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 						}
 
 						JSONObject bundle = res.getJSONObject(Transport.Keys.BUNDLE);
-						if(bundle.has(Transport.Keys.REQUIREMENTS)) {
-
-						}
+						Log.d(Transport.LOG, bundle.toString());
 					}
 				} else {
 					switch(res.getInt(Transport.Keys.ERROR_CODE)) {
@@ -511,45 +504,34 @@ public class UploaderService extends Service implements HttpErrorListener {
 		dh = databaseService.getHelper();
 		db = databaseService.getDb();
 
-		uploadMonitor = new TimerTask() {
-
-			@Override
-			public void run() {
-				if(queue.isEmpty())
-					return;
-				else {
-					Log.d(Transport.LOG, "idle time: " + (System.currentTimeMillis() - timeIdle));
-					timeIdle = System.currentTimeMillis();
-
-					J3MManifest j3mManifest = queue.peek();
-
-					if(!upload(j3mManifest)) {
-						queue.remove(j3mManifest);
-						try {
-							if(j3mManifest.has(Manifest.Keys.SHOULD_RETRY) && j3mManifest.getBoolean(Manifest.Keys.SHOULD_RETRY))
-								queue.add(j3mManifest);
-						} catch(JSONException e) {
-							Log.e(Transport.LOG, e.toString());
-							e.printStackTrace();
-						}
-					}
-				}
-			}
-		};
-		t.schedule(uploadMonitor, 0, 1000);
-		initUploadsFromDatabase();
-
+		start();
 		uploaderService = this;
 
 	}
 
-	private boolean upload(J3MManifest j3mManifest) {
-		if(getMode() == J3M.Chunks.WHOLE)
-			return this.uploadWhole(j3mManifest);
-		else
-			return this.uploadChunk(j3mManifest);
+	private boolean upload(J3MManifest j3mManifest) {		
+		if(!j3mManifest.has(Media.Manifest.Keys.AUTH_TOKEN)) {
+			requestTicket(j3mManifest);
+			return false;
+		}
+		
+		if(getMode() == J3M.Chunks.WHOLE) {
+			boolean res = uploadWhole(j3mManifest);
+			if(res) {
+				try {
+					j3mManifest.put(Media.Manifest.UPLOADED_FLAG, true);
+					j3mManifest.save();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+				
+			}
+			return res;
+		} else {
+			return uploadChunk(j3mManifest);
+		}
 	}
-	
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return START_NOT_STICKY;
@@ -577,12 +559,47 @@ public class UploaderService extends Service implements HttpErrorListener {
 		saveQueueChanges();
 		Log.d(Uploader.LOG, "uploader service destroyed.");
 	}
-
+	
 	public void restart() {
-		//XXX: not sure if i should clear the queue...
 		if(!queue.isEmpty())
 			queue.clear();
+		
+		initUploadsFromDatabase();
+	}
 
+	private void start() {
+		//XXX: not sure if i should clear the queue...
+		this.clearUploads();
+				
+		if(uploadMonitor == null) {
+			uploadMonitor = new TimerTask() {
+
+				@Override
+				public void run() {
+					if(queue.isEmpty()) {
+						return;
+					} else {
+						Log.d(Transport.LOG, "idle time: " + (System.currentTimeMillis() - timeIdle));
+						timeIdle = System.currentTimeMillis();
+
+						J3MManifest j3mManifest = queue.peek();
+
+						if(!upload(j3mManifest)) {
+							queue.remove(j3mManifest);
+							try {
+								if(j3mManifest.has(Manifest.Keys.SHOULD_RETRY) && j3mManifest.getBoolean(Manifest.Keys.SHOULD_RETRY))
+									queue.add(j3mManifest);
+							} catch(JSONException e) {
+								Log.e(Transport.LOG, e.toString());
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+			};
+		}
+		
+		t.schedule(uploadMonitor, 0, 1000);
 		initUploadsFromDatabase();
 	}
 

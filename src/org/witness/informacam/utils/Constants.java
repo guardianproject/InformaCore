@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import android.media.ExifInterface;
-import android.net.Uri;
 import android.os.Environment;
 import android.provider.BaseColumns;
 
@@ -351,6 +350,7 @@ public class Constants {
 				public static final String DERIVATIVE_ROOT = Media.Keys.DERIVATIVE_ROOT;
 				public static final String SHOULD_RETRY = "shouldRetryUpload";
 				public static final String WHOLE_UPLOAD = J3M.Metadata.WHOLE_UPLOAD;
+				public static final String WHOLE_UPLOAD_PATH = "whole_upload_path";
 			}
 
 			public static final String UPLOADED_FLAG = "uploadedFlag";
@@ -608,7 +608,8 @@ public class Constants {
 							FORM_DATA,
 							Form.Extras.DEFAULT_THUMB,
 							Form.Extras.EXPORT_MODE,
-							Form.Extras.MAX_QUESTIONS_PER_PAGE
+							Form.Extras.MAX_QUESTIONS_PER_PAGE,
+							Form.Extras.DATA_DUMP
 						};
 					}
 				}
@@ -669,6 +670,7 @@ public class Constants {
 			public final static String VIDEO_TMP = "informa_tmp.mp4";
 			public final static String TMP_VIDEO_DATA_FILE_NAME = "informaCam_metadata.json";
 			public static final String ICTD_TEMP = "informacam.ictd";
+			public static final String DATA_DUMP = DUMP_FOLDER + "/data/";
 		}
 		
 		public final static class IOCipher {
@@ -865,18 +867,33 @@ public class Constants {
 		public static final Map<Integer, Integer> CHUNKS;
 		static {
 			Map<Integer, Integer> chunks = new HashMap<Integer, Integer>();
-			chunks.put(Chunks.WHOLE, 600);
+			chunks.put(Chunks.WHOLE, -1);
 			chunks.put(Chunks.EXTRA_EXTRA_EXTRA_LARGE, 601);
 			chunks.put(Chunks.EXTRA_LARGE, 602);
 			chunks.put(Chunks.MEDIUM, 603);
 			CHUNKS = Collections.unmodifiableMap(chunks);
 		}
 		
-		
+		public final static class Keys {
+			public final static String DESCRIPTOR = "j3m_descriptor";
+			public final static String PACKAGE = "j3m_package";
+			public static final String FINGERPRINT = Crypto.Keyring.Keys.FINGERPRINT;
+			public static final String PKCS12_ID = Transport.Keys.CERTS;
+			public static final String URL = TrustedDestination.Keys.URL;
+			public static final String ROOT = Media.Manifest.Keys.J3MBASE;
+			public static final String DERIVATIVE_ROOT = Media.Manifest.Keys.DERIVATIVE_ROOT;
+			public static final String THUMBNAIL = Media.Manifest.Keys.THUMBNAIL;
+			public static final String DISPLAY_NAME = Media.Manifest.Keys.ALIAS;
+			public static final String NUM_CHUNKS = Metadata.NUM_CHUNKS;
+			public static final String AUTH_TOKEN = Media.Manifest.Keys.AUTH_TOKEN;
+			
+			
+		}
 		
 		public final static String TORRENT_MIME_TYPE = ".j3mtorrent";
 		public static final String DUMP_FOLDER = "j3m";
 		public static final String TORRENT_DESCRIPTOR_MIME_TYPE = ".j3mdescriptor";
+		public static final String TORRENT_PACKAGE_MIME_TYPE = ".j3mpackage";
 		
 		public final static class State {
 			public static final int IS_IDLE = 0;

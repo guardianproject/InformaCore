@@ -19,7 +19,6 @@ import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.j3m.J3M;
-import org.witness.informacam.j3m.J3M.J3MPackage;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.transport.UploaderService;
@@ -155,11 +154,20 @@ public class ImageConstructor {
 						J3M j3m = new J3M(InformaService.getInstance().informa.getPgpKeyFingerprint(), cv, version);
 						cv.put(Media.Keys.J3M_BASE, j3m.getBase());
 						
+						
+						j3m.j3mmanifest.put(Constants.J3M.Keys.URL, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)));
+						j3m.j3mmanifest.put(Constants.J3M.Keys.PKCS12_ID, td);
+						j3m.j3mmanifest.put(Constants.J3M.Keys.DISPLAY_NAME, forName);
+						j3m.j3mmanifest.save();
+						
+						cv.put(Media.Keys.J3M_MANIFEST, j3m.j3mmanifest.toString());
+						//new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td, forName)
+						
+						// TODO: upload ticket!
 						dh.setTable(db, Tables.Keys.MEDIA);
 						db.insert(dh.getTable(), null, cv);
 						
-						// TODO: upload ticket!
-						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td, forName));
+						UploaderService.getInstance().requestTicket(j3m.j3mmanifest);
 						
 						cursor.close();
 					}

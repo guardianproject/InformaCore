@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.transport.UploaderService;
+import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
@@ -44,7 +45,6 @@ import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.j3m.J3M;
-import org.witness.informacam.j3m.J3M.J3MPackage;
 
 import com.google.common.cache.LoadingCache;
 
@@ -353,9 +353,14 @@ public class VideoConstructor {
 						dh.setTable(db, Tables.Keys.MEDIA);
 						db.insert(dh.getTable(), null, cv);
 						
-						UploaderService.getInstance().requestTicket(new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td, forName));
+						j3m.j3mmanifest.put(Constants.J3M.Keys.URL, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)));
+						j3m.j3mmanifest.put(Constants.J3M.Keys.PKCS12_ID, td);
+						j3m.j3mmanifest.put(Constants.J3M.Keys.DISPLAY_NAME, forName);
+						j3m.j3mmanifest.save();
+						//new J3MPackage(j3m, cursor.getString(cursor.getColumnIndex(TrustedDestination.Keys.URL)), td, forName)
 						
-						cursor.close();
+						// TODO: upload ticket!
+						UploaderService.getInstance().requestTicket(j3m.j3mmanifest);
 					}
 				}
 			}

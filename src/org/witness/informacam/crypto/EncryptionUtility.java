@@ -54,23 +54,25 @@ public class EncryptionUtility {
 			while((len = is.read(buf)) > 0)
 				litOs.write(buf, 0, len);
 			
+			litOs.flush();
 			litOs.close();
 			ldg.close();
 			
+			compOs.flush();
 			compOs.close();
 			cdg.close();
 			
+			encOs.flush();
 			encOs.close();
 			edg.close();
 			
-			is.close();
-			
 			baos.flush();
-			String encrypted = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-			
 			aos.close();
 			baos.close();
 			
+			is.close();
+			
+			String encrypted = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
 			Log.d(Crypto.LOG, encrypted);
 			return encrypted;
 		} catch (NoSuchProviderException e) {

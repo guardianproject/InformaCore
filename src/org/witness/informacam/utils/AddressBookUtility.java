@@ -26,6 +26,7 @@ import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.AddressBook;
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Crypto;
 import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.TrustedDestination;
@@ -238,6 +239,7 @@ public class AddressBookUtility {
 
 						String[] lines = line.split(";");
 						for(String l : lines) {
+							Log.d(App.LOG, l);
 							String key = l.split("=")[0];
 							String value = l.split("=")[1];
 

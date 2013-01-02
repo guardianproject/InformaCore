@@ -231,13 +231,8 @@ public class Informa {
 		String form_namespace;
 		
 		public Subject(String form_namespace, String form_data) {
-			
-			try {
-				this.form_namespace = form_namespace;
-				
-				this.form_data = new JSONObject();
-				this.form_data.put(ImageRegion.Subject.FORM_DATA, FormWrapper.parseXMLAnswersAsJSON(IOUtility.getBytesFromFile(new File(form_data))));
-			} catch (JSONException e) {}
+			this.form_namespace = form_namespace;
+			this.form_data = FormWrapper.parseXMLAnswersAsJSON(IOUtility.getBytesFromFile(new File(form_data)));
 			
 			Log.d(Storage.LOG, this.form_data.toString());
 		}

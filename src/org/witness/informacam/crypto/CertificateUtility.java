@@ -58,6 +58,7 @@ public class CertificateUtility {
 		boolean result = false;
 		
 		ContentValues cv = new ContentValues();
+		Log.d(Crypto.LOG, ccr.toString());
 
 		dh.setTable(db, Tables.Keys.KEYRING);
 		try {

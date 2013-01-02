@@ -1687,7 +1687,7 @@ OnChoosableChosenListener {
 		launch_form.putExtra(Informa.Keys.Data.VideoRegion.INDEX, obscureTrails.indexOf(rt));
 		launch_form.putExtra(Form.Extras.MAX_QUESTIONS_PER_PAGE, 2);
 		launch_form.putExtra(Form.Extras.EXPORT_MODE, Form.ExportMode.XML_BAOS);
-
+		launch_form.putExtra(Form.Extras.DATA_DUMP, Storage.FileIO.DATA_DUMP);
 
 		retriever.setDataSource(recordingFile.getAbsolutePath());
 

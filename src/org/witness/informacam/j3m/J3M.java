@@ -23,6 +23,7 @@ import org.witness.informacam.utils.Constants.Transport;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Storage;
+import org.witness.informacam.utils.Constants.J3M.Keys;
 import org.witness.informacam.utils.Constants.Storage.Tables;
 
 import android.content.ContentValues;
@@ -32,7 +33,7 @@ import android.util.Log;
 
 public class J3M {
 	File file, root, j3mRoot;
-	J3MDescriptor j3mdescriptor;
+	public J3MManifest j3mmanifest;
 	
 	byte[] fileBytes;
 	static String LOG = Constants.J3M.LOG;
@@ -62,16 +63,20 @@ public class J3M {
 				root.mkdir();
 						
 			fileBytes = new byte[(int) file.length()];
+			Log.d(LOG, "file is " + file.length());
 			
 			// TODO: mode is going to be in preferences!
 			mode = uploaderService.getMode();
+			Log.d(LOG, "MODE: " + mode + ", CHUNKS: " + Constants.J3M.CHUNKS.get(mode));
 			
 			j3mRoot = new File(root, Constants.J3M.DUMP_FOLDER);
     		if(!j3mRoot.exists())
     			j3mRoot.mkdir();
     		
-    		j3mdescriptor = new J3MDescriptor(root);
-    		j3mdescriptor.put("pgpKeyFingerprint", pgpFingerprint);
+    		j3mmanifest = new J3MManifest(root.getName());
+    		j3mmanifest.put(Keys.FINGERPRINT, pgpFingerprint);
+    		j3mmanifest.put(Keys.THUMBNAIL, getThumbnail());
+    		
     		
     		if(mode != Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE)) {
 				InputStream fis = new FileInputStream(file);
@@ -82,12 +87,38 @@ public class J3M {
 				chunk_num = (int) Math.ceil(fileBytes.length/mode) + 1;
 			}
     		
+    		JSONObject j3mdescriptor = setDescriptor();
     		if(mode == Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE) || atomize()) {
-    			j3mdescriptor.finalize();
     			ioCipherService.copyFolder(root, true);
     			ioCipherService.moveFileToIOCipher(file, root.getName(), true);
     		}
-			
+    		
+    		if(mode != Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE)) {
+				try {
+					j3mdescriptor.put("j3mBytesExpected", getFileContentSize());
+					j3mdescriptor.put(Constants.J3M.Metadata.NUM_CHUNKS, chunk_num);
+				} catch(JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+				
+				j3mmanifest.put(Media.Manifest.Keys.TOTAL_CHUNKS, chunk_num);
+    			j3mmanifest.put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
+			} else {
+				try {
+					j3mdescriptor.put(Constants.J3M.Metadata.WHOLE_UPLOAD, true);
+				} catch(JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+				
+				j3mmanifest.put(Media.Manifest.Keys.WHOLE_UPLOAD, true);
+    			j3mmanifest.put(Media.Manifest.Keys.WHOLE_UPLOAD_PATH, root.getName() + "/" + file.getName());
+			}
+    		
+			j3mmanifest.put(Keys.DESCRIPTOR, j3mdescriptor);
+    		j3mmanifest.save();
+
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
@@ -149,51 +180,32 @@ public class J3M {
 			
 			chunk_count++;
 		}
-		
-		if(setDescriptor()) {
-			if(mode != Constants.J3M.CHUNKS.get(Constants.J3M.Chunks.WHOLE)) {
-				try {
-					j3mdescriptor.put("j3mBytesExpected", getFileContentSize());
-					j3mdescriptor.put(Constants.J3M.Metadata.NUM_CHUNKS, chunk_num);
-				} catch(JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				}
-			} else {
-				try {
-					j3mdescriptor.put(Constants.J3M.Metadata.WHOLE_UPLOAD, true);
-				} catch(JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				}
-			}
 			
-			return true;
-		}
-		
-		return false;
+		return true;
 	}
 	
-	public boolean setDescriptor() {
+	public JSONObject setDescriptor() {
+		JSONObject j3mdescriptor = new JSONObject();
 		try {
 			// update descriptor
+			if(j3mmanifest.has(Keys.DESCRIPTOR))
+				j3mdescriptor = j3mmanifest.getJSONObject(Keys.DESCRIPTOR);
+			
+			j3mdescriptor.put("pgpKeyFingerprint", this.pgpFingerprint);
 			j3mdescriptor.put("originalHash", root.getName());
 			j3mdescriptor.put("versionLocation", "/" + root.getName() + "/" + file.getName());
 			j3mdescriptor.put("mediaType", mediaType);
-			j3mdescriptor.put("totalBytesExpected", file.length());
+			j3mdescriptor.put("totalBytesExpected", (int) file.length());
 			j3mdescriptor.put("timestampCreated", timestampCreated);
-			
-			return true;
+			Log.d(LOG, "this descriptor:\n" + j3mdescriptor.toString());
+						
+			return j3mdescriptor;
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
 		
-		return false;
-	}
-	
-	public J3MDescriptor getDescriptor() {
-		return j3mdescriptor;
+		return null;
 	}
 	
 	private long getFileContentSize() {
@@ -205,32 +217,16 @@ public class J3M {
 	}
 	
 	public static final class J3MManifest extends JSONObject {
-		info.guardianproject.iocipher.File root;
+		info.guardianproject.iocipher.File root, j3m_root;
 		
-		public J3MManifest(J3MPackage j3mpackage, String authToken) {
-			root = new info.guardianproject.iocipher.File(j3mpackage.root);			
-			
-			// XXX: why does iocipher not see the files?
-			info.guardianproject.iocipher.File j3m_root = new info.guardianproject.iocipher.File(root, "j3m");
-			IOCipherService.getInstance().walk(j3m_root);
+		public J3MManifest(String root_) {
+			root = IOCipherService.getInstance().getFile(root_);
+			j3m_root = IOCipherService.getInstance().getFile(root, "j3m");
 			
 			try {
-				put(Media.Manifest.Keys.DERIVATIVE_ROOT, j3mpackage.derivativeRoot);
-				put(Transport.Keys.URL, j3mpackage.url);
-				put(Transport.Manifest.Keys.AUTH_TOKEN, authToken);
-				put(Transport.Keys.CERTS, j3mpackage.pkcs12Id);
-				put(Transport.Manifest.Keys.TRUSTED_DESTINATION_DISPLAY_NAME, j3mpackage.displayName);
-				put(Crypto.PGP.Keys.PGP_FINGERPRINT, j3mpackage.pgpFingerprint);
-				put(Media.Keys.J3M_BASE, root.getName());
-				
-				if(j3mpackage.j3m.has(Constants.J3M.Metadata.NUM_CHUNKS)) {
-					put(Media.Manifest.Keys.TOTAL_CHUNKS, j3mpackage.chunk_num);
-					put(Transport.Manifest.Keys.LAST_TRANSFERRED, -1);
-				} else
-					put(Media.Manifest.Keys.WHOLE_UPLOAD, true);
-			
+				put(Keys.ROOT, root.getAbsolutePath());
 			} catch (JSONException e) {
-				Log.e(Constants.J3M.LOG, e.toString()); 
+				Log.e(Constants.J3M.LOG, e.toString());
 				e.printStackTrace();
 			}
 		}
@@ -261,7 +257,7 @@ public class J3M {
 				
 				dh.setTable(db, Tables.Keys.MEDIA);
 				db.update(dh.getTable(), cv, Media.Keys.J3M_BASE + " =?", new String[] {getString(Media.Keys.J3M_BASE)});
-				
+				Log.d(Storage.LOG, "saving over manifest\n" + cv.toString());
 				if(h != null) {
 					h.postDelayed(new Runnable() {
 						@Override
@@ -270,53 +266,14 @@ public class J3M {
 						}
 					}, 3000);
 				}
-			} catch(JSONException e) {}
+			} catch(JSONException e) {
+				Log.e(Storage.LOG, e.toString());
+			}
 			
 		}
 
 		public void save() {
 			save(null);
-		}
-	}
-	
-	public static final class J3MDescriptor extends JSONObject {
-		File j3mdescriptor, file, dump_folder;
-		
-		public J3MDescriptor(File root) {
-			j3mdescriptor = new File(root, root.getName() + Constants.J3M.TORRENT_DESCRIPTOR_MIME_TYPE);
-		}
-		
-		public void finalize() {
-			try {
-				FileWriter output = new FileWriter(j3mdescriptor);
-				output.write(this.toString());
-	    		output.flush();
-	    		output.close();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-			
-		}
-	}
-	
-	public final static class J3MPackage {
-		public String pgpFingerprint, derivativeRoot;
-		public String url, root, displayName, thumbnail;
-		public long pkcs12Id;
-		public int chunk_num;
-		public J3MDescriptor j3m;
-		
-		public J3MPackage(J3M j3m, String url, long pkcs12Id, String displayName) {
-			this.j3m = j3m.j3mdescriptor;
-			this.pgpFingerprint = j3m.pgpFingerprint;
-			this.pkcs12Id = pkcs12Id;
-			this.url = url;
-			this.root = j3m.root.getName();
-			this.chunk_num = j3m.chunk_num;
-			this.displayName = displayName;
-			this.thumbnail = j3m.getThumbnail();
-			this.derivativeRoot = j3m.derivativeRoot;
 		}
 	}
 }

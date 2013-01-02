@@ -289,7 +289,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			public void run() {
 				informaService.init();
 				dcimDescriptor = InformaMediaScanner.getDCIMDescriptor(MainActivity.this);
-				Log.d(App.LOG, "DCIM DESCRIPTION before write:\n" + dcimDescriptor.toString());
+				//Log.d(App.LOG, "DCIM DESCRIPTION before write:\n" + dcimDescriptor.toString());
 			}
 		});
 
@@ -604,6 +604,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 		@Override
 		public void onReceive(Context c, Intent i) {
 			if(App.Main.SERVICE_STARTED.equals(i.getAction())) {
+				Log.d(App.LOG, "all services accounted for?");
 			} else if(Transport.Errors.CONNECTION.equals(i.getAction())) {
 				Toast.makeText(MainActivity.this, getString(R.string.error_orbot_nonresponsive), Toast.LENGTH_LONG).show();
 			}
