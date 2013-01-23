@@ -83,6 +83,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 			List<Size> localSizes = camera.getParameters().getSupportedPreviewSizes();
 			Camera.Parameters params = camera.getParameters();
 			params.setPreviewSize(localSizes.get(0).width, localSizes.get(0).height);
+			// TODO: set the camera image size that is uniform and small.
 			camera.setParameters(params);
 			
 		} catch(IOException e) {

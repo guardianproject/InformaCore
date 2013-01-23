@@ -569,7 +569,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 	private void start() {
 		//XXX: not sure if i should clear the queue...
-		this.clearUploads();
+		//this.clearUploads();
 				
 		if(uploadMonitor == null) {
 			uploadMonitor = new TimerTask() {

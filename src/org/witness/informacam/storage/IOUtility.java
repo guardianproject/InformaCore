@@ -64,7 +64,6 @@ public class IOUtility {
 		return baos.toByteArray();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static boolean compare(Object a_, Object b_) {
 		boolean res = false;
 		if(a_ instanceof JSONObject && b_ instanceof JSONObject) {			
