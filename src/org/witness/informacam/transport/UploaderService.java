@@ -5,6 +5,7 @@ import info.guardianproject.iocipher.File;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -24,6 +25,7 @@ import org.json.JSONTokener;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.informa.InformaService;
+import org.witness.informacam.j3m.J3M;
 import org.witness.informacam.j3m.J3M.J3MManifest;
 import org.witness.informacam.storage.DatabaseHelper;
 import org.witness.informacam.storage.DatabaseService;
@@ -31,7 +33,6 @@ import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.HttpUtility.HttpErrorListener;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.J3M;
 import org.witness.informacam.utils.Constants.Media;
 import org.witness.informacam.utils.Constants.Settings;
 import org.witness.informacam.utils.Constants.Storage;
@@ -82,14 +83,42 @@ public class UploaderService extends Service implements HttpErrorListener {
 	public static UploaderService getInstance() {
 		return uploaderService;
 	}
+	
+	public void readjustQueue() {
+		Log.d(Transport.LOG, "readjusting upload queue, size " + queue.size());
+		
+		Queue<J3MManifest> queue_ = new LinkedList<J3MManifest>(queue);		
+		queue.clear();
+		
+		for(J3MManifest j3mManifest : queue_) {
+			queue.add(readjustJ3M(j3mManifest));
+		}
+	}
+	
+	private J3MManifest readjustJ3M(J3MManifest j3mManifest) {
+		J3M j3m = new J3M(j3mManifest);
+		
+		ContentValues cv = new ContentValues();
+		cv.put(Media.Keys.J3M_MANIFEST, j3m.j3mmanifest.toString());
+		
+		dh.setTable(db, Tables.Keys.MEDIA);
+		try {
+			db.update(dh.getTable(), cv, Media.Keys.J3M_BASE + "=?", new String[] {j3mManifest.getString(Media.Keys.J3M_BASE)});
+			return j3m.j3mmanifest;
+		} catch (JSONException e) {
+			Log.e(Transport.LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
+	}
 
 	public int getMode() {
 		if(sp == null)
 			sp = PreferenceManager.getDefaultSharedPreferences(this);
 		try {
-			return sp.getInt(Settings.Uploader.MODE, J3M.Chunks.WHOLE);
+			return sp.getInt(Settings.Uploader.MODE, Constants.J3M.Chunks.WHOLE);
 		} catch(ClassCastException e) {
-			return Integer.parseInt(sp.getString(Settings.Uploader.MODE, String.valueOf(J3M.Chunks.WHOLE)));
+			return Integer.parseInt(sp.getString(Settings.Uploader.MODE, String.valueOf(Constants.J3M.Chunks.WHOLE)));
 		}
 	}
 
@@ -187,14 +216,14 @@ public class UploaderService extends Service implements HttpErrorListener {
 		Map<String, Object> postData = new HashMap<String, Object>();
 
 		try {
-			postData.put(Uploader.Keys.J3M, manifest.getJSONObject(J3M.Keys.DESCRIPTOR).toString());
-			String result = HttpUtility.executeHttpsPost(this, manifest.getString(J3M.Keys.URL), postData, Transport.MimeTypes.JSON, manifest.getLong(J3M.Keys.PKCS12_ID), null, null, null);
+			postData.put(Uploader.Keys.J3M, manifest.getJSONObject(Constants.J3M.Keys.DESCRIPTOR).toString());
+			String result = HttpUtility.executeHttpsPost(this, manifest.getString(Constants.J3M.Keys.URL), postData, Transport.MimeTypes.JSON, manifest.getLong(Constants.J3M.Keys.PKCS12_ID), null, null, null);
 			Log.d(Transport.LOG, result);
 			
 			JSONObject res = parseResult(result);
 			String authToken = res.getJSONObject(Transport.Keys.BUNDLE).getString(Media.Manifest.Keys.AUTH_TOKEN);
 
-			manifest.put(J3M.Keys.AUTH_TOKEN, authToken);
+			manifest.put(Constants.J3M.Keys.AUTH_TOKEN, authToken);
 			manifest.save();
 
 			queue.add(manifest);
@@ -321,7 +350,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 
 		try {
 			url = j3mManifest.getString(Transport.Keys.URL);
-			pkcs12Id = j3mManifest.getLong(J3M.Keys.PKCS12_ID);
+			pkcs12Id = j3mManifest.getLong(Constants.J3M.Keys.PKCS12_ID);
 
 			postData.put(Uploader.Keys.AUTH_TOKEN, j3mManifest.getString(Media.Manifest.Keys.AUTH_TOKEN));
 			postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
@@ -417,7 +446,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 				postData.put(Uploader.Keys.CLIENT_PGP, j3mManifest.getString(Uploader.Keys.CLIENT_PGP));
 
 				String url = j3mManifest.getString(Transport.Keys.URL);
-				long pkcs12Id = j3mManifest.getLong(J3M.Keys.PKCS12_ID);
+				long pkcs12Id = j3mManifest.getLong(Constants.J3M.Keys.PKCS12_ID);
 
 				String result = HttpUtility.executeHttpsPost(this, url, postData, Transport.MimeTypes.TEXT, pkcs12Id, chunk, chunkName, Transport.MimeTypes.OCTET_STREAM);
 
@@ -515,7 +544,7 @@ public class UploaderService extends Service implements HttpErrorListener {
 			return false;
 		}
 		
-		if(getMode() == J3M.Chunks.WHOLE) {
+		if(getMode() == Constants.J3M.Chunks.WHOLE) {
 			boolean res = uploadWhole(j3mManifest);
 			if(res) {
 				try {
@@ -568,7 +597,6 @@ public class UploaderService extends Service implements HttpErrorListener {
 	}
 
 	private void start() {
-		//XXX: not sure if i should clear the queue...
 		//this.clearUploads();
 				
 		if(uploadMonitor == null) {

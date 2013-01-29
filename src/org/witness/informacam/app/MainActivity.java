@@ -104,9 +104,11 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		SQLiteDatabase.loadLibs(this);
+		// FC with
+		//Log.d(App.LOG, "mode: " + UploaderService.getInstance().getMode());
 		initLayout();
 
 		br.add(new Broadcaster(new IntentFilter(App.Main.SERVICE_STARTED)));

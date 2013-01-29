@@ -480,7 +480,7 @@ public class KeyUtility {
 				
 				baos.close();
 				
-				// NOW add b64-encoded base image
+				// TODO: now, i add b64-encoded base image. this should change; key should be a gzip containing key and image.
 				byte[] base_image = c.getBlob(c.getColumnIndex(Settings.Device.Keys.BASE_IMAGE));
 				fos.write(base_image);
 				fos.flush();

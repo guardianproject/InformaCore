@@ -46,7 +46,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 		button = (Button) findViewById(R.id.surface_grabber_button);
 		button.setOnClickListener(this);
-		
+
 		view = (SurfaceView) findViewById(R.id.surface_grabber_holder);
 		holder = view.getHolder();
 		holder.addCallback(this);
@@ -56,7 +56,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	@Override
 	public void onResume() {
 		super.onResume();
-		
+
 		camera = Camera.open();
 
 		if(camera == null)
@@ -67,7 +67,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	public void onPause() {
 		if(camera != null)
 			camera.release();
-		
+
 		super.onPause();
 	}
 
@@ -81,11 +81,30 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		try {
 			camera.setPreviewDisplay(holder);
 			List<Size> localSizes = camera.getParameters().getSupportedPreviewSizes();
+			
+			Size size = null;
+			for(Size sz : localSizes) {
+				Log.d(App.LOG, "w: " + sz.width + ", h: " + sz.height);
+				if(sz.width > 480 && sz.width <= 640)
+					size = sz;
+				
+				if(size != null)
+					break;
+			}
+			
+			if(size == null)
+				size = localSizes.get(0);
+
 			Camera.Parameters params = camera.getParameters();
-			params.setPreviewSize(localSizes.get(0).width, localSizes.get(0).height);
+			params.setPreviewSize(size.width, size.height);
+			params.setPictureSize(size.width, size.height);
+			params.setJpegQuality(80);
+			params.setJpegThumbnailQuality(80);
+
+
 			// TODO: set the camera image size that is uniform and small.
 			camera.setParameters(params);
-			
+
 		} catch(IOException e) {
 			Log.e(App.LOG, e.toString());
 		}
@@ -115,7 +134,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 			this.setResult(Activity.RESULT_OK);
 			finish();
 		}
-			
+
 
 	}
 

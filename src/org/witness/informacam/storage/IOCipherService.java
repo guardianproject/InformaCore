@@ -152,7 +152,8 @@ public class IOCipherService extends Service {
 	public List<JSONObject> getSavedMedia() {
 		List<JSONObject> media = new ArrayList<JSONObject>();
 		for(File dir : new File("/").listFiles()) {
-			if(dir.isDirectory()) {
+			if(dir.isDirectory() && !Arrays.asList(Storage.IOCipher.RESERVED_FOLDERS).contains(dir.getName())) {
+				Log.d(Storage.LOG, dir.getName());
 				for(File f : dir.listFiles()) {
 					if(f.getName().equals("manifest.json")) {
 						try {

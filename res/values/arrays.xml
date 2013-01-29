@@ -33,9 +33,9 @@
     </string-array>
     
 	<string-array name="password_cache">
-		<item>Always</item>
-		<item>Until after I save an image</item>
-		<item>Whenever the app finishes</item>
+		<item>@string/password_cache_always</item>
+		<item>@string/password_cache_on_save</item>
+		<item>@string/password_cache_on_finish</item>
 	</string-array>
 	
 	<string-array name="password_cache_values">
@@ -45,9 +45,9 @@
 	</string-array>
 	
 	<string-array name="default_image_handling">
-		<item>Leave original on SD card</item>
-		<item>Encrypt original</item>
-		<item>Delete original</item>
+		<item>@string/default_image_handling_leave</item>
+		<item>@string/default_image_handling_encrypt</item>
+		<item>@string/default_image_handling_delete</item>
 	</string-array>
 	
 	<string-array name="default_image_handling_values">
@@ -72,7 +72,8 @@
 	</string-array>
 	
 	<string-array name="default_language">
-		<item>English</item>
+	    <item>@string/default_language_default</item>
+		<item>@string/default_language_en</item>
 		<!-- 
 		<item>French</item>
 		<item>Arabic</item>
@@ -81,6 +82,7 @@
 	</string-array>
 	
 	<string-array name="default_language_values">
+	    <item>default</item>
 		<item>en</item>
 		<item>fr</item>
 		<item>ar</item>
@@ -106,13 +108,15 @@
 	</string-array>
 	
 	<string-array name="upload_modes">
-	    <item>Maximum speed</item>
-	    <item>Medium speed</item>
-	    <item>Slow speed</item>
-	    <item>Excrutiatingly slow speed</item>
+	    <item>@string/upload_modes_auto</item>
+	    <item>@string/upload_modes_maximum</item>
+	    <item>@string/upload_modes_medium</item>
+	    <item>@string/upload_modes_slow</item>
+	    <item>@string/upload_modes_ex_slow</item>
 	</string-array>
 	
 	<string-array name="upload_mode_values">
+	    <item>-1</item>
 	    <item>600</item>
 	    <item>601</item>
 	    <item>602</item>

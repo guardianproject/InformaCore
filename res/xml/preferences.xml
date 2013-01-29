@@ -17,19 +17,18 @@
 		android:summary="@string/preferences_cache_text"
 		android:entries="@array/password_cache"
 		android:entryValues="@array/password_cache_values"
-		android:key="informa.PasswordCacheTimeout" />
+		android:key="loginCacheTime" />
 	<ListPreference
 		android:title="@string/preferences_image_handling_label"
 		android:summary="@string/preferences_image_handling_text"
 		android:entries="@array/default_image_handling"
 		android:entryValues="@array/default_image_handling_values"
-		android:key="informa.DefaultImageHandling" />
-	<ListPreference
+		android:key="defaultImageHandling" />
+	<CheckBoxPreference
 	    android:title="@string/preferences_encrypt_label"
 	    android:summary="@string/preferences_encrypt_text"
-	    android:entries="@array/enable_encryption_short"
-	    android:entryValues="@array/enable_encryption_values"
-	    android:key="informa.UseEncryption" />
+	    android:defaultValue="true"
+	    android:key="useEncryption" />
 	<ListPreference
 	    android:title="@string/preferences_upload_mode_label"
 	    android:summary="@string/preferences_upload_mode_text"

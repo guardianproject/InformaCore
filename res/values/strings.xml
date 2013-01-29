@@ -173,6 +173,19 @@
     <string name="preferences_encrypt_text">InformaCam can give you the option of signing and encrypting your metadata to Trusted Contacts in your Address Book.  Would you like to enable this feature?</string>
     <string name="preferences_upload_mode_label">Uploading Options</string>
     <string name="preferences_upload_mode_text">InformaCam can optimize your media upload according to your internet connection.  A strong signal means you can upload more data faster; select your upload speed here.</string>
+    <string name="password_cache_always">Always</string>
+    <string name="password_cache_on_save">Until after I save an image</string>
+    <string name="password_cache_on_finish">Whenever the app finishes</string>
+    <string name="default_image_handling_leave">Leave original on SD card</string>
+    <string name="default_image_handling_encrypt">Encrypt original</string>
+    <string name="default_image_handling_delete">Delete original</string>
+    <string name="upload_modes_auto">Auto</string>
+    <string name="upload_modes_maximum">Maximum Speed</string>
+    <string name="upload_modes_medium">Medium Speed</string>
+    <string name="upload_modes_slow">Slow Speed</string>
+    <string name="upload_modes_ex_slow">Excrutiatingly Slow Speed</string>
+    <string name="default_language_en">English</string>
+    <string name="default_language_default">System Default</string>
 
     <!-- LOG COLLECTOR related -->
     <string name="app_name_lc">Log Collector</string>

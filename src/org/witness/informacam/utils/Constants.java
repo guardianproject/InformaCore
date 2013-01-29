@@ -10,7 +10,10 @@ import java.util.Map;
 
 import android.media.ExifInterface;
 import android.os.Environment;
+import android.preference.ListPreference;
+import android.preference.Preference;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 public class Constants {
 	public final static class Time {
@@ -378,6 +381,8 @@ public class Constants {
 			public final static String DEVICE_EMAIL = "ownerEmailAddress";
 			public static final String GLOBAL_TIME = "globalTimeFromDevice";
 			public static final String DCIM_MANAGEMENT_TYPE = "dcimManagementType";
+			public static final String UPLOADER_MODE = Settings.Uploader.MODE;
+			public static final String LANGUAGE = "obscura.Language";
 		}
 		
 		public final static class Device {
@@ -404,6 +409,24 @@ public class Constants {
 			public final static int LEAVE_ORIGINAL_ALONE = 300;
 			public final static int ENCRYPT_ORIGINAL = 301;
 			public final static int DELETE_ORIGINAL = 302;
+		}
+
+		public static int Translate(Preference preference) {
+			// TODO Auto-generated method stub
+			int value = 0;
+			Log.d(Settings.LOG, "pref class: " + preference.getClass().getName());
+			if(preference instanceof ListPreference) {
+				String index = ((ListPreference) preference).getValue();
+				for(int i=0; i<((ListPreference) preference).getEntryValues().length; i++) {
+					Log.d(Settings.LOG, "index: " + index + "\nval: " + ((ListPreference) preference).getEntryValues()[i]);
+					if(((ListPreference) preference).getEntryValues()[i].equals(index)) {
+						value = i;
+						break;
+					}
+				}
+			}
+			
+			return value;
 		}
 	}
 	
@@ -678,6 +701,10 @@ public class Constants {
 			public static final String ROOT = "informaCamIoCipher";
 			public static final String DUMP_FOLDER = "informaCam";
 			public static final String FORM_ROOT = "installed_forms";
+			public final static String[] RESERVED_FOLDERS = {
+				"informaCam",
+				"installed_forms"
+			};
 			
 		}
 		
@@ -868,9 +895,10 @@ public class Constants {
 		static {
 			Map<Integer, Integer> chunks = new HashMap<Integer, Integer>();
 			chunks.put(Chunks.WHOLE, -1);
-			chunks.put(Chunks.EXTRA_EXTRA_EXTRA_LARGE, 601);
-			chunks.put(Chunks.EXTRA_LARGE, 602);
-			chunks.put(Chunks.MEDIUM, 603);
+			chunks.put(Chunks.EXTRA_EXTRA_EXTRA_LARGE, 600);
+			chunks.put(Chunks.EXTRA_LARGE, 601);
+			chunks.put(Chunks.MEDIUM, 602);
+			chunks.put(Chunks.SMALL, 603);
 			CHUNKS = Collections.unmodifiableMap(chunks);
 		}
 		
