@@ -221,6 +221,7 @@ public class J3M {
 		return atomize(false);
 	}
 
+	
 	private boolean atomize(boolean inIOCipher) {
 		for(int c=0; c<chunk_num; c++) {
 			JSONObject chunk_description = new JSONObject();
