@@ -37,6 +37,7 @@ import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.storage.IOCipherService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.Constants.Informa.CaptureEvent;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Status;
@@ -115,14 +116,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	public void cleanup() {
 		java.io.File imgTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.IMAGE_TMP);
 		if(imgTemp.exists()) {
-			imgTemp.delete();
 			Log.d(Storage.LOG, "removing " + imgTemp.getAbsolutePath());
+			InformaMediaScanner.doScanForDeletion(this, imgTemp);
 		}
 
 		java.io.File vidTemp = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.VIDEO_TMP);
 		if(vidTemp.exists()) {
-			vidTemp.delete();
 			Log.d(Storage.LOG, "removing " + vidTemp.getAbsolutePath());
+			InformaMediaScanner.doScanForDeletion(this, vidTemp);
 		}
 
 		java.io.File vidMetadata = new java.io.File(Storage.FileIO.DUMP_FOLDER, Storage.FileIO.TMP_VIDEO_DATA_FILE_NAME);
@@ -476,7 +477,11 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 	}
 	
 	public long getCurrentTime() {
-		return ((GeoSucker) _geo).getTime();
+		try {
+			return ((GeoSucker) _geo).getTime();
+		} catch(NullPointerException e) {
+			return 0;
+		}
 	}
 	
 	public void onUpdate(LogPack logPack) {
@@ -897,7 +902,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				}).start();
 
 	}
-
+	
 	private class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
 

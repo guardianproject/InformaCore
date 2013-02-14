@@ -50,6 +50,7 @@ import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.VideoRegion;
 import org.witness.informacam.utils.Constants.Media;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -177,6 +178,7 @@ OnChoosableChosenListener {
 	int outVHeight = -1;
 
 
+	@SuppressLint("HandlerLeak")
 	private Handler mHandler = new Handler()
 	{
 		public void handleMessage(Message msg) {
@@ -562,6 +564,7 @@ OnChoosableChosenListener {
 
 	}   
 
+	@SuppressWarnings("deprecation")
 	private boolean updateVideoLayout ()
 	{
 		//Get the dimensions of the video
@@ -1787,5 +1790,31 @@ OnChoosableChosenListener {
 
 	}
 
+	@Override
+	public void onBackPressed() {
+		Log.d(App.LOG, "saving before going back...");
+		
+		progressDialog = new ProgressDialog(this);
+		progressDialog.setCancelable(false);
+		progressDialog.setCanceledOnTouchOutside(false);
+		progressDialog.setMessage(getResources().getString(R.string.saving));
+		progressDialog.show();
+		
+		InformaService.getInstance().storeMediaCache();
+		
+		getIntent().putExtra(App.ImageEditor.Keys.FINISH_ON, App.ImageEditor.SAVED_STATE);
+		setResult(Activity.RESULT_OK, getIntent());
+		
+		mHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				progressDialog.cancel();
+				VideoEditor.this.finish();
+				
+			}
+		}, 3000);
+		
+	}
+	
 
 }

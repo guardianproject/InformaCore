@@ -393,6 +393,15 @@ public class Constants {
 				public final static String BASE_IMAGE = "deviceBaseImage";
 				public static final String DCIM_MAP = "dcimMap";
 			}
+			
+			public static final String[] OVERRIDE_EXTRA_OUTPUT_VIDEO = {
+				"YP-G70",
+				"YP-G1"
+			};
+			
+			public static final String[] OVERRIDE_EXTRA_OUTPUT_IMAGE = {
+				
+			};
 		}
 		
 		public final static class Login {

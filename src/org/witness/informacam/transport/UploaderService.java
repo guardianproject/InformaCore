@@ -91,10 +91,12 @@ public class UploaderService extends Service implements HttpErrorListener {
 		queue.clear();
 		
 		for(J3MManifest j3mManifest : queue_) {
-			queue.add(readjustJ3M(j3mManifest));
+			//TODO: queue.add(readjustJ3M(j3mManifest));
+			queue.add(j3mManifest);
 		}
 	}
 	
+	// TODO: must reinit upload on server
 	private J3MManifest readjustJ3M(J3MManifest j3mManifest) {
 		J3M j3m = new J3M(j3mManifest);
 		

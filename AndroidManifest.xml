@@ -20,6 +20,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_LOGS" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:icon="@drawable/ic_launcher_ssc"
@@ -34,31 +35,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".app.editors.image.ImageEditor" android:screenOrientation="landscape">
-			<intent-filter>
-                 <action android:name="android.intent.action.VIEW" />
-                 <action android:name="android.intent.action.EDIT" />
-                 <action android:name="android.intent.action.SEND" />
-                                  
-                 <category android:name="android.intent.category.DEFAULT" />
-                 <category android:name="android.intent.category.ALTERNATIVE" /> 
-                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
-                 
-             </intent-filter>        
-        </activity>
+        <activity android:name=".app.editors.image.ImageEditor" android:screenOrientation="landscape" />
         <activity android:name=".app.editors.image.ImagePreview" />
-        <activity android:name=".app.editors.video.VideoEditor" android:screenOrientation="landscape">
-			<intent-filter>
-                 <action android:name="android.intent.action.VIEW" />
-                 <action android:name="android.intent.action.EDIT" />
-                 <action android:name="android.intent.action.SEND" />
-                                  
-                 <category android:name="android.intent.category.DEFAULT" />
-                 <category android:name="android.intent.category.ALTERNATIVE" /> 
-                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
-                 
-             </intent-filter>        
-        </activity>
+        <activity android:name=".app.editors.video.VideoEditor" android:screenOrientation="landscape" />
         <activity android:name=".app.editors.video.VideoPreferences" />
         <activity android:name=".app.WizardActivity"
             android:theme="@style/Theme.CustomDialog"

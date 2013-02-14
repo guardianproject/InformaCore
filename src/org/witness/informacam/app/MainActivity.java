@@ -6,8 +6,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import net.sqlcipher.database.SQLiteDatabase;
@@ -39,6 +42,7 @@ import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.FormUtility;
 import org.witness.informacam.utils.InformaMediaScanner;
 import org.witness.informacam.utils.InformaMediaScanner.DCIMDescriptor;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Time;
 import org.witness.informacam.utils.InformaMediaScanner.OnMediaScannedListener;
 
@@ -51,6 +55,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -104,7 +109,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		SQLiteDatabase.loadLibs(this);
 		// FC with
@@ -116,6 +121,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 
 		captureIntent = editorIntent = null;
 		h = new Handler();
+
+		Log.d(App.LOG, "model: " + android.os.Build.MODEL);
 	}
 
 	@Override
@@ -148,7 +155,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			public void run() {
 				Intent launchDatabaseService = new Intent(MainActivity.this, DatabaseService.class);
 				startService(launchDatabaseService);
-				
+
 			}
 		}).start();
 
@@ -246,7 +253,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			@Override
 			public void run() {
 				if(informaService.getCurrentTime() <= 0) {
-					Log.d(App.LOG, "GPS NOT READY YET...");
+					Log.d(App.LOG, "GPS NOT READY YET... (time " + informaService.getCurrentTime() + ")");
 					GPS_WAITING++;
 
 					if(GPS_WAITING > App.Main.GPS_WAIT_MAX) {
@@ -299,7 +306,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			@Override
 			public void run() {
 				if(informaService.getCurrentTime() <= 0) {
-					Log.d(App.LOG, "GPS NOT READY YET...");
+					Log.d(App.LOG, "GPS NOT READY YET... (time " + informaService.getCurrentTime() + ")");
 					GPS_WAITING++;
 
 					if(GPS_WAITING > App.Main.GPS_WAIT_MAX) {
@@ -310,6 +317,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 									mProgressDialog.cancel();
 								} catch(NullPointerException e) {}
 								ErrorHandler.show(MainActivity.this, getString(R.string.error_gps_nonresponsive));
+								GPS_WAITING = 0;
 							}
 						});
 
@@ -325,15 +333,21 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 					LogPack logPack = new LogPack(Informa.CaptureEvent.Keys.TYPE, Informa.CaptureEvent.TIMESTAMPS_RESOLVED);
 					logPack.put(Constants.Time.Keys.RELATIVE_TIME, System.currentTimeMillis());
 					informaService.onUpdate(logPack);
-
-					mediaCaptureFile = new File(Storage.FileIO.DUMP_FOLDER, tempFile);
-					captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(mediaCaptureFile));
-
-					startActivityForResult(captureIntent, App.Main.FROM_MEDIA_CAPTURE);
 				} catch (JSONException e) {
 					Log.e(App.LOG, e.toString());
 					e.printStackTrace();
 				}
+
+				mediaCaptureFile = new File(Storage.FileIO.DUMP_FOLDER, tempFile);
+				if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP) && !Arrays.asList(Settings.Device.OVERRIDE_EXTRA_OUTPUT_IMAGE).contains(android.os.Build.MODEL)) {
+					mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
+					captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mediaCaptureUri);
+				} else if(mediaCaptureFile.getName().equals(Storage.FileIO.VIDEO_TMP) && !Arrays.asList(Settings.Device.OVERRIDE_EXTRA_OUTPUT_VIDEO).contains(android.os.Build.MODEL)) {
+					mediaCaptureUri = Uri.fromFile(mediaCaptureFile);
+					captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mediaCaptureUri);
+				}
+
+				startActivityForResult(captureIntent, App.Main.FROM_MEDIA_CAPTURE);
 			}
 		}, 200);
 
@@ -341,84 +355,45 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	}
 
 	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	public void onActivityResult(int requestCode, int resultCode, final Intent data) {
 		if(resultCode == Activity.RESULT_OK) {
 
 			switch(requestCode) {
 
-			case App.Main.FROM_MEDIA_CAPTURE:
-				boolean copyOver = false;
-
+			case App.Main.FROM_MEDIA_CAPTURE:				
 				if(mediaCaptureFile.getName().equals(Storage.FileIO.IMAGE_TMP)) {
 					editorIntent = new Intent(this, ImageEditor.class);
 					mimeType = Media.Type.MIME_TYPE_JPEG;
-
-					// COMPARE THE DCIM MAP.  if there is a new image in there, resolve it here
-					// on some devices, the uri is the last image uri (not returned by data).  because there is NO BETTER WAY OF DOING THIS on most devices. (wtf?)
-					Log.d(App.LOG, "DCIM DESCRIPTION before write:\n" + dcimDescriptor.toString());
-					Log.d(App.LOG, "DCIM DESCRIPTION after write:\n" + InformaMediaScanner.getDCIMDescriptor(this).toString());
-					if(IOUtility.compare(dcimDescriptor, InformaMediaScanner.getDCIMDescriptor(this))) {
-						Log.d(App.LOG, "this device does not seem to require DCIM resolution");
-					} else {
-						copyOver = true;
-						mediaCaptureUri = IOUtility.getLastImageUri(this);
-						Log.d(App.LOG, "this device must undergo DCIM resolution");
-					}
-
-
 				} else {
 					editorIntent = new Intent(this, VideoEditor.class);
 					mimeType = Media.Type.MIME_TYPE_MP4;
-					mediaCaptureUri = data.getData();
-					
-					// TODO: copyOver should be false, unless i have to do some handling for other devices?
-					// copyOver = true;
-
 				}
-				
-				if(copyOver) {
-					InputStream media = null;
-					try {
-						FileOutputStream fos = new FileOutputStream(mediaCaptureFile);
-						media = getContentResolver().openInputStream(mediaCaptureUri);
-						byte buf[] = new byte[1024];
-						int len;
 
-						try {
-							while((len = media.read(buf)) > 0)
-								fos.write(buf, 0, len);
+				if(mediaCaptureUri == null) {
+					h.post(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								mediaCaptureUri = data.getData();
 
-							fos.close();
-							media.close();
-						} catch (IOException e) {
-							Log.e(App.LOG, e.toString());
-							e.printStackTrace();
-						}
+								AssetFileDescriptor afd = getContentResolver().openAssetFileDescriptor(mediaCaptureUri, "r");
+								FileInputStream fis = afd.createInputStream();
+								FileOutputStream fos = new FileOutputStream(mediaCaptureFile);
 
+								byte[] buf = new byte[1024];
+								int read;
+								while((read = fis.read(buf)) > 0) 
+									fos.write(buf, 0, read);
 
-						new Thread(new Runnable() {
-							@Override
-							public void run() {
-								IOUtility.destroy(MainActivity.this, mediaCaptureUri, new String[] {mediaCaptureFile.getAbsolutePath()});
+								fis.close();
+								fos.close();
+							} catch(IOException e) {
+								Log.e(App.LOG, e.toString());
+								e.printStackTrace();
 							}
-						}).start();
-					} catch(FileNotFoundException e) {
-						Log.e(App.LOG, "now ur fucked: " + e.toString());
-						e.printStackTrace();
-						
-						try {
-							media = new FileInputStream(mediaCaptureFile);
-						} catch (FileNotFoundException e1) {
-							Log.e(App.LOG, "now ur fucked: " + e1.toString());
-							e1.printStackTrace();
 						}
-					}
+					});
 
-					if(media == null) {
-						Log.e(App.LOG, "there is no media still wtf");
-						ErrorHandler.show(this, getString(R.string.error_media_null));
-
-					}
 				}
 
 				mustInitMetadata = true;
@@ -432,14 +407,14 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			case App.Main.FROM_EDITOR:
 				if(mProgressDialog != null)
 					mProgressDialog.dismiss();
-				
+
 				/* 
 				 * TODO: handle logout better: might need assets to do async upload...
 				int loginPref = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(Settings.Keys.LOGIN_CACHE_TIME, null));
 				Log.d(App.LOG, "login pref= " + loginPref);
 				if(loginPref == Settings.LoginCache.AFTER_SAVE)
 					MainRouter.doLogout(MainActivity.this);
-				*/
+				 */
 
 				break;
 			case App.Main.FROM_MEDIA_MANAGER:
@@ -494,7 +469,7 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 				} catch(NullPointerException e) {}
 			}
 		}
-		
+
 		GPS_WAITING = 0;
 	}
 
@@ -566,6 +541,54 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 	@Override
 	public void onMediaScanned(Uri uri) {
 		mediaCaptureUri = uri;
+		Log.d(App.LOG, "mediaCaptureUri is finally " + uri);		
+
+		// RESOLVE COPIES
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				DCIMDescriptor dcimDescriptor_ = InformaMediaScanner.getDCIMDescriptor(MainActivity.this);
+
+				try {
+					Log.d(App.LOG, "DCIM DESCRIPTION before write:\n" + dcimDescriptor.toString());
+					Log.d(App.LOG, "DCIM DESCRIPTION after write:\n" + dcimDescriptor_.toString());
+					if(IOUtility.compare(dcimDescriptor, dcimDescriptor_)) {
+						Log.d(App.LOG, "this device does not seem to require DCIM resolution");
+					} else {
+						Log.d(App.LOG, "this device must undergo DCIM resolution");
+						try {
+							String hash_ = MediaHasher.hash(mediaCaptureFile, "SHA-1");
+							Log.d(App.LOG, "squash data matching this hash: " + hash_);
+							Iterator<String> dKeys = dcimDescriptor_.keys();
+							while(dKeys.hasNext()) {
+								String key = dKeys.next();
+								String hash = dcimDescriptor_.getJSONObject(key).getJSONObject("last_file").getString("hash");
+
+								Log.d(App.LOG, "this dkey: " + key);
+								Log.d(App.LOG, "this hash: " + hash);
+
+								if(hash.equals(hash_)) {
+									IOUtility.destroy(MainActivity.this, Uri.parse(dcimDescriptor_.getJSONObject(key).getJSONObject("last_file").getString("uri")));
+									break;
+								}
+							}
+						} catch (NoSuchAlgorithmException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (JSONException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				} catch(NullPointerException e) {
+					return;
+				}
+			}
+		});
+
 		h.post(new Runnable() {
 			@Override
 			public void run() {

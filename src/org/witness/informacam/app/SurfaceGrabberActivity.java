@@ -36,6 +36,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	SurfaceView view;
 	SurfaceHolder holder;
 	Camera camera;
+	Size size = null;
 
 
 	@SuppressWarnings("deprecation")
@@ -80,9 +81,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	public void surfaceCreated(SurfaceHolder holder) {
 		try {
 			camera.setPreviewDisplay(holder);
-			List<Size> localSizes = camera.getParameters().getSupportedPreviewSizes();
+			List<Size> localSizes = camera.getParameters().getSupportedPictureSizes();
 			
-			Size size = null;
 			for(Size sz : localSizes) {
 				Log.d(App.LOG, "w: " + sz.width + ", h: " + sz.height);
 				if(sz.width > 480 && sz.width <= 640)
@@ -93,10 +93,9 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 			}
 			
 			if(size == null)
-				size = localSizes.get(0);
+				size = localSizes.get(localSizes.size() - 1);
 
 			Camera.Parameters params = camera.getParameters();
-			params.setPreviewSize(size.width, size.height);
 			params.setPictureSize(size.width, size.height);
 			params.setJpegQuality(80);
 			params.setJpegThumbnailQuality(80);
@@ -124,7 +123,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	public void onPictureTaken(byte[] data, Camera camera) {
 		DatabaseHelper dh = DatabaseService.getInstance().getHelper();
 		SQLiteDatabase db = DatabaseService.getInstance().getDb();
-
+		
 		ContentValues cv = new ContentValues();
 		cv.put(Device.Keys.BASE_IMAGE, Base64.encode(data, Base64.DEFAULT));
 		cv.put(Informa.Keys.Device.DISPLAY_NAME, PreferenceManager.getDefaultSharedPreferences(this).getString(Informa.Keys.Device.DISPLAY_NAME, ""));

@@ -3,7 +3,6 @@ package org.witness.informacam.informa.suckers;
 import java.util.TimerTask;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.LogPack;
 import org.witness.informacam.informa.SensorLogger;

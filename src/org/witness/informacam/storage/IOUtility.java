@@ -118,7 +118,7 @@ public class IOUtility {
 						fos.flush();
 						fos.close();
 
-						//InformaMediaScanner.doScanForDeletion(c, del);
+						InformaMediaScanner.doScanForDeletion(c, del);
 					} catch(IOException e) {
 						Log.e(LOG, e.toString());
 						e.printStackTrace();
@@ -496,6 +496,19 @@ public class IOUtility {
 			uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(c.getLong(c.getColumnIndex(BaseColumns._ID))));
 			c.close();
 		}
+		return uri;
+	}
+	
+	public static Uri getLastVideoUri(Activity a) {
+		Uri uri = null;
+		
+		ContentResolver cr = a.getContentResolver();
+		Cursor c = cr.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, new String[] {MediaStore.Video.Media.DATA, BaseColumns._ID}, null, null, BaseColumns._ID + " DESC");
+		if(c != null && c.moveToFirst()) {
+			uri = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf(c.getLong(c.getColumnIndex(BaseColumns._ID))));
+			c.close();
+		}
+		
 		return uri;
 	}
 

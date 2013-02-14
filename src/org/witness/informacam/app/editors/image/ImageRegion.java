@@ -223,8 +223,6 @@ public class ImageRegion implements OnActionItemClickListener
 		List<String> mFilterLabels_ = new LinkedList<String>(Arrays.asList(mFilterLabels));
 		List<Integer> mFilterIcons_ = new LinkedList<Integer>(Arrays.asList(mFilterIcons));
 		
-		
-		
 		while(pIt.hasNext()) {
 			Entry<Integer, JSONObject> plugin = pIt.next();
 			try {

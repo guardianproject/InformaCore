@@ -161,7 +161,9 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 			super.handleMessage(msg);
 
 			switch (msg.what) {
-
+			case 2: // loaded?
+				Log.d(App.LOG, "bitmap loaded");
+				break;
 			case 3: //completed
 				mProgressDialog.dismiss();
 				break;
@@ -239,7 +241,6 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				e.printStackTrace();
 			}
 
-
 			// Load up smaller image
 			try {
 				// Load up the image's dimensions not the image itself
@@ -283,6 +284,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 
 				bmpFactoryOptions.inSampleSize = inSampleSize;
 
+				// XXX: this needs better threading on Samsung Camera
 				// Decode it for real
 				bmpFactoryOptions.inJustDecodeBounds = false;
 
@@ -1335,6 +1337,32 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 		getIntent().putExtra(App.ImageEditor.Keys.FINISH_ON, App.ImageEditor.PACKAGE_GENERATED);
 		setResult(Activity.RESULT_OK, getIntent());
 		finish();
+	}
+	
+	@Override
+	public void onBackPressed() {
+		Log.d(App.LOG, "saving before going back...");
+		
+		mProgressDialog = new ProgressDialog(this);
+		mProgressDialog.setCancelable(false);
+		mProgressDialog.setCanceledOnTouchOutside(false);
+		mProgressDialog.setMessage(getResources().getString(R.string.saving));
+		mProgressDialog.show();
+		
+		InformaService.getInstance().storeMediaCache();
+		
+		getIntent().putExtra(App.ImageEditor.Keys.FINISH_ON, App.ImageEditor.SAVED_STATE);
+		setResult(Activity.RESULT_OK, getIntent());
+		
+		mHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				mProgressDialog.cancel();
+				ImageEditor.this.finish();
+				
+			}
+		}, 3000);
+		
 	}
 	
 }
