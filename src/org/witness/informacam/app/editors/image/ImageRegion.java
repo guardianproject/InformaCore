@@ -1,5 +1,7 @@
 package org.witness.informacam.app.editors.image;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -17,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.R;
 import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
+import org.witness.informacam.app.editors.filters.Filter;
 import org.witness.informacam.app.editors.filters.InformaTagger;
 import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
@@ -62,12 +65,7 @@ public class ImageRegion implements OnActionItemClickListener
 	// What should be done to this region
 	public static final int NOTHING = 0;
 	public static final int OBSCURE = 1;
-
-	public static final int REDACT = 0; // PaintSquareObscure
-	public static final int PIXELATE = 1; // PixelizeObscure
-	public static final int BG_PIXELATE = 2; // BlurObscure
-	//public static final int CONSENT = 3; // InformaTagger
-
+	
 	boolean selected = false;
 
 	public static final int CORNER_UPPER_LEFT = 1;
@@ -79,13 +77,10 @@ public class ImageRegion implements OnActionItemClickListener
 	/* Add each ObscureMethod to this list and update the 
 	 * createObscuredBitmap method in ImageEditor
 	 */
-	int mObscureType = PIXELATE;
+	List<Filter> mFilters;
+	int mObscureType = -1;
 
 	//the other of these strings and resources determines the order in the popup menu
-
-	private static String[] mFilterLabels = {"Redact","Pixelate","CrowdPixel"};
-	private static Integer[] mFilterIcons = {R.drawable.ic_context_fill,R.drawable.ic_context_pixelate,R.drawable.ic_context_pixelate};
-
 
 	public final Drawable unidentifiedBorder, identifiedBorder;
 	public Drawable imageRegionBorder;
@@ -216,30 +211,33 @@ public class ImageRegion implements OnActionItemClickListener
 		mBounds = new RectF(left, top, right, bottom);
 
 		timestampOnGeneration = timestamp;
-
-		Map<Integer, JSONObject> plugins = FormUtility.getAnnotationPlugins(mFilterLabels.length);
+		
+		
+		// init the plugins we have
+		mFilters = new ArrayList<Filter>();
+		for(Filter filter : App.ImageEditor.INFORMA_CAM_PLUGINS) {
+			if(filter.is_available)
+				mFilters.add(filter);
+		}
+		
+		Map<Integer, JSONObject> plugins = FormUtility.getAnnotationPlugins(mFilters.size());
 		Iterator<Entry<Integer, JSONObject>> pIt = plugins.entrySet().iterator();
 		
-		List<String> mFilterLabels_ = new LinkedList<String>(Arrays.asList(mFilterLabels));
-		List<Integer> mFilterIcons_ = new LinkedList<Integer>(Arrays.asList(mFilterIcons));
 		
 		while(pIt.hasNext()) {
 			Entry<Integer, JSONObject> plugin = pIt.next();
 			try {
-				mFilterLabels_.add(plugin.getValue().getString(Forms.TITLE));
-				mFilterIcons_.add(R.drawable.ic_file_blue);
+				mFilters.add(new Filter(plugin.getValue().getString(Forms.TITLE), R.drawable.ic_file_blue, InformaTagger.class, null));
 			} catch (JSONException e) {
 				Log.e(App.LOG, e.toString());
 				e.printStackTrace();
 			}
 		}
 		
-		mFilterLabels = mFilterLabels_.toArray(new String[mFilterLabels_.size()]);
-		mFilterIcons = mFilterIcons_.toArray(new Integer[mFilterIcons_.size()]);
-
+		
 		//set default processor
 		if(rp == null)
-			this.setRegionProcessor(new PixelizeObscure());
+			updateRegionProcessor(mFilters.get(0));
 		else
 			this.setRegionProcessor(rp);
 
@@ -293,13 +291,13 @@ public class ImageRegion implements OnActionItemClickListener
 
 		ActionItem aItem;
 
-		for (int i = 0; i < mFilterLabels.length; i++)
+		for (int i = 0; i < mFilters.size(); i++)
 		{
 
 			aItem = new ActionItem();
-			aItem.setTitle(mFilterLabels[i]);
+			aItem.setTitle(mFilters.get(i).label);
 
-			aItem.setIcon(mImageEditor.getResources().getDrawable(mFilterIcons[i]));			
+			aItem.setIcon(mImageEditor.getResources().getDrawable(mFilters.get(i).resId));			
 
 			mPopupMenu.addActionItem(aItem);
 
@@ -502,44 +500,44 @@ public class ImageRegion implements OnActionItemClickListener
 
 	}
 
-	public void updateRegionProcessor (int obscureType) {
-
-		switch (obscureType) {
-		case ImageRegion.BG_PIXELATE:
-			setRegionProcessor(new CrowdPixelizeObscure());
-			break;
-		case ImageRegion.REDACT:
-			setRegionProcessor(new SolidObscure());
-			break;
-		case ImageRegion.PIXELATE:
-			setRegionProcessor(new PixelizeObscure());
-			break;
-		default:
-			// If the region processor is already a consent tagger, the user wants to edit.
-			// so no need to change the region processor.
-			if(obscureType > ImageRegion.BG_PIXELATE) {
-				if(!(getRegionProcessor() instanceof InformaTagger)) {
-					try {
-						setRegionProcessor(new InformaTagger(obscureType));
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					mImageEditor.updateDisplayImage();
-				}
-
+	public void updateRegionProcessor (Filter filter) {
+		
+		try {
+			Class<?> rp = Class.forName(filter.regionProcessorClass.getName());
+			
+			if(!filter.regionProcessorClass.getName().equals(InformaTagger.class.getName())) {
+				setRegionProcessor((RegionProcesser) rp.newInstance());
+				imageRegionBorder = unidentifiedBorder;
+				
+				mImageEditor.updateDisplayImage();
+			} else {
+				// with ARGS
+				
+				setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(int.class).newInstance(mFilters.indexOf(filter)));
+				imageRegionBorder = identifiedBorder;
 				mImageEditor.launchAnnotationActivity(this);
+			}
 
-			} else
-				setRegionProcessor(new PixelizeObscure());
-			break;
-
-		}
-
-		if(getRegionProcessor().getClass() == InformaTagger.class)
-			imageRegionBorder = identifiedBorder;
-		else
-			imageRegionBorder = unidentifiedBorder;
+			
+		} catch (ClassNotFoundException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		}		
 
 		mImageEditor.updateDisplayImage();
 		InformaService.getInstance().onImageRegionChanged(this);
@@ -548,14 +546,14 @@ public class ImageRegion implements OnActionItemClickListener
 	@Override
 	public void onItemClick(QuickAction source, int pos, int actionId) {
 
-		if (pos == mFilterLabels.length) //meaing after the last one
+		if (pos == mFilters.size()) //meaing after the last one
 		{
 			mImageEditor.deleteRegion(ImageRegion.this);
 		}
 		else
 		{
 			mObscureType = pos;
-			updateRegionProcessor(mObscureType);
+			updateRegionProcessor(mFilters.get(pos));
 
 
 		}

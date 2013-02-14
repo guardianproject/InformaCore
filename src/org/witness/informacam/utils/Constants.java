@@ -8,6 +8,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.witness.informacam.R;
+import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
+import org.witness.informacam.app.editors.filters.Filter;
+import org.witness.informacam.app.editors.filters.InformaTagger;
+import org.witness.informacam.app.editors.filters.PixelizeObscure;
+import org.witness.informacam.app.editors.filters.SolidObscure;
+
 import android.media.ExifInterface;
 import android.os.Environment;
 import android.preference.ListPreference;
@@ -88,6 +95,10 @@ public class Constants {
 		    public final static int HUMAN_OFFSET_BUFFER = 50;
 			public final static float MIN_MOVE = 10;
 			
+			public static final String OBSCURE_MODE_REDACT = "black";
+			public static final String OBSCURE_MODE_PIXELATE = "pixel";
+			public static final String OBSCURE_MODE_IDENTIFY = "identify";
+			
 			public final static class Mode {
 				public static final int NONE = 0;
 				public static final int DRAG = 1;
@@ -126,6 +137,17 @@ public class Constants {
 				public final static String PROPERTIES = App.ImageEditor.Keys.PROPERTIES;
 				public final static String CHOOSE_TRUSTED_DESTINATION = App.ImageEditor.Keys.CHOOSE_TRUSTED_DESTINATION;
 				public final static String FINISH_ON = App.ImageEditor.Keys.FINISH_ON;
+			}
+			
+			public final static List<Filter> INFORMA_CAM_PLUGINS;
+			static {
+				List<Filter> InformaCamPlugins = new ArrayList<Filter>();
+				
+				
+				InformaCamPlugins.add(new Filter("Pixelate", R.drawable.ic_context_pixelate, null, OBSCURE_MODE_PIXELATE));
+				InformaCamPlugins.add(new Filter("Redact", R.drawable.ic_context_fill, null, OBSCURE_MODE_REDACT));
+				
+				INFORMA_CAM_PLUGINS = Collections.unmodifiableList(InformaCamPlugins);
 			}
 			
 			public final static class Actions {
@@ -177,6 +199,17 @@ public class Constants {
 				public final static int SAVE_MENU_ITEM = 1;
 				public final static int SHARE_MENU_ITEM = 2;
 				public final static int NEW_REGION_MENU_ITEM = 3;
+			}
+			
+			public final static List<Filter> INFORMA_CAM_PLUGINS;
+			static {
+				List<Filter> InformaCamPlugins = new ArrayList<Filter>();
+				
+				InformaCamPlugins.add(new Filter("Pixelate", R.drawable.ic_context_pixelate, PixelizeObscure.class, "p"));
+				InformaCamPlugins.add(new Filter("Redact", R.drawable.ic_context_fill, SolidObscure.class, "s"));
+				InformaCamPlugins.add(new Filter("CrowdPixel", R.drawable.ic_context_pixelate, CrowdPixelizeObscure.class, "i"));				
+				
+				INFORMA_CAM_PLUGINS = Collections.unmodifiableList(InformaCamPlugins);
 			}
 			
 			public final static class Filters {

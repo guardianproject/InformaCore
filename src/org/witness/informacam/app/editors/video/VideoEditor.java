@@ -842,7 +842,7 @@ OnChoosableChosenListener {
 		 //obscuredPaint.setTextSize(30);
 		//obscuredPaint.setFakeBoldText(false);
 
-		if (mode.equals(RegionTrail.OBSCURE_MODE_PIXELATE))
+		if (mode.equals(App.VideoEditor.OBSCURE_MODE_PIXELATE))
 		{
 			obscuredPaint.setAlpha(150);
 
@@ -850,7 +850,7 @@ OnChoosableChosenListener {
 
 
 		}
-		else if (mode.equals(RegionTrail.OBSCURE_MODE_REDACT))
+		else if (mode.equals(App.VideoEditor.OBSCURE_MODE_REDACT))
 		{
 
 			obscuredPaint.setStyle(Style.FILL);
@@ -1753,7 +1753,7 @@ OnChoosableChosenListener {
 
 
 				obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)).setProperties(mProp);
-				obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)).setObscureMode(RegionTrail.OBSCURE_MODE_IDENTIFY);
+				obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)).setObscureMode(App.VideoEditor.OBSCURE_MODE_IDENTIFY);
 				Log.d(App.LOG, obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)).getProperties().toString());
 
 				InformaService.getInstance().onVideoRegionChanged(obscureTrails.get(data.getIntExtra(VideoRegion.INDEX, 0)));
