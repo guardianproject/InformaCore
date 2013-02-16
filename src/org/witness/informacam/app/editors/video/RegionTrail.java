@@ -40,7 +40,7 @@ public class RegionTrail implements OnActionItemClickListener {
 	private int startTime = 0;
 	private int endTime = 0;
 
-	
+
 	private int SET_IN_POINT, SET_OUT_POINT, REMOVE_KEYFRAME, REMOVE_REGION, DO_TWEEN = 0;
 
 	private String obscureMode = App.VideoEditor.OBSCURE_MODE_PIXELATE;
@@ -51,13 +51,13 @@ public class RegionTrail implements OnActionItemClickListener {
 
 	private List<Filter> mFilters;
 	public Filter currentFilter = null;
-	
+
 	private static String[] mFilterLabels = {
 		"SetInPoint", 
 		"SetOutPoint",
 		"DoTween",
 		"RemoveKeyFrame",
-		"RemoveTrail"};
+	"RemoveTrail"};
 	private static Integer[] mFilterIcons = {
 		R.drawable.ic_add,
 		R.drawable.ic_add,
@@ -89,9 +89,9 @@ public class RegionTrail implements OnActionItemClickListener {
 		this.currentFilter = filter;
 		this.obscureMode = this.currentFilter.process_tag;
 	}
-	
+
 	public void setObscureMode(String filterName) {
-			// TODO: lookup which filter by its name
+		// TODO: lookup which filter by its name
 		for(Filter filter : mFilters) {
 			if(filter.process_tag.equals(filterName)) {
 				setObscureMode(filter);
@@ -110,17 +110,17 @@ public class RegionTrail implements OnActionItemClickListener {
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.videoEditor = videoEditor;
-		
+
 		mFilters = new ArrayList<Filter>();
 		for(Filter filter : App.VideoEditor.INFORMA_CAM_PLUGINS) {
 			if(filter.is_available)
 				mFilters.add(filter);
 		}
-		
+
 		Map<Integer, JSONObject> plugins = FormUtility.getAnnotationPlugins(mFilters.size());
 		Iterator<Entry<Integer, JSONObject>> pIt = plugins.entrySet().iterator();
-		
-		
+
+
 		while(pIt.hasNext()) {
 			Entry<Integer, JSONObject> plugin = pIt.next();
 			try {
@@ -145,7 +145,7 @@ public class RegionTrail implements OnActionItemClickListener {
 		mProps.put(VideoRegion.START_TIME, startTime);
 		mProps.put(VideoRegion.END_TIME, endTime);
 
-		
+
 		if(videoTrail != null)
 			for(ObscureRegion or : videoTrail)
 				addRegion(or);
@@ -218,7 +218,7 @@ public class RegionTrail implements OnActionItemClickListener {
 			mPopupMenu.addActionItem(aItem);
 
 		}
-		
+
 
 		for (int i = 0; i < mFilterLabels.length; i++)
 		{
@@ -405,7 +405,7 @@ public class RegionTrail implements OnActionItemClickListener {
 	@Override
 	// TODO:
 	public void onItemClick(QuickAction source, int pos, int actionId) {
-		
+
 
 		if (pos >= mFilters.size()) //meaing after the last one
 		{
@@ -413,24 +413,24 @@ public class RegionTrail implements OnActionItemClickListener {
 				setStartTime(videoEditor.mediaPlayer.getCurrentPosition());
 				videoEditor.updateProgressBar(this);
 			}
-			
+
 			if(pos == SET_OUT_POINT) {
 				setEndTime(videoEditor.mediaPlayer.getCurrentPosition());
 				videoEditor.updateProgressBar(this);
 				videoEditor.activeRegion = null;
 				videoEditor.activeRegionTrail = null;
 			}
-			
+
 			if(pos == DO_TWEEN) {
 				setDoTweening(!isDoTweening());
 			}
-			
+
 			if(pos == REMOVE_KEYFRAME) {
 				videoEditor.obscureTrails.remove(this);
 				videoEditor.activeRegionTrail = null;
 				videoEditor.activeRegion = null;
 			}
-			
+
 			if(pos == REMOVE_REGION) {
 				if (videoEditor.activeRegion != null)
 				{
@@ -441,20 +441,22 @@ public class RegionTrail implements OnActionItemClickListener {
 		} else {
 			setObscureMode(mFilters.get(pos));
 			if(mFilters.get(pos).process_tag.equals(App.VideoEditor.OBSCURE_MODE_IDENTIFY)) {
-				// TODO: do not overwrite old values!
-				JSONObject form = FormUtility.getAnnotationPlugins(pos).get(pos);
+				if(!mProps.containsKey(Data.VideoRegion.Subject.FORM_DATA)) {
+					JSONObject form = FormUtility.getAnnotationPlugins(pos).get(pos);
 
-				try {
-					mProps.put(Data.VideoRegion.Subject.FORM_NAMESPACE, form.getString(Forms.TITLE));
-					mProps.put(Data.VideoRegion.Subject.FORM_DEF_PATH, form.getString(Forms.DEF));
-					mProps.put(Data.VideoRegion.FILTER, this.obscureMode);
-					
-					Log.d(App.LOG, mProps.toString());
-					videoEditor.launchTagger(this);
-				} catch (JSONException e) {
-					Log.e(App.LOG, e.toString());
-					e.printStackTrace();
+					try {
+						mProps.put(Data.VideoRegion.Subject.FORM_NAMESPACE, form.getString(Forms.TITLE));
+						mProps.put(Data.VideoRegion.Subject.FORM_DEF_PATH, form.getString(Forms.DEF));
+						mProps.put(Data.VideoRegion.FILTER, this.obscureMode);
+					} catch (JSONException e) {
+						Log.e(App.LOG, e.toString());
+						e.printStackTrace();
+					}
 				}
+				
+				Log.d(App.LOG, mProps.toString());
+				videoEditor.launchTagger(this);
+
 			}
 		}
 

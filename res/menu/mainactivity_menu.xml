@@ -4,9 +4,7 @@
         android:icon="@drawable/menu_refresh_selector" />
     <item android:id="@+id/menu_export_public_key" android:title="@string/mainactivity_export_public_key"
         android:icon="@drawable/menu_export_key_selector" />
-    <item android:id="@+id/extras_import_form" android:title="@string/mainactivity_import_form"
-		android:icon="@drawable/menu_send_log_selector" />
-	<item android:id="@+id/extras_preferences" android:title="@string/mainactivity_preferences"
+    <item android:id="@+id/extras_preferences" android:title="@string/mainactivity_preferences"
 		android:icon="@drawable/menu_preferences_selector" />
 	<item android:id="@+id/extras_knowledgebase" android:title="@string/mainactivity_knowledgebase"
 		android:icon="@drawable/menu_knowledgebase_selector" />

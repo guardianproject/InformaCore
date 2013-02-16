@@ -2,10 +2,8 @@ package org.witness.informacam.app.editors.image;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,18 +16,16 @@ import net.londatiga.android.QuickAction.OnActionItemClickListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.R;
-import org.witness.informacam.app.editors.filters.CrowdPixelizeObscure;
 import org.witness.informacam.app.editors.filters.Filter;
 import org.witness.informacam.app.editors.filters.InformaTagger;
-import org.witness.informacam.app.editors.filters.PixelizeObscure;
 import org.witness.informacam.app.editors.filters.RegionProcesser;
-import org.witness.informacam.app.editors.filters.SolidObscure;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.FormUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Forms;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 
+import android.annotation.SuppressLint;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -253,6 +249,7 @@ public class ImageRegion implements OnActionItemClickListener
 		mMatrix.invert(iMatrix);
 	}
 
+	@SuppressLint("HandlerLeak")
 	public void inflatePopup(boolean showDelayed) {
 
 		if (mPopupMenu == null)
@@ -511,8 +508,7 @@ public class ImageRegion implements OnActionItemClickListener
 				
 				mImageEditor.updateDisplayImage();
 			} else {
-				// init with ARGS
-				if(!(getRegionProcessor() instanceof InformaTagger))
+				if(!getRegionProcessor().getProperties().containsKey(Data.ImageRegion.Subject.FORM_DATA))  // init with ARGS				
 					setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(int.class).newInstance(mFilters.indexOf(filter)));
 				
 				imageRegionBorder = identifiedBorder;

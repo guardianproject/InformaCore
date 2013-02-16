@@ -298,7 +298,6 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 			public void run() {
 				informaService.init();
 				dcimDescriptor = InformaMediaScanner.getDCIMDescriptor(MainActivity.this);
-				//Log.d(App.LOG, "DCIM DESCRIPTION before write:\n" + dcimDescriptor.toString());
 			}
 		});
 
@@ -505,20 +504,19 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 		case R.id.menu_export_public_key:
 			MainRouter.exportDeviceKey(MainActivity.this);
 			return true;
-		case R.id.extras_import_form:
-			importForm();
-			return true;
 		default:
 			return false;
 		}
 	}
 
+	/* 
 	private void importForm() {
 		FormImporterDialog fid = new FormImporterDialog(MainActivity.this);
 		mProgressDialog = ProgressDialog.show(this, "", getString(R.string.please_wait));
 		fid.show();
 
 	}
+	*/
 
 	@Override
 	public void onClick(View v) {
