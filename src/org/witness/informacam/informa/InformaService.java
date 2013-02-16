@@ -66,6 +66,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -102,7 +103,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 
 	String LOG = Constants.Informa.LOG;
 	private int iPref;
-	
+
 	public interface InformaServiceListener {
 		public void onInformaPackageGenerated();
 	}
@@ -144,14 +145,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		}
 
 	}
-	
+
 	public void versionsCreated() {
 		cleanup();
 	}
 
 	public void storeMediaCache() {
 		// save original to iocipher store and cache data by dumping it to flat file that can be inflated later
-		
+
 		new Thread(new Runnable() {
 
 			@Override
@@ -187,7 +188,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		}
 		return logPack;
 	}
-	
+
 	public long[] getInitialGPSTimestamp() {
 		long[] relativeTimestamps = new long[2];
 		try {
@@ -231,11 +232,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 						annotationCache.put(Long.parseLong(key), JSONObjectToLogPack(_s.getJSONObject(key)));
 					}
 				}
-
 			}
 
 			inflatedFromManifest = true;
 		} catch(JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		} catch(ClassCastException e) {
+			// XXX: file was corrupted?
 			Log.e(Storage.LOG, e.toString());
 			e.printStackTrace();
 		}
@@ -371,6 +375,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 		br.add(new Broadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
+		br.add(new Broadcaster(new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)));
 
 		for(BroadcastReceiver b : br)
 			registerReceiver(b, ((Broadcaster) b).intentFilter);
@@ -475,7 +480,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		if(sucker.getClass().equals(PhoneSucker.class))
 			_phone.sendToBuffer(logPack);
 	}
-	
+
 	public long getCurrentTime() {
 		try {
 			return ((GeoSucker) _geo).getTime();
@@ -483,13 +488,13 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			return 0;
 		}
 	}
-	
+
 	public void onUpdate(LogPack logPack) {
 		try {
 			long ts = ((GeoSucker) _geo).getTime();
 			onUpdate(ts, logPack);
 		} catch(NullPointerException e) {
-			
+
 		}
 	}
 
@@ -605,10 +610,14 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 		informa = new Informa();
 		try {
 			LogPack originalData = getMetadata();
-			informa.setDeviceCredentials(_phone.getSucker().forceReturn());
+			
 			informa.setFileInformation(originalData.getString(Genealogy.LOCAL_MEDIA_PATH));
-		} catch(JSONException e) {} 
-		catch (InterruptedException e) {
+		} catch(JSONException e) {}
+		catch(NullPointerException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+			// TODO: this log has been corrupted.
+		} catch (InterruptedException e) {
 			Log.e(Storage.LOG, e.toString());
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -616,6 +625,13 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 			e.printStackTrace();
 		}
 
+		try {
+			informa.setDeviceCredentials(_phone.getSucker().forceReturn());
+		} catch (JSONException e) {
+			Log.e(Storage.LOG, e.toString());
+			e.printStackTrace();
+		}
+		
 		this.editor = editor;
 		this.workingUri = workingUri;
 	}
@@ -686,7 +702,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 						} catch (ExecutionException e) {
 							e.printStackTrace();
 						}
-						
+
 						suspend();
 					}
 				});
@@ -902,7 +918,7 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 				}).start();
 
 	}
-	
+
 	private class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
 
@@ -921,6 +937,13 @@ public class InformaService extends Service implements OnUpdateListener, Informa
 
 						suckerCache.put(((GeoSucker) _geo).getTime(), logPack);
 					} catch(JSONException e) {}
+				}
+			}
+
+			if(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(i.getAction())) {
+				if(InformaService.this.getStatus() == Status.RUNNING) {
+					LogPack logPack = new LogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) _phone).getWifiNetworks());
+					suckerCache.put(((GeoSucker) _geo).getTime(), logPack);
 				}
 			}
 

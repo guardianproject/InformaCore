@@ -451,7 +451,7 @@ public class RegionTrail implements OnActionItemClickListener {
 					Log.d(App.LOG, mProps.toString());
 					videoEditor.launchTagger(this);
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
+					Log.e(App.LOG, e.toString());
 					e.printStackTrace();
 				}
 			}

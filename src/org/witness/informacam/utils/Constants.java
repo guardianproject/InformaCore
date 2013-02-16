@@ -504,13 +504,16 @@ public class Constants {
 		}
 		
 		public static final class Phone {
-			public final static long LOG_RATE = 5000L;
+			public final static long LOG_RATE = 20000L;
 			
 			public static final class Keys {
 				public static final String CELL_ID = "cellTowerId";
 				public static final String BLUETOOTH_DEVICE_ADDRESS = "bluetoothDeviceAddress";
 				public static final String BLUETOOTH_DEVICE_NAME = "bluetoothDeviceName";
 				public static final String IMEI = "IMEI";
+				public static final String VISIBLE_WIFI_NETWORKS = "visibleWifiNetworks";
+				public static final String BSSID = "bssid";
+				public static final String SSID = "ssid";
 				
 			}
 		}
