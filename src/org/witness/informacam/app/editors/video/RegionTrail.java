@@ -24,6 +24,7 @@ import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.FormUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Forms;
+import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.VideoRegion;
 
@@ -50,6 +51,7 @@ public class RegionTrail implements OnActionItemClickListener {
 	private VideoEditor videoEditor;
 
 	private List<Filter> mFilters;
+	private Map<Integer, JSONObject> plugins;
 	public Filter currentFilter = null;
 
 	private static String[] mFilterLabels = {
@@ -117,7 +119,7 @@ public class RegionTrail implements OnActionItemClickListener {
 				mFilters.add(filter);
 		}
 
-		Map<Integer, JSONObject> plugins = FormUtility.getAnnotationPlugins(mFilters.size());
+		plugins = FormUtility.getAnnotationPlugins(mFilters.size());
 		Iterator<Entry<Integer, JSONObject>> pIt = plugins.entrySet().iterator();
 
 
@@ -383,9 +385,6 @@ public class RegionTrail implements OnActionItemClickListener {
 	public Properties getPrettyPrintedProperties() {
 		Properties _mProps = (Properties) mProps.clone();
 		_mProps.remove(VideoRegion.TRAIL);
-
-		Log.d(App.LOG, "all props:\n" + _mProps.toString());
-
 		return _mProps;
 	}
 
@@ -440,23 +439,32 @@ public class RegionTrail implements OnActionItemClickListener {
 			}
 		} else {
 			setObscureMode(mFilters.get(pos));
-			if(mFilters.get(pos).process_tag.equals(App.VideoEditor.OBSCURE_MODE_IDENTIFY)) {
-				if(!mProps.containsKey(Data.VideoRegion.Subject.FORM_DATA)) {
-					JSONObject form = FormUtility.getAnnotationPlugins(pos).get(pos);
-
-					try {
-						mProps.put(Data.VideoRegion.Subject.FORM_NAMESPACE, form.getString(Forms.TITLE));
-						mProps.put(Data.VideoRegion.Subject.FORM_DEF_PATH, form.getString(Forms.DEF));
-						mProps.put(Data.VideoRegion.FILTER, this.obscureMode);
-					} catch (JSONException e) {
-						Log.e(App.LOG, e.toString());
-						e.printStackTrace();
+			mProps.put(Data.VideoRegion.FILTER, this.obscureMode);
+			
+			if(mFilters.get(pos).process_tag.equals(App.VideoEditor.OBSCURE_MODE_IDENTIFY)) {				
+				// is it new? or is it a different filter than before?
+				try {
+					if(!mProps.containsKey(Data.VideoRegion.Subject.FORM_DEF_PATH) || !plugins.get(pos).getString(Forms.DEF).equals(mProps.get(Data.VideoRegion.Subject.FORM_DEF_PATH))) {
+						mProps.put(Data.VideoRegion.Subject.FORM_NAMESPACE, plugins.get(pos).getString(Forms.TITLE));
+						mProps.put(Data.VideoRegion.Subject.FORM_DEF_PATH, plugins.get(pos).getString(Forms.DEF));
+						
+						if(mProps.containsKey(Data.VideoRegion.Subject.FORM_DATA))
+							mProps.remove(Data.VideoRegion.Subject.FORM_DATA);
 					}
+				} catch (JSONException e) {
+					Log.e(App.LOG, e.toString());
+					e.printStackTrace();
 				}
 				
 				Log.d(App.LOG, mProps.toString());
 				videoEditor.launchTagger(this);
-
+			} else {
+				if(mProps.containsKey(Data.VideoRegion.Subject.FORM_NAMESPACE))
+					mProps.remove(Data.VideoRegion.Subject.FORM_NAMESPACE);
+				if(mProps.containsKey(Data.VideoRegion.Subject.FORM_DEF_PATH))
+					mProps.remove(Data.VideoRegion.Subject.FORM_DEF_PATH);
+				if(mProps.containsKey(Data.VideoRegion.Subject.FORM_DATA))
+					mProps.remove(Data.VideoRegion.Subject.FORM_DATA);
 			}
 		}
 

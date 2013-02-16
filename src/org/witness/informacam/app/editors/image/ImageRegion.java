@@ -3,6 +3,7 @@ package org.witness.informacam.app.editors.image;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,7 @@ public class ImageRegion implements OnActionItemClickListener
 	 * createObscuredBitmap method in ImageEditor
 	 */
 	List<Filter> mFilters;
+	Map<Integer, JSONObject> plugins;
 	int mObscureType = -1;
 
 	//the other of these strings and resources determines the order in the popup menu
@@ -216,9 +218,8 @@ public class ImageRegion implements OnActionItemClickListener
 				mFilters.add(filter);
 		}
 		
-		Map<Integer, JSONObject> plugins = FormUtility.getAnnotationPlugins(mFilters.size());
+		plugins = FormUtility.getAnnotationPlugins(mFilters.size());
 		Iterator<Entry<Integer, JSONObject>> pIt = plugins.entrySet().iterator();
-		
 		
 		while(pIt.hasNext()) {
 			Entry<Integer, JSONObject> plugin = pIt.next();
@@ -508,8 +509,10 @@ public class ImageRegion implements OnActionItemClickListener
 				
 				mImageEditor.updateDisplayImage();
 			} else {
+				JSONObject form = plugins.get(mFilters.indexOf(filter));
+				
 				if(!getRegionProcessor().getProperties().containsKey(Data.ImageRegion.Subject.FORM_DATA))  // init with ARGS				
-					setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(int.class).newInstance(mFilters.indexOf(filter)));
+					setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(String.class, String.class).newInstance(form.getString(Forms.TITLE), form.getString(Forms.DEF)));
 				
 				imageRegionBorder = identifiedBorder;
 				mImageEditor.launchAnnotationActivity(this);
@@ -532,6 +535,9 @@ public class ImageRegion implements OnActionItemClickListener
 			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
+			Log.e(App.LOG, e.toString());
+			e.printStackTrace();
+		} catch (JSONException e) {
 			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
 		}		

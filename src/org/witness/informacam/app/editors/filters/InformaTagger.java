@@ -1,5 +1,6 @@
 package org.witness.informacam.app.editors.filters;
 
+import java.util.Map;
 import java.util.Properties;
 
 import org.json.JSONException;
@@ -19,12 +20,11 @@ public class InformaTagger implements RegionProcesser
 	Properties mProps;
 	private Bitmap mPreview;
 	
-	public InformaTagger(int obscureType) throws JSONException {
-		JSONObject form = FormUtility.getAnnotationPlugins(obscureType).get(obscureType);
+	public InformaTagger(Map<Integer, JSONObject> plugins, int position) throws JSONException {
 
 		mProps = new Properties ();
-		mProps.put(ImageRegion.Subject.FORM_NAMESPACE, form.getString(Forms.TITLE));
-		mProps.put(ImageRegion.Subject.FORM_DEF_PATH, form.getString(Forms.DEF));
+		mProps.put(ImageRegion.Subject.FORM_NAMESPACE, plugins.get(position).getString(Forms.TITLE));
+		mProps.put(ImageRegion.Subject.FORM_DEF_PATH, plugins.get(position).getString(Forms.DEF));
 		mProps.put(ImageRegion.FILTER, this.getClass().getName());
 	}
 	
