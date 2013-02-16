@@ -24,10 +24,10 @@ import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.FormUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Forms;
-import org.witness.informacam.utils.Constants.Storage;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data;
 import org.witness.informacam.utils.Constants.Informa.Keys.Data.VideoRegion;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -35,6 +35,7 @@ import android.util.Log;
 public class RegionTrail implements OnActionItemClickListener {
 
 
+	@SuppressLint("UseSparseArrays")
 	private HashMap<Integer,ObscureRegion> regionMap = new HashMap<Integer,ObscureRegion>();
 	private Properties mProps;
 
@@ -93,7 +94,6 @@ public class RegionTrail implements OnActionItemClickListener {
 	}
 
 	public void setObscureMode(String filterName) {
-		// TODO: lookup which filter by its name
 		for(Filter filter : mFilters) {
 			if(filter.process_tag.equals(filterName)) {
 				setObscureMode(filter);
@@ -237,6 +237,7 @@ public class RegionTrail implements OnActionItemClickListener {
 		mPopupMenu.setOnActionItemClickListener(this);
 	}
 
+	@SuppressLint("HandlerLeak")
 	public void inflatePopup (boolean showDelayed, final int x, final int y) {
 		if(mPopupMenu == null)
 			initPopup();

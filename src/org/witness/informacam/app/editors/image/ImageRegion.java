@@ -3,7 +3,6 @@ package org.witness.informacam.app.editors.image;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class ImageRegion implements OnActionItemClickListener
 	// What should be done to this region
 	public static final int NOTHING = 0;
 	public static final int OBSCURE = 1;
-	
+
 	boolean selected = false;
 
 	public static final int CORNER_UPPER_LEFT = 1;
@@ -209,18 +208,18 @@ public class ImageRegion implements OnActionItemClickListener
 		mBounds = new RectF(left, top, right, bottom);
 
 		timestampOnGeneration = timestamp;
-		
-		
+
+
 		// init the plugins we have
 		mFilters = new ArrayList<Filter>();
 		for(Filter filter : App.ImageEditor.INFORMA_CAM_PLUGINS) {
 			if(filter.is_available)
 				mFilters.add(filter);
 		}
-		
+
 		plugins = FormUtility.getAnnotationPlugins(mFilters.size());
 		Iterator<Entry<Integer, JSONObject>> pIt = plugins.entrySet().iterator();
-		
+
 		while(pIt.hasNext()) {
 			Entry<Integer, JSONObject> plugin = pIt.next();
 			try {
@@ -230,8 +229,8 @@ public class ImageRegion implements OnActionItemClickListener
 				e.printStackTrace();
 			}
 		}
-		
-		
+
+
 		//set default processor
 		if(rp == null)
 			updateRegionProcessor(mFilters.get(0));
@@ -499,26 +498,30 @@ public class ImageRegion implements OnActionItemClickListener
 	}
 
 	public void updateRegionProcessor (Filter filter) {
-		
+
 		try {
 			Class<?> rp = Class.forName(filter.regionProcessorClass.getName());
-			
+
 			if(!filter.regionProcessorClass.getName().equals(InformaTagger.class.getName())) {
 				setRegionProcessor((RegionProcesser) rp.newInstance());
 				imageRegionBorder = unidentifiedBorder;
-				
+
 				mImageEditor.updateDisplayImage();
 			} else {
 				JSONObject form = plugins.get(mFilters.indexOf(filter));
-				
-				if(!getRegionProcessor().getProperties().containsKey(Data.ImageRegion.Subject.FORM_DATA))  // init with ARGS				
+
+				try {
+					if(!getRegionProcessor().getProperties().containsKey(Data.ImageRegion.Subject.FORM_DATA))  // init with ARGS				
+						setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(String.class, String.class).newInstance(form.getString(Forms.TITLE), form.getString(Forms.DEF)));
+				} catch(NullPointerException e) {
 					setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(String.class, String.class).newInstance(form.getString(Forms.TITLE), form.getString(Forms.DEF)));
-				
+				}
+
 				imageRegionBorder = identifiedBorder;
 				mImageEditor.launchAnnotationActivity(this);
 			}
 
-			
+
 		} catch (ClassNotFoundException e) {
 			Log.e(App.LOG, e.toString());
 			e.printStackTrace();
