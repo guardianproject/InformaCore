@@ -144,8 +144,8 @@ public class Constants {
 				List<Filter> InformaCamPlugins = new ArrayList<Filter>();
 				
 				
-				InformaCamPlugins.add(new Filter("Pixelate", R.drawable.ic_context_pixelate, null, OBSCURE_MODE_PIXELATE));
-				InformaCamPlugins.add(new Filter("Redact", R.drawable.ic_context_fill, null, OBSCURE_MODE_REDACT));
+				InformaCamPlugins.add(new Filter("Pixelate", R.drawable.ic_context_pixelate, null, OBSCURE_MODE_PIXELATE, false));
+				InformaCamPlugins.add(new Filter("Redact", R.drawable.ic_context_fill, null, OBSCURE_MODE_REDACT, false));
 				
 				INFORMA_CAM_PLUGINS = Collections.unmodifiableList(InformaCamPlugins);
 			}
@@ -205,9 +205,9 @@ public class Constants {
 			static {
 				List<Filter> InformaCamPlugins = new ArrayList<Filter>();
 				
-				InformaCamPlugins.add(new Filter("Pixelate", R.drawable.ic_context_pixelate, PixelizeObscure.class, "p"));
-				InformaCamPlugins.add(new Filter("Redact", R.drawable.ic_context_fill, SolidObscure.class, "s"));
-				InformaCamPlugins.add(new Filter("CrowdPixel", R.drawable.ic_context_pixelate, CrowdPixelizeObscure.class, "i"));				
+				InformaCamPlugins.add(new Filter("Pixelate", R.drawable.ic_context_pixelate, PixelizeObscure.class, "p", false));
+				InformaCamPlugins.add(new Filter("Redact", R.drawable.ic_context_fill, SolidObscure.class, "s", false));
+				InformaCamPlugins.add(new Filter("CrowdPixel", R.drawable.ic_context_pixelate, CrowdPixelizeObscure.class, "i", false));				
 				
 				INFORMA_CAM_PLUGINS = Collections.unmodifiableList(InformaCamPlugins);
 			}
