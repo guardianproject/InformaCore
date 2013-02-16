@@ -441,6 +441,7 @@ public class RegionTrail implements OnActionItemClickListener {
 		} else {
 			setObscureMode(mFilters.get(pos));
 			if(mFilters.get(pos).process_tag.equals(App.VideoEditor.OBSCURE_MODE_IDENTIFY)) {
+				// TODO: do not overwrite old values!
 				JSONObject form = FormUtility.getAnnotationPlugins(pos).get(pos);
 
 				try {

@@ -1171,6 +1171,13 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	public void launchAnnotationActivity(ImageRegion ir) {
 		Intent launch_form = new Intent(this, FormHolder.class);
 		
+		try {
+			Log.d(App.LOG, "launch region:\n" + ir.getRepresentation().toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		launch_form.putExtra(Form.Extras.DEF_PATH, IOUtility.getBytesFromFile(new File((String) ir.getRegionProcessor().getProperties().get(Informa.Keys.Data.ImageRegion.Subject.FORM_DEF_PATH))));
 		if(ir.getRegionProcessor().getProperties().containsKey(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA))
 			launch_form.putExtra(Form.Extras.PREVIOUS_ANSWERS, IOUtility.getBytesFromFile(new File((String) ir.getRegionProcessor().getProperties().get(Informa.Keys.Data.ImageRegion.Subject.FORM_DATA))));
@@ -1259,6 +1266,13 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 				
 				ImageRegion ir = imageRegions.get(data.getIntExtra(Informa.Keys.Data.ImageRegion.INDEX, 0));
 				ir.getRegionProcessor().setProperties(mProp);
+				
+				try {
+					Log.d(App.LOG, "updated region:\n" + ir.getRepresentation().toString());
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 				InformaService.getInstance().onImageRegionChanged(ir);
 
@@ -1340,9 +1354,7 @@ public class ImageEditor extends Activity implements OnTouchListener, OnClickLis
 	}
 	
 	@Override
-	public void onBackPressed() {
-		Log.d(App.LOG, "saving before going back...");
-		
+	public void onBackPressed() {		
 		mProgressDialog = new ProgressDialog(this);
 		mProgressDialog.setCancelable(false);
 		mProgressDialog.setCanceledOnTouchOutside(false);

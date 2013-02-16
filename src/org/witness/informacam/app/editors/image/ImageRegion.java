@@ -511,9 +511,10 @@ public class ImageRegion implements OnActionItemClickListener
 				
 				mImageEditor.updateDisplayImage();
 			} else {
-				// with ARGS
+				// init with ARGS
+				if(!(getRegionProcessor() instanceof InformaTagger))
+					setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(int.class).newInstance(mFilters.indexOf(filter)));
 				
-				setRegionProcessor((RegionProcesser) rp.getDeclaredConstructor(int.class).newInstance(mFilters.indexOf(filter)));
 				imageRegionBorder = identifiedBorder;
 				mImageEditor.launchAnnotationActivity(this);
 			}
