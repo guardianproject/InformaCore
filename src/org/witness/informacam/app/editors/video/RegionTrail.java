@@ -60,7 +60,8 @@ public class RegionTrail implements OnActionItemClickListener {
 		"SetOutPoint",
 		"DoTween",
 		"RemoveKeyFrame",
-	"RemoveTrail"};
+		"RemoveTrail"};
+	
 	private static Integer[] mFilterIcons = {
 		R.drawable.ic_add,
 		R.drawable.ic_add,
@@ -132,7 +133,15 @@ public class RegionTrail implements OnActionItemClickListener {
 				e.printStackTrace();
 			}
 		}
-
+		
+		// map remaining actions
+		int o = mFilters.size(); 
+		SET_IN_POINT = o++;
+		SET_OUT_POINT = o++;
+		DO_TWEEN = o++;
+		REMOVE_KEYFRAME = o++;
+		REMOVE_REGION = o++;
+		
 		// set default mode
 		if(currentFilter == null)
 			setObscureMode(mFilters.get(0));
@@ -443,21 +452,28 @@ public class RegionTrail implements OnActionItemClickListener {
 			mProps.put(Data.VideoRegion.FILTER, this.obscureMode);
 			
 			if(mFilters.get(pos).process_tag.equals(App.VideoEditor.OBSCURE_MODE_IDENTIFY)) {				
-				// is it new? or is it a different filter than before?
+				Log.d(App.LOG, this.getPrettyPrintedProperties().toString());
+				
 				try {
-					if(!mProps.containsKey(Data.VideoRegion.Subject.FORM_DEF_PATH) || !plugins.get(pos).getString(Forms.DEF).equals(mProps.get(Data.VideoRegion.Subject.FORM_DEF_PATH))) {
-						mProps.put(Data.VideoRegion.Subject.FORM_NAMESPACE, plugins.get(pos).getString(Forms.TITLE));
-						mProps.put(Data.VideoRegion.Subject.FORM_DEF_PATH, plugins.get(pos).getString(Forms.DEF));
+					mProps.put(Data.VideoRegion.Subject.FORM_NAMESPACE, plugins.get(pos).getString(Forms.TITLE));
+					mProps.put(Data.VideoRegion.Subject.FORM_DEF_PATH, plugins.get(pos).getString(Forms.DEF));
+					
+					// is it new? or is it a different filter than before?
+					if(
+							!mProps.containsKey(Data.VideoRegion.Subject.FORM_NAMESPACE) || 
+							!plugins.get(pos).getString(Forms.TITLE).equals(mProps.get(Data.VideoRegion.Subject.FORM_NAMESPACE))
+					) {
 						
 						if(mProps.containsKey(Data.VideoRegion.Subject.FORM_DATA))
 							mProps.remove(Data.VideoRegion.Subject.FORM_DATA);
 					}
+					
 				} catch (JSONException e) {
 					Log.e(App.LOG, e.toString());
 					e.printStackTrace();
 				}
 				
-				Log.d(App.LOG, mProps.toString());
+				
 				videoEditor.launchTagger(this);
 			} else {
 				if(mProps.containsKey(Data.VideoRegion.Subject.FORM_NAMESPACE))
