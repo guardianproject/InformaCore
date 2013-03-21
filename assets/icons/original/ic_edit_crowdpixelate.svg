@@ -16,53 +16,9 @@
 <metadata>
 	<sfw  xmlns="&ns_sfw;">
 		<slices></slices>
-		<sliceSourceBounds  height="26.309" width="26.194" y="383.346" x="292.403" bottomLeftOrigin="true"></sliceSourceBounds>
+		<sliceSourceBounds  x="292.798" y="382.94" width="27.12" height="27.12" bottomLeftOrigin="true"></sliceSourceBounds>
 	</sfw>
 </metadata>
-<pattern  x="-289.5" y="412.5" width="72" height="72" patternUnits="userSpaceOnUse" id="SVGID_1_" viewBox="14.75 -72 72 72" overflow="visible">
-	<g>
-		<polygon fill="none" points="14.75,0 86.75,0 86.75,-72 14.75,-72 		"/>
-		<g>
-			<polygon fill="none" points="14.75,-72 14.75,0 86.75,0 86.75,-72 			"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-70.5" x2="87.25" y2="-70.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-67.5" x2="87.25" y2="-67.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-64.5" x2="87.25" y2="-64.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-61.5" x2="87.25" y2="-61.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-58.5" x2="87.25" y2="-58.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-55.5" x2="87.25" y2="-55.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-52.5" x2="87.25" y2="-52.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-49.5" x2="87.25" y2="-49.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-46.5" x2="87.25" y2="-46.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-43.5" x2="87.25" y2="-43.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-40.5" x2="87.25" y2="-40.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-37.5" x2="87.25" y2="-37.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-34.5" x2="87.25" y2="-34.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-31.5" x2="87.25" y2="-31.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-28.5" x2="87.25" y2="-28.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-25.5" x2="87.25" y2="-25.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-22.5" x2="87.25" y2="-22.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-19.5" x2="87.25" y2="-19.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-16.5" x2="87.25" y2="-16.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-13.5" x2="87.25" y2="-13.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-10.5" x2="87.25" y2="-10.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-7.5" x2="87.25" y2="-7.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-4.5" x2="87.25" y2="-4.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="15.25" y1="-1.5" x2="87.25" y2="-1.5"/>
-			<line fill="none" stroke="#231F20" stroke-width="2" stroke-dasharray="2,1" x1="2" y1="-4.5" x2="0" y2="-4.5"/>
-		</g>
-	</g>
-</pattern>
-<path fill="#8C8E91" stroke="#FFFFFF" stroke-miterlimit="10" d="M17.867,21.98c-1.465-0.928-3.137-0.709-4.681-1.506
-	c-0.02-0.195-0.059-0.535-0.091-0.859c1.899-0.775,2.982-3.153,2.417-5.478c-0.17-0.697-1.314-2.842-3.199-2.646
-	c-1.386,0.143-3.333,0.549-3.813,2.169c-0.679,1.93,0.306,5.199,2.259,6.023c-0.036,0.279-0.076,0.584-0.097,0.791
-	c-1.545,0.797-3.217,0.578-4.683,1.506c-1.559,0.982-1.563,2.357-1.895,4.018h15.678C19.431,24.338,19.427,22.965,17.867,21.98z"/>
-<g>
-	<path fill="#8C8E91" d="M25.105,22.629c-1.761-1.111-3.765-0.85-5.616-1.809c-0.025-0.232-0.07-0.641-0.108-1.031
-		c2.278-0.93,3.579-3.783,2.899-6.569c-0.204-0.837-1.577-3.411-3.839-3.176c-1.663,0.172-3.998,0.658-4.576,2.602
-		c-0.812,2.316,0.365,6.239,2.711,7.227c-0.043,0.336-0.092,0.701-0.118,0.949c-1.854,0.957-3.858,0.695-5.618,1.809
-		c-1.869,1.182-1.875,2.828-2.272,4.82h18.813C26.983,25.459,26.977,23.811,25.105,22.629z"/>
-</g>
-<pattern  id="SVGID_2_" xlink:href="#SVGID_1_" patternTransform="matrix(1.1088 0 0 -1.1088 781.3252 -19004.8828)">
-</pattern>
-<path fill="url(#SVGID_2_)" d="M2.903,2.845v26.309h26.194V2.845H2.903z M26.736,25.051H12.79V8.995h13.947V25.051z"/>
+<image overflow="visible" enable-background="new    " width="117" height="117" xlink:href="F2FFD89.jpg"  transform="matrix(0.2318 0 0 0.2318 3.2983 2.4404)">
+</image>
 </svg>
