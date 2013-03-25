@@ -1,3 +1,0 @@
-Next, we'll need a photo taken by your camera in order to link this device to your identity.
-We suggest taking a "boring" picture: a white wall will do just fine. 
-{$ type=button; text=Take a Photo; callback=initDeviceKey; mandatory=true;}

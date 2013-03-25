@@ -1,102 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.witness.informacam"
     android:versionCode="1"
-    android:versionName="1.0"
-    android:installLocation="preferExternal" >
+    android:versionName="1.0" >
 
-    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="10" />
-    <uses-feature android:name="android.hardware.camera" />
-    
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="17" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_LOGS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <permission
+        android:name="org.witness.informacam.ICP"
+        android:label="InformaCam"
+        android:protectionLevel="normal" />
 
     <application
-        android:icon="@drawable/ic_launcher_ssc"
+        android:allowBackup="true"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Light.NoTitleBar" android:name="InformaCam">
-        <activity
-            android:name="org.witness.informacam.app.MainActivity"
-            android:label="@string/app_name"
-            android:configChanges="orientation|keyboardHidden">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".app.editors.image.ImageEditor" android:screenOrientation="landscape" />
-        <activity android:name=".app.editors.image.ImagePreview" />
-        <activity android:name=".app.editors.video.VideoEditor" android:screenOrientation="landscape" />
-        <activity android:name=".app.editors.video.VideoPreferences" />
-        <activity android:name=".app.WizardActivity"
-            android:theme="@style/Theme.CustomDialog"
-            android:screenOrientation="portrait"
-            android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.SurfaceGrabberActivity" android:screenOrientation="landscape" />
-        <activity android:name=".app.AboutActivity"
-            android:theme="@style/Theme.CustomDialog"
-            android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.LoginActivity"
-            android:theme="@style/Theme.CustomDialog"
-            android:configChanges="orientation|keyboardHidden" />
-        <activity 
-            android:name="info.guardianproject.odkparser.ui.FormHolder"
-            android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.DestinationChooserActivity"
-            android:theme="@style/Theme.CustomDialog"
-            android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.AddressBookChooserActivity"
-            android:configChanges="orientation|keyboardHidden"
-            android:theme="@style/Theme.CustomDialog" />
-        
-        
-        <activity android:name=".app.MediaManagerActivity" android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.MessageCenterActivity" android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.MessageThreadActivity" android:configChanges="orientation|keyboardHidden" />
-        <activity android:name=".app.AddressBookActivity" android:configChanges="orientation|keyboardHidden">
-			<intent-filter>
-			    <category android:name="android.intent.category.DEFAULT" />
-			    <action android:name="android.intent.action.VIEW" />
-			    <data android:mimeType="application/*" android:pathPattern=".*.ictd" android:scheme="content" />
-			</intent-filter>
-			
-			<intent-filter>
-			    <category android:name="android.intent.category.DEFAULT" />
-			    <action android:name="android.intent.action.VIEW" />
-			    <data android:mimeType="application/*" android:pathPattern=".*.ictd" android:scheme="file" />
-			</intent-filter>
-		</activity>
-        
-        <activity android:name=".app.KnowledgebaseActivity" />
-        <activity android:name=".app.PreferencesActivity" />
-        
-        <activity android:name="com.xtralogic.android.logcollector.SendLogActivity"
-                  android:label="@string/app_name_lc"
-                  android:theme="@style/Theme.CustomDialog">
-            <intent-filter>
-                <action android:name="com.xtralogic.logcollector.intent.action.SEND_LOG" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-        
-        <service android:name=".informa.InformaService" android:enabled="true" />
-        <service android:name=".transport.UploaderService" android:enabled="true" />
-        <service android:name=".storage.IOCipherService" android:enabled="true" />
-        <service android:name=".storage.DatabaseService" android:enabled="true" />
-        <service android:name=".crypto.SignatureService" android:enabled="true" />
-    </application>
+        android:permission="org.witness.informacam.ICP"
+        android:theme="@style/AppTheme" />
 
 </manifest>

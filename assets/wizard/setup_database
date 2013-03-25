@@ -1,4 +1,0 @@
-A secure, encrypted database will be created to store your images and contacts.
-
-Choose a password (of 10 characters or more) to lock your database.  This is also the password you'll use to log in:
-{$ type=password; callback=saveDBPW; mandatory=true;}

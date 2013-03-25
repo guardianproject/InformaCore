@@ -9,8 +9,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import net.sqlcipher.database.SQLiteDatabase;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPException;
@@ -23,19 +21,17 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
-import org.witness.informacam.informa.LogPack;
-import org.witness.informacam.storage.DatabaseHelper;
-import org.witness.informacam.storage.DatabaseService;
-import org.witness.informacam.utils.Constants.Crypto.Signatures;
-import org.witness.informacam.utils.Constants.Settings.Device;
-import org.witness.informacam.utils.Constants.Storage.Tables;
+import org.witness.informacam.utils.LogPack;
+import org.witness.informacam.utils.Constants.Actions;
+import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
 
 import android.app.Service;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Binder;
 import android.os.IBinder;
-import android.provider.BaseColumns;
+import android.util.Log;
 
 public class SignatureService extends Service {
 	private final IBinder binder = new LocalBinder();
@@ -45,6 +41,8 @@ public class SignatureService extends Service {
 	private PGPPrivateKey privateKey = null;
 	private PGPPublicKey publicKey = null;
 	private String authKey = null;
+	
+	private final static String LOG = App.Crypto.LOG;
 	
 	public class LocalBinder extends Binder {
 		public SignatureService getService() {
@@ -57,29 +55,16 @@ public class SignatureService extends Service {
 		return binder;
 	}
 	
-	public static SignatureService getInstance() {
-		return signatureService;
-	}
-	
 	@Override
 	public void onCreate() {
-		DatabaseHelper dh = DatabaseService.getInstance().getHelper();
-		SQLiteDatabase db = DatabaseService.getInstance().getDb();
-		
-		dh.setTable(db, Tables.Keys.SETUP);
-		
-		Cursor k = dh.getValue(db, new String[] {Device.Keys.AUTH_KEY, Device.Keys.SECRET_KEY}, BaseColumns._ID, 1);
-		if(k != null && k.moveToFirst()) {
-			try {
-				initKey(k.getBlob(k.getColumnIndex(Device.Keys.SECRET_KEY)), k.getString(k.getColumnIndex(Device.Keys.AUTH_KEY)));
-			} catch(PGPException e) {}
-			k.close();
-		}
+		Log.d(LOG, "started.");
 		
 		signatureService = this;
+		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE));
+		
 	}
 	
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "unused", "deprecation" })
 	private void initKey(byte[] sk, String authKey) throws PGPException {
 		this.authKey = authKey;
 		secretKey = KeyUtility.extractSecretKey(sk);
@@ -166,6 +151,10 @@ public class SignatureService extends Service {
 		} catch (ExecutionException e) {
 			return null;
 		}
+	}
+	
+	public static SignatureService getInstance() {
+		return signatureService;
 	}
 
 }
