@@ -232,7 +232,6 @@ public class AddressBookUtility {
 					int numRead = 0;
 
 					String line;
-					StringBuilder sb = new StringBuilder();
 
 					while((numRead = br.read(buf)) != -1) {
 						line = String.valueOf(buf, 0, numRead);
@@ -242,7 +241,8 @@ public class AddressBookUtility {
 							Log.d(App.LOG, l);
 							String key = l.split("=")[0];
 							String value = l.split("=")[1];
-
+							
+							// XXX: please pay attention to potential SQL injections HERE.
 							if(key.equals(TrustedDestination.Keys.URL))
 								trustedDestinationURL = value;
 							if(key.equals(Crypto.Keystore.Keys.PASSWORD))
@@ -270,6 +270,7 @@ public class AddressBookUtility {
 					e1.printStackTrace();
 				}
 				
+				// XXX: please pay attention to potential SQL injections HERE.
 				if(ext.equals(".png") || ext.equals(".jpg")) {
 					try {
 						imgBytes = new byte[is.available()];
@@ -281,6 +282,7 @@ public class AddressBookUtility {
 					}
 
 
+			    // XXX: please pay attention to potential SQL injections HERE.
 				} else if(ext.equals(".p12")) {
 					try {
 						certBytes = new byte[is.available()];
@@ -292,6 +294,7 @@ public class AddressBookUtility {
 						e.printStackTrace();
 					}
 
+				// XXX: please pay attention to potential SQL injections HERE.
 				} else if(ext.equals(".asc")) {
 
 					try {

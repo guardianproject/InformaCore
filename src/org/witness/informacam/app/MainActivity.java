@@ -112,12 +112,11 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 
 		sp = PreferenceManager.getDefaultSharedPreferences(this);
 		SQLiteDatabase.loadLibs(this);
-		// FC with
-		//Log.d(App.LOG, "mode: " + UploaderService.getInstance().getMode());
 		initLayout();
 
 		br.add(new Broadcaster(new IntentFilter(App.Main.SERVICE_STARTED)));
 		br.add(new Broadcaster(new IntentFilter(Transport.Errors.CONNECTION)));
+		br.add(new Broadcaster(new IntentFilter(App.Main.FORCE_CLOSE_REPORTED)));
 
 		captureIntent = editorIntent = null;
 		h = new Handler();
@@ -630,6 +629,8 @@ public class MainActivity extends Activity implements OnEulaAgreedTo, OnClickLis
 				Log.d(App.LOG, "all services accounted for?");
 			} else if(Transport.Errors.CONNECTION.equals(i.getAction())) {
 				Toast.makeText(MainActivity.this, getString(R.string.error_orbot_nonresponsive), Toast.LENGTH_LONG).show();
+			} else if(App.Main.FORCE_CLOSE_REPORTED.equals(i.getAction())) {
+				Toast.makeText(MainActivity.this, "hi", Toast.LENGTH_LONG).show();
 			}
 
 		}
