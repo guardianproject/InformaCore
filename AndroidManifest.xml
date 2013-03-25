@@ -6,6 +6,7 @@
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="17" />
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <permission
@@ -19,6 +20,14 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:permission="org.witness.informacam.ICP"
-        android:theme="@style/AppTheme" />
+        android:theme="@style/AppTheme" >
+        <activity android:name="org.witness.informacam.CameraActivity" >
+            <intent-filter>
+                <action android:name="android.media.action.IMAGE_CAPTURE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
 
 </manifest>

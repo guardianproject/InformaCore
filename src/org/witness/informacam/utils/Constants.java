@@ -118,6 +118,16 @@ public class Constants {
 
 	public final static class App {
 		public final static String LOG = "******************** InformaCam : MAIN ********************";
+		
+		public static final class Camera {
+			public final static String LOG = "******************** InformaCam : CameraActivity ********************";
+			public final static String TYPE = "cameraType";
+			
+			public static final class Type {
+				public final static int CAMERA = 500;
+				public final static int CAMCORDER = 501;
+			}
+		}
 
 		public final static class Transport {
 			public final static String LOG = "******************** InformaCam : Transport ********************";
