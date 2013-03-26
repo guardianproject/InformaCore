@@ -1,7 +1,7 @@
 package org.witness.informacam.utils.models;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.json.JSONObject;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -23,7 +23,7 @@ public class IConnection extends Model {
 
 	public void setParam(String key, Object value) {
 		if(params == null) {
-			params = new Vector<IParam>();
+			params = new ArrayList<IParam>();
 		}
 
 		IParam param = new IParam();
@@ -35,7 +35,7 @@ public class IConnection extends Model {
 
 	public void setData(String key, String entityName, int source) {
 		if(data == null) {
-			data = new Vector<IData>();
+			data = new ArrayList<IData>();
 		}
 
 		IData data = new IData();

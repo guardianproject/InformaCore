@@ -18,4 +18,7 @@
     <string name="your_password_should_be">Your password should be more than 10 characters.</string>
     <string name="your_device_is_all">Your device is all set.</string>
     <string name="continue_">Continue</string>
+    <string name="could_not_find_any_camera_activity">Could not find any Camera apps installed on your phone.</string>
+    <string name="get_in">Get In</string>
+    <string name="cancel">Cancel</string>
 </resources>

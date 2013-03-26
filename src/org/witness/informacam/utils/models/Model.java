@@ -2,9 +2,8 @@ package org.witness.informacam.utils.models;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,10 +36,12 @@ public class Model extends JSONObject {
 				f.setAccessible(true);
 				if(values.has(f.getName())) {
 					if(f.getType() == List.class) {
-						List subValue = new Vector();
+						List subValue = new ArrayList();
 						boolean isModel = false;
 
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
+						Log.d(LOG, "UGH: " + clz.getName());
+
 						Object test = clz.newInstance();
 						if(test instanceof Model) {
 							isModel = true;
@@ -60,6 +61,8 @@ public class Model extends JSONObject {
 						}
 
 						f.set(this, subValue);
+					} else if(f.getType() == byte[].class) { 
+						f.set(this, values.getString(f.getName()).getBytes());
 					} else {
 						f.set(this, values.get(f.getName()));
 					}
@@ -89,22 +92,26 @@ public class Model extends JSONObject {
 		for(Field f : fields) {
 			f.setAccessible(true);
 
+			if(f.getName().contains("this$")) {
+				continue;
+			}
+
 			try {
 				Object value = f.get(this);
 				if(f.getType() == List.class) {
 					JSONArray subValue = new JSONArray();
 					for(Object v : (List<?>) value) {
-						Log.d(LOG, v.getClass().getName());
+						// Log.d(LOG, v.getClass().getName());
 						if(v instanceof Model) {
 							subValue.put(((Model) v).asJson());
 						} else {
 							subValue.put(v);
 						}
-
-						break;
 					}
 
 					json.put(f.getName(), subValue);
+				} else if(f.getType() == byte[].class) {
+					json.put(f.getName(), new String((byte[]) value));
 				} else {
 					json.put(f.getName(), value);
 				}
@@ -115,6 +122,9 @@ public class Model extends JSONObject {
 				Log.d(LOG, e.toString());
 				e.printStackTrace();
 			} catch (JSONException e) {
+				Log.d(LOG, e.toString());
+				e.printStackTrace();
+			} catch (NullPointerException e) {
 				Log.d(LOG, e.toString());
 				e.printStackTrace();
 			}

@@ -27,7 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.storage.IOService;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -117,7 +117,6 @@ public class KeyUtility {
 			
 			if(informaCam.ioService.saveBlob(authTokenBlob.toString().getBytes(), new java.io.File(IUser.CREDENTIALS))) {
 				informaCam.user.hasCredentials = true;
-				informaCam.persistLogin(informaCam.user.getString(IUser.PASSWORD));
 				informaCam.user.remove(IUser.PASSWORD);
 				
 				progress += 10;
@@ -207,7 +206,7 @@ public class KeyUtility {
 			publicCredentials.put(IUser.PUBLIC_KEY, baos.toByteArray());
 			baos.close();
 			
-			IOService.zipFiles(publicCredentials, IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER);
+			IOUtility.zipFiles(publicCredentials, IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER);
 			
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);

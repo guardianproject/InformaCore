@@ -6,11 +6,13 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.models.IConnection;
 import org.witness.informacam.utils.models.IPendingConnections;
 
+import info.guardianproject.iocipher.File;
 import info.guardianproject.onionkit.ui.OrbotHelper;
 import android.app.Activity;
 import android.app.Service;
@@ -28,6 +30,7 @@ public class UploaderService extends Service {
 	
 	OrbotHelper oh;
 	public IPendingConnections pendingConnections = new IPendingConnections();
+	private boolean isRunning = false;
 	
 	InformaCam informaCam = InformaCam.getInstance();
 	
@@ -65,15 +68,18 @@ public class UploaderService extends Service {
 	}
 	
 	private void run() {
-		if(informaCam.ioService.getBytes(Models.IPendingConnections.PATH, Type.IOCIPHER) != null) {
+		if(informaCam.ioService.getBytes(Models.IPendingConnections.PATH, Type.IOCIPHER) != null && !isRunning) {
 			pendingConnections = new IPendingConnections();
 			pendingConnections.inflate(informaCam.ioService.getBytes(Models.IPendingConnections.PATH, Type.IOCIPHER));
+			isRunning = true;
 			
 			for(IConnection connection : pendingConnections.queue) {
 				if(!connection.isHeld) {
 					
 				}
-			}			
+			}
+		} else {
+			// TODO: start a listener for updates to queue...
 		}
 	}
 	
@@ -111,20 +117,33 @@ public class UploaderService extends Service {
 		pendingConnections.queue.add(connection);
 	}
 	
-	public boolean checkForOrbot(Activity a) {
-		if(oh.isOrbotInstalled()) {
-			return true;
-		} else {
-			oh.promptToInstall(a);
-			return false;
-		}
-	}
-	
 	public boolean isConnectedToTor() {
 		return oh.isOrbotRunning();
 	}
 	
-	
+	public void requestCredentials() {
+		/*
+		 * params: pgpKeyFingerprint
+		 * data: publicCredentials
+		 * method: post
+		 * url: requestUrl
+		 * returns: {
+		 * 	result:code, 
+		 *  data: {
+		 *  	_id: id of user, 
+		 *  	_rev: _rev of user, 
+		 *  	upload_id : id of upload bucket, 
+		 *  	upload_rev: rev of upload bucket
+		 *  	}
+		 *  } or {
+		 *   result: code,
+		 *   reason: reason as string
+		 *  
+		 *  }
+		 */
+		IConnection connection = new IConnection();
+		
+	}
 	
 
 }

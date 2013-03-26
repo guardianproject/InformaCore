@@ -1,8 +1,6 @@
 package org.witness.informacam.ui;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
@@ -12,9 +10,7 @@ import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.Codes.Transport;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
@@ -44,7 +40,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	private final static String LOG = App.LOG;
 	private String packageName;
 
-	InformaCam informaCam = InformaCam.getInstance();
+	InformaCam informaCam;
 
 	TabHost tabHost;
 	ViewPager viewPager;
@@ -63,7 +59,8 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 
 		Log.d(LOG, "hello " + packageName);
 		
-		informaCam.associateActivity(this);
+		informaCam = InformaCam.getInstance(this);
+		
 		setContentView(R.layout.activity_wizard);
 
 		fragments.add(Fragment.instantiate(this, WizardStepOne.class.getName()));

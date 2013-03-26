@@ -21,5 +21,8 @@
         <item name="android:textColor">@drawable/black</item>
         <item name="android:textSize">25sp</item>
     </style>
-
+	<style name="h1_login">
+	    <item name="android:textColor">@drawable/white</item>
+        <item name="android:textSize">25sp</item>
+	</style>
 </resources>
