@@ -2,7 +2,6 @@
 
     <string name="app_name">InformaCam</string>
     <string name="welcome">Welcome!</string>
-    <string name="welcome_text">Some welcome text here, if we need it\u2026</string>
     <string name="name">Name</string>
     <string name="password">Password</string>
     <string name="password_again">Password again</string>
