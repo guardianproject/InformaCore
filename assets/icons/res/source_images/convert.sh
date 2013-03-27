@@ -18,7 +18,7 @@ rm ../res/drawable-ldpi/*
 for f in *.svg;
 do
 	echo "Processing $f"
-	
+
 	if [ -f drawable/$f ]; then
 		echo "manually scaled file exists at drawable"
 		convert -background none drawable/$f ../res/drawable/${f/.svg}.png
@@ -32,6 +32,7 @@ do
 		convert -background none drawable-xhdpi/$f ../res/drawable-xhdpi/${f/.svg}.png
 	else
 		convert -background none $f ../res/drawable-xhdpi/${f/.svg}.png
+		echo "converting xhdpi $f"
 	fi
 
 	if [ -f drawable-hdpi/$f ]; then

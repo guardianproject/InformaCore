@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/bin/bash
 
 #Requires ImageMagick to be installed.
 #Some builds of ImageMagick on OSX have problems generating the images correctly.
@@ -9,11 +9,11 @@
 #To use simply run the create_images script from its folder and it will generate images for all the svg files.
 
 # purge generated files
-rm ../res/drawable/*
-rm ../res/drawable-xhdpi/*
-rm ../res/drawable-hdpi/*
-rm ../res/drawable-mdpi/*
-rm ../res/drawable-ldpi/*
+# rm ../res/drawable/*
+# rm ../res/drawable-xhdpi/*
+# rm ../res/drawable-hdpi/*
+# rm ../res/drawable-mdpi/*
+# rm ../res/drawable-ldpi/*
 
 for f in *.svg;
 do
@@ -29,7 +29,7 @@ do
 
 	if [ -f drawable-xhdpi/$f ]; then
 		echo "manually scaled file exists at drawable-xhdpi"
-		convert -background none drawable-xhdpi/$f ../res/drawable-xhdpi/${f/.svg}.png
+		convert -background none drawconable-xhdpi/$f ../res/drawable-xhdpi/${f/.svg}.png
 	else
 		convert -background none $f ../res/drawable-xhdpi/${f/.svg}.png
 	fi
