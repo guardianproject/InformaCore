@@ -18,21 +18,28 @@ public class Constants {
 	public interface InformaCamEventListener {
 		public void onUpdate(Message message);
 	}
-	
+
 	public interface WizardListener {
 		public FragmentManager returnFragmentManager();
 		public void wizardCompleted();
 		public void onSubFragmentCompleted();
+	}
+	
+	public interface SuckerCacheListener {
+		public void onUpdate(long timestamp, LogPack logPack);
+		public void onUpdate(LogPack logPack);
 	}
 
 	public final static class Actions {
 		public final static String INIT = "org.witness.informacam.action.INIT";
 		public final static String SHUTDOWN = "org.witness.informacam.action.SHUTDOWN";
 		public final static String ASSOCIATE_SERVICE = "org.witness.informacam.action.ASSOCIATE_SERVICE";
+		public static final String DISASSOCIATE_SERVICE = "org.witness.informacam.action.DISASSOCIATE_SERVICE";
 		public static final String UPLOADER_UPDATE = "org.witness.informacam.action.UPLOADER_UPDATE";
 		public static final String CAMERA = "android.media.action.IMAGE_CAPTURE";
 		public static final String INFORMACAM_START = "org.witness.informacam.action.INFORMACAM_START";
 		public static final String INFORMACAM_STOP = "org.witness.informacam.action.INFORMACAM_STOP";
+
 	}
 
 	public final static class Codes {
@@ -43,6 +50,7 @@ public class Constants {
 			public static final int UPLOADER_SERVICE = 103;
 			public static final int RETRY_SAVE = 104;
 			public static final int RETRY_GET = 105;
+			public static final int INFORMA_SERVICE = 106;
 		}
 
 		public final static class Keys {
@@ -57,7 +65,7 @@ public class Constants {
 				public static final String UPDATE = "update";
 			}
 		}
-		
+
 		public final static class Extras {
 			public final static String WIZARD_SUPPLEMENT = "wizard_supplement";
 			public static final String MESSAGE_CODE = "message_code";
@@ -69,12 +77,12 @@ public class Constants {
 			public static final class Wizard {
 				public final static int INIT = 300;
 			}
-			
+
 			public static final class UI {
 				public final static int UPDATE = 301;
 				public static final int REPLACE = 302;
 			}
-			
+
 			public static final class Login {
 				public final static int DO_LOGIN = 303;
 				public final static int DO_LOGOUT = 304;
@@ -89,7 +97,7 @@ public class Constants {
 			public static final class Home {
 				public final static int INIT = 308;
 			}
-			
+
 		}
 
 		public static final class Transport {
@@ -101,10 +109,88 @@ public class Constants {
 		public class Media {
 			public static final int ORIENTATION_PORTRAIT = 1;
 			public static final int ORIENTATION_LANDSCAPE = 2;
-			
+
 			public static final int TYPE_IMAGE = 400;
 			public static final int TYPE_VIDEO = 401;
 			public static final int TYPE_JOURNAL = 402;
+		}
+	}
+	
+	public final static class Time {
+		public final static String LOG = "**************** InformaCam: TIME ****************";
+
+		public final static class DateFormats {
+			public static final String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+			public static final String EXIF_DATE_FORMAT = "yyyy:MM:dd HH:mm:ss";
+		}
+
+		public static final class Keys {
+
+			public static final String RELATIVE_TIME = "mediaRelativeTimestamp";
+
+		}
+	}
+
+
+	public final static class Suckers {
+		public final static String LOG = "******************** InformaCam : Suckers ********************";
+
+		public final static class CaptureEvent {
+			public final static int METADATA_CAPTURED = 272;
+			public final static int MEDIA_OPENED = 273;
+			public final static int REGION_GENERATED = 274;
+			public final static int MEDIA_SAVED = 275;
+			public final static int SENSOR_PLAYBACK = 271;
+			public final static int TIMESTAMPS_RESOLVED= 270;
+			
+			public final static class Keys {
+				public final static String USER_ACTION = "userActionReported";
+				public final static String TYPE = "captureEventType";
+				public final static String MATCH_TIMESTAMP = "captureEventMatchTimestamp";
+				public final static String TIMESTAMP = "captureEventTimestamp";
+				public final static String ON_VIDEO_START = "timestampOnVideoStart";
+				public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
+				public final static String METADATA_CAPTURED = "metadataCaptured";
+			}
+		}
+
+		public final static class Phone {
+			public final static long LOG_RATE = 20000L;
+
+			public final static class Keys {
+				public static final String CELL_ID = "cellTowerId";
+				public static final String BLUETOOTH_DEVICE_ADDRESS = "bluetoothDeviceAddress";
+				public static final String BLUETOOTH_DEVICE_NAME = "bluetoothDeviceName";
+				public static final String IMEI = "IMEI";
+				public static final String VISIBLE_WIFI_NETWORKS = "visibleWifiNetworks";
+				public static final String BSSID = "bssid";
+				public static final String SSID = "ssid";
+			}
+		}
+
+		public final static class Accelerometer {
+			public final static long LOG_RATE = 500L;
+			
+			public final static class Keys {
+				public static final String ACC = "acc";
+				public static final String ORIENTATION = "orientation";
+				public static final String LIGHT = "light";
+				public static final String LIGHT_METER_VALUE = "lightMeterValue";
+				public static final String X = "acc_x";
+				public static final String Y = "acc_y";
+				public static final String Z = "acc_z";
+				public static final String PITCH = "pitch";
+				public static final String ROLL = "roll";
+				public static final String AZIMUTH = "azimuth";
+			}
+		}
+
+		public final static class Geo {
+			public final static long LOG_RATE = 10000L;
+
+			public final static class Keys {
+				public static final String GPS_COORDS = "gps_coords";
+			}
 		}
 	}
 
@@ -123,7 +209,7 @@ public class Constants {
 			public static final String PUBLIC_CREDENTIALS = "publicCredentials";
 			public static final String PUBLIC_KEY = "publicKey";
 		}
-		
+
 		public class IMediaManifest {
 			public class Sort {
 				public final static int DATE_DESC = 1;
@@ -134,22 +220,22 @@ public class Constants {
 				public final static String IS_SHOWING = "isShowing";
 			}
 		}
-		
+
 		public class IMedia {
 			public final static String _ID = "_id";
-			
+
 			public class MimeType {
 				public final static String IMAGE = "image/jpeg";
 				public final static String VIDEO = "video/mp4";
 			}
 		}
-		
+
 		public class ICredentials {
 			public final static String PASSWORD_BLOCK = "passwordBlock";
 		}
 
 		public class IPendingConnections {
-			
+
 		}
 
 		public class IConnection {
@@ -187,28 +273,28 @@ public class Constants {
 
 	public final static class App {
 		public final static String LOG = "******************** InformaCam : MAIN ********************";
-		
+
 		public static final class Camera {
 			public final static String LOG = "******************** InformaCam : CameraActivity ********************";
 			public final static String TYPE = "cameraType";
-			
+
 			public static final class Type {
 				public final static int CAMERA = 500;
 				public final static int CAMCORDER = 501;
 			}
-			
+
 			public static final class Intents {
 				public final static String CAMERA = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
 				public final static String CAMCORDER = MediaStore.ACTION_VIDEO_CAPTURE;
 			}
-			
+
 			public static final class Authority {
 				public final static Uri CAMERA = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 				public final static Uri CAMCORDER = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
 			}
-			
+
 			public static final String TAG = "InformaCam.Camera";
-			
+
 			public final static List<String> SUPPORTED;
 			static {
 				List<String> supported = new Vector<String>();
@@ -229,7 +315,7 @@ public class Constants {
 			public static final String DUMP = "informaCam";
 			public static final String REVIEW_DUMP = "reviewDump";
 			public static final String EXTERNAL_DIR = "InformaCam";
-			
+
 			public final static class Type {
 
 				public static final int INTERNAL_STORAGE = 200;
@@ -237,7 +323,7 @@ public class Constants {
 				public static final int APPLICATION_ASSET = 202;
 				public static final int CONTENT_RESOLVER = 203;
 				public static final int FILE_SYSTEM = 204;
-				
+
 			}
 		}
 
@@ -248,7 +334,7 @@ public class Constants {
 		public final static class Crypto {
 			public final static String LOG = "******************** InformaCam : Crypto ********************";
 			public final static byte[] PASSWORD_SALT = {(byte) 0xA4, (byte) 0x0B, (byte) 0xC8,
-			      (byte) 0x34, (byte) 0xD6, (byte) 0x95, (byte) 0xF3, (byte) 0x13};
+				(byte) 0x34, (byte) 0xD6, (byte) 0x95, (byte) 0xF3, (byte) 0x13};
 
 			public final static class Signatures {
 				public final static class Keys {

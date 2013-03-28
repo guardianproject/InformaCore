@@ -64,6 +64,13 @@ public class SignatureService extends Service {
 		
 	}
 	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+	}
+	
+	
 	@SuppressWarnings({ "unused", "deprecation" })
 	private void initKey(byte[] sk, String authKey) throws PGPException {
 		this.authKey = authKey;

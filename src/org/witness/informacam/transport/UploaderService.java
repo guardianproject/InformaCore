@@ -63,6 +63,13 @@ public class UploaderService extends Service {
 		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE));
 	}
 	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+	}
+	
+	
 	public static UploaderService getInstance() {
 		return uploaderService;
 	}

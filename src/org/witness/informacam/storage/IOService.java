@@ -56,6 +56,9 @@ public class IOService extends Service {
 		if(vfs != null) {
 			vfs.unmount();
 		}
+		
+		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+		
 	}
 
 	public static IOService getInstance() {

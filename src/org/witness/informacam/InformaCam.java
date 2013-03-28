@@ -14,6 +14,7 @@ import org.witness.informacam.models.IUser;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.transport.UploaderService;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -63,6 +64,7 @@ public class InformaCam extends Service {
 	public UploaderService uploaderService = null;
 	public IOService ioService = null;
 	public SignatureService signatureService = null;
+	public InformaService informaService = null;
 
 	private static InformaCam informaCam;
 	public Activity a;
@@ -85,11 +87,12 @@ public class InformaCam extends Service {
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.SHUTDOWN)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.UPLOADER_UPDATE)));
+		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.DISASSOCIATE_SERVICE)));
 
 		for(BroadcastReceiver br : broadcasters) {
 			registerReceiver(br, ((IBroadcaster) br).intentFilter);
 		}
-		
+
 		ioServiceIntent = new Intent(this, IOService.class);
 		signatureServiceIntent = new Intent(this, SignatureService.class);
 		uploaderServiceIntent = new Intent(this, UploaderService.class);
@@ -109,7 +112,7 @@ public class InformaCam extends Service {
 		sendBroadcast(new Intent().setAction(Actions.INFORMACAM_START));
 		informaCam = this;
 	}
-	
+
 	@SuppressWarnings("deprecation")
 	public int[] getDimensions() {
 		Display display = a.getWindowManager().getDefaultDisplay();
@@ -120,7 +123,7 @@ public class InformaCam extends Service {
 	public void startup() {
 		Log.d(LOG, "NOW we init!");
 		user = new IUser();
-		
+
 		boolean init = false;
 		boolean login = false;
 		boolean run = false;
@@ -142,7 +145,7 @@ public class InformaCam extends Service {
 					} else {
 						login = true;
 					}
-					
+
 				} else {
 					login = true;
 				}
@@ -175,7 +178,7 @@ public class InformaCam extends Service {
 			ioService.saveBlob(user, new java.io.File(IManifest.USER));
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Login.DO_LOGIN);
 		} 
-		
+
 		if(run) {
 			byte[] mediaManifestBytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 
@@ -319,7 +322,7 @@ public class InformaCam extends Service {
 
 		return true;
 	}
-	
+
 	public boolean isAbsolutelyLoggedIn() {
 		try {
 			return (ioService.isMounted() && user.isLoggedIn);
@@ -415,6 +418,9 @@ public class InformaCam extends Service {
 				case Codes.Routes.UPLOADER_SERVICE:
 					uploaderService = UploaderService.getInstance();
 					break;
+				case Codes.Routes.INFORMA_SERVICE:
+					informaService = InformaService.getInstance();
+					break;
 				}
 
 				if(signatureService == null) {
@@ -432,13 +438,19 @@ public class InformaCam extends Service {
 					return;
 				}
 
-				new Thread(new Runnable() {
-					@Override
-					public void run() {
-						startup();
-					}
-				}).start();
+				if(intent.getIntExtra(Codes.Keys.SERVICE, 0) != Codes.Routes.INFORMA_SERVICE) {
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							startup();
+						}
+					}).start();
+				}
 
+			} else if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
+				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
+					// TODO:
+				}
 			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
 				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
 				case Codes.Transport.MUST_INSTALL_TOR:
