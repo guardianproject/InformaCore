@@ -31,6 +31,8 @@ public class Constants {
 		public final static String ASSOCIATE_SERVICE = "org.witness.informacam.action.ASSOCIATE_SERVICE";
 		public static final String UPLOADER_UPDATE = "org.witness.informacam.action.UPLOADER_UPDATE";
 		public static final String CAMERA = "android.media.action.IMAGE_CAPTURE";
+		public static final String INFORMACAM_START = "org.witness.informacam.action.INFORMACAM_START";
+		public static final String INFORMACAM_STOP = "org.witness.informacam.action.INFORMACAM_STOP";
 	}
 
 	public final static class Codes {
@@ -122,6 +124,17 @@ public class Constants {
 			public static final String PUBLIC_KEY = "publicKey";
 		}
 		
+		public class IMediaManifest {
+			public class Sort {
+				public final static int DATE_DESC = 1;
+				public final static int DATE_ASC = 4;
+				public final static int TYPE_PHOTO = 2;
+				public final static int TYPE_VIDEO = 3;
+				public final static int LOCATION = 0;
+				public final static String IS_SHOWING = "isShowing";
+			}
+		}
+		
 		public class IMedia {
 			public final static String _ID = "_id";
 			
@@ -200,6 +213,7 @@ public class Constants {
 			static {
 				List<String> supported = new Vector<String>();
 				supported.add("com.sec.android.app.camera");
+				supported.add("com.android.camera");
 				SUPPORTED = Collections.unmodifiableList(supported);
 			}
 		}

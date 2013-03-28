@@ -1,4 +1,4 @@
-package org.witness.informacam.utils.models;
+package org.witness.informacam.models;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -140,7 +140,6 @@ public class IDCIMDescriptor extends Model {
 			entry.timeCaptured = file.lastModified();
 			
 			if(entry.timeCaptured < startTime) {
-				Log.d(LOG, "NOPE THIS WAS TAKEN AT " + entry.timeCaptured + " WHICH IS WAY EARLIER THAN " + startTime);
 				return null;
 			}
 			
@@ -216,7 +215,8 @@ public class IDCIMDescriptor extends Model {
 				}
 
 				if(getThumbnailFromMediaMetadata) {
-					Bitmap b_ = mmr.getFrameAtTime(Math.max(entry.exif.duration/2, 0), MediaMetadataRetriever.OPTION_CLOSEST);
+					Bitmap b_ = mmr.getFrameAtTime();
+					Log.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
 					byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
 
 					info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);

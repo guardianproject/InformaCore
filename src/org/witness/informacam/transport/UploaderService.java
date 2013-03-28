@@ -3,14 +3,14 @@ package org.witness.informacam.transport;
 import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.IConnection;
+import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.models.IConnection;
-import org.witness.informacam.utils.models.IPendingConnections;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.onionkit.ui.OrbotHelper;

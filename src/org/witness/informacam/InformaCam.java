@@ -8,6 +8,10 @@ import java.util.Vector;
 
 import org.witness.informacam.crypto.AesUtility;
 import org.witness.informacam.crypto.SignatureService;
+import org.witness.informacam.models.ICredentials;
+import org.witness.informacam.models.IMediaManifest;
+import org.witness.informacam.models.IUser;
+import org.witness.informacam.models.Model;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.Constants.Actions;
@@ -17,10 +21,6 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.models.ICredentials;
-import org.witness.informacam.utils.models.IMediaManifest;
-import org.witness.informacam.utils.models.IUser;
-import org.witness.informacam.utils.models.Model;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -55,7 +55,7 @@ public class InformaCam extends Service {
 
 	private List<BroadcastReceiver> broadcasters = new Vector<BroadcastReceiver>();
 
-	public IMediaManifest mediaManifest;
+	public IMediaManifest mediaManifest = new IMediaManifest();
 	public IUser user;
 
 	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent;
@@ -106,6 +106,7 @@ public class InformaCam extends Service {
 			}
 		}).start();
 
+		sendBroadcast(new Intent().setAction(Actions.INFORMACAM_START));
 		informaCam = this;
 	}
 	
@@ -176,7 +177,6 @@ public class InformaCam extends Service {
 		} 
 		
 		if(run) {
-			mediaManifest = new IMediaManifest();
 			byte[] mediaManifestBytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 
 			if(mediaManifestBytes != null) {
@@ -216,10 +216,12 @@ public class InformaCam extends Service {
 
 	public void saveState(Model model, java.io.File cache) {
 		ioService.saveBlob(model.asJson().toString().getBytes(), cache);
+		Log.d(LOG, "saved state for " + cache.getAbsolutePath());
 	}
 
 	public void saveState(Model model, info.guardianproject.iocipher.File cache) {
 		ioService.saveBlob(model.asJson().toString().getBytes(), cache);
+		Log.d(LOG, "saved state for " + cache.getAbsolutePath());
 	}
 
 	public void associateActivity(Activity a) {
@@ -316,6 +318,14 @@ public class InformaCam extends Service {
 		shutdown();
 
 		return true;
+	}
+	
+	public boolean isAbsolutelyLoggedIn() {
+		try {
+			return (ioService.isMounted() && user.isLoggedIn);
+		} catch(NullPointerException e) {
+			return false;
+		}
 	}
 
 	public boolean attemptLogin() {

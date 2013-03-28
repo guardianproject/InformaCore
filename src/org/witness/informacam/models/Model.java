@@ -1,4 +1,4 @@
-package org.witness.informacam.utils.models;
+package org.witness.informacam.models;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -70,7 +70,7 @@ public class Model extends JSONObject {
 						List subValue = new ArrayList();
 
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
-						Log.d(LOG, "UGH: " + clz.getName());
+						//Log.d(LOG, "UGH: " + clz.getName());
 
 						Object test = clz.newInstance();
 						if(test instanceof Model) {
@@ -94,7 +94,7 @@ public class Model extends JSONObject {
 					} else if(f.getType() == byte[].class) { 
 						f.set(this, values.getString(f.getName()).getBytes());
 					} else if(isModel) {
-						Log.d(LOG, "attempting to set value as the model!");
+						//Log.d(LOG, "attempting to set value as the model!");
 						f.set(this, values.get(f.getName()));
 					} else {
 						f.set(this, values.get(f.getName()));
@@ -131,7 +131,7 @@ public class Model extends JSONObject {
 
 			try {
 				Object value = f.get(this);
-				Log.d(LOG, "HEY THIS TYPE " + f.getType().getSuperclass());
+				//Log.d(LOG, "HEY THIS TYPE " + f.getType().getSuperclass());
 				
 				boolean isModel = false;
 				

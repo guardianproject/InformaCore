@@ -5,14 +5,15 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.IDCIMDescriptor;
+import org.witness.informacam.models.IDCIMEntry;
+import org.witness.informacam.models.IMedia;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
+import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
-import org.witness.informacam.utils.models.IDCIMDescriptor;
-import org.witness.informacam.utils.models.IDCIMEntry;
-import org.witness.informacam.utils.models.IMedia;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -76,26 +77,31 @@ public class DCIMObserver {
 					for(IMedia media : dcimDescriptor.dcimEntries) {
 						if(informaCam.mediaManifest.media == null) {
 							informaCam.mediaManifest.media = new ArrayList<IMedia>();
+						} else {
+							for(IMedia m : informaCam.mediaManifest.media) {
+								m.isNew = false;
+							}
 						}
 						
 						informaCam.mediaManifest.media.add(media);
 					}
 					
 					// save it
-					informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-					Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
-					
-					Bundle data = new Bundle();
-					data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
-					
-					Message message = new Message();
-					message.setData(data);
-					
-					try {
-						((InformaCamEventListener) informaCam.a).onUpdate(message);
-					} catch(ClassCastException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
+					if(informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA))) {
+						Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
+						
+						Bundle data = new Bundle();
+						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
+						
+						Message message = new Message();
+						message.setData(data);
+						
+						try {
+							((InformaCamEventListener) informaCam.a).onUpdate(message);
+						} catch(ClassCastException e) {
+							Log.e(LOG, e.toString());
+							e.printStackTrace();
+						}
 					}
 				}
 			}

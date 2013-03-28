@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.models.IConnection;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
@@ -16,7 +17,6 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.WizardListener;
-import org.witness.informacam.utils.models.IConnection;
 
 import android.app.Activity;
 import android.content.Context;
@@ -31,7 +31,9 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.widget.TabHost;
 import android.widget.TextView;
 
@@ -94,6 +96,14 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		tabHost.setOnTabChangedListener(pager);
 		viewPager.setAdapter(pager);
 		viewPager.setOnPageChangeListener(pager);
+		viewPager.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return true;
+			}
+			
+		});
 
 		TabHost.TabSpec tabSpec = null;
 		
@@ -149,17 +159,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		}
 
 		@Override
-		public void onTabChanged(String tabId) {
-			int i=0;
-			for(Fragment f : fragments) {
-				if(f.getClass().getSimpleName().equals(tabId)) {
-					viewPager.setCurrentItem(i);
-					break;
-				}
-
-				i++;
-			}
-		}
+		public void onTabChanged(String tabId) {}
 
 		@Override
 		public void onPageScrollStateChanged(int state) {

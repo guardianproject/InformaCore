@@ -1,4 +1,4 @@
-package org.witness.informacam.utils.models;
+package org.witness.informacam.models;
 
 import java.util.ArrayList;
 import java.util.List;

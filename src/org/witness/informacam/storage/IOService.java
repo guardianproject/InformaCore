@@ -7,11 +7,11 @@ import java.io.InputStream;
 import info.guardianproject.iocipher.VirtualFileSystem;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Storage;
-import org.witness.informacam.utils.models.Model;
 
 import android.app.Service;
 import android.content.Intent;
@@ -230,12 +230,7 @@ public class IOService extends Service {
 
 	public boolean initIOCipher(String authToken) {
 		try {
-			java.io.File informaCamPublic = new java.io.File(Environment.getExternalStorageDirectory(), Storage.EXTERNAL_DIR);
-			if(!informaCamPublic.exists()) {
-				informaCamPublic.mkdir();
-			}
-			
-			java.io.File storageRoot = new java.io.File(informaCamPublic, Storage.IOCIPHER);
+			java.io.File storageRoot = new java.io.File(getDir(Storage.ROOT, MODE_PRIVATE).getAbsolutePath(), Storage.IOCIPHER);
 			vfs = new VirtualFileSystem(storageRoot);
 			vfs.mount(authToken);
 			
@@ -256,6 +251,11 @@ public class IOService extends Service {
 			return deleteFile(pathToFile);
 		case Storage.Type.IOCIPHER:
 			info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToFile);
+			if(file.isDirectory()) {
+				for(info.guardianproject.iocipher.File f : file.listFiles()) {
+					f.delete();
+				}
+			}
 			return file.delete();
 		case Storage.Type.CONTENT_RESOLVER:
 			return getContentResolver().delete(Uri.parse(pathToFile), null, null) > 0 ? true : false;

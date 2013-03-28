@@ -107,7 +107,7 @@
                 android:layout_height="match_parent"
                 android:layout_alignParentRight="true"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_launcher" />
+                android:src="@drawable/ic_context_slide_right" />
         </RelativeLayout>
     </RelativeLayout>
 

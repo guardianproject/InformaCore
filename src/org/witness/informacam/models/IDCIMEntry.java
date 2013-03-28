@@ -1,4 +1,4 @@
-package org.witness.informacam.utils.models;
+package org.witness.informacam.models;
 
 public class IDCIMEntry extends Model {
 	public String uri = null;

@@ -1,5 +1,6 @@
-package org.witness.informacam.utils.models;
+package org.witness.informacam.models;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.ImageUtility;
+import org.witness.informacam.utils.MediaHasher;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -32,18 +34,43 @@ public class IMedia extends Model {
 	
 	public CharSequence detailsAsText;
 	
+	private InformaCam informaCam = InformaCam.getInstance();
+	
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
+	}
+	
+	public boolean delete() {		
+		if(informaCam.mediaManifest.media.remove(this)) {
+			informaCam.ioService.delete(rootFolder, Type.IOCIPHER);
+			informaCam.mediaManifest.save();
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean rename() {
+		Log.d(LOG, "RENAMING A MEDIA ENTRY: " + _id);
+		
+		return true;
+	}
+	
+	public boolean export() {
+		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		return true;
 	}
 	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
 		switch(depth) {
 		case 1:
+			if(this.alias != null) {
+				details.append(this.alias);
+			}
 			details.append(this._id);
-			details.append(System.getProperty("line.separator"));
-			details.append(this.alias);
-			details.append(System.getProperty("line.separator"));
+			Log.d(LOG, this.asJson().toString());
+			
 			break;
 		}
 		
@@ -119,11 +146,15 @@ public class IMedia extends Model {
 
 	public String generateId(String seed) {
 		try {
-			return KeyUtility.generatePassword(seed.getBytes());
+			return MediaHasher.hash(KeyUtility.generatePassword(seed.getBytes()).getBytes(), "MD5");
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return seed;
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
 		}
+		
+		return seed;
 	}	
 }

@@ -2,7 +2,7 @@
     package="org.witness.informacam"
     android:versionCode="1"
     android:versionName="1.0"
-    android:installLocation="auto" >
+    android:installLocation="preferExternal" >
 
     <uses-sdk
         android:minSdkVersion="10"

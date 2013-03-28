@@ -65,7 +65,7 @@ public class ImageUtility {
 	}
 	
 	public static byte[] downsampleImageForListOrPreview(Bitmap source) {
-		return downsampleImageForListOrPreview(source, 480, 260);
+		return downsampleImageForListOrPreview(source, 640, 480);
 	}
 	
 	public static byte[] downsampleImageForListOrPreview(Bitmap source, int maximumX, int maximumY) {

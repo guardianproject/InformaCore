@@ -11,20 +11,20 @@
         android:gravity="center"
         android:text="@string/welcome" />
 
-    <EditText
+    <EditText style="@style/ic_edittext"
         android:id="@+id/user_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/name" />
 
-    <EditText
+    <EditText style="@style/ic_edittext"
         android:id="@+id/user_password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/password"
         android:inputType="textPassword" />
 
-    <EditText
+    <EditText style="@style/ic_edittext"
         android:id="@+id/user_password_again"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

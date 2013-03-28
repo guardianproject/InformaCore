@@ -1,4 +1,4 @@
-package org.witness.informacam.utils.models;
+package org.witness.informacam.models;
 
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
