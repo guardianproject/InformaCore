@@ -1,5 +1,7 @@
 package org.witness.informacam.informa;
 
+import java.util.List;
+
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
@@ -20,8 +22,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
 	private static InformaService informaService;
 	
-	private String informaCurrentStatusString;
-	private int informaCurrentStatus;
 	private long timeOffset = 0L;
 	
 	SensorLogger<GeoSucker> _geo;
@@ -46,9 +46,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		
-		// start suckers
+		// TODO: start suckers
 		
-		// resolve time
+		// TODO: resolve time
 		
 		informaService = this;
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE).setAction(Actions.ASSOCIATE_SERVICE));
@@ -57,6 +57,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		
+		// TODO: save stuff
+		
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
 	}
 	
@@ -67,6 +70,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@Override
 	public void onUpdate(long timestamp, LogPack logPack) {
 		// TODO Auto-generated method stub
+		if(cache.log == null) {
+			cache.log = new List<LogPack>();
+		}
 		
 	}
 

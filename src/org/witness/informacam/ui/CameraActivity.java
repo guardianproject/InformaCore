@@ -74,10 +74,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 
 	}
 
-	private void init() {		
-		Log.d(LOG, "registering dcim observers");
-		informaCam.ioService.startDCIMObserver();
-
+	private void init() {
 		List<ResolveInfo> resolveInfo = getPackageManager().queryIntentActivities(new Intent(Actions.CAMERA), 0);
 
 		for(ResolveInfo ri : resolveInfo) {
@@ -89,6 +86,13 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
 				cameraComponent = new ComponentName(packageName, name);
 				Log.d(LOG, "HUZZAH FOUND CAMERA!");
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						informaCam.startInforma();
+						informaCam.ioService.startDCIMObserver();
+					}
+				}).start();
 				break;
 			}
 		}
@@ -152,18 +156,19 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 		Log.d(LOG, "ON ACTIVITY RESULT CALLED IN CAMERA");
 		setResult(Activity.RESULT_CANCELED);
 
-		try{
-			Log.d(LOG, "unregistering dcim observers");
-			informaCam.ioService.stopDCIMObserver();
-
-
-
-		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-
-
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try{
+					Log.d(LOG, "unregistering dcim observers");
+					informaCam.ioService.stopDCIMObserver();
+					informaCam.stopInforma();
+				} catch(NullPointerException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+		}).start();
 	}
 
 	@Override

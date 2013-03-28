@@ -59,7 +59,7 @@ public class InformaCam extends Service {
 	public IMediaManifest mediaManifest = new IMediaManifest();
 	public IUser user;
 
-	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent;
+	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent;
 
 	public UploaderService uploaderService = null;
 	public IOService ioService = null;
@@ -96,6 +96,7 @@ public class InformaCam extends Service {
 		ioServiceIntent = new Intent(this, IOService.class);
 		signatureServiceIntent = new Intent(this, SignatureService.class);
 		uploaderServiceIntent = new Intent(this, UploaderService.class);
+		informaServiceIntent = new Intent(this, InformaService.class);
 
 		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
 		ed = sp.edit();
@@ -381,6 +382,14 @@ public class InformaCam extends Service {
 		return informaCam;
 	}
 
+	public void startInforma() {
+		startService(informaServiceIntent);
+	}
+	
+	public void stopInforma() {
+		stopService(informaServiceIntent);		
+	}
+	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
