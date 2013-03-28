@@ -1,6 +1,7 @@
 package org.witness.informacam.storage;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,6 +16,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.MediaColumns;
@@ -80,5 +82,36 @@ public class IOUtility {
 		}
 
 		return false;
+	}
+
+	public final static Bitmap getBitmapFromFile(String pathToFile, int source) {
+		byte[] bytes = null;
+		Bitmap bitmap = null;
+		
+		switch(source) {
+		case Type.IOCIPHER:
+			try {
+				info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToFile);
+				info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(file);
+				
+				bytes = new byte[fis.available()];
+				fis.read(bytes);
+				fis.close();
+				
+				bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+				bytes = null;
+			} catch (FileNotFoundException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			
+			break;
+		}
+		
+		return bitmap;
+		
 	}
 }

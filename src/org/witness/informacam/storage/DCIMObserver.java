@@ -1,5 +1,6 @@
 package org.witness.informacam.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -11,6 +12,7 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.models.IDCIMDescriptor;
 import org.witness.informacam.utils.models.IDCIMEntry;
+import org.witness.informacam.utils.models.IMedia;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -70,7 +72,19 @@ public class DCIMObserver {
 				
 				dcimDescriptor.thumbnails = null;
 				
-				if(informaCam.ioService.saveBlob(dcimDescriptor, new info.guardianproject.iocipher.File(IManifest.DCIM))) {
+				if(informaCam.ioService.saveBlob(dcimDescriptor, new info.guardianproject.iocipher.File(IManifest.DCIM))) {					
+					for(IMedia media : dcimDescriptor.dcimEntries) {
+						if(informaCam.mediaManifest.media == null) {
+							informaCam.mediaManifest.media = new ArrayList<IMedia>();
+						}
+						
+						informaCam.mediaManifest.media.add(media);
+					}
+					
+					// save it
+					informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+					Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
+					
 					Bundle data = new Bundle();
 					data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
 					

@@ -1,13 +1,9 @@
 package org.witness.informacam.utils;
 
-
-import info.guardianproject.iocipher.File;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Message;
 import android.provider.MediaStore;
@@ -87,6 +83,10 @@ public class Constants {
 				public final static int STOP = 306;
 				public final static int ADD = 307;
 			}
+
+			public static final class Home {
+				public final static int INIT = 308;
+			}
 			
 		}
 
@@ -94,6 +94,15 @@ public class Constants {
 
 			public static final int MUST_INSTALL_TOR = 400;
 			public static final int MUST_START_TOR = 401;
+		}
+
+		public class Media {
+			public static final int ORIENTATION_PORTRAIT = 1;
+			public static final int ORIENTATION_LANDSCAPE = 2;
+			
+			public static final int TYPE_IMAGE = 400;
+			public static final int TYPE_VIDEO = 401;
+			public static final int TYPE_JOURNAL = 402;
 		}
 	}
 
@@ -113,12 +122,21 @@ public class Constants {
 			public static final String PUBLIC_KEY = "publicKey";
 		}
 		
+		public class IMedia {
+			public final static String _ID = "_id";
+			
+			public class MimeType {
+				public final static String IMAGE = "image/jpeg";
+				public final static String VIDEO = "video/mp4";
+			}
+		}
+		
 		public class ICredentials {
 			public final static String PASSWORD_BLOCK = "passwordBlock";
 		}
 
 		public class IPendingConnections {
-			public static final String PATH = "pendingConnections";
+			
 		}
 
 		public class IConnection {
@@ -147,9 +165,11 @@ public class Constants {
 	}
 
 	public final static class IManifest {
-		public final static String PATH = "informacam_manifest";
+		public final static String USER = "informacam_manifest";
 		public static final String PREF = "informacam_preferences";		
 		public final static String DCIM = "dcimDescriptor";
+		public final static String MEDIA = "mediaManifest";
+		public static final String PENDING_CONNECTIONS = "pendingConnections";
 	}
 
 	public final static class App {
@@ -191,9 +211,10 @@ public class Constants {
 		public final static class Storage {
 			public final static String LOG = "******************** InformaCam : Storage ********************";
 			public static final String ROOT = "informaCamIOCipher";
-			public static final String IOCIPHER = "iocipher.db";
+			public static final String IOCIPHER = "ic_data.db";
 			public static final String DUMP = "informaCam";
 			public static final String REVIEW_DUMP = "reviewDump";
+			public static final String EXTERNAL_DIR = "InformaCam";
 			
 			public final static class Type {
 

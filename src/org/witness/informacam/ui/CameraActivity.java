@@ -149,7 +149,8 @@ public class CameraActivity extends Activity implements InformaCamEventListener 
 			setResult(Activity.RESULT_OK, result);
 			finish();
 		} else {
-			// TODO: HOLD FOR RE-LOGIN...
+			setResult(Activity.RESULT_CANCELED);
+			finish();
 		}
 
 	}

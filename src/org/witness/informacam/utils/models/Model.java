@@ -16,6 +16,31 @@ import android.util.Log;
 public class Model extends JSONObject {
 	public final static String LOG = App.LOG;
 	Field[] fields;
+	
+	@SuppressWarnings("rawtypes")
+	public Object getObjectByParameter(List root, String key, Object value) {
+		for(Object o : root) {
+			try {
+				Field f = o.getClass().getDeclaredField(key);
+				Object v = f.get(o);
+				
+				if(v.equals(value)) {
+					return o;
+				}
+			} catch (NoSuchFieldException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
+	}
 
 	public void inflate(byte[] jsonStringBytes) {
 		try {
@@ -35,9 +60,14 @@ public class Model extends JSONObject {
 			try {
 				f.setAccessible(true);
 				if(values.has(f.getName())) {
+					boolean isModel = false;
+					
+					if(f.getType().getSuperclass() == Model.class) {
+						isModel = true;
+					}					
+					
 					if(f.getType() == List.class) {
 						List subValue = new ArrayList();
-						boolean isModel = false;
 
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
 						Log.d(LOG, "UGH: " + clz.getName());
@@ -63,6 +93,9 @@ public class Model extends JSONObject {
 						f.set(this, subValue);
 					} else if(f.getType() == byte[].class) { 
 						f.set(this, values.getString(f.getName()).getBytes());
+					} else if(isModel) {
+						Log.d(LOG, "attempting to set value as the model!");
+						f.set(this, values.get(f.getName()));
 					} else {
 						f.set(this, values.get(f.getName()));
 					}
@@ -98,6 +131,14 @@ public class Model extends JSONObject {
 
 			try {
 				Object value = f.get(this);
+				Log.d(LOG, "HEY THIS TYPE " + f.getType().getSuperclass());
+				
+				boolean isModel = false;
+				
+				if(f.getType().getSuperclass() == Model.class) {
+					isModel = true;
+				}
+				
 				if(f.getType() == List.class) {
 					JSONArray subValue = new JSONArray();
 					for(Object v : (List<?>) value) {
@@ -112,6 +153,8 @@ public class Model extends JSONObject {
 					json.put(f.getName(), subValue);
 				} else if(f.getType() == byte[].class) {
 					json.put(f.getName(), new String((byte[]) value));
+				} else if(isModel) {
+					json.put(f.getName(), ((Model) value).asJson());
 				} else {
 					json.put(f.getName(), value);
 				}
@@ -125,8 +168,7 @@ public class Model extends JSONObject {
 				Log.d(LOG, e.toString());
 				e.printStackTrace();
 			} catch (NullPointerException e) {
-				Log.d(LOG, e.toString());
-				e.printStackTrace();
+				
 			}
 
 		}

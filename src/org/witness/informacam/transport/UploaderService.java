@@ -68,9 +68,9 @@ public class UploaderService extends Service {
 	}
 	
 	private void run() {
-		if(informaCam.ioService.getBytes(Models.IPendingConnections.PATH, Type.IOCIPHER) != null && !isRunning) {
+		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null && !isRunning) {
 			pendingConnections = new IPendingConnections();
-			pendingConnections.inflate(informaCam.ioService.getBytes(Models.IPendingConnections.PATH, Type.IOCIPHER));
+			pendingConnections.inflate(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER));
 			isRunning = true;
 			
 			for(IConnection connection : pendingConnections.queue) {

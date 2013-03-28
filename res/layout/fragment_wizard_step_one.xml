@@ -11,12 +11,6 @@
         android:gravity="center"
         android:text="@string/welcome" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="@string/welcome_text" />
-
     <EditText
         android:id="@+id/user_name"
         android:layout_width="match_parent"

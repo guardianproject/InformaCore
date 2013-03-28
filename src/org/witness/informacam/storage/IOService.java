@@ -14,10 +14,10 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.models.Model;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -230,7 +230,12 @@ public class IOService extends Service {
 
 	public boolean initIOCipher(String authToken) {
 		try {
-			java.io.File storageRoot = new java.io.File(getDir(Storage.ROOT, MODE_PRIVATE).getAbsolutePath(), Storage.IOCIPHER);
+			java.io.File informaCamPublic = new java.io.File(Environment.getExternalStorageDirectory(), Storage.EXTERNAL_DIR);
+			if(!informaCamPublic.exists()) {
+				informaCamPublic.mkdir();
+			}
+			
+			java.io.File storageRoot = new java.io.File(informaCamPublic, Storage.IOCIPHER);
 			vfs = new VirtualFileSystem(storageRoot);
 			vfs.mount(authToken);
 			
@@ -270,5 +275,13 @@ public class IOService extends Service {
 	
 	public void stopDCIMObserver() {
 		dcimObserver.destroy();
+	}
+
+	public boolean isMounted() {
+		if(vfs != null) {
+			return vfs.isMounted();
+		}
+		
+		return false;
 	}
 }

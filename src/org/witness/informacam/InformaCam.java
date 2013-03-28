@@ -18,6 +18,7 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.models.ICredentials;
+import org.witness.informacam.utils.models.IMediaManifest;
 import org.witness.informacam.utils.models.IUser;
 import org.witness.informacam.utils.models.Model;
 
@@ -40,13 +41,13 @@ import android.os.IBinder;
 import android.os.Message;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 public class InformaCam extends Service {	
 	public final LocalBinder binder = new LocalBinder();
@@ -54,8 +55,8 @@ public class InformaCam extends Service {
 
 	private List<BroadcastReceiver> broadcasters = new Vector<BroadcastReceiver>();
 
+	public IMediaManifest mediaManifest;
 	public IUser user;
-	private Bundle update;
 
 	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent;
 
@@ -81,10 +82,6 @@ public class InformaCam extends Service {
 		super.onCreate();
 		Log.d(LOG, "InformaCam service started via intent");
 
-		ioServiceIntent = new Intent(this, IOService.class);
-		signatureServiceIntent = new Intent(this, SignatureService.class);
-		uploaderServiceIntent = new Intent(this, UploaderService.class);
-
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.SHUTDOWN)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.UPLOADER_UPDATE)));
@@ -92,6 +89,10 @@ public class InformaCam extends Service {
 		for(BroadcastReceiver br : broadcasters) {
 			registerReceiver(br, ((IBroadcaster) br).intentFilter);
 		}
+		
+		ioServiceIntent = new Intent(this, IOService.class);
+		signatureServiceIntent = new Intent(this, SignatureService.class);
+		uploaderServiceIntent = new Intent(this, UploaderService.class);
 
 		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
 		ed = sp.edit();
@@ -107,27 +108,40 @@ public class InformaCam extends Service {
 
 		informaCam = this;
 	}
+	
+	@SuppressWarnings("deprecation")
+	public int[] getDimensions() {
+		Display display = a.getWindowManager().getDefaultDisplay();
+		Log.d(LOG, "querying window manager for display size: " + display.getWidth() + "," + display.getHeight());
+		return new int[] {display.getWidth(),display.getHeight()};
+	}
 
 	public void startup() {
 		Log.d(LOG, "NOW we init!");
 		user = new IUser();
+		
 		boolean init = false;
 		boolean login = false;
+		boolean run = false;
 
 		try {
-			FileInputStream fis = this.openFileInput(IManifest.PATH);			
+			FileInputStream fis = this.openFileInput(IManifest.USER);			
 			if(fis.available() == 0) {
 				init = true;
 			} else {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
+				Log.d(LOG, "CURRENT USER:\n" + user.asJson().toString());
 
 				if(user.isLoggedIn) {
-					if(!attemptLogin()) {
+					// test to see if ioCipher is mounted
+					if(ioService.isMounted() || attemptLogin()) {
+						run = true;
+					} else {
 						login = true;
 					}
-
+					
 				} else {
 					login = true;
 				}
@@ -157,23 +171,26 @@ public class InformaCam extends Service {
 		if(login) {
 			// we log in!
 			user.isLoggedIn = false;
-			ioService.saveBlob(user, new java.io.File(IManifest.PATH));
+			ioService.saveBlob(user, new java.io.File(IManifest.USER));
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Login.DO_LOGIN);
+		} 
+		
+		if(run) {
+			mediaManifest = new IMediaManifest();
+			byte[] mediaManifestBytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+
+			if(mediaManifestBytes != null) {
+				mediaManifest.inflate(mediaManifestBytes);
+			}
+
+			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Home.INIT);
 		}
 
-		putUpdate(data);
-
-	}
-	
-	private void putUpdate(Bundle update) {
-		this.update = update;
-	}
-	
-	public Message getUpdate() {
 		Message message = new Message();
-		message.setData(update);
-		
-		return message;
+		message.setData(data);
+
+		((InformaCamEventListener) a).onUpdate(message);
+
 	}
 
 	private void shutdown() {
@@ -193,7 +210,8 @@ public class InformaCam extends Service {
 	}
 
 	private void saveStates() {
-		saveState(user, new java.io.File(IManifest.PATH));
+		saveState(user, new java.io.File(IManifest.USER));
+		saveState(mediaManifest, new java.io.File(IManifest.MEDIA));
 	}
 
 	public void saveState(Model model, java.io.File cache) {
@@ -207,7 +225,7 @@ public class InformaCam extends Service {
 	public void associateActivity(Activity a) {
 		this.a = a;
 	}
-	
+
 	public void promptForLogin(OnDismissListener odl) {
 		AlertDialog.Builder ad = new AlertDialog.Builder(this);
 		final Dialog d = ad.create();
@@ -217,18 +235,18 @@ public class InformaCam extends Service {
 			public void onCancel(DialogInterface dialog) {
 				a.finish();
 			}
-			
+
 		});
-		
-		
+
+
 		if(odl != null) {
 			d.setOnDismissListener(odl);
 		}
-		
+
 		View view = LayoutInflater.from(this).inflate(R.layout.alert_login, null);
 		final EditText password = (EditText) view.findViewById(R.id.login_password);
 		final ProgressBar waiter = (ProgressBar) view.findViewById(R.id.login_waiter);
-		
+
 		final Button commit = (Button) view.findViewById(R.id.login_commit);
 		commit.setOnClickListener(new OnClickListener() {
 
@@ -236,18 +254,18 @@ public class InformaCam extends Service {
 			public void onClick(View v) {
 				waiter.setVisibility(View.VISIBLE);
 				commit.setVisibility(View.GONE);
-				
+
 				if(attemptLogin(password.getText().toString())) {
 					d.dismiss();
 				} else {
 					waiter.setVisibility(View.GONE);
 					commit.setVisibility(View.VISIBLE);
 				}
-				
+
 			}
-			
+
 		});
-		
+
 		final Button cancel = (Button) view.findViewById(R.id.login_cancel);
 		cancel.setOnClickListener(new OnClickListener() {
 
@@ -255,17 +273,17 @@ public class InformaCam extends Service {
 			public void onClick(View v) {
 				d.cancel();
 			}
-			
+
 		});
-		
+
 		ad.setView(view);
 		ad.show();
 	}
-	
+
 	public void promptForLogin() {
 		promptForLogin(null);
 	}
-	
+
 	public void promptForLogin(final int resumeCode, final byte[] data, final info.guardianproject.iocipher.File file) {
 		OnDismissListener odl = new OnDismissListener() {
 
@@ -276,9 +294,9 @@ public class InformaCam extends Service {
 					ioService.saveBlob(data, file);
 					break;
 				}
-				
+
 			}
-			
+
 		};
 		promptForLogin(odl);
 	}
@@ -313,11 +331,11 @@ public class InformaCam extends Service {
 		String authToken = AesUtility.DecryptWithPassword(password, credentials.iv.getBytes(), credentials.passwordBlock.getBytes());
 		if(authToken != null && ioService.initIOCipher(authToken)) {
 
-			user.inflate(ioService.getBytes(IManifest.PATH, Type.INTERNAL_STORAGE));
+			user.inflate(ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
 
 			user.isLoggedIn = true;
 			user.lastLogIn = System.currentTimeMillis();
-			ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.PATH));
+			ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
 
 			persistLogin(password);
 			return true;
@@ -337,13 +355,13 @@ public class InformaCam extends Service {
 		Log.d(LOG, "no activity association, just returning instance");
 		return informaCam;
 	}
-	
+
 	public static InformaCam getInstance(Activity a) {
 		informaCam.associateActivity(a);
 		Log.d(LOG, "associating to activity " + a.getClass().getName());
 		return informaCam;
 	}
-	
+
 	public static InformaCam getInstance(FragmentActivity a) {
 		informaCam.associateActivity(a);
 		Log.d(LOG, "associating to activity " + a.getClass().getName());
@@ -388,29 +406,29 @@ public class InformaCam extends Service {
 					uploaderService = UploaderService.getInstance();
 					break;
 				}
-				
+
 				if(signatureService == null) {
 					Log.d(LOG, "cannot init yet (signature) ... trying again");
 					return;
 				}
-				
+
 				if(uploaderService == null) {
 					Log.d(LOG, "cannot init yet (uploader) ... trying again");
 					return;
 				}
-				
+
 				if(ioService == null) {
 					Log.d(LOG, "cannot init yet (io) ... trying again");
 					return;
 				}
-				
+
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
 						startup();
 					}
 				}).start();
-				
+
 			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
 				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
 				case Codes.Transport.MUST_INSTALL_TOR:

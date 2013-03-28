@@ -202,7 +202,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.isLoggedIn = true;
 		
 		Log.d(LOG, "new user: " + informaCam.user.asJson());
-		informaCam.ioService.saveBlob(informaCam.user, new java.io.File(IManifest.PATH));
+		informaCam.ioService.saveBlob(informaCam.user, new java.io.File(IManifest.USER));
 		
 		for(IConnection connection : informaCam.uploaderService.pendingConnections.queue) {
 			connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
@@ -210,7 +210,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			connection.isHeld = false;
 		}
 		
-		informaCam.ioService.saveBlob(informaCam.uploaderService.pendingConnections, new info.guardianproject.iocipher.File(Models.IPendingConnections.PATH));
+		informaCam.ioService.saveBlob(informaCam.uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 		
 		setResult(Activity.RESULT_OK);
 		finish();

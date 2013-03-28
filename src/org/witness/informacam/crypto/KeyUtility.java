@@ -64,7 +64,7 @@ public class KeyUtility {
 		}
 	}
 	
-	private static String generatePassword(byte[] baseBytes) throws NoSuchAlgorithmException {
+	public static String generatePassword(byte[] baseBytes) throws NoSuchAlgorithmException {
 		// initialize random bytes
 		byte[] randomBytes = new byte[baseBytes.length];
 		SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");

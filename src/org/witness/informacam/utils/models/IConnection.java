@@ -15,7 +15,7 @@ public class IConnection extends Model {
 	public IResult result = null;
 
 	public List<IParam> params = null;
-	public List<IData> data = null;
+	public List<ITransportData> data = null;
 
 	public IConnection() {
 		_id = System.currentTimeMillis();
@@ -35,10 +35,10 @@ public class IConnection extends Model {
 
 	public void setData(String key, String entityName, int source) {
 		if(data == null) {
-			data = new ArrayList<IData>();
+			data = new ArrayList<ITransportData>();
 		}
 
-		IData data = new IData();
+		ITransportData data = new ITransportData();
 		data.entityName = entityName;
 		data.key = key;
 		data.source = source;
