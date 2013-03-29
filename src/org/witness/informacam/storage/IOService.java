@@ -147,6 +147,22 @@ public class IOService extends Service {
 	public boolean saveBlob(Model model, info.guardianproject.iocipher.File file) {
 		return saveBlob(model.asJson().toString().getBytes(), file);
 	}
+	
+	public info.guardianproject.iocipher.FileInputStream getFileInputStream(String path) {
+		if(vfs == null) {
+			return null;
+		}
+		
+		info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(path);
+		try {
+			return new info.guardianproject.iocipher.FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
 
 	public byte[] getBytes(String pathToData, int source) {
 		byte[] bytes = null;
