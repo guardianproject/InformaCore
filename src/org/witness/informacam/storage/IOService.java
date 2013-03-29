@@ -3,6 +3,8 @@ package org.witness.informacam.storage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Vector;
 
 import info.guardianproject.iocipher.VirtualFileSystem;
 
@@ -12,12 +14,12 @@ import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Service;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -28,6 +30,8 @@ public class IOService extends Service {
 	private VirtualFileSystem vfs = null;
 	private DCIMObserver dcimObserver = null;
 	private InformaCam informaCam = InformaCam.getInstance();
+	
+	private List<java.io.File> cleanupQueue = new Vector<java.io.File>();
 
 	private final static String LOG = App.Storage.LOG;
 
@@ -55,6 +59,11 @@ public class IOService extends Service {
 
 		if(vfs != null) {
 			vfs.unmount();
+		}
+		
+		for(java.io.File f : cleanupQueue) {
+			Log.d(LOG, "removing unsafe file: " + f.getAbsolutePath());
+			f.delete();
 		}
 		
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
@@ -148,22 +157,6 @@ public class IOService extends Service {
 		return saveBlob(model.asJson().toString().getBytes(), file);
 	}
 	
-	public info.guardianproject.iocipher.FileInputStream getFileInputStream(String path) {
-		if(vfs == null) {
-			return null;
-		}
-		
-		info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(path);
-		try {
-			return new info.guardianproject.iocipher.FileInputStream(file);
-		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-			return null;
-		}
-		
-	}
-
 	public byte[] getBytes(String pathToData, int source) {
 		byte[] bytes = null;
 

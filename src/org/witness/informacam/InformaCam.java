@@ -68,7 +68,7 @@ public class InformaCam extends Service {
 	public InformaService informaService = null;
 
 	private static InformaCam informaCam;
-	public Activity a;
+	public Activity a = null;
 	public Handler h = new Handler();
 
 	SharedPreferences.Editor ed;
@@ -198,8 +198,10 @@ public class InformaCam extends Service {
 
 		Message message = new Message();
 		message.setData(data);
-
-		((InformaCamEventListener) a).onUpdate(message);
+		
+		if(a != null) {
+			((InformaCamEventListener) a).onUpdate(message);
+		}
 
 	}
 
