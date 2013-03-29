@@ -73,6 +73,15 @@ public class TimeUtility {
 		return dateFormat.format(d);
 	}
 	
+	@SuppressLint("SimpleDateFormat")
+	public final static String[] millisecondsToDatestampAndTimestamp(long ms) {
+		DateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy");
+		DateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+		
+		Date d = new Date(ms);
+		return new String[] {dateFormat.format(d), timeFormat.format(d)};
+	}
+	
 	public final static String millisecondsToTimestamp(long ms) {
 		int s = (int) (ms/1000);
 		int hours = s/3600;

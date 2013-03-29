@@ -5,6 +5,7 @@ public class IDCIMEntry extends Model {
 	public String fileName = null;
 	public String name = null;
 	public String originalHash = null;
+	public String bitmapHash = null;
 	public String mediaType = null;
 	public byte[] thumbnailFile = null;
 	public String thumbnailName = null;

@@ -1,6 +1,6 @@
 package org.witness.informacam.informa;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
@@ -71,8 +71,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public void onUpdate(long timestamp, LogPack logPack) {
 		// TODO Auto-generated method stub
 		if(cache.log == null) {
-			cache.log = new List<LogPack>();
+			cache.log = new ArrayList<LogPack>();
 		}
+		
+		cache.log.add(logPack);
 		
 	}
 

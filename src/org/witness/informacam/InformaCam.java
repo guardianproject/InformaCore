@@ -9,6 +9,7 @@ import java.util.Vector;
 import org.witness.informacam.crypto.AesUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.models.ICredentials;
+import org.witness.informacam.models.IMedia;
 import org.witness.informacam.models.IMediaManifest;
 import org.witness.informacam.models.IUser;
 import org.witness.informacam.models.Model;
@@ -185,6 +186,11 @@ public class InformaCam extends Service {
 
 			if(mediaManifestBytes != null) {
 				mediaManifest.inflate(mediaManifestBytes);
+				if(mediaManifest.media != null && mediaManifest.media.size() > 0) {
+					for(IMedia m : mediaManifest.media) {
+						m.isNew = false;
+					}
+				}
 			}
 
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Home.INIT);
@@ -385,11 +391,11 @@ public class InformaCam extends Service {
 	public void startInforma() {
 		startService(informaServiceIntent);
 	}
-	
+
 	public void stopInforma() {
 		stopService(informaServiceIntent);		
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
@@ -458,7 +464,7 @@ public class InformaCam extends Service {
 
 			} else if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
 				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
-					// TODO:
+				// TODO:
 				}
 			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
 				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {

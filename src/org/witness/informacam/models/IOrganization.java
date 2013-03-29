@@ -6,4 +6,5 @@ public class IOrganization extends Model {
 	public String requestUrl = null;
 	public String trustedRouteUrl = null;
 	public byte[] clientCertificate = null;
+	public String id = null;
 }

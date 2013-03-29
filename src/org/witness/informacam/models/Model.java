@@ -93,9 +93,14 @@ public class Model extends JSONObject {
 						f.set(this, subValue);
 					} else if(f.getType() == byte[].class) { 
 						f.set(this, values.getString(f.getName()).getBytes());
-					} else if(isModel) {
-						//Log.d(LOG, "attempting to set value as the model!");
-						f.set(this, values.get(f.getName()));
+					} else if(isModel) {						
+						Class clz = (Class<?>) f.getType();
+						Model val = (Model) clz.newInstance();
+						
+						//Log.d(LOG, "the thing should read:\n" + values.getJSONObject(f.getName()).toString());
+						
+						val.inflate(values.getJSONObject(f.getName()));
+						f.set(this, val);
 					} else {
 						f.set(this, values.get(f.getName()));
 					}

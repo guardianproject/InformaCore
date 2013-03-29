@@ -86,13 +86,13 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
 				cameraComponent = new ComponentName(packageName, name);
 				Log.d(LOG, "HUZZAH FOUND CAMERA!");
-				new Thread(new Runnable() {
+				h.post(new Runnable() {
 					@Override
 					public void run() {
 						informaCam.startInforma();
 						informaCam.ioService.startDCIMObserver();
 					}
-				}).start();
+				});
 				break;
 			}
 		}
@@ -156,7 +156,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 		Log.d(LOG, "ON ACTIVITY RESULT CALLED IN CAMERA");
 		setResult(Activity.RESULT_CANCELED);
 
-		new Thread(new Runnable() {
+		h.post(new Runnable() {
 			@Override
 			public void run() {
 				try{
@@ -168,7 +168,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 					e.printStackTrace();
 				}
 			}
-		}).start();
+		});
 	}
 
 	@Override
