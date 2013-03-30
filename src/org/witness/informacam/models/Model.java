@@ -54,7 +54,7 @@ public class Model extends JSONObject {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {
 		//Log.d(LOG, "attempting to inflate object with values:\n" + values.toString());
-		fields = this.getClass().getDeclaredFields();
+		fields = this.getClass().getFields();
 
 		for(Field f : fields) {
 			try {
@@ -124,13 +124,17 @@ public class Model extends JSONObject {
 	}
 
 	public JSONObject asJson() {
-		fields = this.getClass().getDeclaredFields();
+		fields = this.getClass().getFields();
 		JSONObject json = new JSONObject();
 
 		for(Field f : fields) {
 			f.setAccessible(true);
 
 			if(f.getName().contains("this$")) {
+				continue;
+			}
+			
+			if(f.getName().equals("NULL") || f.getName().equals("LOG")) {
 				continue;
 			}
 

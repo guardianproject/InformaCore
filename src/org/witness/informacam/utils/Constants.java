@@ -130,6 +130,10 @@ public class Constants {
 
 		}
 	}
+	
+	public final static class Forms {
+		public final static String LOG = "**************** InformaCam: Forms ****************";
+	}
 
 
 	public final static class Suckers {
@@ -269,6 +273,7 @@ public class Constants {
 		public final static String DCIM = "dcimDescriptor";
 		public final static String MEDIA = "mediaManifest";
 		public static final String PENDING_CONNECTIONS = "pendingConnections";
+		public static final String FORMS = "installedForms";
 	}
 
 	public final static class App {
@@ -315,6 +320,7 @@ public class Constants {
 			public static final String DUMP = "informaCam";
 			public static final String REVIEW_DUMP = "reviewDump";
 			public static final String EXTERNAL_DIR = "InformaCam";
+			public static final String FORM_ROOT = "forms";
 
 			public final static class Type {
 
