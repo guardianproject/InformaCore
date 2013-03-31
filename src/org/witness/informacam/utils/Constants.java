@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Vector;
 
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
@@ -28,6 +29,10 @@ public class Constants {
 	public interface SuckerCacheListener {
 		public void onUpdate(long timestamp, LogPack logPack);
 		public void onUpdate(LogPack logPack);
+	}
+	
+	public interface HttpUtilityListener {
+		public void onOrbotRunning();
 	}
 
 	public final static class Actions {
@@ -265,6 +270,16 @@ public class Constants {
 		public class IDCIMDescriptor {
 			public static final String TAG = "IDCIMDescriptor";
 		}
+
+		public class IResult {
+			public final static String DATA = "data";
+			public final static String REASON = "reason";
+		}
+
+		public class ITransportData {
+			public final static String UPLOAD = "upload";
+			public static final String FILE = "file";
+		}
 	}
 
 	public final static class IManifest {
@@ -274,6 +289,9 @@ public class Constants {
 		public final static String MEDIA = "mediaManifest";
 		public static final String PENDING_CONNECTIONS = "pendingConnections";
 		public static final String FORMS = "installedForms";
+		public static final String ORGS = "installedOrganizations";
+		public static final String KEY_STORE_MANIFEST = "keystoreManifest";
+		public static final String KEY_STORE = "keystore.jks";
 	}
 
 	public final static class App {
@@ -311,6 +329,11 @@ public class Constants {
 
 		public final static class Transport {
 			public final static String LOG = "******************** InformaCam : Transport ********************";
+			
+			public final static class Results {
+				public final static String OK = "200";
+				public final static String[] FAIL = {"404", "500"};
+			}
 		}
 
 		public final static class Storage {
@@ -319,8 +342,9 @@ public class Constants {
 			public static final String IOCIPHER = "ic_data.db";
 			public static final String DUMP = "informaCam";
 			public static final String REVIEW_DUMP = "reviewDump";
-			public static final String EXTERNAL_DIR = "InformaCam";
+			public static final String EXTERNAL_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/InformaCam";
 			public static final String FORM_ROOT = "forms";
+			public static final String ORGS_ROOT = "organizations";
 
 			public final static class Type {
 

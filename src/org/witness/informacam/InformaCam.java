@@ -1,5 +1,7 @@
 package org.witness.informacam;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,8 +11,11 @@ import java.util.Vector;
 import org.witness.informacam.crypto.AesUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.models.ICredentials;
+import org.witness.informacam.models.IInstalledOrganizations;
+import org.witness.informacam.models.IKeyStore;
 import org.witness.informacam.models.IMedia;
 import org.witness.informacam.models.IMediaManifest;
+import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.models.IUser;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.storage.IOService;
@@ -18,6 +23,7 @@ import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
@@ -28,6 +34,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Service;
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -36,6 +43,7 @@ import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -56,6 +64,7 @@ public class InformaCam extends Service {
 	private final static String LOG = App.LOG;
 
 	private List<BroadcastReceiver> broadcasters = new Vector<BroadcastReceiver>();
+	private List<BroadcastReceiver> informaBroadcasters = new Vector<BroadcastReceiver>();
 
 	public IMediaManifest mediaManifest = new IMediaManifest();
 	public IUser user;
@@ -235,9 +244,37 @@ public class InformaCam extends Service {
 		ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 		Log.d(LOG, "saved state for " + cache.getAbsolutePath());
 	}
-
-	public void associateActivity(Activity a) {
-		this.a = a;
+	
+	public void saveState(Model model) {
+		if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+		} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
+		}
+	}
+	
+	public Model getModel(Model model) {
+		byte[] bytes = null;
+		try {
+			if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
+				bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
+				bytes = informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
+				bytes = informaCam.ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
+			}
+			
+			if(bytes != null) {
+				model.inflate(bytes);
+			}
+			
+		} catch(NullPointerException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return model;
+		
 	}
 
 	public void promptForLogin(OnDismissListener odl) {
@@ -389,6 +426,10 @@ public class InformaCam extends Service {
 		Log.d(LOG, "associating to activity " + a.getClass().getName());
 		return informaCam;
 	}
+	
+	public void associateActivity(Activity a) {
+		this.a = a;
+	}
 
 	public void startInforma() {
 		startService(informaServiceIntent);
@@ -437,6 +478,15 @@ public class InformaCam extends Service {
 					break;
 				case Codes.Routes.INFORMA_SERVICE:
 					informaService = InformaService.getInstance();
+					
+					informaBroadcasters.add(new IBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
+					informaBroadcasters.add(new IBroadcaster(new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)));
+					
+					for(BroadcastReceiver br : informaBroadcasters) {
+						registerReceiver(br, ((IBroadcaster) br).intentFilter);
+					}
+
+					
 					break;
 				}
 
@@ -466,7 +516,12 @@ public class InformaCam extends Service {
 
 			} else if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
 				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
-				// TODO:
+				case Codes.Routes.INFORMA_SERVICE:
+					for(BroadcastReceiver br : informaBroadcasters) {
+						unregisterReceiver(br);
+					}
+					
+					break;
 				}
 			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
 				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {

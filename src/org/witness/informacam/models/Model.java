@@ -44,8 +44,13 @@ public class Model extends JSONObject {
 
 	public void inflate(byte[] jsonStringBytes) {
 		try {
-			inflate((JSONObject) new JSONTokener(new String(jsonStringBytes)).nextValue());
+			if(jsonStringBytes != null) {
+				inflate((JSONObject) new JSONTokener(new String(jsonStringBytes)).nextValue());
+			}
 		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch(NullPointerException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}

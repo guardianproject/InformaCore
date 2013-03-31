@@ -52,9 +52,9 @@ public class IMedia extends Model {
 		return false;
 	}
 
-	public boolean rename() {
+	public boolean rename(String alias) {
 		Log.d(LOG, "RENAMING A MEDIA ENTRY: " + _id);
-
+		this.alias = alias;
 		return true;
 	}
 

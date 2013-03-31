@@ -14,6 +14,8 @@ import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.LogPack;
 
+import android.app.Activity;
+
 public class SensorLogger<T> {
 	public T _sucker;
 	
@@ -25,12 +27,12 @@ public class SensorLogger<T> {
 	File mLog;
 	JSONArray mBuffer;
 	
-	protected InformaService is;
-	
+	protected Activity a;
+		
 	boolean isRunning;
 		
 	public SensorLogger() {
-		is = InformaCam.getInstance().informaService;
+		a = InformaCam.getInstance().a;
 		isRunning = true;
 	}
 	
@@ -98,6 +100,6 @@ public class SensorLogger<T> {
 	public void sendToBuffer(LogPack logPack) throws JSONException {
 		logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
 		// TODO: LOL put Nmea time
-		((SuckerCacheListener) is).onUpdate(logPack); 
+		//((SuckerCacheListener) is).onUpdate(logPack); 
 	}
 }

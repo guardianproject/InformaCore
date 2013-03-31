@@ -47,6 +47,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 		Log.d(LOG, "started.");
 		
 		// TODO: start suckers
+		_geo = new GeoSucker();
+		_phone = new PhoneSucker();
+		_acc = new AccelerometerSucker();
 		
 		// TODO: resolve time
 		
@@ -59,6 +62,18 @@ public class InformaService extends Service implements SuckerCacheListener {
 		super.onDestroy();
 		
 		// TODO: save stuff
+		
+		try {
+			_geo.getSucker().stopUpdates();
+			_phone.getSucker().stopUpdates();
+			_acc.getSucker().stopUpdates();
+		} catch(NullPointerException e) {
+			e.printStackTrace();
+		}
+		
+		_geo = null;
+		_phone = null;
+		_acc = null;
 		
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
 	}

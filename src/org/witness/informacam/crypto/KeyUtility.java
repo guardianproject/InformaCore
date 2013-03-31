@@ -64,6 +64,26 @@ public class KeyUtility {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static PGPPublicKey extractPublicKeyFromBytes(byte[] keyBlock) throws IOException, PGPException {
+		PGPPublicKeyRingCollection keyringCol = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(new ByteArrayInputStream(Base64.decode(keyBlock, Base64.DEFAULT))));
+		PGPPublicKey key = null;
+		Iterator<PGPPublicKeyRing> rIt = keyringCol.getKeyRings();
+		while(key == null && rIt.hasNext()) {
+			PGPPublicKeyRing keyring = (PGPPublicKeyRing) rIt.next();
+			Iterator<PGPPublicKey> kIt = keyring.getPublicKeys();
+			while(key == null && kIt.hasNext()) {
+				PGPPublicKey k = (PGPPublicKey) kIt.next();
+				if(k.isEncryptionKey())
+					key = k;
+			}
+		}
+		if(key == null)
+			throw new IllegalArgumentException("there isn't an encryption key here.");
+
+		return key;
+	}
+	
 	public static String generatePassword(byte[] baseBytes) throws NoSuchAlgorithmException {
 		// initialize random bytes
 		byte[] randomBytes = new byte[baseBytes.length];

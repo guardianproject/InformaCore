@@ -30,7 +30,7 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		super();
 		setSucker(this);
 		
-		lm = (LocationManager) is.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+		lm = (LocationManager) a.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
 		
 		if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
 			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);

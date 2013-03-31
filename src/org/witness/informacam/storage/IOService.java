@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Vector;
 
+import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.VirtualFileSystem;
 
 import org.witness.informacam.InformaCam;
@@ -13,6 +14,7 @@ import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
@@ -239,6 +241,34 @@ public class IOService extends Service {
 
 		return bytes;
 	}
+	
+	public java.io.File getPublicCredentials() {
+		byte[] publicCredentialsBytes = getBytes(Models.IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER);
+		if(publicCredentialsBytes != null) {
+			try {
+				java.io.File externalDir = new java.io.File(Storage.EXTERNAL_DIR);
+				if(!externalDir.exists()) {
+					externalDir.mkdir();
+				}
+				
+				java.io.File publicCredentials = new java.io.File(Storage.EXTERNAL_DIR, "publicCredentials.zip");
+				java.io.FileOutputStream fis = new java.io.FileOutputStream(publicCredentials);
+				
+				fis.write(publicCredentialsBytes);
+				fis.flush();
+				fis.close();
+				return publicCredentials;
+			} catch (FileNotFoundException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
+	}
 
 	public boolean initIOCipher(String authToken) {
 		try {
@@ -247,6 +277,16 @@ public class IOService extends Service {
 			vfs.mount(authToken);
 			
 			Log.d(LOG, "MOUNTED IOCIPHER");
+			
+			info.guardianproject.iocipher.File organizationRoot = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT);
+			if(!organizationRoot.exists()) {
+				organizationRoot.mkdir();
+			}
+			
+			info.guardianproject.iocipher.File formsRoot = new info.guardianproject.iocipher.File(Storage.FORM_ROOT);
+			if(!formsRoot.exists()) {
+				formsRoot.mkdir();
+			}
 
 			return true;
 		} catch(IllegalArgumentException e) {

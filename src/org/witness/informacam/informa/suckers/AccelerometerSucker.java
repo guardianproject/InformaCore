@@ -32,7 +32,7 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 		super();
 		setSucker(this);
 		
-		sm = (SensorManager) is.getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
+		sm = (SensorManager) a.getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
 		availableSensors = sm.getSensorList(Sensor.TYPE_ALL);
 		
 		for(Sensor s : availableSensors) {

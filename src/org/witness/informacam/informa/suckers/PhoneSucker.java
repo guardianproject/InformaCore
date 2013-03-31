@@ -34,9 +34,9 @@ public class PhoneSucker extends SensorLogger {
 	public PhoneSucker() {
 		setSucker(this);
 				
-		tm = (TelephonyManager) is.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+		tm = (TelephonyManager) a.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
 		ba = BluetoothAdapter.getDefaultAdapter();
-		wm = (WifiManager) is.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+		wm = (WifiManager) a.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		
 		if(ba != null)
 		{
