@@ -7,12 +7,15 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
+import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Suckers.Geo;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -178,6 +181,14 @@ public class IDCIMDescriptor extends Model {
 			}
 
 			entry.exif = new IExif();
+			
+			try {
+				entry.exif.location = Model.parseJSONAsFloatArray(((GeoSucker) InformaCam.getInstance().informaService._geo).forceReturn().getString(Geo.Keys.GPS_COORDS));
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			
 			Log.d(LOG, "MEDIA TYPE: " + entry.mediaType);
 			if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 				try {

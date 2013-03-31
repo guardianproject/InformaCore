@@ -98,6 +98,8 @@ public class Model extends JSONObject {
 						f.set(this, subValue);
 					} else if(f.getType() == byte[].class) { 
 						f.set(this, values.getString(f.getName()).getBytes());
+					} else if(f.getType() == float[].class) {
+						f.set(this, parseJSONAsFloatArray(values.getString(f.getName())));
 					} else if(isModel) {						
 						Class clz = (Class<?>) f.getType();
 						Model val = (Model) clz.newInstance();
@@ -126,6 +128,26 @@ public class Model extends JSONObject {
 		}
 
 		//Log.d(LOG, "finished inflating object, which is now\n" + this.asJson().toString());
+	}
+	
+	public static float[] parseJSONAsFloatArray(String value) {
+		String[] floatStrings = value.substring(1, value.length() - 1).split(",");
+		float[] floats = new float[floatStrings.length];
+		
+		for(int f=0; f<floatStrings.length; f++) {
+			floats[f] = Float.parseFloat(floatStrings[f]);
+		}
+		
+		return floats;
+	}
+	
+	public String parseFloatArrayAsJSON(float[] floats) {
+		StringBuffer floatString = new StringBuffer();
+		for(float f : floats) {
+			floatString.append("," + f);
+		}
+		
+		return "[" + floatString.toString().substring(1) + "]";
 	}
 
 	public JSONObject asJson() {
@@ -167,6 +189,8 @@ public class Model extends JSONObject {
 					json.put(f.getName(), subValue);
 				} else if(f.getType() == byte[].class) {
 					json.put(f.getName(), new String((byte[]) value));
+				} else if(f.getType() == float[].class) {
+					json.put(f.getName(), parseFloatArrayAsJSON((float[]) value));
 				} else if(isModel) {
 					json.put(f.getName(), ((Model) value).asJson());
 				} else {

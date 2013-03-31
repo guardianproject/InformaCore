@@ -17,7 +17,7 @@ public class IExif extends Model {
 	public int whiteBalance;
 	
 	public long duration;
-	
+	public float[] location;
 	
 	
 
