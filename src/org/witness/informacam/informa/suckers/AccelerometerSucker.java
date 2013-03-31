@@ -71,17 +71,17 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 		getTimer().schedule(getTask(), 0, Accelerometer.LOG_RATE);
 	}
 	
-	private void readAccelerometer() throws JSONException {
+	private void readAccelerometer() throws JSONException, NullPointerException {
 		if(currentAccelerometer != null)
 			sendToBuffer(currentAccelerometer);
 	}
 	
-	private void readOrientation() throws JSONException {
+	private void readOrientation() throws JSONException, NullPointerException {
 		if(currentMagField != null)
 			sendToBuffer(currentMagField);
 	}
 	
-	private void readLight() throws JSONException {
+	private void readLight() throws JSONException, NullPointerException {
 		if(currentLight != null)
 			sendToBuffer(currentLight);
 	}

@@ -1,5 +1,7 @@
 package org.witness.informacam.utils;
 
+import info.guardianproject.iocipher.File;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -143,6 +145,7 @@ public class Constants {
 
 	public final static class Suckers {
 		public final static String LOG = "******************** InformaCam : Suckers ********************";
+		public static final int GPS_WAIT_MAX = 10;
 
 		public final static class CaptureEvent {
 			public final static int METADATA_CAPTURED = 272;
@@ -292,6 +295,7 @@ public class Constants {
 		public static final String ORGS = "installedOrganizations";
 		public static final String KEY_STORE_MANIFEST = "keystoreManifest";
 		public static final String KEY_STORE = "keystore.jks";
+		public static final String CACHES = "informaCaches";
 	}
 
 	public final static class App {

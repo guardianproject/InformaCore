@@ -27,6 +27,7 @@ public class PhoneSucker extends SensorLogger {
 	
 	boolean hasBluetooth = false;
 	boolean hasWifi;
+	boolean wifiWasOn = false;
 	
 	private final static String LOG = Suckers.LOG;
 	
@@ -53,6 +54,7 @@ public class PhoneSucker extends SensorLogger {
 			// if not, turn on, and set hasWifi to true
 			if(wm.isWifiEnabled()) {
 				hasWifi = true;
+				wifiWasOn = true;
 			} else {
 				wm.setWifiEnabled(true);
 			}
@@ -66,7 +68,7 @@ public class PhoneSucker extends SensorLogger {
 		setTask(new TimerTask() {
 			
 			@Override
-			public void run() throws NullPointerException {
+			public void run() {
 				if(getIsRunning()) {
 					try {
 						sendToBuffer(new LogPack(Phone.Keys.CELL_ID, getCellId()));
@@ -82,7 +84,7 @@ public class PhoneSucker extends SensorLogger {
 						}
 							
 						
-					} catch (JSONException e) {}
+					} catch(NullPointerException e) {}
 				}
 			}
 		});
@@ -150,7 +152,7 @@ public class PhoneSucker extends SensorLogger {
 			ba.disable();
 		}
 		
-		if(hasWifi) {
+		if(hasWifi && !wifiWasOn) {
 			wm.setWifiEnabled(false);
 		}
 		

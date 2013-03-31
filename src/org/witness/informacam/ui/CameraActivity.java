@@ -64,7 +64,10 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 				init();
 			}
 		} catch(NullPointerException e) {
-			startService(new Intent(this, org.witness.informacam.InformaCam.class));
+			Log.e(LOG, "HEY THERE IS NOT INFORMACAM INSTANCE!");
+			e.printStackTrace();
+			
+			startService(new Intent(this, InformaCam.class));
 			
 			icb = new Vector<InformaCamBroadcaster>();
 			icb.add(new InformaCamBroadcaster(this, new IntentFilter(Actions.INFORMACAM_START)));
@@ -85,7 +88,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
 				cameraComponent = new ComponentName(packageName, name);
-				Log.d(LOG, "HUZZAH FOUND CAMERA!");
 				h.post(new Runnable() {
 					@Override
 					public void run() {
@@ -153,7 +155,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		Log.d(LOG, "ON ACTIVITY RESULT CALLED IN CAMERA");
 		setResult(Activity.RESULT_CANCELED);
 
 		h.post(new Runnable() {
@@ -173,7 +174,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 
 	@Override
 	public void onUpdate(Message message) {
-		Log.d(LOG, "hey i am the camera and i have a message:\n" + message.getData().toString());
 		byte[] dcimBytes = informaCam.ioService.getBytes(IManifest.DCIM, Type.IOCIPHER);
 		if(dcimBytes != null) {
 			IDCIMDescriptor dcimDescriptor = new IDCIMDescriptor();

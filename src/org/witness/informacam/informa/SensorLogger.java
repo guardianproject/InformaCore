@@ -11,10 +11,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
+import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.LogPack;
 
 import android.app.Activity;
+import android.util.Log;
 
 public class SensorLogger<T> {
 	public T _sucker;
@@ -28,11 +30,15 @@ public class SensorLogger<T> {
 	JSONArray mBuffer;
 	
 	protected Activity a;
+	InformaCam informaCam;
 		
 	boolean isRunning;
+	
+	private final static String LOG = Suckers.LOG; 
 		
 	public SensorLogger() {
-		a = InformaCam.getInstance().a;
+		informaCam = InformaCam.getInstance();
+		a = informaCam.a;
 		isRunning = true;
 	}
 	
@@ -97,9 +103,17 @@ public class SensorLogger<T> {
 		return null;
 	}
 
-	public void sendToBuffer(LogPack logPack) throws JSONException {
-		logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
-		// TODO: LOL put Nmea time
-		//((SuckerCacheListener) is).onUpdate(logPack); 
+	public void sendToBuffer(final LogPack logPack) {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
+					((SuckerCacheListener) informaCam.informaService).onUpdate(logPack);
+				} catch(NullPointerException e) {}
+				catch (JSONException e) {}
+			}
+		}).start();
+		
 	}
 }

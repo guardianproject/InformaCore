@@ -56,12 +56,10 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 			@Override
 			public void run() throws NullPointerException {
 				if(getIsRunning()) {
-					double[] loc = updateLocation();
 					try {
+						double[] loc = updateLocation();
 						if (loc != null)
 							sendToBuffer(new LogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]"));
-					} catch (JSONException e) {
-						Log.e(LOG,"location json error",e);
 					} catch(NullPointerException e) {
 						Log.e(LOG, "location NPE", e);
 					}

@@ -1,9 +1,8 @@
 package org.witness.informacam.models;
 
-import java.util.List;
+import org.json.JSONArray;
 
-import org.witness.informacam.utils.LogPack;
-
-public class ISuckerCache {
-	public List<LogPack> log;
+public class ISuckerCache extends Model {
+	public JSONArray cache = null;
+	public long timeOffset = 0L;
 }
