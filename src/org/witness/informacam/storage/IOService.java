@@ -160,7 +160,7 @@ public class IOService extends Service {
 	}
 	
 	public byte[] getBytes(String pathToData, int source) {
-		byte[] bytes = null;
+		byte[] bytes = new byte[0];
 
 		switch(source) {
 		case Storage.Type.INTERNAL_STORAGE:
@@ -193,18 +193,20 @@ public class IOService extends Service {
 			
 			info.guardianproject.iocipher.FileInputStream iFis;
 			info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToData);
-
+			
 			try {
 				iFis = new info.guardianproject.iocipher.FileInputStream(file);
 				bytes = new byte[iFis.available()];
 				iFis.read(bytes);
 				iFis.close();
 			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Log.d(LOG, "no, no bytes");
+				return null;
 			} catch (IOException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
+			} catch (Exception e) {
+				Log.e(LOG, e.toString());
 			}
 
 			break;
@@ -272,7 +274,7 @@ public class IOService extends Service {
 
 	public boolean initIOCipher(String authToken) {
 		try {
-			java.io.File storageRoot = new java.io.File(getDir(Storage.ROOT, MODE_PRIVATE).getAbsolutePath(), Storage.IOCIPHER);
+			java.io.File storageRoot = new java.io.File(getExternalFilesDir(Storage.ROOT).getAbsolutePath(), Storage.IOCIPHER);
 			vfs = new VirtualFileSystem(storageRoot);
 			vfs.mount(authToken);
 			

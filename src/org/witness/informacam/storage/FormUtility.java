@@ -79,6 +79,10 @@ public class FormUtility {
 		try {
 			installedForms.inflate(informaCam.ioService.getBytes(IManifest.FORMS, Type.IOCIPHER));
 		} catch(NullPointerException e) {
+			Log.d(LOG, "actually, we must init this form manifest.");
+		}
+		
+		if(installedForms.installedForms == null) {
 			installedForms.installedForms = new ArrayList<IForm>();
 		}
 

@@ -220,6 +220,7 @@ public class Constants {
 			public static final String PGP_KEY_FINGERPRINT = "pgpKeyFingerprint";
 			public static final String PUBLIC_CREDENTIALS = "publicCredentials";
 			public static final String PUBLIC_KEY = "publicKey";
+			public static final String BELONGS_TO_USER = "belongs_to_user";
 		}
 
 		public class IMediaManifest {
@@ -258,6 +259,11 @@ public class Constants {
 
 			public static final String DATA = "data";
 			public static final String PARAMS = "params";
+			public static final String _ID = "_id";
+			public static final String _REV = "_rev";
+			public class Routes {
+				public static final String EXPORT = "/export/";
+			}
 		}
 
 		public class IDCIMEntry {
@@ -277,11 +283,21 @@ public class Constants {
 		public class IResult {
 			public final static String DATA = "data";
 			public final static String REASON = "reason";
+			public static final String RESPONSE_CODE = "response_code";
+			
+			public class ResponseCodes {
+				public static final int DOWNLOAD_ASSET = 43;
+				public final static int INIT_USER = 44;
+			}
 		}
 
 		public class ITransportData {
 			public final static String UPLOAD = "upload";
 			public static final String FILE = "file";
+		}
+
+		public class IIdentity {
+			public final static String SOURCE = "source";
 		}
 	}
 

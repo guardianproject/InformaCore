@@ -1,17 +1,9 @@
 package org.witness.informacam.transport;
 
-import info.guardianproject.onionkit.proxy.SocksProxyClientConnOperator;
-import info.guardianproject.onionkit.trust.StrongHttpsClient;
-import info.guardianproject.onionkit.trust.StrongSSLSocketFactory;
-import info.guardianproject.onionkit.trust.StrongTrustManager;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
@@ -32,8 +24,6 @@ import java.util.concurrent.Future;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
@@ -45,16 +35,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.ClientConnectionOperator;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.HostNameResolver;
-import org.apache.http.conn.scheme.LayeredSchemeSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.params.HttpParams;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -69,7 +53,6 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 
-import android.content.Context;
 import android.util.Log;
 
 public class HttpUtility {
@@ -100,6 +83,7 @@ public class HttpUtility {
 			JSONObject resultObject = (JSONObject) new JSONTokener(resultBuffer.toString()).nextValue();
 			if(result.code == Integer.parseInt(Transport.Results.OK)) {
 				result.data = resultObject.getJSONObject(Models.IResult.DATA);
+				result.responseCode = resultObject.getInt(Models.IResult.RESPONSE_CODE);
 			} else {
 				result.reason = resultObject.getString(Models.IResult.REASON);
 			}
@@ -113,23 +97,34 @@ public class HttpUtility {
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+		} catch (ClassCastException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
 		}
 
 		Log.d(LOG, "REQUEST RESULT:\n" + sb.toString());
 		return result;
 	}
 
-	public static IConnection executeHttpGet(final IConnection connection) {
+	public IConnection executeHttpGet(final IConnection connection) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
 			@Override
 			public IConnection call() throws Exception {
 				InformaCam informaCam = InformaCam.getInstance();
+
 				HttpClient http = new DefaultHttpClient();
+				
+				ISocketFactory iSocketFactory = new ISocketFactory(null, connection);
+				ClientConnectionManager ccm = http.getConnectionManager();
+				SchemeRegistry registry = ccm.getSchemeRegistry();
+				registry.register(new Scheme("https", iSocketFactory, connection.port));
 
 				http.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(PROXY_HOST, PROXY_PORT));
-				HttpGet get = new HttpGet(connection.url);
-				get = connection.build(get);
+				
+				HttpGet get = new HttpGet(connection.build());
+				
+				Log.d(LOG, "executing get");
 
 				connection.numTries++;
 				connection.result = parseResponse(http.execute(get));
@@ -150,17 +145,25 @@ public class HttpUtility {
 		}
 	}
 
-	public static IConnection executeHttpPost(final IConnection connection) {
+	public IConnection executeHttpPost(final IConnection connection) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
 			@Override
 			public IConnection call() throws Exception {
 				InformaCam informaCam = InformaCam.getInstance();
-				HttpClient http = new IHttpClient(connection);
+
+				HttpClient http = new DefaultHttpClient();
+				
+				ISocketFactory iSocketFactory = new ISocketFactory(null, connection);
+				ClientConnectionManager ccm = http.getConnectionManager();
+				SchemeRegistry registry = ccm.getSchemeRegistry();
+				registry.register(new Scheme("https", iSocketFactory, connection.port));
 
 				http.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(PROXY_HOST, PROXY_PORT));
+				
 				HttpPost post = new HttpPost(connection.url);
 				post = connection.build(post);
+				Log.d(LOG, "executing post");
 
 				connection.numTries++;
 				connection.result = parseResponse(http.execute(post));
@@ -180,144 +183,92 @@ public class HttpUtility {
 			return null;
 		}
 	}
-
-	public static class IHttpClient extends DefaultHttpClient {
-		private SchemeRegistry mRegistry;
-		private ISSLSocketFactory sFactory;
-		
-		public IHttpClient(IConnection connection) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
-			sFactory = new ISSLSocketFactory(connection);
-			mRegistry.register(new Scheme("https", sFactory, connection.port));
-		}
-
-	}
-
-	public static class ISSLSocketFactory extends org.apache.http.conn.ssl.SSLSocketFactory implements LayeredSchemeSocketFactory {
-		ITrustManager itm;
-		private SSLSocketFactory mFactory = null;
-
-		private Proxy mProxy = null;
-
-		public static final String TLS   = "TLS";
-		public static final String SSL   = "SSL";
-		public static final String SSLV2 = "SSLv2";
-
-		public ISSLSocketFactory (IConnection connection) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
-		{
-			super(null);
-
-			SSLContext sslContext = SSLContext.getInstance ("TLS");
-			itm = new ITrustManager();
-			TrustManager[] tm = new TrustManager[] { itm };
-			KeyManager[] km = itm.getKeyManagers(connection.transportCredentials);
-			sslContext.init (km, tm, new SecureRandom ());
-
-			mFactory = sslContext.getSocketFactory ();
-
-		}
-
-		@Override
-		public Socket createSocket() throws IOException
-		{
-		    return mFactory.createSocket();
-		}
-
-		@Override
-		public Socket createSocket(Socket socket, String host, int port,
-				boolean autoClose) throws IOException, UnknownHostException {
-		
-			return mFactory.createSocket(socket, host, port, autoClose);
-		}
-
-		
-
-		@Override
-		public boolean isSecure(Socket sock) throws IllegalArgumentException {
-			return (sock instanceof SSLSocket);
-		}
-		
-
-		public void setProxy (Proxy proxy) {
-			mProxy = proxy;
-		}
-		
-		public Proxy getProxy ()
-		{
-			return mProxy;
-		}
-		
-		class StrongHostNameResolver implements HostNameResolver
-		{
-
-			@Override
-			public InetAddress resolve(String host) throws IOException {
-				
-				//can we do proxied name look ups here?
-				
-				//what can we implement to make name resolution strong
-				
-				return InetAddress.getByName(host);
-			}
-			
-		}
-
-		@Override
-		public Socket connectSocket(Socket sock, InetSocketAddress arg1,
-				InetSocketAddress arg2, HttpParams arg3) throws IOException,
-				UnknownHostException, ConnectTimeoutException {
-		
-			return connectSocket(sock, arg1.getHostName(), arg1.getPort(), InetAddress.getByName(arg2.getHostName()), arg2.getPort(),arg3);
-		}
-
-		@Override
-		public Socket createSocket(HttpParams arg0) throws IOException {
-			
-			return createSocket();
-			
-		}
-
-		@Override
-		public Socket createLayeredSocket(Socket arg0, String arg1, int arg2,
-				boolean arg3) throws IOException, UnknownHostException {
-			return ((LayeredSchemeSocketFactory)mFactory).createLayeredSocket(arg0, arg1, arg2, arg3);
-		}
-
-	}
 	
-	public static class ITrustManager implements X509TrustManager {
+	public class ISocketFactory extends org.apache.http.conn.ssl.SSLSocketFactory {
+		SSLContext sslContext;
+		
+		public ISocketFactory(KeyStore keyStore, IConnection connection) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
+			super(null);
+		
+			sslContext = SSLContext.getInstance ("TLS");
+			ITrustManager itm = new ITrustManager();
+			X509KeyManager[] km = null;
+
+			if(connection.transportCredentials != null) {
+				km = itm.getKeyManagers(connection.transportCredentials);
+			}
+
+			sslContext.init (km, new TrustManager[] { itm }, new SecureRandom ());
+		}
+		
+		@Override
+		public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+			return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+		}
+		
+		@Override
+		public Socket createSocket() throws IOException {
+			return sslContext.getSocketFactory().createSocket();
+		}
+	}
+
+	public class ITrustManager implements X509TrustManager {
 		private KeyStore keyStore;
 		private X509TrustManager defaultTrustManager;
 		private X509TrustManager appTrustManager;
 
 		private InformaCam informaCam;
 		private IKeyStore keyStoreManifest;
+		
+		private boolean hasKeyStore;
 
 		private final static String LOG = Crypto.LOG;
 
 		public ITrustManager() {
 			informaCam = InformaCam.getInstance();
 
-			loadKeyStore();
+			hasKeyStore = loadKeyStore();
 
 			defaultTrustManager = getTrustManager(false);
 			appTrustManager = getTrustManager(true);
 		}
 
-		private void loadKeyStore() {
+		private boolean loadKeyStore() {
 			try {
 				keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
 			} catch(KeyStoreException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
-			
+
 			try {
-				keyStoreManifest = (IKeyStore) informaCam.getModel(new IKeyStore());
-				if(keyStoreManifest.path == null) {
-					keyStore.load(null, null);
+				keyStoreManifest = new IKeyStore();
+				keyStoreManifest.inflate(informaCam.ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER));
+
+			} catch(Exception e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+
+			
+
+			try {
+				keyStore.load(null, null);
+				
+				ByteArrayInputStream bais = null;
+				try {
+					bais = new ByteArrayInputStream(informaCam.ioService.getBytes(keyStoreManifest.path, Type.IOCIPHER));
+				} catch(NullPointerException e) {}
+				
+				if(bais != null && bais.available() > 0) {
+					keyStore.load(bais, keyStoreManifest.password.toCharArray());
+					return true;
 				} else {
-					keyStore.load(new ByteArrayInputStream(informaCam.ioService.getBytes(keyStoreManifest.path, Type.IOCIPHER)), keyStoreManifest.password.toCharArray());
+					Log.d(LOG, "KEY STORE INITED");
+					return false;
 				}
+
+
 			} catch(CertificateException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -328,16 +279,18 @@ public class HttpUtility {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
+			
+			return false;
 		}
 
-		private boolean updateKeyStore(byte[] newKey) {
-			if(informaCam.ioService.saveBlob(newKey, new info.guardianproject.iocipher.File(IManifest.KEY_STORE))) {
+		private boolean updateKeyStore(byte[] newKeyStore) {
+			if(informaCam.ioService.saveBlob(newKeyStore, new info.guardianproject.iocipher.File(IManifest.KEY_STORE))) {
 				keyStoreManifest.lastModified = System.currentTimeMillis();
 				informaCam.saveState(keyStoreManifest);
-				
+
 				return true;
 			}
-			
+
 			return false;
 		}
 
@@ -345,6 +298,7 @@ public class HttpUtility {
 			try {
 				for(X509Certificate cert : chain) {
 					keyStore.setCertificateEntry(cert.getSubjectDN().toString(), cert);
+					Log.d(LOG, "setting certificate entry: " + cert.getSubjectDN().toString());
 				}
 			} catch(KeyStoreException e) {
 				Log.e(Crypto.LOG, "keystore exception: " + e.toString());
@@ -366,23 +320,19 @@ public class HttpUtility {
 				Log.e(Crypto.LOG, "Certificate Exception: " + e.toString());
 			}
 		}
-		
+
 		public X509KeyManager[] getKeyManagers(ITransportCredentials transportCredentials) {
-			if(transportCredentials == null) {
-				return null;
-			}
-			
 			KeyManagerFactory kmf = null;
 			KeyManager[] km = null;
 			X509KeyManager[] xkm = null;
 			try {
 				kmf = KeyManagerFactory.getInstance("X509");
 				KeyStore xks = KeyStore.getInstance("PKCS12");
-				
+
 				byte[] keyBytes = informaCam.ioService.getBytes(transportCredentials.certificatePath, Type.IOCIPHER);
 				ByteArrayInputStream bais = new ByteArrayInputStream(keyBytes);
 				xks.load(bais, transportCredentials.certificatePassword.toCharArray());
-				
+
 				kmf.init(xks, keyStoreManifest.password.toCharArray());
 				km = kmf.getKeyManagers();
 				xkm = new X509KeyManager[km.length];
@@ -391,7 +341,7 @@ public class HttpUtility {
 					X509KeyManager k = (X509KeyManager) km[x];
 					xkm[x] = k;
 				}
-				
+
 				return xkm;
 			} catch (NoSuchAlgorithmException e) {
 				Log.e(Crypto.LOG, e.toString());
@@ -408,12 +358,15 @@ public class HttpUtility {
 			} catch (UnrecoverableKeyException e) {
 				Log.e(Crypto.LOG, e.toString());
 				e.printStackTrace();
+			} catch (NullPointerException e) {
+				Log.e(Crypto.LOG, e.toString());
+				e.printStackTrace();
 			}
 
 			return null;
-			
+
 		}
-		
+
 		private X509TrustManager getTrustManager(boolean withKeystore) {
 			try {
 				TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
@@ -454,7 +407,7 @@ public class HttpUtility {
 			} while(e != null);
 			return false;
 		}
-		
+
 		private void checkCertificateTrusted(X509Certificate[] chain, String authType, boolean isServer) throws CertificateException {
 			try {
 				if(isServer)
@@ -477,7 +430,7 @@ public class HttpUtility {
 				}
 			}
 		}
-		
+
 		@Override
 		public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 			checkCertificateTrusted(chain, authType, false);

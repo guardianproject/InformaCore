@@ -6,6 +6,7 @@ public class IResult extends Model {
 	public int code = 0;
 	public String reason = null;
 	public JSONObject data = null;
+	public int responseCode = 0;
 	
 	public IResult() {}
 	

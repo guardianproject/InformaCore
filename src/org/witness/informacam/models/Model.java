@@ -46,6 +46,8 @@ public class Model extends JSONObject {
 		try {
 			if(jsonStringBytes != null) {
 				inflate((JSONObject) new JSONTokener(new String(jsonStringBytes)).nextValue());
+			} else {
+				Log.d(LOG, "json is null, no inflate");
 			}
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());

@@ -206,6 +206,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		
 		for(IConnection connection : informaCam.uploaderService.pendingConnections.queue) {
 			connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
+			connection.setParam(IUser.ALIAS, informaCam.user.alias);
 			connection.setData(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS);
 			connection.isHeld = false;
 		}

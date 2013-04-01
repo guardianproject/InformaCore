@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.IConnection;
+import org.witness.informacam.models.IIdentity;
+import org.witness.informacam.models.IInstalledOrganizations;
+import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.IParam;
 import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.utils.Constants.Actions;
@@ -16,6 +20,7 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Transport;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Models.IUser;
 
 import info.guardianproject.onionkit.ui.OrbotHelper;
 import android.app.Service;
@@ -38,6 +43,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	InformaCam informaCam = InformaCam.getInstance();
 
 	Handler handler = new Handler();
+	Timer queueMaster;
 
 	Runnable connectionRunnable = new Runnable() {
 		@Override
@@ -69,12 +75,30 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		try {
+			queueMaster.cancel();
+		} catch(NullPointerException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
 	}
 
-
 	public static UploaderService getInstance() {
 		return uploaderService;
+	}
+	
+	private void checkForConnections() {
+		queueMaster = new Timer();
+		TimerTask tt = new TimerTask() {
+			@Override
+			public void run() {
+				if(!isRunning) {
+					UploaderService.this.run();
+				}
+			}
+		};
+		queueMaster.schedule(tt, 0, 10000);
 	}
 
 	private void checkForOrbotStartup() {
@@ -105,30 +129,42 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				isRunning = true;
+				
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						for(IConnection connection : pendingConnections.queue) {
+							if(!connection.isHeld) {
+								connection.numTries = 0;
+								connection.isHeld = true;
+								
+								Log.d(LOG, connection.asJson().toString());
+								HttpUtility http = new HttpUtility();
 
-				for(IConnection connection : pendingConnections.queue) {
-					Log.d(LOG, connection.asJson().toString());
-					/*
-					if(!connection.isHeld) {
-						if(connection.method.equals(Models.IConnection.Methods.POST)) {
-							connection = HttpUtility.executeHttpPost(connection);
-							
-						} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
-							connection = HttpUtility.executeHttpGet(connection);
-						}
-						
-						if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
-							// TODO: handle the data
-						}
-						
-						if(connection.result.code == Integer.parseInt(Transport.Results.OK) || connection.numTries > 10) {
-							// TODO: pop from queue.
-						}
+								if(connection.method.equals(Models.IConnection.Methods.POST)) {
+									connection = http.executeHttpPost(connection);
 
-						informaCam.saveState(pendingConnections);
+								} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
+									connection = http.executeHttpGet(connection);
+								}
+
+								if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
+									routeResult(connection);
+								} else {
+									if(connection.numTries > 10) {
+										pendingConnections.queue.remove(connection);
+									} else {
+										connection.isHeld = false;
+									}
+								}
+
+								informaCam.saveState(pendingConnections);
+							}
+						}
+						isRunning = false;
+
 					}
-					*/
-				}
+				}).start();
 			}
 		} else {
 			// TODO: start a listener for updates to queue...
@@ -136,6 +172,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	public void init() {
+		isRunning = false;
 		if(!oh.isOrbotInstalled()) {
 			handler.post(new Runnable() {
 				@Override
@@ -166,6 +203,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		run();
+		checkForConnections();
 	}
 
 	public void addToQueue(IConnection connection) {
@@ -180,28 +218,41 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		return oh.isOrbotRunning();
 	}
 
-	public void requestCredentials() {
-		/*
-		 * params: pgpKeyFingerprint
-		 * data: publicCredentials
-		 * method: post
-		 * url: requestUrl
-		 * returns: {
-		 * 	result:code, 
-		 *  data: {
-		 *  	_id: id of user, 
-		 *  	_rev: _rev of user, 
-		 *  	upload_id : id of upload bucket, 
-		 *  	upload_rev: rev of upload bucket
-		 *  	}
-		 *  } or {
-		 *   result: code,
-		 *   reason: reason as string
-		 *  
-		 *  }
-		 */
-		IConnection connection = new IConnection();
-
+	private void routeResult(IConnection connection) {
+		switch(connection.result.responseCode) {
+		case Models.IResult.ResponseCodes.INIT_USER:										
+			try {
+				IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
+				IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
+				organization.identity = new IIdentity();
+				organization.identity.inflate(connection.result.data.getJSONObject(Models.IIdentity.SOURCE));
+				informaCam.saveState(installedOrganizations);
+				
+				IConnection nextConnection = new IConnection();
+				nextConnection.knownCallback = Models.IResult.ResponseCodes.DOWNLOAD_ASSET;
+				
+				IParam user = new IParam();
+				user.key = IUser.BELONGS_TO_USER;
+				user.value = organization.identity._id;
+				
+				nextConnection.params = new ArrayList<IParam>();
+				nextConnection.params.add(user);
+				
+				nextConnection.url = (connection.url + Models.IConnection.Routes.EXPORT);
+				nextConnection.port = connection.port;
+				nextConnection.destination = connection.destination;
+				
+				addToQueue(nextConnection);
+				informaCam.saveState(pendingConnections);
+				
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			break;
+		}
+		
+		pendingConnections.queue.remove(connection);
 	}
 
 	@Override

@@ -23,7 +23,6 @@ import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
@@ -248,8 +247,12 @@ public class InformaCam extends Service {
 	public void saveState(Model model) {
 		if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
 			saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
-		} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
+		} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 			saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
+		} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
+		} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
 		}
 	}
 	
@@ -262,17 +265,23 @@ public class InformaCam extends Service {
 				bytes = informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 				bytes = informaCam.ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
+				bytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 			}
 			
 			if(bytes != null) {
 				model.inflate(bytes);
+			} else {
+				Log.d(LOG, "BYTES IS NULLLLL");
 			}
 			
 		} catch(NullPointerException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+			Log.d(LOG, "bytes is null");
 		}
 		
+		Log.d(LOG, "model is " + model.getClass().getName());
 		return model;
 		
 	}

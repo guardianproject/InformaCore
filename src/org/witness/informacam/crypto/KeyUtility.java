@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -27,9 +29,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.IKeyStore;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models.IUser;
@@ -108,7 +112,7 @@ public class KeyUtility {
 		data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.UI.UPDATE);
 		data.putInt(Codes.Keys.UI.PROGRESS, progress);
 		
-		String authToken, secretAuthToken;
+		String authToken, secretAuthToken, keyStorePassword;
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.update(data);
 		
@@ -121,6 +125,7 @@ public class KeyUtility {
 
 			authToken = generatePassword(baseImageBytes);
 			secretAuthToken = generatePassword(baseImageBytes);
+			keyStorePassword = generatePassword(baseImageBytes);
 			
 			informaCam.ioService.initIOCipher(authToken);
 			
@@ -232,6 +237,19 @@ public class KeyUtility {
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 			
+			if(informaCam.ioService.saveBlob(new byte[0], new info.guardianproject.iocipher.File(IManifest.KEY_STORE))) {
+				// make keystore manifest
+				IKeyStore keyStoreManifest = new IKeyStore();
+				keyStoreManifest.password = keyStorePassword;
+				keyStoreManifest.path = IManifest.KEY_STORE;
+				keyStoreManifest.lastModified = System.currentTimeMillis();
+				informaCam.saveState(keyStoreManifest);
+				Log.d(LOG, "JUST SAVED KEY MANIFEST AND KEY STORE\n" + keyStoreManifest.asJson().toString());
+			}
+			progress += 10;
+			data.putInt(Codes.Keys.UI.PROGRESS, progress);
+			informaCam.update(data);
+			
 			if(informaCam.ioService.saveBlob(
 					secretKeyPackage.toString().getBytes(), 
 					new info.guardianproject.iocipher.File(IUser.SECRET))
@@ -243,7 +261,7 @@ public class KeyUtility {
 				informaCam.user.remove(IUser.ALIAS);
 				informaCam.user.hasPrivateKey = true;
 								
-				progress += 19;
+				progress += 9;
 				data.putInt(Codes.Keys.UI.PROGRESS, progress);
 				informaCam.update(data);
 			}
