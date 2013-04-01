@@ -42,8 +42,6 @@ public class FormUtility {
 		return installIncludedForms(a, IManifest.FORMS);
 	}
 
-
-
 	public static boolean installIncludedForms(Activity a, String formRoot) {
 		InformaCam informaCam = InformaCam.getInstance();		
 		try {
