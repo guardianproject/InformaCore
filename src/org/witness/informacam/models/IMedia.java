@@ -1,5 +1,6 @@
 package org.witness.informacam.models;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -13,6 +14,7 @@ import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.models.media.ISubmission;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.MediaHasher;
@@ -21,7 +23,7 @@ import android.graphics.Bitmap;
 import android.util.Base64;
 import android.util.Log;
 
-public class IMedia extends Model {
+public class IMedia extends Model implements MetadataEmbededListener {
 	public String rootFolder = null;
 	public String _id, _rev, alias = null;
 	public String bitmapThumb, bitmapList, bitmapPreview = null;
@@ -42,7 +44,7 @@ public class IMedia extends Model {
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
 	}
-	
+
 	public boolean delete() {
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -59,7 +61,7 @@ public class IMedia extends Model {
 		this.alias = alias;
 		return true;
 	}
-	
+
 	public boolean export() {
 		return export(null, true);
 	}
@@ -100,20 +102,24 @@ public class IMedia extends Model {
 			if(organization != null) {
 				j3m = EncryptionUtility.encrypt(j3mZip, informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER));
 			}
-			
-			embed();
-			
+
 			if(share) {
 				// create a java.io.file
 				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, j3mFile.getName());
-				informaCam.ioService.saveBlob(j3m, shareFile, true);
-			} else if(organization != null){
-				// create connection and send to queue or export as file
-				ISubmission submission = new ISubmission(organization);
-				submission.isHeld = true;
+				return embed(shareFile, j3mFile, null);
+			} else {
+				// create a java.io.file
+				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, "export_" + System.currentTimeMillis());
+				
+				if(organization != null){
+					// create connection and send to queue or export as file
+					ISubmission submission = new ISubmission(organization);
+					submission.isHeld = true;
+					return embed(exportFile, j3mFile, submission);
+				} else {
+					return embed(exportFile, j3mFile, null);
+				}
 			}
-
-			return true;
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
@@ -122,11 +128,16 @@ public class IMedia extends Model {
 			e.printStackTrace();
 		}
 
-		
+
 		return false;
 	}
-	
-	protected void embed() {}
+
+	protected boolean embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
+		return false;
+	}
+	protected boolean embed(java.io.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
+		return false;
+	} 
 
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
@@ -170,5 +181,11 @@ public class IMedia extends Model {
 		}
 
 		return seed;
+	}
+
+	@Override
+	public void onMetadataEmbeded(File version) {
+		// TODO Auto-generated method stub
+		
 	}	
 }

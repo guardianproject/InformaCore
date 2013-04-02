@@ -1,6 +1,9 @@
 package org.witness.informacam.models.media;
 
+import info.guardianproject.iocipher.File;
+
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.models.IMedia;
 import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.utils.ImageUtility;
@@ -16,9 +19,15 @@ public class IImage extends IMedia {
 	public int width, height;
 	
 	@Override
-	public void embed() {
-		super.embed();
-		Log.d(LOG, "embedding as image");
+	public boolean embed(java.io.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
+		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m, pendingConnection);
+		return imageConstructor.finish();
+	}
+	
+	@Override
+	public boolean embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
+		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m, pendingConnection);
+		return imageConstructor.finish();
 	}
 	
 	@Override

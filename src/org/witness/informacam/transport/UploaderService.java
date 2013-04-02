@@ -101,7 +101,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				}
 			}
 		};
-		queueMaster.schedule(tt, 0, 10000);
+		queueMaster.schedule(tt, 0, (1000 * 60) * 10);
 	}
 
 	private void checkForOrbotStartup() {

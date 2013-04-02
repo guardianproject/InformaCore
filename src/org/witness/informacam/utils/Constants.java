@@ -37,6 +37,10 @@ public class Constants {
 	public interface HttpUtilityListener {
 		public void onOrbotRunning();
 	}
+	
+	public interface MetadataEmbededListener {
+		public void onMetadataEmbeded(java.io.File version);
+	}
 
 	public final static class Actions {
 		public final static String INIT = "org.witness.informacam.action.INIT";
@@ -142,7 +146,10 @@ public class Constants {
 	public final static class Forms {
 		public final static String LOG = "**************** InformaCam: Forms ****************";
 	}
-
+	
+	public final static class Ffmpeg {
+		public final static String LOG = "**************** InformaCam: FFMPEG ****************";
+	}
 
 	public final static class Suckers {
 		public final static String LOG = "******************** InformaCam : Suckers ********************";
