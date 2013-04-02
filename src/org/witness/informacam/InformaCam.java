@@ -16,6 +16,7 @@ import org.witness.informacam.models.IKeyStore;
 import org.witness.informacam.models.IMedia;
 import org.witness.informacam.models.IMediaManifest;
 import org.witness.informacam.models.IPendingConnections;
+import org.witness.informacam.models.ISecretKey;
 import org.witness.informacam.models.IUser;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.storage.IOService;
@@ -253,6 +254,8 @@ public class InformaCam extends Service {
 			saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
 		} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
 			saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+		} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
+			saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
 		}
 	}
 	
@@ -267,6 +270,8 @@ public class InformaCam extends Service {
 				bytes = informaCam.ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
 				bytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
+				bytes = informaCam.ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
 			}
 			
 			if(bytes != null) {

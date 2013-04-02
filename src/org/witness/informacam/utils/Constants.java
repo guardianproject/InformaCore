@@ -2,6 +2,7 @@ package org.witness.informacam.utils;
 
 import info.guardianproject.iocipher.File;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -207,6 +208,9 @@ public class Constants {
 	}
 
 	public final static class Models {
+		public static final String _ID = "_id";
+		public static final String _REV = "_rev";
+		
 		public class IUser {
 			public final static String PATH_TO_BASE_IMAGE = "path_to_base_image";
 			public final static String AUTH_TOKEN = "auth_token";
@@ -236,10 +240,23 @@ public class Constants {
 
 		public class IMedia {
 			public final static String _ID = "_id";
+			public static final String J3M = "j3m";
+			public static final String J3M_DESCRIPTOR = "j3m_descriptor";
 
 			public class MimeType {
 				public final static String IMAGE = "image/jpeg";
 				public final static String VIDEO = "video/mp4";
+				public static final String LOG = "informacam/log";
+			}
+
+			public class j3m {
+				public final static String DATA = "data";
+				public final static String GENEALOGY = "genealogy";
+				public final static String INTENT = "intent";
+				public static final String SIGNATURE = "signature";
+				public static final String SIZE = "size";
+				public static final String HASH = "hash";
+				public static final String FILE_NAME = "file_name";
 			}
 		}
 
@@ -284,20 +301,36 @@ public class Constants {
 			public final static String DATA = "data";
 			public final static String REASON = "reason";
 			public static final String RESPONSE_CODE = "response_code";
+			public static final String CONTENT = "content";
 			
 			public class ResponseCodes {
 				public static final int DOWNLOAD_ASSET = 43;
 				public final static int INIT_USER = 44;
+				public static final int INSTALL_ICTD = 45;
+				public static final int UPLOAD_SUBMISSION = 46;
 			}
 		}
 
 		public class ITransportData {
 			public final static String UPLOAD = "upload";
 			public static final String FILE = "file";
+			public static final String _ID = "_id";
+			public static final String _REV = "_rev";
 		}
 
 		public class IIdentity {
 			public final static String SOURCE = "source";
+			public static final String CREDENTIALS = "credentials";
+		}
+
+		public class IOrganization {
+
+			public static final String REQUEST_URL = "requestUrl";
+			
+		}
+
+		public class ITransportCredentials {
+			public static final String PASSWORD = "password";
 		}
 	}
 
@@ -374,6 +407,16 @@ public class Constants {
 				public static final int CONTENT_RESOLVER = 203;
 				public static final int FILE_SYSTEM = 204;
 
+			}
+			
+			public final static class ICTD {
+				public final static List<String> ZIP_OMITABLES;
+				static {
+					List<String> zip_omitables = new ArrayList<String>();
+					zip_omitables.add("__MACOSX");
+					zip_omitables.add("DS_Store");
+					ZIP_OMITABLES = Collections.unmodifiableList(zip_omitables);
+				}
 			}
 		}
 

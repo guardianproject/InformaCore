@@ -1,7 +1,10 @@
 package org.witness.informacam.crypto;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,6 +12,7 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
+import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -16,9 +20,17 @@ import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPUtil;
+import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.ISecretKey;
 import org.witness.informacam.utils.Constants.App.Crypto;
 
 import android.util.Base64;
@@ -28,7 +40,7 @@ public class EncryptionUtility {
 	private final static String LOG = Crypto.LOG;
 	
 	@SuppressWarnings("deprecation")
-	public final static String encrypt(byte[] data, byte[] publicKey) {
+	public final static byte[] encrypt(byte[] data, byte[] publicKey) {
 		try {
 			BouncyCastleProvider bc = new BouncyCastleProvider();
 			int bufferSize = 1 << 16;
@@ -73,8 +85,8 @@ public class EncryptionUtility {
 			
 			is.close();
 			
-			String encrypted = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-			Log.d(LOG, encrypted);
+			byte[] encrypted = Base64.encode(baos.toByteArray(), Base64.DEFAULT);
+			Log.d(LOG, new String(encrypted));
 			return encrypted;
 		} catch (NoSuchProviderException e) {
 			e.printStackTrace();
@@ -86,5 +98,123 @@ public class EncryptionUtility {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	public static info.guardianproject.iocipher.File decrypt(info.guardianproject.iocipher.File file, info.guardianproject.iocipher.File newFile) {
+		try {
+			info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(file);
+			byte[] bytes = new byte[fis.available()];
+			fis.read(bytes);
+			fis.close();
+
+			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(newFile);
+			fos.write(decrypt(bytes));
+			fos.flush();
+			fos.close();
+
+			return newFile;
+		} catch (FileNotFoundException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (NullPointerException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
+	
+	@SuppressWarnings({ "deprecation", "rawtypes" })
+	public static byte[] decrypt(byte[] bytes) {
+		InformaCam informaCam = InformaCam.getInstance();
+		byte[] decryptedBytes = null;
+		PGPSecretKey sk = null;
+		PGPPrivateKey pk = null;
+		
+		ISecretKey secretKey = (ISecretKey) informaCam.getModel(new ISecretKey());
+
+		try {
+			
+			BouncyCastleProvider bc = new BouncyCastleProvider();
+
+			sk = KeyUtility.extractSecretKey(secretKey.secretKey.getBytes());
+			pk = sk.extractPrivateKey(secretKey.secretAuthToken.toCharArray(), bc);
+			
+			if(sk == null || pk == null) {
+				Log.e(Crypto.LOG, "secret key or private key is null");
+				return null;
+			}
+
+			InputStream is = PGPUtil.getDecoderStream(new ByteArrayInputStream(bytes));
+
+			PGPObjectFactory pgpF = new PGPObjectFactory(is);
+			PGPEncryptedDataList edl;
+
+			Object o = pgpF.nextObject();
+
+			if(o instanceof PGPEncryptedDataList)
+				edl = (PGPEncryptedDataList) o;
+			else
+				edl = (PGPEncryptedDataList) pgpF.nextObject();
+
+			Iterator it = edl.getEncryptedDataObjects();
+			PGPPublicKeyEncryptedData ed = null;
+			ed = (PGPPublicKeyEncryptedData) it.next();
+			if(ed == null) {
+				Log.e(Crypto.LOG, "No PGPPublicKeyEncryptedData found.");
+				return null;
+			}
+
+			InputStream clearStream = ed.getDataStream(pk, bc);
+			pgpF = new PGPObjectFactory(clearStream);
+
+			PGPLiteralData ld = null;
+			o = pgpF.nextObject();
+			try {
+				PGPCompressedData cd = (PGPCompressedData) o;
+				InputStream compressedStream = new BufferedInputStream(cd.getDataStream());
+				pgpF = new PGPObjectFactory(compressedStream);
+
+				Object message = pgpF.nextObject();
+
+				if(message instanceof PGPLiteralData) {
+					ld = (PGPLiteralData) message;
+				}
+			} catch(ClassCastException e) {
+				ld = (PGPLiteralData) o;
+			}
+
+			if(ld == null)
+				return null;
+
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			BufferedOutputStream bos = new BufferedOutputStream(baos);
+
+			InputStream ldis = ld.getInputStream();
+			int ch;
+
+			while((ch = ldis.read()) >= 0)
+				bos.write(ch);
+
+			bos.flush();
+			bos.close();
+
+			decryptedBytes = baos.toByteArray();
+			baos.close();
+
+		} catch (IOException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		} catch (PGPException e) {
+			Log.e(Crypto.LOG, e.toString());
+			e.printStackTrace();
+		}
+
+
+		return decryptedBytes;
 	}
 }

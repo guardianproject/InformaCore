@@ -8,6 +8,9 @@ import java.util.List;
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.GeoSucker;
+import org.witness.informacam.models.media.IImage;
+import org.witness.informacam.models.media.ILog;
+import org.witness.informacam.models.media.IVideo;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.LogPack;
@@ -81,12 +84,20 @@ public class IDCIMDescriptor extends Model {
 		entry = analyze(entry, c);
 		if(entry != null) {
 			if(!isThumbnail) {
-				IMedia media = new IMedia();
-				media.dcimEntry = entry;
-				media._id = media.generateId(entry.originalHash);
-				media.analyze();
+				Object media = null;
+				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+					media = new IImage();
+				} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+					media = new IVideo();
+				} else if(entry.mediaType.equals(Models.IMedia.MimeType.LOG)) {
+					media = new ILog();
+				}
+				
+				((IMedia) media).dcimEntry = entry;
+				((IMedia) media)._id = ((IMedia) media).generateId(entry.originalHash);
+				((IMedia) media).analyze();
 
-				dcimEntries.add(media);
+				dcimEntries.add((IMedia) media);
 				numEntries++;
 			} else {
 				thumbnails.add(entry);

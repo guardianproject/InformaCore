@@ -1,30 +1,33 @@
 package org.witness.informacam.models;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.models.media.ISubmission;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Base64;
 import android.util.Log;
 
 public class IMedia extends Model {
-	public String rootFolder;
-	public String bitmap, bitmapThumb, bitmapList, bitmapPreview;
-	public String _id, _rev, alias;
-	public int width, height;
+	public String rootFolder = null;
+	public String _id, _rev, alias = null;
+	public String bitmapThumb, bitmapList, bitmapPreview = null;
 	public long lastEdited = 0L;
 	public boolean isNew = false;
+	public List<String> associatedCaches = null;
 
 	public IDCIMEntry dcimEntry;
 
@@ -39,7 +42,7 @@ public class IMedia extends Model {
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
 	}
-
+	
 	public boolean delete() {
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -53,15 +56,77 @@ public class IMedia extends Model {
 	}
 
 	public boolean rename(String alias) {
-		Log.d(LOG, "RENAMING A MEDIA ENTRY: " + _id);
 		this.alias = alias;
 		return true;
 	}
-
+	
 	public boolean export() {
-		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-		return true;
+		return export(null, true);
 	}
+
+	public boolean export(IOrganization organization, boolean share) {
+		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		InformaCam informaCam = InformaCam.getInstance();
+
+		// create data package
+		if(data == null) {
+			data = new IData();
+		}
+		data.originalData = dcimEntry.exif;
+		if(associatedCaches != null && associatedCaches.size() > 0) { 
+			for(String ac : associatedCaches) {
+				// TODO: render these to data.sensorCapture 
+
+			}
+		}
+
+		JSONObject j3mObject = null;
+		try {
+			j3mObject = new JSONObject();
+			j3mObject.put(Models.IMedia.j3m.DATA, data.asJson());
+			j3mObject.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+			j3mObject.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, Base64.encode(informaCam.signatureService.signData(j3mObject.toString().getBytes()), Base64.DEFAULT));
+
+			// base64
+			byte[] j3mBytes = Base64.encode(j3mObject.toString().getBytes(), Base64.DEFAULT);
+
+			// zip
+			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, "j3m_" + System.currentTimeMillis());
+			byte[] j3mZip = IOUtility.zipBytes(j3mBytes, new info.guardianproject.iocipher.FileInputStream(j3mFile), Type.IOCIPHER);
+
+			// encrypt
+			byte[] j3m = j3mZip;
+			if(organization != null) {
+				j3m = EncryptionUtility.encrypt(j3mZip, informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER));
+			}
+			
+			embed();
+			
+			if(share) {
+				// create a java.io.file
+				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, j3mFile.getName());
+				informaCam.ioService.saveBlob(j3m, shareFile, true);
+			} else if(organization != null){
+				// create connection and send to queue or export as file
+				ISubmission submission = new ISubmission(organization);
+				submission.isHeld = true;
+			}
+
+			return true;
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+
+		
+		return false;
+	}
+	
+	protected void embed() {}
 
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
@@ -82,7 +147,6 @@ public class IMedia extends Model {
 	public void analyze() {
 		isNew = true;
 
-		InformaCam informaCam = InformaCam.getInstance();
 		try {
 			info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(dcimEntry.originalHash);
 			this.rootFolder = rootFolder.getAbsolutePath();
@@ -91,63 +155,6 @@ public class IMedia extends Model {
 				rootFolder.mkdir();
 			}
 		} catch (ExceptionInInitializerError e) {}
-
-		byte[] bytes = null;
-
-		if(dcimEntry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-			bytes = informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER);
-		} else {
-			try {
-				bytes = informaCam.ioService.getBytes(dcimEntry.getString("video_still"), Type.IOCIPHER);
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
-
-		final Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-		height = bitmap_.getHeight();
-		width = bitmap_.getWidth();
-
-		// burn copies in various sizes
-		// 1. main (if image)
-		if(dcimEntry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-			info.guardianproject.iocipher.File b = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
-			informaCam.ioService.saveBlob(bytes, b);
-			bitmap = b.getAbsolutePath();
-			dcimEntry.fileName = null;
-		}
-		
-		bytes = null;
-
-		// 2. thumb
-		info.guardianproject.iocipher.File bThumb = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.thumbnailName);
-		informaCam.ioService.saveBlob(Base64.decode(informaCam.ioService.getBytes(dcimEntry.thumbnailFileName, Type.IOCIPHER), Base64.DEFAULT), bThumb);
-		bitmapThumb = bThumb.getAbsolutePath();
-		dcimEntry.thumbnailFile = null;
-		dcimEntry.thumbnailFileName = null;
-
-		// 3. list and preview
-		String nameRoot = dcimEntry.name.substring(0, dcimEntry.name.lastIndexOf("."));
-		final info.guardianproject.iocipher.File bList = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_list.jpg"));
-		final info.guardianproject.iocipher.File bPreview = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_preview.jpg"));
-
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				InformaCam informaCam = InformaCam.getInstance();
-
-				byte[] listViewBytes = ImageUtility.downsampleImageForListOrPreview(bitmap_);
-				informaCam.ioService.saveBlob(listViewBytes, bList);
-				informaCam.ioService.saveBlob(listViewBytes, bPreview);
-
-				bitmapPreview = bPreview.getAbsolutePath();
-				bitmapList = bList.getAbsolutePath();
-
-				listViewBytes = null;
-				bitmap_.recycle();
-			}
-		}).start();
 
 	}
 

@@ -1,5 +1,6 @@
 package org.witness.informacam.informa;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -10,6 +11,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
+import org.witness.informacam.models.IMedia;
 import org.witness.informacam.models.ISuckerCache;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
@@ -48,6 +50,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	InformaCam informaCam;
 	
 	Handler h = new Handler();
+	IMedia associatedMedia = null;
 
 	private final static String LOG = App.Informa.LOG;
 
@@ -86,6 +89,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 		} catch(NullPointerException e) {
 			return 0;
 		}
+	}
+	
+	public void associateMedia(IMedia media) {
+		this.associatedMedia = media;
 	}
 	
 	private void init() {
@@ -160,6 +167,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		Log.d(LOG, suckerCache.asJson().toString());
 		informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
+		
+		if(associatedMedia != null) {
+			IMedia media = informaCam.mediaManifest.getById(associatedMedia._id);
+			if(media.associatedCaches == null) {
+				media.associatedCaches = new ArrayList<String>();
+			}
+			media.associatedCaches.add(cacheFile.getAbsolutePath());
+			informaCam.saveState(informaCam.mediaManifest);
+		}
 	}
 
 	@Override

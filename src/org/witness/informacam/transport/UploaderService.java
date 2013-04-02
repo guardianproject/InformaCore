@@ -6,6 +6,7 @@ import java.util.TimerTask;
 
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.models.IConnection;
 import org.witness.informacam.models.IIdentity;
 import org.witness.informacam.models.IInstalledOrganizations;
@@ -81,6 +82,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
+		
+		informaCam.saveState(pendingConnections);
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
 	}
 
@@ -166,8 +169,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					}
 				}).start();
 			}
-		} else {
-			// TODO: start a listener for updates to queue...
 		}
 	}
 
@@ -238,12 +239,35 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				nextConnection.params = new ArrayList<IParam>();
 				nextConnection.params.add(user);
 				
-				nextConnection.url = (connection.url + Models.IConnection.Routes.EXPORT);
+				String exportId = connection.result.data.getJSONObject(Models.IIdentity.CREDENTIALS).getString(Models._ID);
+				nextConnection.url = (connection.url + Models.IConnection.Routes.EXPORT + exportId);
 				nextConnection.port = connection.port;
 				nextConnection.destination = connection.destination;
 				
 				addToQueue(nextConnection);
 				informaCam.saveState(pendingConnections);
+				
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			break;
+		case Models.IResult.ResponseCodes.DOWNLOAD_ASSET:
+			try {
+				String rawContent = connection.result.data.getString(Models.IResult.CONTENT);
+				switch(connection.knownCallback) {
+				case Models.IResult.ResponseCodes.INSTALL_ICTD:
+					
+						IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
+						IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
+						IOrganization mergeOrganization = KeyUtility.installICTD(rawContent, organization);
+						if(mergeOrganization != null) {
+							organization.inflate(mergeOrganization);
+							informaCam.saveState(installedOrganizations);
+						}
+					
+					break;
+				}
 				
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());

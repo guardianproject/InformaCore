@@ -76,6 +76,30 @@ public class IOService extends Service {
 		return IOService;
 	}
 	
+	public boolean saveBlob(byte[] data, java.io.File file, boolean isPublic) {
+		if(!isPublic) {
+			return saveBlob(data, file);
+		} else {
+			try {
+				java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+				fos.write(data);
+				fos.flush();
+				fos.close();
+				
+				return true;
+
+			} catch (FileNotFoundException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+
+			return false;
+		}
+	}
+	
 	public boolean saveBlob(byte[] data, java.io.File file) {
 		return saveBlob(data, file, false, null);
 	}
