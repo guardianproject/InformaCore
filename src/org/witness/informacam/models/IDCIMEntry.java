@@ -10,6 +10,7 @@ public class IDCIMEntry extends Model {
 	public byte[] thumbnailFile = null;
 	public String thumbnailName = null;
 	public String thumbnailFileName = null;
+	public String previewFrame = null;
 	public IExif exif;
 	
 	public long size;

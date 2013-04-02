@@ -152,9 +152,11 @@ public class PhoneSucker extends SensorLogger {
 			ba.disable();
 		}
 		
+		/*
 		if(hasWifi && !wifiWasOn) {
 			wm.setWifiEnabled(false);
 		}
+		*/
 		
 		
 		

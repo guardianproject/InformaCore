@@ -3,6 +3,7 @@ package org.witness.informacam.utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 
@@ -21,6 +22,18 @@ public class ImageUtility {
 	
 	public static int getOrientation(Bitmap b) {
 		return b.getWidth() > b.getHeight() ? Codes.Media.ORIENTATION_LANDSCAPE : Codes.Media.ORIENTATION_PORTRAIT;
+	}
+	
+	public static Bitmap getVideoFrame(java.io.File source, int[] dims) {
+		try {
+			VideoConstructor videoConstructor = new VideoConstructor();
+			return videoConstructor.getAFrame(source, dims);
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 	
 	public static Bitmap drawableToBitmap(Drawable d) {

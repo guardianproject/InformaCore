@@ -1,9 +1,9 @@
 package org.witness.informacam.informa.embed;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.IMedia;
 import org.witness.informacam.models.IPendingConnections;
-import org.witness.informacam.models.media.ISubmission;
+import org.witness.informacam.models.connections.ISubmission;
+import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 

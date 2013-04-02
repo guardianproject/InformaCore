@@ -10,6 +10,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.ILog;
+import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
@@ -84,20 +85,22 @@ public class IDCIMDescriptor extends Model {
 		entry = analyze(entry, c);
 		if(entry != null) {
 			if(!isThumbnail) {
-				Object media = null;
-				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-					media = new IImage();
-				} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
-					media = new IVideo();
-				} else if(entry.mediaType.equals(Models.IMedia.MimeType.LOG)) {
-					media = new ILog();
-				}
+				IMedia media = new IMedia();
+				media.dcimEntry = entry;
+				media._id = media.generateId(entry.originalHash);
 				
-				((IMedia) media).dcimEntry = entry;
-				((IMedia) media)._id = ((IMedia) media).generateId(entry.originalHash);
-				((IMedia) media).analyze();
+				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+					IImage image = new IImage();
+					image.inflate(media.asJson());
+					image.analyze();
+					dcimEntries.add(image);
+				} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+					IVideo video = new IVideo();
+					video.inflate(media.asJson());
+					video.analyze();
+					dcimEntries.add(video);
+				}
 
-				dcimEntries.add((IMedia) media);
 				numEntries++;
 			} else {
 				thumbnails.add(entry);
@@ -255,12 +258,7 @@ public class IDCIMDescriptor extends Model {
 					InformaCam.getInstance().ioService.saveBlob(previewBytes, preview);
 					previewBytes = null;
 					
-					try {
-						entry.put("video_still", preview.getAbsolutePath());
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					}
+					entry.previewFrame = preview.getAbsolutePath();
 
 					b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
 					b_.recycle();

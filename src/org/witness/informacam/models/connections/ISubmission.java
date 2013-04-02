@@ -1,4 +1,4 @@
-package org.witness.informacam.models.media;
+package org.witness.informacam.models.connections;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.IConnection;
 import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.IParam;
 import org.witness.informacam.utils.Constants.App.Storage.Type;

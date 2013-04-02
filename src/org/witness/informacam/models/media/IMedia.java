@@ -1,4 +1,4 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.media;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,7 +11,14 @@ import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
-import org.witness.informacam.models.media.ISubmission;
+import org.witness.informacam.models.IDCIMEntry;
+import org.witness.informacam.models.IData;
+import org.witness.informacam.models.IGenealogy;
+import org.witness.informacam.models.IIntent;
+import org.witness.informacam.models.IOrganization;
+import org.witness.informacam.models.Model;
+import org.witness.informacam.models.connections.IMessage;
+import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
@@ -30,13 +37,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public long lastEdited = 0L;
 	public boolean isNew = false;
 	public List<String> associatedCaches = null;
+	public List<String> associatedForms = null;
+	public List<IRegion> associatedRegions = null;
 
 	public IDCIMEntry dcimEntry;
 
 	public IData data;
 	public IIntent intent;
 	public IGenealogy genealogy;
-	public List<IAnnotation> annotations;
 	public List<IMessage> messages;
 
 	public CharSequence detailsAsText;

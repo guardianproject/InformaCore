@@ -1,4 +1,4 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.connections;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -13,6 +13,12 @@ import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.message.BasicNameValuePair;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.IOrganization;
+import org.witness.informacam.models.IParam;
+import org.witness.informacam.models.IResult;
+import org.witness.informacam.models.ITransportCredentials;
+import org.witness.informacam.models.ITransportData;
+import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models;
 

@@ -285,8 +285,18 @@ public class Constants {
 			public static final String PARAMS = "params";
 			public static final String _ID = "_id";
 			public static final String _REV = "_rev";
+			
+			public class CommonParams {
+				public static final String MESSAGE_TO = "message_to";
+				public static final String MESSAGE_TIME = "message_time";
+				public static final String MESSAGE_CONTENT = "message_content";
+			}
+			
 			public class Routes {
-				public static final String EXPORT = "/export/";
+				public static final String EXPORT = "export/";
+				public static final String MESSAGES = "messages/";
+				public static final String SUBMISSIONS = "submissions/";
+				public static final String UPLOAD = "upload/";
 			}
 		}
 

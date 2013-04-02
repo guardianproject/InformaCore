@@ -16,14 +16,14 @@ import android.util.Log;
 public class Model extends JSONObject {
 	public final static String LOG = App.LOG;
 	Field[] fields;
-	
+
 	@SuppressWarnings("rawtypes")
 	public Object getObjectByParameter(List root, String key, Object value) {
 		for(Object o : root) {
 			try {
 				Field f = o.getClass().getDeclaredField(key);
 				Object v = f.get(o);
-				
+
 				if(v.equals(value)) {
 					return o;
 				}
@@ -38,7 +38,7 @@ public class Model extends JSONObject {
 				e.printStackTrace();
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -68,33 +68,31 @@ public class Model extends JSONObject {
 				f.setAccessible(true);
 				if(values.has(f.getName())) {
 					boolean isModel = false;
-					
+
 					if(f.getType().getSuperclass() == Model.class) {
 						isModel = true;
 					}					
-					
+
 					if(f.getType() == List.class) {
 						List subValue = new ArrayList();
 
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
-						//Log.d(LOG, "UGH: " + clz.getName());
+						Log.d(LOG, "UGH: " + clz.getName());
 
 						Object test = clz.newInstance();
 						if(test instanceof Model) {
 							isModel = true;
 						}
 
-						if(isModel) {
-							JSONArray ja = values.getJSONArray(f.getName());
-							for(int i=0; i<ja.length(); i++) {
-								Object value = clz.newInstance();
+						JSONArray ja = values.getJSONArray(f.getName());
+						for(int i=0; i<ja.length(); i++) {
+							Object value = clz.newInstance();
+							if(isModel) {
 								((Model) value).inflate(ja.getJSONObject(i));
-								subValue.add(value);
+							} else {
+								value = ja.get(i);
 							}
-						} else {
-							for(Object v : (List<?>) values.get(f.getName())) {
-								subValue.add(v);
-							}
+							subValue.add(value);
 						}
 
 						f.set(this, subValue);
@@ -105,9 +103,9 @@ public class Model extends JSONObject {
 					} else if(isModel) {						
 						Class clz = (Class<?>) f.getType();
 						Model val = (Model) clz.newInstance();
-						
+
 						//Log.d(LOG, "the thing should read:\n" + values.getJSONObject(f.getName()).toString());
-						
+
 						val.inflate(values.getJSONObject(f.getName()));
 						f.set(this, val);
 					} else {
@@ -131,24 +129,24 @@ public class Model extends JSONObject {
 
 		//Log.d(LOG, "finished inflating object, which is now\n" + this.asJson().toString());
 	}
-	
+
 	public static float[] parseJSONAsFloatArray(String value) {
 		String[] floatStrings = value.substring(1, value.length() - 1).split(",");
 		float[] floats = new float[floatStrings.length];
-		
+
 		for(int f=0; f<floatStrings.length; f++) {
 			floats[f] = Float.parseFloat(floatStrings[f]);
 		}
-		
+
 		return floats;
 	}
-	
+
 	public String parseFloatArrayAsJSON(float[] floats) {
 		StringBuffer floatString = new StringBuffer();
 		for(float f : floats) {
 			floatString.append("," + f);
 		}
-		
+
 		return "[" + floatString.toString().substring(1) + "]";
 	}
 
@@ -162,7 +160,7 @@ public class Model extends JSONObject {
 			if(f.getName().contains("this$")) {
 				continue;
 			}
-			
+
 			if(f.getName().equals("NULL") || f.getName().equals("LOG")) {
 				continue;
 			}
@@ -170,13 +168,13 @@ public class Model extends JSONObject {
 			try {
 				Object value = f.get(this);
 				//Log.d(LOG, "HEY THIS TYPE " + f.getType().getSuperclass());
-				
+
 				boolean isModel = false;
-				
+
 				if(f.getType().getSuperclass() == Model.class) {
 					isModel = true;
 				}
-				
+
 				if(f.getType() == List.class) {
 					JSONArray subValue = new JSONArray();
 					for(Object v : (List<?>) value) {
@@ -208,7 +206,7 @@ public class Model extends JSONObject {
 				Log.d(LOG, e.toString());
 				e.printStackTrace();
 			} catch (NullPointerException e) {
-				
+
 			}
 
 		}

@@ -1,11 +1,8 @@
 package org.witness.informacam.models.media;
 
-import info.guardianproject.iocipher.File;
-
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.ImageConstructor;
-import org.witness.informacam.models.IMedia;
-import org.witness.informacam.models.IOrganization;
+import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
@@ -34,7 +31,9 @@ public class IImage extends IMedia {
 	public void analyze() {
 		super.analyze();
 		
+		Log.d(LOG, "BUT NOW I DO IMAGE STUFF on " + dcimEntry.fileName);
 		InformaCam informaCam = InformaCam.getInstance();
+		
 		byte[] bytes = informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER);
 		
 		final Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
