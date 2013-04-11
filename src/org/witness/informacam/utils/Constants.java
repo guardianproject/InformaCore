@@ -82,6 +82,7 @@ public class Constants {
 			public final static String WIZARD_SUPPLEMENT = "wizard_supplement";
 			public static final String MESSAGE_CODE = "message_code";
 			public static final String RETURNED_MEDIA = "informacam_returned_media";
+			public static final String INSTALL_NEW_KEY = "install_ictd_uri";
 		}
 
 		public static final class Messages {
@@ -153,7 +154,7 @@ public class Constants {
 
 	public final static class Suckers {
 		public final static String LOG = "******************** InformaCam : Suckers ********************";
-		public static final int GPS_WAIT_MAX = 10;
+		public static final int GPS_WAIT_MAX = 30;
 
 		public final static class CaptureEvent {
 			public final static int METADATA_CAPTURED = 272;
@@ -286,6 +287,8 @@ public class Constants {
 			public static final String _ID = "_id";
 			public static final String _REV = "_rev";
 			
+			public static final int MAX_TRIES = 10;
+			
 			public class CommonParams {
 				public static final String MESSAGE_TO = "message_to";
 				public static final String MESSAGE_TIME = "message_time";
@@ -342,6 +345,16 @@ public class Constants {
 
 		public class IOrganization {
 
+			public static final String ADDRESS = "address";
+			public static final String CITY = "city";
+			public static final String STATE = "state";
+			public static final String ZIP = "zip";
+			public static final String PHONE = "phone";
+			public static final String FAX = "fax";
+			public static final String ORGANIZATION_DETAILS = "organizationDetails";
+			public static final String NEW_REQUEST = "newRequest";
+			public static final String METHOD = "method";
+			public static final String PORT = "port";
 			public static final String REQUEST_URL = "requestUrl";
 			
 		}

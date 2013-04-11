@@ -10,6 +10,8 @@ import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.VirtualFileSystem;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
@@ -22,6 +24,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -36,7 +39,7 @@ public class IOService extends Service {
 	private List<java.io.File> cleanupQueue = new Vector<java.io.File>();
 
 	private final static String LOG = App.Storage.LOG;
-
+	
 	public class LocalBinder extends Binder {
 		public IOService getService() {
 			return IOService.this;

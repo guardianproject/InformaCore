@@ -41,8 +41,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	Bundle bundle;
 	Handler h = new Handler();
 
-	List<InformaCamBroadcaster> icb = null;
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -68,10 +66,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			e.printStackTrace();
 			
 			startService(new Intent(this, InformaCam.class));
-			
-			icb = new Vector<InformaCamBroadcaster>();
-			icb.add(new InformaCamBroadcaster(this, new IntentFilter(Actions.INFORMACAM_START)));
-			icb.add(new InformaCamBroadcaster(this, new IntentFilter(Actions.INFORMACAM_STOP)));
 		}
 
 
@@ -113,23 +107,12 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	@Override
 	public void onResume() {
 		super.onResume();
-
-		if(icb != null) {
-			for(InformaCamBroadcaster icb_ : icb) {
-				registerReceiver(icb_, ((InformaCamBroadcaster) icb_).intentFilter);
-			}
-		}
 		
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
-		if(icb != null) {
-			for(InformaCamBroadcaster icb_ : icb) {
-				this.unregisterReceiver(icb_);
-			}
-		}
 	}
 
 	@Override
@@ -190,7 +173,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	}
 
 	@Override
-	public void onInformaCamStart() {
+	public void onInformaCamStart(Intent intent) {
 		informaCam = InformaCam.getInstance(this);
 		if(doInit) {
 			init();
@@ -199,7 +182,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	}
 
 	@Override
-	public void onInformaCamStop() {
+	public void onInformaCamStop(Intent intent) {
 		// TODO Auto-generated method stub
 
 	}

@@ -1,19 +1,20 @@
 package org.witness.informacam;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.crypto.AesUtility;
+import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.models.ICredentials;
 import org.witness.informacam.models.IInstalledOrganizations;
 import org.witness.informacam.models.IKeyStore;
 import org.witness.informacam.models.IMediaManifest;
+import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.models.ISecretKey;
 import org.witness.informacam.models.IUser;
@@ -36,13 +37,16 @@ import android.app.Dialog;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Bundle;
@@ -64,7 +68,6 @@ public class InformaCam extends Service {
 	private final static String LOG = App.LOG;
 
 	private List<BroadcastReceiver> broadcasters = new Vector<BroadcastReceiver>();
-	private List<BroadcastReceiver> informaBroadcasters = new Vector<BroadcastReceiver>();
 
 	public IMediaManifest mediaManifest = new IMediaManifest();
 	public IUser user;
@@ -80,6 +83,7 @@ public class InformaCam extends Service {
 	public Activity a = null;
 	public Handler h = new Handler();
 
+		
 	SharedPreferences.Editor ed;
 	private SharedPreferences sp;
 
@@ -88,13 +92,19 @@ public class InformaCam extends Service {
 			return InformaCam.this;
 		}
 	}
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.d(LOG, "ON START COMMAND RECEIVED");
+		
+		return START_STICKY;
+	}
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
 		Log.d(LOG, "InformaCam service started via intent");
 
-		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.SHUTDOWN)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.UPLOADER_UPDATE)));
 		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.DISASSOCIATE_SERVICE)));
@@ -110,17 +120,19 @@ public class InformaCam extends Service {
 
 		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
 		ed = sp.edit();
-
+		
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
+				
 				startService(signatureServiceIntent);
 				startService(uploaderServiceIntent);
 				startService(ioServiceIntent);
+				
+				
 			}
 		}).start();
 
-		sendBroadcast(new Intent().setAction(Actions.INFORMACAM_START));
 		informaCam = this;
 	}
 
@@ -135,14 +147,15 @@ public class InformaCam extends Service {
 		Log.d(LOG, "NOW we init!");
 		user = new IUser();
 
-		boolean init = false;
-		boolean login = false;
-		boolean run = false;
-
+		final int INIT = 1;
+		final int LOGIN = 2;
+		final int RUN = 3;
+		int startCode = LOGIN;
+		
 		try {
 			FileInputStream fis = this.openFileInput(IManifest.USER);			
 			if(fis.available() == 0) {
-				init = true;
+				startCode = INIT;
 			} else {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
@@ -152,45 +165,44 @@ public class InformaCam extends Service {
 				if(user.isLoggedIn) {
 					// test to see if ioCipher is mounted
 					if(ioService.isMounted() || attemptLogin()) {
-						run = true;
+						startCode = RUN;
 					} else {
-						login = true;
+						startCode = LOGIN;
 					}
 
 				} else {
-					login = true;
+					startCode = LOGIN;
 				}
 			}
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			init = true;
+			startCode = INIT;
 
 		} catch (IOException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			init = true;
+			startCode = INIT;
 		}
 
 		if(!user.hasCompletedWizard) {
-			init = true;
+			startCode = INIT;
 		}
 
 		Bundle data = new Bundle();
 
-		if(init) {
+		switch(startCode) {
+		case INIT:
 			// we launch our wizard!			
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Wizard.INIT);
-		}
-
-		if(login) {
+			break;
+		case LOGIN:
 			// we log in!
 			user.isLoggedIn = false;
 			ioService.saveBlob(user, new java.io.File(IManifest.USER));
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Login.DO_LOGIN);
-		} 
-
-		if(run) {
+			break;
+		case RUN:
 			byte[] mediaManifestBytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 
 			if(mediaManifestBytes != null) {
@@ -203,15 +215,11 @@ public class InformaCam extends Service {
 			}
 
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Home.INIT);
+			break;
 		}
 
-		Message message = new Message();
-		message.setData(data);
-		
-		if(a != null) {
-			((InformaCamEventListener) a).onUpdate(message);
-		}
-
+		Intent intent = new Intent(Actions.INFORMACAM_START).putExtra(Codes.Keys.SERVICE, data);
+		sendBroadcast(intent);
 	}
 
 	private void shutdown() {
@@ -445,6 +453,31 @@ public class InformaCam extends Service {
 		this.a = a;
 	}
 
+	public void initUploads() {
+		uploaderService.init();
+	}
+	
+	public IOrganization installICTD(Uri ictdURI) {
+		IOrganization organization = null;
+		
+		try {
+			InputStream is = getContentResolver().openInputStream(ictdURI);
+			byte[] rc = new byte[is.available()];
+			is.read(rc);
+			is.close();
+			
+			organization = KeyUtility.installICTD(rc);
+		} catch (FileNotFoundException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return organization;
+	}
+	
 	public void startInforma() {
 		startService(informaServiceIntent);
 	}
@@ -475,11 +508,7 @@ public class InformaCam extends Service {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			// XXX: maybe not?
-			if(intent.getAction().equals(Actions.SHUTDOWN)) {
-				Log.d(LOG, "KILLING IC?");
-				shutdown();
-			} else if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {				
+			if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {				
 				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
 				case Codes.Routes.SIGNATURE_SERVICE:
 					signatureService = SignatureService.getInstance();
@@ -492,15 +521,6 @@ public class InformaCam extends Service {
 					break;
 				case Codes.Routes.INFORMA_SERVICE:
 					informaService = InformaService.getInstance();
-					
-					informaBroadcasters.add(new IBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)));
-					informaBroadcasters.add(new IBroadcaster(new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)));
-					
-					for(BroadcastReceiver br : informaBroadcasters) {
-						registerReceiver(br, ((IBroadcaster) br).intentFilter);
-					}
-
-					
 					break;
 				}
 
@@ -529,14 +549,7 @@ public class InformaCam extends Service {
 				}
 
 			} else if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
-				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
-				case Codes.Routes.INFORMA_SERVICE:
-					for(BroadcastReceiver br : informaBroadcasters) {
-						unregisterReceiver(br);
-					}
-					
-					break;
-				}
+				
 			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
 				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
 				case Codes.Transport.MUST_INSTALL_TOR:
@@ -545,7 +558,6 @@ public class InformaCam extends Service {
 					break;
 				}
 			}
-
 		}
 
 	}

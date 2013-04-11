@@ -28,6 +28,7 @@ public class IConnection extends Model {
 	public long _id = -1L;
 	public int numTries = 0;
 	public boolean isHeld = false;
+	public boolean isSticky = false;
 	public String url = null;
 	public int port = 443;
 	public IOrganization destination = null;

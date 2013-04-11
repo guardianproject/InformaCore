@@ -128,8 +128,16 @@ public class EncryptionUtility {
 
 	}
 	
-	@SuppressWarnings({ "deprecation", "rawtypes" })
 	public static byte[] decrypt(byte[] bytes) {
+		return decrypt(bytes, false);
+	}
+	
+	@SuppressWarnings({ "deprecation", "rawtypes" })
+	public static byte[] decrypt(byte[] bytes, boolean isBase64Encoded) {
+		if(isBase64Encoded) {
+			bytes = Base64.decode(bytes, Base64.DEFAULT);
+		}
+		
 		InformaCam informaCam = InformaCam.getInstance();
 		byte[] decryptedBytes = null;
 		PGPSecretKey sk = null;

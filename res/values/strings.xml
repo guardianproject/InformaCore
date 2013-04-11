@@ -13,6 +13,7 @@
     <string name="done">Done!</string>
     <string name="please_wait_while_your">Please wait while your key finishes generating.</string>
     <string name="ok">OK</string>
+    <string name="clear">Clear</string>
     <string name="sorry_your_password_doesnt">Sorry, your password doesn\'t match.</string>
     <string name="your_password_should_be">Your password should be more than 10 characters.</string>
     <string name="your_device_is_all">Your device is all set.</string>
@@ -20,4 +21,6 @@
     <string name="could_not_find_any_camera_activity">Could not find any Camera apps installed on your phone.</string>
     <string name="get_in">Get In</string>
     <string name="cancel">Cancel</string>
+    <string name="permissions_title">InformaCam Permissions</string>
+    <string name="permissions_description">Allows the application to read sensor data from your devices\'s available sensors (accelerometer, light meter, compass, etc.), read your network state, wifi state, and bluetooth state where available.</string>
 </resources>

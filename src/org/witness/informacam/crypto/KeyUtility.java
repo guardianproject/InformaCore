@@ -36,6 +36,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.IKeyStore;
 import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.ISecretKey;
+import org.witness.informacam.storage.IOService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -367,14 +368,31 @@ public class KeyUtility {
 		}
 		return null;
 	}
-
+	
+	public static IOrganization installICTD(String rc) {
+		return installICTD(rc.getBytes());
+	}
+	
 	public static IOrganization installICTD(String rc, IOrganization organization) {
+		return installICTD(rc.getBytes(), organization);
+	}
+	
+	public static IOrganization installICTD(byte[] rc) {
+		return installICTD(rc, null);
+	}
+
+	public static IOrganization installICTD(byte[] rc, IOrganization organization) {
+		InformaCam informaCam = InformaCam.getInstance();
+		
 		// decrypt
-		byte[] rawContent = EncryptionUtility.decrypt(rc.getBytes());
+		byte[] rawContent = EncryptionUtility.decrypt(rc);
+		if(rawContent == null) {
+			return null;
+		}
 
 		List<info.guardianproject.iocipher.File> packageFiles = new ArrayList<info.guardianproject.iocipher.File>();
 		try {
-			for(String filePath : IOUtility.unzipFile(rawContent, MediaHasher.hash(organization.organizationName.getBytes(), "SHA-1"), Type.IOCIPHER)) {
+			for(String filePath : IOUtility.unzipFile(rawContent, MediaHasher.hash(rc, "SHA-1"), Type.IOCIPHER)) {
 				packageFiles.add(new info.guardianproject.iocipher.File(filePath));
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -386,7 +404,7 @@ public class KeyUtility {
 			e.printStackTrace();
 			return null;
 		}
-
+		rawContent = null;
 
 		if(packageFiles.size() > 0) {
 			String ext = null;
@@ -433,6 +451,23 @@ public class KeyUtility {
 				} else if(ext.equals(".p12")) {
 					organization.transportCredentials.certificatePath = file.getAbsolutePath();
 				} else if(ext.equals(".asc")) {
+					// check to see if asc matches org fingerprint
+					try {
+						String fingerprint = new String(Hex.encode(KeyUtility.extractPublicKeyFromBytes(informaCam.ioService.getBytes(file.getAbsolutePath(), Type.IOCIPHER)).getFingerprint()));
+						Log.d(LOG, "importing key with fingerprint: " + fingerprint + "\nwhich should match " + organization.organizationFingerprint);
+						if(!fingerprint.equals(organization.organizationFingerprint)) {
+							Log.e(LOG, "this fingerprint does not match the organization fingerprint.");
+							return null;
+						}
+						
+					} catch (IOException e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
+					} catch (PGPException e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
+					}
+					
 					organization.publicKeyPath = file.getAbsolutePath();
 				}
 			}

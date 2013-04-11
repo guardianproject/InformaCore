@@ -82,6 +82,13 @@ public class TimeUtility {
 		return new String[] {dateFormat.format(d), timeFormat.format(d)};
 	}
 	
+	public final static String millisecondsToStopwatchTime(long ms) {
+		DateFormat timeFormat = new SimpleDateFormat("hh:mm");
+		
+		Date d = new Date(ms);
+		return timeFormat.format(d);
+	}
+	
 	public final static String millisecondsToTimestamp(long ms) {
 		int s = (int) (ms/1000);
 		int hours = s/3600;

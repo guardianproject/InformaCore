@@ -138,7 +138,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					public void run() {
 						for(IConnection connection : pendingConnections.queue) {
 							if(!connection.isHeld) {
-								connection.numTries = 0;
 								connection.isHeld = true;
 								
 								Log.d(LOG, connection.asJson().toString());
@@ -154,7 +153,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 								if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
 									routeResult(connection);
 								} else {
-									if(connection.numTries > 10) {
+									if(connection.numTries > Models.IConnection.MAX_TRIES && !connection.isSticky) {
 										pendingConnections.queue.remove(connection);
 									} else {
 										connection.isHeld = false;
@@ -229,6 +228,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				organization.identity.inflate(connection.result.data.getJSONObject(Models.IIdentity.SOURCE));
 				informaCam.saveState(installedOrganizations);
 				
+				/*
+				 * XXX: we don't like this.
 				IConnection nextConnection = new IConnection();
 				nextConnection.knownCallback = Models.IResult.ResponseCodes.DOWNLOAD_ASSET;
 				
@@ -244,8 +245,13 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				nextConnection.port = connection.port;
 				nextConnection.destination = connection.destination;
 				
+				// this connection should be sticky; user should retry their credential download until it is available.
+				nextConnection.isSticky = true;
+				
+				
 				addToQueue(nextConnection);
 				informaCam.saveState(pendingConnections);
+				*/
 				
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());

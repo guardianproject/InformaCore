@@ -201,6 +201,10 @@ public class IDCIMDescriptor extends Model {
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+				entry.exif.location = new float[] {0f,0f};
 			}
 			
 			Log.d(LOG, "MEDIA TYPE: " + entry.mediaType);
