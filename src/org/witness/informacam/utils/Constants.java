@@ -31,7 +31,7 @@ public class Constants {
 	
 	public interface SuckerCacheListener {
 		public void onUpdate(long timestamp, LogPack logPack);
-		public void onUpdate(LogPack logPack);
+		public long onUpdate(LogPack logPack);
 	}
 	
 	public interface HttpUtilityListener {
@@ -226,6 +226,11 @@ public class Constants {
 			public static final String REGION_COORDINATES = "region_coordinates";
 			public static final String REGION_DIMENSIONS = "region_dimensions";
 			public static final String REGION_TIMESTAMPS = "region_timestamps";
+			
+			public static final String DISPLAY_TOP = "displayTop";
+			public static final String DISPLAY_LEFT = "displayLeft";
+			public static final String DISPLAY_WIDTH = "displayWidth";
+			public static final String DISPLAY_HEIGHT = "displayHeight";
 			
 			public class Bounds {
 				public final static String TOP = "top";

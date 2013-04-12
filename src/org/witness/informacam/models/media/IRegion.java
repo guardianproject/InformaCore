@@ -1,28 +1,26 @@
 package org.witness.informacam.models.media;
 
-import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 
-import android.util.Log;
-
 public class IRegion extends Model {
 	public String id = null;
+	public long timestamp = 0L;
+	
+	public String formNamespace = null;
+	public String formPath = null;
 	
 	public void init(IRegionBounds bounds) {
-		try {
-			InformaCam.getInstance().informaService.addRegion(this);
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
+		InformaCam.getInstance().informaService.addRegion(this);
 	}
 	
 	public void update() {
-		
+		InformaCam.getInstance().informaService.updateRegion(this);
 	}
 	
-	public void delete() {
-		
+	public void delete(IMedia parent) {
+		if(InformaCam.getInstance().informaService.removeRegion(this)) {
+			parent.associatedRegions.remove(this);
+		}
 	}
 }

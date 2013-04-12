@@ -330,26 +330,62 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return logPack;
 	}
 	
-	private void changeRegion(IRegion region) {
+	@SuppressWarnings("unchecked")
+	public boolean removeRegion(IRegion region) {
+		try { 
+			LogPack logPack = cache.getIfPresent(region.timestamp);
+			if(logPack.has(CaptureEvent.Keys.TYPE) && logPack.getInt(CaptureEvent.Keys.TYPE) == CaptureEvent.REGION_GENERATED) {
+				logPack.remove(CaptureEvent.Keys.TYPE);
+			}
+			
+			Iterator<String> repIt = region.asJson().keys();
+			while(repIt.hasNext()) {
+				logPack.remove(repIt.next());
+			}
+			
+			return true;
+		} catch(NullPointerException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
 		
+		return false;
 	}
 
 	@SuppressWarnings("unchecked")
-	private void removeRegion(IRegion region) {
-		long timestamp = 0L;
-
-		
-	}
-
-	@SuppressWarnings("unchecked")
-	public void addRegion(IRegion region) throws JSONException {
+	public void addRegion(IRegion region) {
 		LogPack logPack = new LogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED);
 		Iterator<String> rIt = region.asJson().keys();
 		while(rIt.hasNext()) {
 			String key = rIt.next();
-			logPack.put(key, region.asJson().get(key));
+			try {
+				logPack.put(key, region.asJson().get(key));
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
-		onUpdate(logPack);
+		
+		region.timestamp = onUpdate(logPack);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void updateRegion(IRegion region) {
+		try {
+			LogPack logPack = cache.getIfPresent(region.timestamp);
+			Iterator<String> repIt = region.asJson().keys();
+			while(repIt.hasNext()) {
+				String key = repIt.next();
+				logPack.put(key, region.asJson().get(key));
+			}
+		} catch(JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+
 	}
 
 	@SuppressWarnings({ "unchecked", "unused" })
@@ -387,8 +423,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	@Override
-	public void onUpdate(LogPack logPack) {
-		onUpdate(((GeoSucker) _geo).getTime(), logPack);
+	public long onUpdate(LogPack logPack) {
+		long timestamp = ((GeoSucker) _geo).getTime();
+		onUpdate(timestamp, logPack);
+		return timestamp;
 	}
 
 	class InformaBroadcaster extends BroadcastReceiver {

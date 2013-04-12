@@ -40,7 +40,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public long lastEdited = 0L;
 	public boolean isNew = false;
 	public List<String> associatedCaches = null;
-	public List<String> associatedForms = null;
 	public List<IRegion> associatedRegions = null;
 
 	public IDCIMEntry dcimEntry = null;
@@ -67,17 +66,91 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return false;
 	}
+	
+	public IRegion getRegionAtRect() {
+		return getRegionAtRect(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, -1L, true);
+	}
+	
+	public IRegion getRegionAtRect(int top, int left, int width, int height, long timestamp, boolean byRealHeight) {
+		for(IRegion region : associatedRegions) {
+			IRegionBounds bounds = null;
+			
+			if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+				bounds = ((IImageRegion) region).bounds;
+			} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+				bounds = ((IVideoRegion) region).getBoundsAtTime(timestamp);
+			}
+			
+			if(
+				bounds != null &&
+				bounds.top == top &&
+				bounds.left == left &&
+				bounds.width == width &&
+				bounds.height == height
+			) {
+				if(
+					(region instanceof IVideoRegion && ((IVideoRegion) region).getBoundsAtTime(timestamp) != null) ||
+						region instanceof IImageRegion
+				){
+					return region;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	public List<IRegion> getRegionsWithForms() {
+		List<IRegion> regionsWithForms = null;
+		
+		if(associatedRegions != null && associatedRegions.size() > 0) {
+			for(IRegion region : associatedRegions) {
+				if(region.formNamespace != null) {
+					if(regionsWithForms == null) {
+						regionsWithForms = new ArrayList<IRegion>();
+					}
+					
+					regionsWithForms.add(region);
+				}
+			}
+		}
+		
+		return regionsWithForms;
+	}
 
 	public boolean rename(String alias) {
 		this.alias = alias;
 		return true;
 	}
 	
-	public void addRegion(int top, int left, int width, int height) throws JSONException {
-		addRegion(top, left, width, height, -1L);
+	public IRegion addRegion() {
+		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+			try {
+				return addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height);
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			
+		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+			try {
+				IVideoRegion region = (IVideoRegion) addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, 0);
+				region.trail.get(0).endTime = dcimEntry.exif.duration;
+				region.update();
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
 	}
 	
-	public void addRegion(int top, int left, int width, int height, long startTime) throws JSONException {
+	public IRegion addRegion(int top, int left, int width, int height) throws JSONException {
+		return addRegion(top, left, width, height, -1L);
+	}
+	
+	public IRegion addRegion(int top, int left, int width, int height, long startTime) throws JSONException {
 		if(associatedRegions == null) {
 			associatedRegions = new ArrayList<IRegion>();
 		}
@@ -92,8 +165,13 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 		
 		region.init(new IRegionBounds(top, left, width, height, startTime));
+		return region;
 	}
 
+	public void removeRegion(IRegion region) {
+		region.delete(this);
+	}
+	
 	public boolean export() {
 		return export(null, true);
 	}

@@ -27,6 +27,25 @@ public class IForm extends Model {
 
 	FormWrapper fw = null;
 	Activity a = null;
+	
+	public String[] populateAnswers(byte[] oldAnswers) {
+		String[] answers = null;
+		try {
+			fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path), oldAnswers);
+			answers = new String[fw.questions.size()];
+			int answer = 0;
+			for(QD qd : fw.questions) {
+				Log.d(LOG, "old value: " + qd.initialValue);
+				answers[answer] = qd.initialValue != null ? qd.initialValue : "";
+				answer++;
+			}
+		} catch (FileNotFoundException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return answers;
+	}
 
 	public boolean associate(Activity a, View answerHolder, String questionId) {
 		return associate(a, null, answerHolder, questionId);

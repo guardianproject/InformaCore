@@ -15,6 +15,11 @@ public class IRegionBounds extends Model {
 	public long startTime = -1L;
 	public long endTime = 0L;
 	
+	public int displayTop = 0;
+	public int displayLeft = 0;
+	public int displayWidth = 0;
+	public int displayHeight = 0;
+	
 	public IRegionBounds(int top, int left, int width, int height) {
 		this(top, left, width, height, -1L);
 	}
@@ -37,37 +42,13 @@ public class IRegionBounds extends Model {
 	
 	@Override
 	public JSONObject asJson() {
-		JSONObject regionBounds = new JSONObject();
+		JSONObject json = super.asJson();
+		json.remove(Models.IRegion.DISPLAY_TOP);
+		json.remove(Models.IRegion.DISPLAY_LEFT);
+		json.remove(Models.IRegion.DISPLAY_WIDTH);
+		json.remove(Models.IRegion.DISPLAY_HEIGHT);
 		
-		JSONObject timestamps = null;
-		JSONObject regionDimensions = null;
-		JSONObject regionCoordinates = null;
-		
-		try {
-			regionDimensions = new JSONObject();
-			regionDimensions.put(Models.IRegion.Bounds.HEIGHT, height);
-			regionDimensions.put(Models.IRegion.Bounds.WIDTH, width);
-			regionBounds.put(Models.IRegion.REGION_COORDINATES, regionCoordinates);
-		
-			regionCoordinates = new JSONObject();
-			regionCoordinates.put(Models.IRegion.Bounds.TOP, top);
-			regionCoordinates.put(Models.IRegion.Bounds.LEFT, left);
-			regionBounds.put(Models.IRegion.REGION_DIMENSIONS, regionDimensions);
-			
-			if(startTime != -1L) {
-				timestamps = new JSONObject();
-				timestamps.put(Models.IRegion.Bounds.START_TIME, startTime);
-				timestamps.put(Models.IRegion.Bounds.END_TIME, endTime);
-				timestamps.put(Models.IRegion.Bounds.DURATION, getDuration());
-				regionBounds.put(Models.IRegion.REGION_TIMESTAMPS, timestamps);
-			}
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-		
-		
-		return regionBounds;
+		return json;
 	}
 	
 }
