@@ -254,7 +254,6 @@ public class IOService extends Service {
 			try {
 				java.io.File file_ = new java.io.File(pathToData);
 				java.io.FileInputStream fis_ = new java.io.FileInputStream(file_);
-				
 				bytes = new byte[fis_.available()];
 				fis_.read(bytes);
 				fis_.close();
@@ -351,7 +350,7 @@ public class IOService extends Service {
 	}
 
 	public void startDCIMObserver() {
-		dcimObserver = new DCIMObserver(this);
+		dcimObserver = new DCIMObserver(informaCam.a);
 	}
 	
 	public void stopDCIMObserver() {

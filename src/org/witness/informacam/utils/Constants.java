@@ -51,6 +51,8 @@ public class Constants {
 		public static final String CAMERA = "android.media.action.IMAGE_CAPTURE";
 		public static final String INFORMACAM_START = "org.witness.informacam.action.INFORMACAM_START";
 		public static final String INFORMACAM_STOP = "org.witness.informacam.action.INFORMACAM_STOP";
+		public static final String INFORMA_START = "org.witness.informacam.action.INFORMA_SERVICE_START";
+		public static final String INFORMA_STOP = "org.witness.informacam.action.INFORMA_SERVICE_STOP";
 
 	}
 
@@ -406,6 +408,7 @@ public class Constants {
 				List<String> supported = new Vector<String>();
 				supported.add("com.sec.android.app.camera");
 				supported.add("com.android.camera");
+				supported.add("com.google.android.gallery3d");
 				SUPPORTED = Collections.unmodifiableList(supported);
 			}
 		}

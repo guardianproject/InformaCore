@@ -549,7 +549,12 @@ public class InformaCam extends Service {
 				}
 
 			} else if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
-				
+				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
+				case Codes.Routes.INFORMA_SERVICE:
+					informaService = null;
+					sendBroadcast(new Intent().setAction(Actions.INFORMA_STOP));
+					break;
+				}
 			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
 				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
 				case Codes.Transport.MUST_INSTALL_TOR:

@@ -1,4 +1,4 @@
-package org.witness.informacam.utils;
+package org.witness.informacam.storage;
 
 import java.io.File;
 

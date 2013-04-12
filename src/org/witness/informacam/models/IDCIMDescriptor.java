@@ -9,12 +9,10 @@ import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.models.media.IImage;
-import org.witness.informacam.models.media.ILog;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
-import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -25,7 +23,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
+import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -156,6 +154,10 @@ public class IDCIMDescriptor extends Model {
 			entry.size = file.length();
 			entry.timeCaptured = file.lastModified();
 			
+			if(!entry.isAvailable()) {
+				return null;
+			}
+			
 			if(entry.timeCaptured < startTime) {
 				return null;
 			}
@@ -184,14 +186,18 @@ public class IDCIMDescriptor extends Model {
 
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 			boolean getThumbnailFromMediaMetadata = false;
-
-			Bitmap b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
+			boolean bruteForceThumbnailFromMedia = false;
+						
+			Bitmap b;			
+			b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 			if(b == null) {
 				b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
 			}
 
 			if(b == null && entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 				getThumbnailFromMediaMetadata = true;
+			} else if(b == null && entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+				bruteForceThumbnailFromMedia = true;
 			}
 
 			entry.exif = new IExif();
@@ -227,7 +233,19 @@ public class IDCIMDescriptor extends Model {
 				} catch (IOException e) {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
-					return null;
+				}
+				
+				Log.d(LOG, "entry: " + entry.asJson().toString());
+				
+				if(bruteForceThumbnailFromMedia) {
+					byte[] bytes = InformaCam.getInstance().ioService.getBytes(entry.fileName, Type.FILE_SYSTEM);
+					Bitmap b_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+					b = ImageUtility.createThumb(b_, new int[] {b_.getWidth(), b_.getHeight()});
+					entry.exif.width = b_.getWidth();
+					entry.exif.height = b_.getHeight();
+					b_.recycle();
+					
+					
 				}
 			} else {
 				MediaMetadataRetriever mmr = new MediaMetadataRetriever();

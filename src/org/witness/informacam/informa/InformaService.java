@@ -137,7 +137,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
-				sendBroadcast(new Intent().setAction(Actions.INFORMACAM_START));
+				sendBroadcast(new Intent().setAction(Actions.INFORMA_START));
 			}
 		});
 

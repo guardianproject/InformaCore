@@ -77,7 +77,7 @@ public class Model extends JSONObject {
 						List subValue = new ArrayList();
 
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
-						Log.d(LOG, "UGH: " + clz.getName());
+						//Log.d(LOG, "UGH: " + clz.getName());
 
 						Object test = clz.newInstance();
 						if(test instanceof Model) {

@@ -35,6 +35,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	private boolean doInit = true;
 	private Intent cameraIntent = null;
 	private ComponentName cameraComponent = null;
+	private String packageName;
 
 	private InformaCam informaCam;
 
@@ -45,6 +46,8 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_camera_waiter);
+		
+		packageName = this.getClass().getName();
 
 		try {
 			Iterator<String> i = savedInstanceState.keySet().iterator();
@@ -82,13 +85,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
 				cameraComponent = new ComponentName(packageName, name);
-				h.post(new Runnable() {
-					@Override
-					public void run() {
-						informaCam.startInforma();
-						informaCam.ioService.startDCIMObserver();
-					}
-				});
 				break;
 			}
 		}
@@ -97,11 +93,9 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			Toast.makeText(this, getString(R.string.could_not_find_any_camera_activity), Toast.LENGTH_LONG).show();
 			setResult(Activity.RESULT_CANCELED);
 			finish();
+		} else {
+			informaCam.startInforma();
 		}
-
-		cameraIntent = new Intent(Camera.Intents.CAMERA);
-		cameraIntent.setComponent(cameraComponent);
-		startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
 	}
 
 	@Override
@@ -178,7 +172,16 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 		if(doInit) {
 			init();
 		}
-
+	}
+	
+	@Override
+	public void onInformaStart(Intent intent) {
+		informaCam.ioService.startDCIMObserver();
+		
+		cameraIntent = new Intent(Camera.Intents.CAMERA);
+		cameraIntent.setComponent(cameraComponent);
+		startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
+		
 	}
 
 	@Override
@@ -186,4 +189,12 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 		// TODO Auto-generated method stub
 
 	}
+
+	@Override
+	public void onInformaStop(Intent intent) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	
 }

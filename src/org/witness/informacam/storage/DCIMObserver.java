@@ -16,6 +16,7 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.net.Uri;
@@ -34,10 +35,10 @@ public class DCIMObserver {
 	InformaCam informaCam = InformaCam.getInstance();
 	
 	Handler h;
-	Context c;
+	Activity a;
 	
-	public DCIMObserver(Context c) {
-		this.c = c;
+	public DCIMObserver(Activity a) {
+		this.a = a;
 		h = new Handler();
 		
 		observers = new Vector<ContentObserver>();
@@ -51,7 +52,7 @@ public class DCIMObserver {
 		observers.add(new Observer(h, MediaStore.Video.Thumbnails.INTERNAL_CONTENT_URI));
 		
 		for(ContentObserver o : observers) {
-			c.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
+			a.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
 		}
 		
 		dcimDescriptor = new IDCIMDescriptor();
@@ -109,7 +110,7 @@ public class DCIMObserver {
 		
 		
 		for(ContentObserver o : observers) {
-			c.getContentResolver().unregisterContentObserver(o);
+			a.getContentResolver().unregisterContentObserver(o);
 		}
 		
 		Log.d(LOG, "DCIM OBSERVER STOPPED");
@@ -142,7 +143,7 @@ public class DCIMObserver {
 				isThumbnail = true;
 			}
 			
-			dcimDescriptor.addEntry(authority, c, isThumbnail);
+			dcimDescriptor.addEntry(authority, a, isThumbnail);
 		}
 		
 		@Override
