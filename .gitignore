@@ -2,3 +2,5 @@
 bin/*
 gen/*
 .classpath
+local.properties
+build.xml
