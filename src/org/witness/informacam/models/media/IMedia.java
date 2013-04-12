@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONException;
@@ -24,9 +25,11 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.util.Base64;
 import android.util.Log;
 
@@ -68,6 +71,27 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public boolean rename(String alias) {
 		this.alias = alias;
 		return true;
+	}
+	
+	public void addRegion(int top, int left, int width, int height) throws JSONException {
+		addRegion(top, left, width, height, -1L);
+	}
+	
+	public void addRegion(int top, int left, int width, int height, long startTime) throws JSONException {
+		if(associatedRegions == null) {
+			associatedRegions = new ArrayList<IRegion>();
+		}
+		
+		IRegion region;
+		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+			region = new IImageRegion();
+		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+			region = new IVideoRegion();
+		} else {
+			region = new IRegion();
+		}
+		
+		region.init(new IRegionBounds(top, left, width, height, startTime));
 	}
 
 	public boolean export() {

@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.Vector;
 
 import org.javarosa.core.model.QuestionDef;
+import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 
 import android.app.Activity;
@@ -130,6 +131,14 @@ public class IForm extends Model {
 		}
 
 		return fw.processFormAsXML(os);
+	}
+	
+	public JSONObject save() {
+		for(QD questionDef : fw.questions) {
+			questionDef.commit(fw);
+		}
+		
+		return fw.processFormAsJSON();
 	}
 
 	public QD getQuestionDefByTitleId(String questionId) {

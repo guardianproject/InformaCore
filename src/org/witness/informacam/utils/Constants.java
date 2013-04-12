@@ -221,6 +221,23 @@ public class Constants {
 		public static final String _ID = "_id";
 		public static final String _REV = "_rev";
 		
+		public class IRegion {
+			public final static String REGION_BOUNDS = "region_bounds";
+			public static final String REGION_COORDINATES = "region_coordinates";
+			public static final String REGION_DIMENSIONS = "region_dimensions";
+			public static final String REGION_TIMESTAMPS = "region_timestamps";
+			
+			public class Bounds {
+				public final static String TOP = "top";
+				public final static String LEFT = "left";
+				public final static String WIDTH = "width";
+				public final static String HEIGHT = "height";
+				public final static String START_TIME = "start_time";
+				public final static String END_TIME = "end_time";
+				public static final String DURATION = "duration";
+			}
+		}
+		
 		public class IUser {
 			public final static String PATH_TO_BASE_IMAGE = "path_to_base_image";
 			public final static String AUTH_TOKEN = "auth_token";

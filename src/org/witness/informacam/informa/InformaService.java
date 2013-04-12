@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,12 +19,14 @@ import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.ISuckerCache;
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers;
+import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.LogPack;
 
@@ -44,6 +51,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
 	private static InformaService informaService;
 
+	ExecutorService ex;
+	
 	private long startTime = 0L;
 	private long realStartTime = 0L;
 
@@ -222,6 +231,125 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	public static InformaService getInstance() {
 		return informaService;
+	}
+	
+	public List<LogPack> getAllEventsByType(final int type, final LoadingCache<Long, LogPack> cache) throws InterruptedException, ExecutionException {
+		ex = Executors.newFixedThreadPool(100);
+		Future<List<LogPack>> query = ex.submit(new Callable<List<LogPack>>() {
+
+			@Override
+			public List<LogPack> call() throws Exception {
+				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
+				List<LogPack> events = new ArrayList<LogPack>();
+				while(cIt.hasNext()) {
+					Entry<Long, LogPack> entry = cIt.next();
+					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+						events.add(entry.getValue());
+				}
+
+				return events;
+			}
+		});
+
+		List<LogPack> events = query.get();
+		ex.shutdown();
+
+		return events;
+	}
+
+	public List<Entry<Long, LogPack>> getAllEventsByTypeWithTimestamp(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
+		ex = Executors.newFixedThreadPool(100);
+		Future<List<Entry<Long, LogPack>>> query = ex.submit(new Callable<List<Entry<Long, LogPack>>>() {
+
+			@Override
+			public List<Entry<Long, LogPack>> call() throws Exception {
+				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
+				List<Entry<Long, LogPack>> events = new ArrayList<Entry<Long, LogPack>>();
+				while(cIt.hasNext()) {
+					Entry<Long, LogPack> entry = cIt.next();
+					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+						events.add(entry);
+				}
+
+				return events;
+			}
+		});
+
+		List<Entry<Long, LogPack>> events = query.get();
+		ex.shutdown();
+
+		return events;
+	}
+
+	public Entry<Long, LogPack> getEventByTypeWithTimestamp(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
+		ex = Executors.newFixedThreadPool(100);
+		Future<Entry<Long, LogPack>> query = ex.submit(new Callable<Entry<Long, LogPack>>() {
+
+			@Override
+			public Entry<Long, LogPack> call() throws Exception {
+				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
+				Entry<Long, LogPack> entry = null;
+				while(cIt.hasNext() && entry == null) {
+					Entry<Long, LogPack> e = cIt.next();
+					if(e.getValue().has(CaptureEvent.Keys.TYPE) && e.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+						entry = e;
+				}
+
+				return entry;
+			}
+		});
+
+		Entry<Long, LogPack> entry = query.get();
+		ex.shutdown();
+
+		return entry;
+	}
+
+	public LogPack getEventByType(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
+		ex = Executors.newFixedThreadPool(100);
+		Future<LogPack> query = ex.submit(new Callable<LogPack>() {
+
+			@Override
+			public LogPack call() throws Exception {
+				Iterator<LogPack> cIt = cache.asMap().values().iterator();
+				LogPack logPack = null;
+				while(cIt.hasNext() && logPack == null) {
+					LogPack lp = cIt.next();
+
+					if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
+						logPack = lp;
+				}
+
+				return logPack;
+			}
+
+		});
+		LogPack logPack = query.get();
+		ex.shutdown();
+
+		return logPack;
+	}
+	
+	private void changeRegion(IRegion region) {
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	private void removeRegion(IRegion region) {
+		long timestamp = 0L;
+
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	public void addRegion(IRegion region) throws JSONException {
+		LogPack logPack = new LogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED);
+		Iterator<String> rIt = region.asJson().keys();
+		while(rIt.hasNext()) {
+			String key = rIt.next();
+			logPack.put(key, region.asJson().get(key));
+		}
+		onUpdate(logPack);
 	}
 
 	@SuppressWarnings({ "unchecked", "unused" })
