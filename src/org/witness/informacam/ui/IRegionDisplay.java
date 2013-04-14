@@ -73,23 +73,4 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 		setStatus(true);
 		((IRegionDisplayListener) a).onSelected(this);
 	}
-
-	/*
-	@Override
-	public boolean onTouch(View v, MotionEvent event) {
-		Log.d(LOG, "regiondisplay has the ontouch listener:\naction:" + event.getAction() + "\nx: " + event.getX() + ", y: " + event.getY());
-		
-		if(event.getAction() == MotionEvent.ACTION_MOVE) {
-			isDragging = true;
-		}
-		
-		if(event.getAction() == MotionEvent.ACTION_CANCEL && isDragging) {
-			isDragging = false;
-			bounds.displayLeft = (int) event.getX() - (bounds.displayWidth/2);
-			bounds.displayTop = (int) event.getY() - (bounds.displayHeight/2);
-			update();
-		}
-		return false;
-	}
-	*/
 }
