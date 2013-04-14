@@ -1,11 +1,8 @@
 package org.witness.informacam.models.media;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Models;
-
-import android.util.Log;
 
 public class IRegionBounds extends Model {
 	public int top = 0;
@@ -25,10 +22,10 @@ public class IRegionBounds extends Model {
 	}
 	
 	public IRegionBounds(int top, int left, int width, int height, long startTime) {
-		this.top = top;
-		this.left = left;
-		this.width = width;
-		this.height = height;
+		this.displayTop = top;
+		this.displayLeft = left;
+		this.displayWidth = width;
+		this.displayHeight = height;
 		this.startTime = startTime;
 	}
 	
@@ -40,13 +37,25 @@ public class IRegionBounds extends Model {
 		}
 	}
 	
+	private void calculate() {
+		// TODO: turn display metrics into real metrics;
+	}
+	
 	@Override
 	public JSONObject asJson() {
 		JSONObject json = super.asJson();
+		/*
 		json.remove(Models.IRegion.DISPLAY_TOP);
 		json.remove(Models.IRegion.DISPLAY_LEFT);
 		json.remove(Models.IRegion.DISPLAY_WIDTH);
 		json.remove(Models.IRegion.DISPLAY_HEIGHT);
+		*/
+		
+		if(startTime == -1L) {
+			json.remove(Models.IRegion.Bounds.START_TIME);
+			json.remove(Models.IRegion.Bounds.END_TIME);
+			json.remove(Models.IRegion.Bounds.DURATION);
+		}
 		
 		return json;
 	}

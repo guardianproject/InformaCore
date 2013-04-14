@@ -237,8 +237,8 @@ public class Constants {
 				public final static String LEFT = "left";
 				public final static String WIDTH = "width";
 				public final static String HEIGHT = "height";
-				public final static String START_TIME = "start_time";
-				public final static String END_TIME = "end_time";
+				public final static String START_TIME = "startTime";
+				public final static String END_TIME = "endTime";
 				public static final String DURATION = "duration";
 			}
 		}

@@ -51,7 +51,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public List<IMessage> messages = null;
 
 	public CharSequence detailsAsText = null;
-	
+
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
 	}
@@ -67,55 +67,68 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return false;
 	}
-	
+
 	public IRegion getRegionAtRect() {
 		return getRegionAtRect(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, -1L, true);
 	}
-	
+
+	public IRegion getRegionAtRect(IRegionDisplay regionDisplay) {
+		return getRegionAtRect(regionDisplay, -1L);
+	}
+
+	public IRegion getRegionAtRect(IRegionDisplay regionDisplay, long timestamp) {
+		IRegionBounds bounds = regionDisplay.bounds;
+		return getRegionAtRect(bounds.displayTop, bounds.displayLeft, bounds.displayWidth, bounds.displayHeight, timestamp, false);
+	}
+
 	public IRegion getRegionAtRect(int top, int left, int width, int height, long timestamp, boolean byRealHeight) {
 		for(IRegion region : associatedRegions) {
 			IRegionBounds bounds = null;
-			
+
 			if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 				bounds = ((IImageRegion) region).bounds;
 			} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 				bounds = ((IVideoRegion) region).getBoundsAtTime(timestamp);
 			}
-			
-			if(
-				bounds != null &&
-				bounds.top == top &&
-				bounds.left == left &&
-				bounds.width == width &&
-				bounds.height == height
-			) {
-				if(
-					(region instanceof IVideoRegion && ((IVideoRegion) region).getBoundsAtTime(timestamp) != null) ||
-						region instanceof IImageRegion
-				){
-					return region;
+
+			if(byRealHeight) {
+				if(bounds != null && bounds.top == top && bounds.left == left && bounds.width == width && bounds.height == height) {
+					if(region instanceof IImageRegion) {
+						return region;
+					} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
+						return region;
+					}
+				}
+			} else {
+				if(bounds != null && bounds.displayTop == top && bounds.displayLeft == left && bounds.displayWidth == width && bounds.displayHeight == height) {
+					if(region instanceof IImageRegion) {
+						return region;
+					} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
+						return region;
+					}
 				}
 			}
+
 		}
-		
+
 		return null;
 	}
-	
+
 	public List<IRegion> getRegionsWithForms() {
 		List<IRegion> regionsWithForms = null;
-		
+
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
 				if(region.formNamespace != null) {
 					if(regionsWithForms == null) {
 						regionsWithForms = new ArrayList<IRegion>();
 					}
-					
+
 					regionsWithForms.add(region);
 				}
 			}
 		}
-		
+
 		return regionsWithForms;
 	}
 
@@ -123,39 +136,40 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		this.alias = alias;
 		return true;
 	}
-	
+
 	public IRegion addRegion() {
+		IRegion region = null;
 		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 			try {
-				return addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height);
+				region = addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height);
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
-			
+
 		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 			try {
-				IVideoRegion region = (IVideoRegion) addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, 0);
-				region.trail.get(0).endTime = dcimEntry.exif.duration;
-				region.update();
+				region = addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, 0);
+				((IVideoRegion) region).trail.get(0).endTime = dcimEntry.exif.duration;
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
 		}
-		
-		return null;
+
+		return region;
 	}
-	
+
 	public IRegion addRegion(int top, int left, int width, int height) throws JSONException {
 		return addRegion(top, left, width, height, -1L);
 	}
-	
-	public IRegion addRegion(int top, int left, int width, int height, long startTime) throws JSONException {		
+
+	public IRegion addRegion(int top, int left, int width, int height, long startTime) throws JSONException {
 		if(associatedRegions == null) {
+			Log.d(LOG, "initing associatedRegions");
 			associatedRegions = new ArrayList<IRegion>();
 		}
-		
+
 		IRegion region;
 		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 			region = new IImageRegion();
@@ -164,15 +178,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		} else {
 			region = new IRegion();
 		}
-		
+
 		region.init(new IRegionBounds(top, left, width, height, startTime));
+		associatedRegions.add(region);
+		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
+		
 		return region;
 	}
-	
+
 	public void removeRegion(IRegion region) {
 		region.delete(this);
 	}
-	
+
 	public boolean export() {
 		return export(null, true);
 	}
@@ -221,7 +238,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			} else {
 				// create a java.io.file
 				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, "export_" + System.currentTimeMillis());
-				
+
 				if(organization != null){
 					// create connection and send to queue or export as file
 					ISubmission submission = new ISubmission(organization);
@@ -246,6 +263,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	protected boolean embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
 		return false;
 	}
+	
 	protected boolean embed(java.io.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
 		return false;
 	} 
@@ -297,6 +315,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	@Override
 	public void onMetadataEmbeded(File version) {
 		// TODO Auto-generated method stub
-		
+
 	}	
 }
