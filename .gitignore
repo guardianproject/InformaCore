@@ -4,3 +4,4 @@ gen/*
 .classpath
 local.properties
 build.xml
+project.properties

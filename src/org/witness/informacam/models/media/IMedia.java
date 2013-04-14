@@ -21,6 +21,7 @@ import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntent;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.ui.IRegionDisplay;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
@@ -50,7 +51,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public List<IMessage> messages = null;
 
 	public CharSequence detailsAsText = null;
-
+	
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
 	}
@@ -150,7 +151,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return addRegion(top, left, width, height, -1L);
 	}
 	
-	public IRegion addRegion(int top, int left, int width, int height, long startTime) throws JSONException {
+	public IRegion addRegion(int top, int left, int width, int height, long startTime) throws JSONException {		
 		if(associatedRegions == null) {
 			associatedRegions = new ArrayList<IRegion>();
 		}
@@ -167,7 +168,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		region.init(new IRegionBounds(top, left, width, height, startTime));
 		return region;
 	}
-
+	
 	public void removeRegion(IRegion region) {
 		region.delete(this);
 	}
