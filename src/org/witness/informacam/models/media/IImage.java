@@ -16,22 +16,21 @@ public class IImage extends IMedia {
 	public int width, height;
 	
 	@Override
-	public boolean embed(java.io.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
-		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m, pendingConnection);
-		return imageConstructor.finish();
+	public void embed(java.io.File destination, info.guardianproject.iocipher.File j3m) {
+		super.embed(destination, j3m);
+		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m);
 	}
 	
 	@Override
-	public boolean embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
-		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m, pendingConnection);
-		return imageConstructor.finish();
+	public void embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m) {
+		super.embed(destination, j3m);
+		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m);
 	}
 	
 	@Override
 	public void analyze() {
 		super.analyze();
 		
-		Log.d(LOG, "BUT NOW I DO IMAGE STUFF on " + dcimEntry.fileName);
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		byte[] bytes = informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER);

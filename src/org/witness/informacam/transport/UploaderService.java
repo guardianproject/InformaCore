@@ -13,6 +13,8 @@ import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.IParam;
 import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.models.connections.IConnection;
+import org.witness.informacam.models.connections.ISubmission;
+import org.witness.informacam.models.connections.IUpload;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -45,13 +47,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 	Handler handler = new Handler();
 	Timer queueMaster;
-
-	Runnable connectionRunnable = new Runnable() {
-		@Override
-		public void run() {
-
-		}
-	};
 
 	public class LocalBinder extends Binder {
 		public UploaderService getService() {
@@ -212,6 +207,9 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		pendingConnections.queue.add(connection);
+		if(!this.isRunning) {
+			run();
+		}
 	}
 
 	public boolean isConnectedToTor() {
@@ -219,11 +217,27 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	private void routeResult(IConnection connection) {
+		IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
+		IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
+		
 		switch(connection.result.responseCode) {
+		case Models.IResult.ResponseCodes.UPLOAD_SUBMISSION:
+			try {
+				String uploadId = connection.result.data.getString(Models._ID);
+				String uploadRev = connection.result.data.getString(Models._REV);
+				IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
+				
+				addToQueue(upload);
+				informaCam.saveState(pendingConnections);
+				
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			
+			break;
 		case Models.IResult.ResponseCodes.INIT_USER:										
 			try {
-				IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
-				IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
 				organization.identity = new IIdentity();
 				organization.identity.inflate(connection.result.data.getJSONObject(Models.IIdentity.SOURCE));
 				informaCam.saveState(installedOrganizations);
@@ -263,9 +277,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				String rawContent = connection.result.data.getString(Models.IResult.CONTENT);
 				switch(connection.knownCallback) {
 				case Models.IResult.ResponseCodes.INSTALL_ICTD:
-					
-						IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
-						IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
 						IOrganization mergeOrganization = KeyUtility.installICTD(rawContent, organization);
 						if(mergeOrganization != null) {
 							organization.inflate(mergeOrganization);
@@ -282,12 +293,13 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			break;
 		}
 		
-		pendingConnections.queue.remove(connection);
+		if(!connection.isSticky) {
+			pendingConnections.queue.remove(connection);
+		}
 	}
 
 	@Override
 	public void onOrbotRunning() {
-		// TODO Auto-generated method stub
 		Log.d(LOG, "Orbot STARTED!  Engage...");
 		if(!isRunning) {
 			run();

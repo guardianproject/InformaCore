@@ -8,11 +8,11 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 public class ImageConstructor {
-	ISubmission pendingConnection;
 	info.guardianproject.iocipher.File pathToImage;
 	info.guardianproject.iocipher.File pathToJ3M;
 
-	java.io.File clone, version;
+	java.io.File clone;
+	java.io.File version;
 	InformaCam informaCam;
 	IMedia media;
 
@@ -21,22 +21,17 @@ public class ImageConstructor {
 	}
 
 	public static native int constructImage(
-			String originalImageFilename, 
-			String informaImageFilename, 
-			String metadataObjectString, 
-			int metadataLength);
+			String clonePath, 
+			String versionPath, 
+			String j3mString, 
+			int j3mStringLength);
 
 	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M) {
-		this(media, pathToImage, pathToJ3M, null);
-	}
-
-	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, ISubmission pendingConnection) {
 		informaCam = InformaCam.getInstance();
 
 		this.media = media;
 		this.pathToImage = pathToImage;
 		this.pathToJ3M = pathToJ3M;
-		this.pendingConnection = pendingConnection;
 
 		byte[] metadata = informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER);
 
@@ -47,23 +42,19 @@ public class ImageConstructor {
 		int c = constructImage(clone.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
 
 		if(c > 0) {
-			if(pendingConnection != null) {
-				IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
-
-				ISubmission submission = (ISubmission) pendingConnections.queue.get(pendingConnections.queue.indexOf(pendingConnection));
-				if(submission != null) {
-					submission.isHeld = false;
-					informaCam.saveState(pendingConnections);
-				}
-			}
-			
-			media.onMetadataEmbeded(version);
+			finish();
+			media.onMetadataEmbeded(pathToImage);
 		}
+
+
 	}
-	
-	public boolean finish() {
+
+	public void finish() {
 		// move back to iocipher
-		// do cleanup
-		return true;
+		if(informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), pathToImage)) {
+			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
+			clone.delete();
+			version.delete();
+		}
 	}
 }

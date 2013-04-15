@@ -1,10 +1,7 @@
 package org.witness.informacam.models.media;
 
-import info.guardianproject.iocipher.File;
-
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
-import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -18,15 +15,15 @@ public class IVideo extends IMedia {
 	public int width, height;
 
 	@Override
-	public boolean embed(java.io.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
-		VideoConstructor videoConstructor = new VideoConstructor(this, new info.guardianproject.iocipher.File(video), j3m, pendingConnection);
-		return videoConstructor.finish();
+	public void embed(java.io.File destination, info.guardianproject.iocipher.File j3m) {
+		super.embed(destination, j3m);
+		VideoConstructor videoConstructor = new VideoConstructor(this, new info.guardianproject.iocipher.File(video), j3m);
 	}
 
 	@Override
-	public boolean embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
-		VideoConstructor videoConstructor = new VideoConstructor(this, new info.guardianproject.iocipher.File(video), j3m, pendingConnection);
-		return videoConstructor.finish();
+	public void embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m) {
+		super.embed(destination, j3m);
+		VideoConstructor videoConstructor = new VideoConstructor(this, new info.guardianproject.iocipher.File(video), j3m);
 	}
 	
 	@Override

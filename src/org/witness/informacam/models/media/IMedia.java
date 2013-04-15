@@ -14,7 +14,9 @@ import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.models.IDCIMEntry;
 import org.witness.informacam.models.IOrganization;
+import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.IMessage;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.j3m.IData;
@@ -36,8 +38,12 @@ import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
 	public String rootFolder = null;
-	public String _id, _rev, alias = null;
-	public String bitmapThumb, bitmapList, bitmapPreview = null;
+	public String _id = null;
+	public String _rev = null;
+	public String alias = null;
+	public String bitmapThumb = null;
+	public String bitmapList = null;
+	public String bitmapPreview = null;
 	public long lastEdited = 0L;
 	public boolean isNew = false;
 	public List<String> associatedCaches = null;
@@ -51,6 +57,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public List<IMessage> messages = null;
 
 	public CharSequence detailsAsText = null;
+	
+	private String currentJ3MDescriptorHash = null;
 
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
@@ -182,7 +190,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		region.init(new IRegionBounds(top, left, width, height, startTime));
 		associatedRegions.add(region);
 		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
-		
+
 		return region;
 	}
 
@@ -210,6 +218,23 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			}
 		}
 
+		if(genealogy == null) {
+			genealogy = new IGenealogy();
+		}
+		genealogy.createdOnDevice = informaCam.user.pgpKeyFingerprint;
+		genealogy.dateCreated = dcimEntry.timeCaptured;
+		genealogy.localMediaPath = dcimEntry.fileName;
+
+		if(intent == null) {
+			intent = new IIntent();
+		}
+		intent.alias = informaCam.user.alias;
+		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
+
+		if(organization != null) {
+			intent.intendedDestination = organization.organizationName;
+		}
+
 		JSONObject j3mObject = null;
 		try {
 			j3mObject = new JSONObject();
@@ -222,30 +247,31 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			byte[] j3mBytes = Base64.encode(j3mObject.toString().getBytes(), Base64.DEFAULT);
 
 			// zip
-			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, "j3m_" + System.currentTimeMillis());
+			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
 			byte[] j3mZip = IOUtility.zipBytes(j3mBytes, new info.guardianproject.iocipher.FileInputStream(j3mFile), Type.IOCIPHER);
 
 			// encrypt
-			byte[] j3m = j3mZip;
 			if(organization != null) {
-				j3m = EncryptionUtility.encrypt(j3mZip, informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER));
+				j3mZip = EncryptionUtility.encrypt(j3mZip, informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER));
+				informaCam.ioService.saveBlob(j3mZip, j3mFile);
 			}
 
 			if(share) {
 				// create a java.io.file
 				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, j3mFile.getName());
-				return embed(shareFile, j3mFile, null);
+				embed(shareFile, j3mFile);
 			} else {
 				// create a java.io.file
 				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, "export_" + System.currentTimeMillis());
 
 				if(organization != null){
 					// create connection and send to queue or export as file
-					ISubmission submission = new ISubmission(organization);
+					ISubmission submission = new ISubmission(organization, exportFile.getAbsolutePath());
 					submission.isHeld = true;
-					return embed(exportFile, j3mFile, submission);
+					embed(exportFile, j3mFile);
+					informaCam.uploaderService.addToQueue(submission);
 				} else {
-					return embed(exportFile, j3mFile, null);
+					embed(exportFile, j3mFile);
 				}
 			}
 		} catch (JSONException e) {
@@ -260,13 +286,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return false;
 	}
 
-	protected boolean embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
-		return false;
-	}
-	
-	protected boolean embed(java.io.File destination, info.guardianproject.iocipher.File j3m, ISubmission pendingConnection) {
-		return false;
-	} 
+	protected void embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m) {}
+
+	protected void embed(java.io.File destination, info.guardianproject.iocipher.File j3m) {} 
 
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
@@ -313,8 +335,20 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	@Override
-	public void onMetadataEmbeded(File version) {
-		// TODO Auto-generated method stub
+	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
+		InformaCam informaCam = InformaCam.getInstance();
+		IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
+		if(pendingConnections.queue != null) {
+			for(IConnection connection : pendingConnections.queue) {
+				if(connection instanceof ISubmission && ((ISubmission) connection).pathToNextConnectionData.equals(version.getAbsolutePath())) {
+					((ISubmission) connection).Set(version);
+					connection.isHeld = false;
+					informaCam.saveState(pendingConnections);
+					
+					break;
+				}
+			}
+		}
 
 	}	
 }

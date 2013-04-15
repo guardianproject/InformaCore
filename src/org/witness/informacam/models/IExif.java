@@ -2,22 +2,22 @@ package org.witness.informacam.models;
 
 public class IExif extends Model {
 
-	public String aperture;
-	public String make;
-	public String model;
-	public String timestamp;
-	public String exposure;
-	public String iso;
+	public String aperture = null;
+	public String make = null;
+	public String model = null;
+	public String timestamp = null;
+	public String exposure = null;
+	public String iso = null;
 	
-	public int width;
-	public int height;
-	public int flash;
-	public int focalLength;
-	public int orientation;
-	public int whiteBalance;
+	public int width = 0;
+	public int height = 0;
+	public int flash = 0;
+	public int focalLength = 0;
+	public int orientation = 0;
+	public int whiteBalance = 0;
 	
-	public long duration;
-	public float[] location;
+	public long duration = 0L;
+	public float[] location = new float[] {0.0f, 0.0f};
 	
 	
 

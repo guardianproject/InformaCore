@@ -52,7 +52,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private static InformaService informaService;
 
 	ExecutorService ex;
-	
+
 	private long startTime = 0L;
 	private long realStartTime = 0L;
 
@@ -67,7 +67,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	Handler h = new Handler();
 	IMedia associatedMedia = null;
-	
+
 	private InformaBroadcaster[] broadcasters = {
 			new InformaBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)),
 			new InformaBroadcaster(new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
@@ -91,7 +91,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		informaCam = InformaCam.getInstance();
-		
+
 		for(BroadcastReceiver broadcaster : broadcasters) {
 			this.registerReceiver(broadcaster, ((InformaBroadcaster) broadcaster).intentFilter);
 		}
@@ -220,7 +220,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		_geo = null;
 		_phone = null;
 		_acc = null;
-		
+
 		for(BroadcastReceiver b : broadcasters) {
 			unregisterReceiver(b);
 		}
@@ -232,8 +232,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public static InformaService getInstance() {
 		return informaService;
 	}
-	
-	public List<LogPack> getAllEventsByType(final int type, final LoadingCache<Long, LogPack> cache) throws InterruptedException, ExecutionException {
+
+	public List<LogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<List<LogPack>> query = ex.submit(new Callable<List<LogPack>>() {
 
@@ -257,7 +257,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return events;
 	}
 
-	public List<Entry<Long, LogPack>> getAllEventsByTypeWithTimestamp(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
+	public List<Entry<Long, LogPack>> getAllEventsByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<List<Entry<Long, LogPack>>> query = ex.submit(new Callable<List<Entry<Long, LogPack>>>() {
 
@@ -281,7 +281,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return events;
 	}
 
-	public Entry<Long, LogPack> getEventByTypeWithTimestamp(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
+	public Entry<Long, LogPack> getEventByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<Entry<Long, LogPack>> query = ex.submit(new Callable<Entry<Long, LogPack>>() {
 
@@ -305,7 +305,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return entry;
 	}
 
-	public LogPack getEventByType(final int type, final LoadingCache<Long, LogPack> cache) throws JSONException, InterruptedException, ExecutionException {
+	public LogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
 		Future<LogPack> query = ex.submit(new Callable<LogPack>() {
 
@@ -329,7 +329,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		return logPack;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public boolean removeRegion(IRegion region) {
 		try { 
@@ -337,12 +337,12 @@ public class InformaService extends Service implements SuckerCacheListener {
 			if(logPack.has(CaptureEvent.Keys.TYPE) && logPack.getInt(CaptureEvent.Keys.TYPE) == CaptureEvent.REGION_GENERATED) {
 				logPack.remove(CaptureEvent.Keys.TYPE);
 			}
-			
+
 			Iterator<String> repIt = region.asJson().keys();
 			while(repIt.hasNext()) {
 				logPack.remove(repIt.next());
 			}
-			
+
 			return true;
 		} catch(NullPointerException e) {
 			Log.e(LOG, e.toString());
@@ -351,7 +351,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
-		
+
 		return false;
 	}
 
@@ -368,10 +368,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 				e.printStackTrace();
 			}
 		}
-		
+
 		region.timestamp = onUpdate(logPack);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public void updateRegion(IRegion region) {
 		try {
@@ -431,7 +431,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	class InformaBroadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
-		
+
 		public InformaBroadcaster(IntentFilter intentFilter) {
 			this.intentFilter = intentFilter;
 		}

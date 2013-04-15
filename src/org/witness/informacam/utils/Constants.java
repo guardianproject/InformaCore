@@ -39,7 +39,7 @@ public class Constants {
 	}
 	
 	public interface MetadataEmbededListener {
-		public void onMetadataEmbeded(java.io.File version);
+		public void onMetadataEmbeded(info.guardianproject.iocipher.File version);
 	}
 
 	public final static class Actions {
@@ -165,6 +165,7 @@ public class Constants {
 			public final static int MEDIA_SAVED = 275;
 			public final static int SENSOR_PLAYBACK = 271;
 			public final static int TIMESTAMPS_RESOLVED= 270;
+			public final static int FORM_EDITED = 269;
 			
 			public final static class Keys {
 				public final static String USER_ACTION = "userActionReported";
@@ -220,6 +221,13 @@ public class Constants {
 	public final static class Models {
 		public static final String _ID = "_id";
 		public static final String _REV = "_rev";
+		
+		public class IGenealogy {
+			public class OwnershipType {
+				public final static int INDIVIDUAL = 400;
+				public final static int ORGANIZATION = 401;
+			}
+		}
 		
 		public class IRegion {
 			public final static String REGION_BOUNDS = "region_bounds";
@@ -310,6 +318,8 @@ public class Constants {
 			public static final String PARAMS = "params";
 			public static final String _ID = "_id";
 			public static final String _REV = "_rev";
+			public static final String BELONGS_TO_USER = "belongs_to_user";
+			public static final String BYTE_RANGE = "byte_range";
 			
 			public static final int MAX_TRIES = 10;
 			

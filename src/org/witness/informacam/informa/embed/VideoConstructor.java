@@ -23,9 +23,8 @@ public class VideoConstructor {
 	static String[] libraryAssets = {"ffmpeg"};
 	static java.io.File fileBinDir;
 
-	info.guardianproject.iocipher.File pathToImage;
+	info.guardianproject.iocipher.File pathToVideo;
 	info.guardianproject.iocipher.File pathToJ3M;
-	ISubmission pendingConnection;
 
 	java.io.File clone;
 	java.io.File version;
@@ -55,10 +54,9 @@ public class VideoConstructor {
 		}
 	}
 
-	public VideoConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, ISubmission pendingConnection) {
-		this.pathToImage = pathToImage;
+	public VideoConstructor(IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M) {
+		this.pathToVideo = pathToVideo;
 		this.pathToJ3M = pathToJ3M;
-		this.pendingConnection = pendingConnection;
 		this.media = media;
 
 		informaCam = InformaCam.getInstance();
@@ -82,14 +80,14 @@ public class VideoConstructor {
 		metadata = new java.io.File(Storage.EXTERNAL_DIR, "metadata_" + pathToJ3M.getName());
 		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER), metadata);
 
-		clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToImage.getName());
-		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToImage.getAbsolutePath(), Type.IOCIPHER), clone);
+		clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToVideo.getName());
+		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo.getAbsolutePath(), Type.IOCIPHER), clone);
 
-		version = new java.io.File(Storage.EXTERNAL_DIR, pathToImage.getName());
+		version = new java.io.File(Storage.EXTERNAL_DIR, pathToVideo.getName());
 		try {
 			constructVideo();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
 	}
@@ -123,21 +121,10 @@ public class VideoConstructor {
 
 				@Override
 				public void processComplete(int exitValue) {
-					if(pendingConnection != null) {
-						IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
+					Log.d(LOG, "ffmpeg process completed");
 
-						ISubmission submission = (ISubmission) pendingConnections.queue.get(pendingConnections.queue.indexOf(pendingConnection));
-						if(submission != null) {
-							submission.isHeld = false;
-							informaCam.saveState(pendingConnections);
-						}
-					}
-
-					// move back to iocipher
-					// clean up
-					
-					// ping back
-					media.onMetadataEmbeded(version);
+					finish();
+					media.onMetadataEmbeded(pathToVideo);
 				}
 			});
 		} catch (Exception e) {
@@ -215,11 +202,12 @@ public class VideoConstructor {
 		return BitmapFactory.decodeFile(tmp.getAbsolutePath());
 	}
 	
-	public boolean finish() {
+	public void finish() {
 		// move back to iocipher
-		// do cleanup
-		return true;
+		if(informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), pathToVideo)) {
+			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
+			clone.delete();
+			version.delete();
+		}
 	}
-
-
 }

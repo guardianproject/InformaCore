@@ -1,8 +1,9 @@
 package org.witness.informacam.models.j3m;
 
-import org.witness.informacam.models.IUser;
 import org.witness.informacam.models.Model;
 
 public class IGenealogy extends Model {
-	IUser user;
+	public String localMediaPath = null;
+	public long dateCreated = 0L;
+	public String createdOnDevice = null;
 }

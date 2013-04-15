@@ -13,10 +13,13 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Models;
 
+import android.util.Log;
+
 public class ISubmission extends IConnection {
-	JSONObject j3mDescriptor = null;
+	public JSONObject j3mDescriptor = null;
+	public String pathToNextConnectionData = null;
 	
-	public ISubmission(IOrganization organization) {
+	public ISubmission(IOrganization organization, String pathToNextConnectionData) {
 		super();
 		
 		this.params = new ArrayList<IParam>();
@@ -34,6 +37,8 @@ public class ISubmission extends IConnection {
 		this.url = organization.requestUrl + "submissions/";
 		this.method = Models.IConnection.Methods.POST;
 		this.knownCallback = Models.IResult.ResponseCodes.UPLOAD_SUBMISSION;
+		
+		this.pathToNextConnectionData = pathToNextConnectionData;
 	}
 	
 	public void Set(info.guardianproject.iocipher.File mediaFile) {
@@ -41,7 +46,7 @@ public class ISubmission extends IConnection {
 		try {
 			j3mDescriptor = new JSONObject();
 			j3mDescriptor.put(Models.IMedia.j3m.SIZE, mediaFile.length());
-			j3mDescriptor.put(Models.IMedia.j3m.HASH, MediaHasher.hash(informaCam.ioService.getBytes(mediaFile.getAbsolutePath(), Type.IOCIPHER), "SHA-1"));
+			j3mDescriptor.put(Models.IMedia.j3m.HASH, MediaHasher.hash(informaCam.ioService.getBytes(mediaFile.getAbsolutePath(), Type.IOCIPHER), "SHA-1"));			
 			
 			IParam param = new IParam();
 			param.key = Models.IMedia.J3M_DESCRIPTOR;
@@ -51,13 +56,13 @@ public class ISubmission extends IConnection {
 			isHeld = false;
 			informaCam.uploaderService.addToQueue(this);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
+			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
+			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
 		
