@@ -13,18 +13,6 @@ import android.util.Base64;
 public class IVideo extends IMedia {
 	public String video, bitmapThumb, bitmapList, bitmapPreview = null;
 	public int width, height;
-
-	@Override
-	public void embed(java.io.File destination, info.guardianproject.iocipher.File j3m) {
-		super.embed(destination, j3m);
-		VideoConstructor videoConstructor = new VideoConstructor(this, new info.guardianproject.iocipher.File(video), j3m);
-	}
-
-	@Override
-	public void embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m) {
-		super.embed(destination, j3m);
-		VideoConstructor videoConstructor = new VideoConstructor(this, new info.guardianproject.iocipher.File(video), j3m);
-	}
 	
 	@Override
 	public Bitmap getBitmap(String pathToFile) {

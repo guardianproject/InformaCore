@@ -16,18 +16,6 @@ public class IImage extends IMedia {
 	public int width, height;
 	
 	@Override
-	public void embed(java.io.File destination, info.guardianproject.iocipher.File j3m) {
-		super.embed(destination, j3m);
-		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m);
-	}
-	
-	@Override
-	public void embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m) {
-		super.embed(destination, j3m);
-		ImageConstructor imageConstructor = new ImageConstructor(this, new info.guardianproject.iocipher.File(bitmap), j3m);
-	}
-	
-	@Override
 	public void analyze() {
 		super.analyze();
 		

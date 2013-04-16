@@ -40,6 +40,7 @@ public class Constants {
 	
 	public interface MetadataEmbededListener {
 		public void onMetadataEmbeded(info.guardianproject.iocipher.File version);
+		public void onMetadataEmbeded(java.io.File version);
 	}
 
 	public final static class Actions {
@@ -287,6 +288,14 @@ public class Constants {
 			public final static String _ID = "_id";
 			public static final String J3M = "j3m";
 			public static final String J3M_DESCRIPTOR = "j3m_descriptor";
+			
+			public class Image {
+				public static final String BITMAP = "bitmap";
+			}
+			
+			public class Video {
+				public static final String VIDEO = "video";
+			}
 
 			public class MimeType {
 				public final static String IMAGE = "image/jpeg";

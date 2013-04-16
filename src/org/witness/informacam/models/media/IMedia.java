@@ -5,13 +5,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.informa.embed.ImageConstructor;
+import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.IDCIMEntry;
 import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.IPendingConnections;
@@ -201,6 +205,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public boolean export() {
 		return export(null, true);
 	}
+	
+	public boolean export(IOrganization organization) {
+		return export(organization, false);
+	}
 
 	public boolean export(IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
@@ -248,48 +256,49 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			// base64
 			byte[] j3mBytes = Base64.encode(j3mObject.toString().getBytes(), Base64.DEFAULT);
 
-			// zip
 			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
-			byte[] j3mZip = IOUtility.zipBytes(j3mBytes, new info.guardianproject.iocipher.FileInputStream(j3mFile), Type.IOCIPHER);
-
-			// encrypt
 			if(organization != null) {
-				j3mZip = EncryptionUtility.encrypt(j3mZip, informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER));
-				informaCam.ioService.saveBlob(j3mZip, j3mFile);
+				j3mBytes = EncryptionUtility.encrypt(j3mBytes, informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER));
 			}
+			
+			byte[] j3mZip = IOUtility.zipBytes(j3mBytes, j3mFile.getName(), Type.IOCIPHER);
+			informaCam.ioService.saveBlob(j3mZip, j3mFile);
 
+			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
+			info.guardianproject.iocipher.File original = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
 			if(share) {
 				// create a java.io.file
-				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, j3mFile.getName());
-				embed(shareFile, j3mFile);
+				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);
+				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+					
+					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, shareFile.getAbsolutePath(), Type.FILE_SYSTEM);
+				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, shareFile.getAbsolutePath(), Type.FILE_SYSTEM);
+				}
 			} else {
 				// create a java.io.file
-				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, "export_" + System.currentTimeMillis());
+				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
 
 				if(organization != null){
 					// create connection and send to queue or export as file
 					ISubmission submission = new ISubmission(organization, exportFile.getAbsolutePath());
 					submission.isHeld = true;
-					embed(exportFile, j3mFile);
 					informaCam.uploaderService.addToQueue(submission);
-				} else {
-					embed(exportFile, j3mFile);
+				}
+				
+				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER);
+				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER);
 				}
 			}
 		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
 
 		return false;
 	}
-
-	protected void embed(info.guardianproject.iocipher.File destination, info.guardianproject.iocipher.File j3m) {}
-
-	protected void embed(java.io.File destination, info.guardianproject.iocipher.File j3m) {} 
 
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
@@ -351,5 +360,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			}
 		}
 
+	}
+
+	@Override
+	public void onMetadataEmbeded(File version) {
+		// TODO Auto-generated method stub
+		
 	}	
 }

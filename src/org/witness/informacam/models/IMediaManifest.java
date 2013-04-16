@@ -24,6 +24,7 @@ public class IMediaManifest extends Model {
 	public IMedia getById(String mediaId) {
 		for(IMedia m : media) {
 			if(m._id.equals(mediaId)) {
+				Log.d(LOG, "this media " + m.asJson().toString());
 				return m;
 			}
 		}

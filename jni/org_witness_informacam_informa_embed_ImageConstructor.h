@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 /*
- * Class:     org_witness_informacam_app_editors_image_ImageConstructor
+ * Class:     org_witness_informacam_informa_embed_ImageConstructor
  * Method:    constructImage
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)I
  */
@@ -16,7 +16,7 @@ JNIEXPORT jint JNICALL Java_org_witness_informacam_informa_embed_ImageConstructo
   (JNIEnv *, jobject, jstring, jstring, jstring, jint);
 
 /*
- * Class:     org_witness_informacam_app_editors_image_ImageConstructor
+ * Class:     org_witness_informacam_informa_embed_ImageConstructor
  * Method:    redactRegion
  * Signature: (Ljava/lang/String;Ljava/lang/String;IIIILjava/lang/String;)[B
  */

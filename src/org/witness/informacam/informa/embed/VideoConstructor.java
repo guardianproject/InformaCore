@@ -54,7 +54,7 @@ public class VideoConstructor {
 		}
 	}
 
-	public VideoConstructor(IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M) {
+	public VideoConstructor(IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) {
 		this.pathToVideo = pathToVideo;
 		this.pathToJ3M = pathToJ3M;
 		this.media = media;
@@ -78,12 +78,12 @@ public class VideoConstructor {
 		}
 
 		metadata = new java.io.File(Storage.EXTERNAL_DIR, "metadata_" + pathToJ3M.getName());
-		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER), metadata);
+		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER), metadata, true);
 
-		clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToVideo.getName());
-		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo.getAbsolutePath(), Type.IOCIPHER), clone);
+		clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToNewVideo);
+		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo.getAbsolutePath(), Type.IOCIPHER), clone, true);
 
-		version = new java.io.File(Storage.EXTERNAL_DIR, pathToVideo.getName());
+		version = new java.io.File(Storage.EXTERNAL_DIR, pathToNewVideo);
 		try {
 			constructVideo();
 		} catch (IOException e) {

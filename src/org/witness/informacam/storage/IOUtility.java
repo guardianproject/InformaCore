@@ -68,39 +68,19 @@ public class IOUtility {
 		}
 	}
 
-	public static byte[] zipBytes(byte[] bytes, InputStream is, int source) {
+	public static byte[] zipBytes(byte[] bytes, String fileName, int source) {
 		try {
-			OutputStream os = null;
-			BufferedOutputStream bos = null;
-			int buf = 2048;
-
-			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
-			ZipEntry ze;
-
-			while((ze = zis.getNextEntry()) != null) {
-				int count;
-				byte[] data = new byte[buf];
-
-				switch(source) {
-				case Type.IOCIPHER:
-					os = new info.guardianproject.iocipher.FileOutputStream(ze.getName());
-					break;
-				}
-
-				bos = new BufferedOutputStream(os, buf);
-				while((count = zis.read(data, 0, buf)) != -1) {
-					bos.write(data, 0, count);
-				}
-
-				bos.flush();
-				bos.close();
-			}
-
-			byte[] zip = new byte[zis.available()];
-			zis.read(zip);
-			zis.close();
-
-			return zip;
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();			
+			ZipOutputStream zos = new ZipOutputStream(baos);
+			ZipEntry ze = new ZipEntry(fileName);
+			ze.setSize(bytes.length);
+			
+			zos.putNextEntry(ze);
+			zos.write(bytes);
+			zos.closeEntry();
+			zos.close();
+			
+			return baos.toByteArray();
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
