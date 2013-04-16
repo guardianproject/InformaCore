@@ -384,6 +384,10 @@ public class KeyUtility {
 	public static IOrganization installICTD(byte[] rc, IOrganization organization) {
 		InformaCam informaCam = InformaCam.getInstance();
 		
+		if(organization == null) {
+			organization = new IOrganization();
+		}
+		
 		// decrypt
 		byte[] rawContent = EncryptionUtility.decrypt(rc);
 		if(rawContent == null) {
@@ -450,12 +454,29 @@ public class KeyUtility {
 					}
 				} else if(ext.equals(".p12")) {
 					organization.transportCredentials.certificatePath = file.getAbsolutePath();
+					Log.d(LOG, "transport credentials: " + organization.transportCredentials.certificatePath);
 				} else if(ext.equals(".asc")) {
 					// check to see if asc matches org fingerprint
 					try {
-						String fingerprint = new String(Hex.encode(KeyUtility.extractPublicKeyFromBytes(informaCam.ioService.getBytes(file.getAbsolutePath(), Type.IOCIPHER)).getFingerprint()));
-						Log.d(LOG, "importing key with fingerprint: " + fingerprint + "\nwhich should match " + organization.organizationFingerprint);
-						if(!fingerprint.equals(organization.organizationFingerprint)) {
+						byte[] keyBlock = informaCam.ioService.getBytes(file.getAbsolutePath(), Type.IOCIPHER);
+						
+						String fingerprint = new String(Hex.encode(KeyUtility.extractPublicKeyFromBytes(Base64.encode(keyBlock, Base64.DEFAULT)).getFingerprint()));
+						
+						// try to match this up with an existing org
+						boolean found = false;
+						for(IOrganization org :informaCam.installedOrganizations.organizations) {
+							if(fingerprint.equals(org.organizationFingerprint)) {
+								organization.publicKeyPath = file.getAbsolutePath();
+								org.inflate(organization.asJson());
+								
+								organization = org;
+								found = true;
+								Log.d(LOG, "importing key with fingerprint: " + fingerprint + "\nwhich should match " + org.organizationFingerprint);
+								break;
+							}
+						}
+						
+						if(!found) {
 							Log.e(LOG, "this fingerprint does not match the organization fingerprint.");
 							return null;
 						}
@@ -468,7 +489,7 @@ public class KeyUtility {
 						e.printStackTrace();
 					}
 					
-					organization.publicKeyPath = file.getAbsolutePath();
+					
 				}
 			}
 		}

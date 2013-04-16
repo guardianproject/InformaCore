@@ -23,4 +23,6 @@
     <string name="cancel">Cancel</string>
     <string name="permissions_title">InformaCam Permissions</string>
     <string name="permissions_description">Allows the application to read sensor data from your devices\'s available sensors (accelerometer, light meter, compass, etc.), read your network state, wifi state, and bluetooth state where available.</string>
+    <string name="key_installed">Key Installed</string>
+    <string name="x_has_verified_you">%1$s has verified you.  You may now send and receive media and messages from them.</string>
 </resources>

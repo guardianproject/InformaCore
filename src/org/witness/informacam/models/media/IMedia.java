@@ -210,7 +210,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		if(data == null) {
 			data = new IData();
 		}
-		data.originalData = dcimEntry.exif;
+		data.exif = dcimEntry.exif;
 		if(associatedCaches != null && associatedCaches.size() > 0) { 
 			for(String ac : associatedCaches) {
 				// TODO: render these to data.sensorCapture 
@@ -241,8 +241,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.DATA, data.asJson());
 			j3mObject.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
 			j3mObject.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, Base64.encode(informaCam.signatureService.signData(j3mObject.toString().getBytes()), Base64.DEFAULT));
-
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3mObject.toString().getBytes())));			
+			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
+			
+			
 			// base64
 			byte[] j3mBytes = Base64.encode(j3mObject.toString().getBytes(), Base64.DEFAULT);
 
@@ -281,7 +283,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
-
 
 		return false;
 	}

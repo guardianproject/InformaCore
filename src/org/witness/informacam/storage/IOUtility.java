@@ -4,6 +4,7 @@ import info.guardianproject.iocipher.File;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -85,20 +86,20 @@ public class IOUtility {
 					os = new info.guardianproject.iocipher.FileOutputStream(ze.getName());
 					break;
 				}
-				
+
 				bos = new BufferedOutputStream(os, buf);
 				while((count = zis.read(data, 0, buf)) != -1) {
 					bos.write(data, 0, count);
 				}
-				
+
 				bos.flush();
 				bos.close();
 			}
-			
+
 			byte[] zip = new byte[zis.available()];
 			zis.read(zip);
 			zis.close();
-			
+
 			return zip;
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
@@ -107,7 +108,7 @@ public class IOUtility {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
-		
+
 		return null;
 
 	}
@@ -180,7 +181,6 @@ public class IOUtility {
 		IOService ioService = InformaCam.getInstance().ioService;
 		List<String> paths = new ArrayList<String>();
 
-		ZipFile zipFile = null;
 		String rootFolderPath = "";
 
 		switch(destination) {
@@ -199,88 +199,69 @@ public class IOUtility {
 			}
 
 			ioService.saveBlob(rawContent, zf);
-			try {
-				zipFile = new ZipFile(zf);
-			} catch (ZipException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-
-
 			break;
 		}
 
-		if(zipFile == null) {
-			return null;
-		}
+		ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(rawContent));
 
-		Enumeration entries = zipFile.entries();
-		while(entries.hasMoreElements()) {
-			ZipEntry entry = (ZipEntry) entries.nextElement();
-			boolean isOmitable = false;
-			for(String omit : Storage.ICTD.ZIP_OMITABLES) {
-				if(entry.getName().contains(omit) || String.valueOf(entry.getName().charAt(0)).compareTo(".") == 0) {
-					isOmitable = true;
+		ZipEntry entry = null;
+		try {
+			while((entry = zis.getNextEntry()) != null) {
+				boolean isOmitable = false;
+				for(String omit : Storage.ICTD.ZIP_OMITABLES) {
+					if(entry.getName().contains(omit) || String.valueOf(entry.getName().charAt(0)).compareTo(".") == 0) {
+						isOmitable = true;
+					}
+
+					if(isOmitable)
+						break;
 				}
 
 				if(isOmitable)
-					break;
-			}
+					continue;
 
-			if(isOmitable)
-				continue;
+				if(entry.isDirectory()) {
+					switch(destination) {
+					case Type.IOCIPHER:
+						info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(entry.getName());
+						if(!rootFolder.exists()) {
+							rootFolder.mkdir();
+						}
 
-			if(entry.isDirectory()) {
-				switch(destination) {
-				case Type.IOCIPHER:
-					info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(entry.getName());
-					if(!rootFolder.exists()) {
-						rootFolder.mkdir();
+						rootFolderPath = rootFolder.getAbsolutePath();
+						break;
 					}
 
-					rootFolderPath = rootFolder.getAbsolutePath();
-					break;
+					continue;
 				}
 
-				continue;
+				BufferedOutputStream bos = null;
+				try {
+					switch(destination) {
+					case Type.IOCIPHER:
+						info.guardianproject.iocipher.File entryFile = new info.guardianproject.iocipher.File(rootFolderPath, entry.getName());
+						bos = new BufferedOutputStream(new info.guardianproject.iocipher.FileOutputStream(entryFile));
+						paths.add(entryFile.getAbsolutePath());
+						break;
+					}
+
+					byte[] buf = new byte[1024];
+					int ch;
+					while((ch = zis.read(buf)) > 0) {
+						bos.write(buf, 0, ch);
+					}
+
+					bos.close();
+
+				} catch (FileNotFoundException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+					return null;
+				}
 			}
 
-			BufferedOutputStream bos = null;
-			try {
-				switch(destination) {
-				case Type.IOCIPHER:
-					info.guardianproject.iocipher.File entryFile = new info.guardianproject.iocipher.File(rootFolderPath, entry.getName());
-					bos = new BufferedOutputStream(new info.guardianproject.iocipher.FileOutputStream(entryFile));
-					paths.add(entryFile.getAbsolutePath());
-					break;
-				}
 
-				InputStream is = zipFile.getInputStream(entry);
-				byte[] buf = new byte[1024];
-				int ch;
-				while((ch = is.read(buf)) >= 0) {
-					bos.write(buf, 0, ch);
-				}
-
-				is.close();
-				bos.close();
-
-			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return null;
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return null;
-			}
-		}
-
-		try {
-			zipFile.close();
+			zis.close();
 		} catch (IOException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();

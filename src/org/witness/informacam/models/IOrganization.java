@@ -12,8 +12,8 @@ public class IOrganization extends Model {
 	public String requestUrl = null;
 	public String publicKeyPath = null;
 	public String organizationFingerprint = null;
-	public ITransportCredentials transportCredentials = null;
-	public IIdentity identity = null;
+	public ITransportCredentials transportCredentials = new ITransportCredentials();
+	public IIdentity identity = new IIdentity();
 	
 	public JSONObject inflateContent(String contentString) {
 		try {

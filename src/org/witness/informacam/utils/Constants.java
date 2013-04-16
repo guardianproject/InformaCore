@@ -221,6 +221,11 @@ public class Constants {
 	public final static class Models {
 		public static final String _ID = "_id";
 		public static final String _REV = "_rev";
+		public class INotification {
+			public class Type {
+				public final static int NEW_KEY = 700;
+			}
+		}
 		
 		public class IGenealogy {
 			public class OwnershipType {
@@ -409,6 +414,7 @@ public class Constants {
 		public static final String KEY_STORE_MANIFEST = "keystoreManifest";
 		public static final String KEY_STORE = "keystore.jks";
 		public static final String CACHES = "informaCaches";
+		public static final String NOTIFICATIONS = "notificationsManifest";
 	}
 
 	public final static class App {

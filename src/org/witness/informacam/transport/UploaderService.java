@@ -1,6 +1,7 @@
 package org.witness.informacam.transport;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -27,7 +28,12 @@ import org.witness.informacam.utils.Constants.Models.IUser;
 
 import info.guardianproject.onionkit.ui.OrbotHelper;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -42,11 +48,32 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	OrbotHelper oh;
 	public IPendingConnections pendingConnections = new IPendingConnections();
 	private boolean isRunning = false;
+	private int connectionType = -1;
 
 	InformaCam informaCam = InformaCam.getInstance();
 
 	Handler handler = new Handler();
 	Timer queueMaster;
+	
+	List<Broadcaster> br = new ArrayList<Broadcaster>();
+	
+	class Broadcaster extends BroadcastReceiver {
+		IntentFilter intentFilter;
+		
+		public Broadcaster(IntentFilter intentFilter) {
+			this.intentFilter = intentFilter;
+		}
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")) {
+				Log.d(LOG, "connextivity status changed");
+				connectionType = getConnectionStatus();
+			}
+			
+		}
+		
+	}
 
 	public class LocalBinder extends Binder {
 		public UploaderService getService() {
@@ -63,6 +90,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		oh = new OrbotHelper(this);
+		
+		br.add(new Broadcaster(new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE")));
 
 		uploaderService = this;
 		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE));
@@ -78,6 +107,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			e.printStackTrace();
 		}
 		
+		unregisterConnectivityUpdates();
 		informaCam.saveState(pendingConnections);
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
 	}
@@ -121,22 +151,51 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		};
 		t.schedule(tt, 0, 500);
 	}
+	
+	private void registerConnectivityUpdates() {
+		for(BroadcastReceiver b : br) {
+			registerReceiver(b, ((Broadcaster) b).intentFilter);
+		}
+	}
+	
+	private void unregisterConnectivityUpdates() {
+		for(BroadcastReceiver b : br) {
+			unregisterReceiver(b);
+		}
+	}
+	
+	private int getConnectionStatus() {
+		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo ni = cm.getActiveNetworkInfo();
+		Log.d(LOG, "active network: " + ni.getTypeName());
+		
+		return ni.getType();
+	}
 
 	private void run() {
+		informaCam = InformaCam.getInstance();
+		
 		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null && !isRunning) {
 			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				isRunning = true;
+				registerConnectivityUpdates();
+				connectionType = getConnectionStatus();
 				
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
+						android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
 						for(IConnection connection : pendingConnections.queue) {
 							if(!connection.isHeld) {
 								connection.isHeld = true;
 								
 								Log.d(LOG, connection.asJson().toString());
 								HttpUtility http = new HttpUtility();
+								
+								if(connection instanceof IUpload) {
+									((IUpload) connection).setByteBufferSize(connectionType);
+								}
 
 								if(connection.method.equals(Models.IConnection.Methods.POST)) {
 									connection = http.executeHttpPost(connection);
@@ -223,11 +282,17 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		switch(connection.result.responseCode) {
 		case Models.IResult.ResponseCodes.UPLOAD_SUBMISSION:
 			try {
-				String uploadId = connection.result.data.getString(Models._ID);
-				String uploadRev = connection.result.data.getString(Models._REV);
-				IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
+				if(connection instanceof ISubmission) {
+					String uploadId = connection.result.data.getString(Models._ID);
+					String uploadRev = connection.result.data.getString(Models._REV);
+					
+					IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
+					addToQueue(upload);
+				} else if(connection instanceof IUpload) {
+					((IUpload) connection).update();
+				}
 				
-				addToQueue(upload);
+				
 				informaCam.saveState(pendingConnections);
 				
 			} catch (JSONException e) {

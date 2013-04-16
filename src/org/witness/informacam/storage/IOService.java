@@ -267,6 +267,7 @@ public class IOService extends Service {
 			break;
 		}
 
+		Log.d(LOG, "bytes here: " + bytes.length);
 		return bytes;
 	}
 	

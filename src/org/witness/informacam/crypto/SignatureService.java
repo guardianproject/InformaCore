@@ -21,16 +21,20 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.ISecretKey;
 import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 
 public class SignatureService extends Service {
@@ -41,6 +45,8 @@ public class SignatureService extends Service {
 	private PGPPrivateKey privateKey = null;
 	private PGPPublicKey publicKey = null;
 	private String authKey = null;
+	
+	InformaCam informaCam;
 	
 	private final static String LOG = App.Crypto.LOG;
 	
@@ -58,10 +64,10 @@ public class SignatureService extends Service {
 	@Override
 	public void onCreate() {
 		Log.d(LOG, "started.");
-		
+		informaCam = InformaCam.getInstance();
+
 		signatureService = this;
 		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE));
-		
 	}
 	
 	@Override
@@ -71,12 +77,18 @@ public class SignatureService extends Service {
 	}
 	
 	
-	@SuppressWarnings({ "unused", "deprecation" })
-	private void initKey(byte[] sk, String authKey) throws PGPException {
-		this.authKey = authKey;
-		secretKey = KeyUtility.extractSecretKey(sk);
+	@SuppressWarnings({"deprecation" })
+	public void initKey() throws PGPException {
+		ISecretKey sk = (ISecretKey) informaCam.getModel(new ISecretKey());
+
+		authKey = sk.secretAuthToken;
+		secretKey = KeyUtility.extractSecretKey(sk.secretKey.getBytes());
 		privateKey = secretKey.extractPrivateKey(this.authKey.toCharArray(), new BouncyCastleProvider());
 		publicKey = secretKey.getPublicKey();
+		
+		sk = null;
+		
+		
 	}
 	
 	public boolean isVerified(final LogPack data) {
