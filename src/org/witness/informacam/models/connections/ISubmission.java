@@ -31,17 +31,16 @@ public class ISubmission extends IConnection {
 		
 		IParam param = new IParam();
 		param.key = Models._ID;
-		param.value = organization.transportCredentials.userId;
+		param.value = organization.identity._id;
 		params.add(param);
 		
 		param = new IParam();
 		param.key = Models._REV;
-		param.value = organization.transportCredentials.userRev;
+		param.value = organization.identity._rev;
 		params.add(param);
 		
-		this.url = organization.requestUrl + Models.IConnection.Routes.SUBMISSIONS;
-		this.method = Models.IConnection.Methods.POST;
-		this.knownCallback = Models.IResult.ResponseCodes.UPLOAD_SUBMISSION;
+		url = organization.requestUrl + Models.IConnection.Routes.SUBMISSIONS;
+		knownCallback = Models.IResult.ResponseCodes.UPLOAD_SUBMISSION;
 		
 		this.pathToNextConnectionData = pathToNextConnectionData;
 	}
