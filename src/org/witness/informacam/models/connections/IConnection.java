@@ -4,11 +4,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.IParam;
@@ -19,12 +14,16 @@ import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models;
 
+import android.util.Log;
+import ch.boye.httpclientandroidlib.HttpEntity;
+import ch.boye.httpclientandroidlib.NameValuePair;
+import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.client.utils.URLEncodedUtils;
 import ch.boye.httpclientandroidlib.entity.mime.MultipartEntity;
 import ch.boye.httpclientandroidlib.entity.mime.content.ByteArrayBody;
 import ch.boye.httpclientandroidlib.entity.mime.content.ContentBody;
 import ch.boye.httpclientandroidlib.entity.mime.content.StringBody;
-
-import android.util.Log;
+import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 public class IConnection extends Model {
 	public long _id = -1L;
