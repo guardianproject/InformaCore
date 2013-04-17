@@ -10,6 +10,7 @@ public class IOrganization extends Model {
 	public String organizationName = null;
 	public String organizationDetails = null;
 	public String requestUrl = null;
+	public int requestPort = 443;
 	public String publicKeyPath = null;
 	public String organizationFingerprint = null;
 	public ITransportCredentials transportCredentials = new ITransportCredentials();

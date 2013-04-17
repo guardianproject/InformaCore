@@ -11,29 +11,30 @@ import android.util.Base64;
 public class IMessage extends IConnection {
 	public IMessage(IOrganization organization, String messageText) {
 		super();
-		
+		type = Models.IConnection.Type.MESSAGE;
 		url = organization.requestUrl + Models.IConnection.Routes.MESSAGES;
-		
+		port = organization.requestPort;
+
 		params = new ArrayList<IParam>();
 		IParam param = new IParam();
 		param.key = Models._ID;
 		param.value = Models._REV;
 		params.add(param);
-		
+
 		param = new IParam();
 		param.key = Models.IConnection.CommonParams.MESSAGE_TO;
 		param.value = organization.organizationName;
 		params.add(param);
-		
+
 		param = new IParam();
 		param.key = Models.IConnection.CommonParams.MESSAGE_TIME;
 		param.value = System.currentTimeMillis();
 		params.add(param);
-		
+
 		param = new IParam();
 		param.key = Models.IConnection.CommonParams.MESSAGE_CONTENT;
 		param.value = Base64.encodeToString(messageText.getBytes(), Base64.DEFAULT);
 		params.add(param);
-		
+
 	}
 }

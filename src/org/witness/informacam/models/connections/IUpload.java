@@ -21,21 +21,26 @@ public class IUpload extends IConnection {
 	public int byteBufferSize = 0;
 	public int totalBytes = 0;
 	
+	public IUpload() {}
+	
 	public IUpload(IOrganization organization, String pathToData, String uploadId, String uploadRev) {
 		super();
+		
+		type = Models.IConnection.Type.UPLOAD;
+		port = organization.requestPort;
 		
 		fileBytes = InformaCam.getInstance().ioService.getBytes(pathToData, Type.IOCIPHER);
 		totalBytes = fileBytes.length;
 		byteBufferSize = totalBytes;
 		
-		this.params = new ArrayList<IParam>();
+		params = new ArrayList<IParam>();
 
 		IParam param = new IParam();
 		param.key = Models.IConnection.BELONGS_TO_USER;
 		param.value = organization.transportCredentials.userId;
 		params.add(param);
 
-		this.url = organization.requestUrl + "upload/" + uploadId;
+		this.url = organization.requestUrl + Models.IConnection.Routes.UPLOAD + uploadId;
 		this.method = Models.IConnection.Methods.POST;
 		this.isSticky = true;
 		

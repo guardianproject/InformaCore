@@ -25,4 +25,7 @@
     <string name="permissions_description">Allows the application to read sensor data from your devices\'s available sensors (accelerometer, light meter, compass, etc.), read your network state, wifi state, and bluetooth state where available.</string>
     <string name="key_installed">Key Installed</string>
     <string name="x_has_verified_you">%1$s has verified you.  You may now send and receive media and messages from them.</string>
+    <string name="send">Send\u2026</string>
+    <string name="key_sent">Key Sent</string>
+    <string name="you_have_successfully_sent">You have successfully sent your key to %1$s.  Once verified on their end, you can start sending and receiving media and messages.</string>
 </resources>

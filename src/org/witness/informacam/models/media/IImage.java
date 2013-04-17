@@ -1,15 +1,12 @@
 package org.witness.informacam.models.media;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.informa.embed.ImageConstructor;
-import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
-import android.util.Log;
 
 public class IImage extends IMedia {
 	public String bitmap;

@@ -438,7 +438,29 @@ public class KeyUtility {
 								String value = l.split("=")[1];
 
 								if(key.equals(Models.IOrganization.REQUEST_URL)) {
-									organization.requestUrl = value;
+									String urlBase = null;
+									if(value.indexOf("http://") != -1) {
+										urlBase = value.substring(value.indexOf("http://") + 7);
+									}
+									
+									if(value.indexOf("https://") != -1) {
+										urlBase = value.substring(value.indexOf("http://") + 8);
+									}
+									
+									if(urlBase != null) {
+										String[] urlAndPort = urlBase.split(":");
+										if(urlAndPort.length > 1) {
+											organization.requestUrl = urlAndPort[0] + "/";
+											organization.requestPort = Integer.parseInt(urlAndPort[1]);
+										}
+									} else {
+										urlBase = value + ((value.charAt(value.length() - 1) == '/') ? "" : "/");
+										organization.requestUrl = urlBase;
+									}
+									
+									Log.d(LOG, "urlBase: " + urlBase);
+									
+									
 								} if(key.equals(Models.ITransportCredentials.PASSWORD)) {
 									organization.transportCredentials.certificatePassword = value;
 								}

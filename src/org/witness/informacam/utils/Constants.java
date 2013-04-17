@@ -224,7 +224,8 @@ public class Constants {
 		public static final String _REV = "_rev";
 		public class INotification {
 			public class Type {
-				public final static int NEW_KEY = 700;
+				public final static int NEW_KEY = 600;
+				public static final int KEY_SENT = 601;
 			}
 		}
 		
@@ -288,6 +289,7 @@ public class Constants {
 			public final static String _ID = "_id";
 			public static final String J3M = "j3m";
 			public static final String J3M_DESCRIPTOR = "j3m_descriptor";
+			public static final String VERSION = "versionForExport";
 			
 			public class Image {
 				public static final String BITMAP = "bitmap";
@@ -336,6 +338,14 @@ public class Constants {
 			public static final String BYTE_RANGE = "byte_range";
 			
 			public static final int MAX_TRIES = 10;
+			public static final String PATH_TO_NEXT_CONNECTION_DATA = "pathToNextConnectionData";
+			
+			public class Type {
+				public static final int NONE = 799;
+				public static final int MESSAGE = 800;
+				public static final int SUBMISSION = 801;
+				public static final int UPLOAD = 802;
+			}
 			
 			public class CommonParams {
 				public static final String MESSAGE_TO = "message_to";

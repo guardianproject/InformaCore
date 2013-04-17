@@ -1,5 +1,7 @@
 package org.witness.informacam.transport;
 
+import info.guardianproject.onionkit.ui.OrbotHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -7,15 +9,16 @@ import java.util.TimerTask;
 
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.R;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.models.IIdentity;
 import org.witness.informacam.models.IInstalledOrganizations;
 import org.witness.informacam.models.IOrganization;
-import org.witness.informacam.models.IParam;
 import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.connections.IUpload;
+import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -24,9 +27,7 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Transport;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Models.IUser;
 
-import info.guardianproject.onionkit.ui.OrbotHelper;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -54,25 +55,25 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 	Handler handler = new Handler();
 	Timer queueMaster;
-	
+
 	List<Broadcaster> br = new ArrayList<Broadcaster>();
-	
+
 	class Broadcaster extends BroadcastReceiver {
 		IntentFilter intentFilter;
-		
+
 		public Broadcaster(IntentFilter intentFilter) {
 			this.intentFilter = intentFilter;
 		}
-		
+
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")) {
 				Log.d(LOG, "connextivity status changed");
 				connectionType = getConnectionStatus();
 			}
-			
+
 		}
-		
+
 	}
 
 	public class LocalBinder extends Binder {
@@ -90,7 +91,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		oh = new OrbotHelper(this);
-		
+
 		br.add(new Broadcaster(new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE")));
 
 		uploaderService = this;
@@ -106,7 +107,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
-		
+
 		unregisterConnectivityUpdates();
 		informaCam.saveState(pendingConnections);
 		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
@@ -115,7 +116,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	public static UploaderService getInstance() {
 		return uploaderService;
 	}
-	
+
 	private void checkForConnections() {
 		queueMaster = new Timer();
 		TimerTask tt = new TimerTask() {
@@ -126,7 +127,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				}
 			}
 		};
-		queueMaster.schedule(tt, 0, (1000 * 60) * 10);
+		queueMaster.schedule(tt, 0, (long) ((1000 * 60) * 0.5));
 	}
 
 	private void checkForOrbotStartup() {
@@ -151,49 +152,56 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		};
 		t.schedule(tt, 0, 500);
 	}
-	
+
 	private void registerConnectivityUpdates() {
 		for(BroadcastReceiver b : br) {
 			registerReceiver(b, ((Broadcaster) b).intentFilter);
 		}
 	}
-	
+
 	private void unregisterConnectivityUpdates() {
 		for(BroadcastReceiver b : br) {
 			unregisterReceiver(b);
 		}
 	}
-	
+
 	private int getConnectionStatus() {
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo ni = cm.getActiveNetworkInfo();
 		Log.d(LOG, "active network: " + ni.getTypeName());
-		
+
 		return ni.getType();
 	}
 
 	private void run() {
 		informaCam = InformaCam.getInstance();
-		
+
 		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null && !isRunning) {
 			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
+			/*
+			pendingConnections.queue.clear();
+			informaCam.saveState(pendingConnections);
+			 */
+
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				isRunning = true;
 				registerConnectivityUpdates();
 				connectionType = getConnectionStatus();
-				
+
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
 						android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
 						for(IConnection connection : pendingConnections.queue) {
+							Log.d(LOG, connection.asJson().toString());
 							if(!connection.isHeld) {
 								connection.isHeld = true;
-								
+
 								Log.d(LOG, connection.asJson().toString());
 								HttpUtility http = new HttpUtility();
-								
-								if(connection instanceof IUpload) {
+
+								if(connection.type == Models.IConnection.Type.UPLOAD) {
+									
 									((IUpload) connection).setByteBufferSize(connectionType);
 								}
 
@@ -204,14 +212,19 @@ public class UploaderService extends Service implements HttpUtilityListener {
 									connection = http.executeHttpGet(connection);
 								}
 
-								if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
-									routeResult(connection);
-								} else {
-									if(connection.numTries > Models.IConnection.MAX_TRIES && !connection.isSticky) {
-										pendingConnections.queue.remove(connection);
+								try {
+									if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
+										routeResult(connection);
 									} else {
-										connection.isHeld = false;
+										if(connection.numTries > Models.IConnection.MAX_TRIES && !connection.isSticky) {
+											pendingConnections.queue.remove(connection);
+										} else {
+											connection.isHeld = false;
+										}
 									}
+								} catch(NullPointerException e) {
+									Log.e(LOG, e.toString());
+									e.printStackTrace();
 								}
 
 								informaCam.saveState(pendingConnections);
@@ -266,6 +279,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		pendingConnections.queue.add(connection);
+		informaCam.saveState(pendingConnections);
 		if(!this.isRunning) {
 			run();
 		}
@@ -278,28 +292,28 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	private void routeResult(IConnection connection) {
 		IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
 		IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
-		
+
 		switch(connection.result.responseCode) {
 		case Models.IResult.ResponseCodes.UPLOAD_SUBMISSION:
 			try {
-				if(connection instanceof ISubmission) {
+				if(connection.type == Models.IConnection.Type.SUBMISSION) {
 					String uploadId = connection.result.data.getString(Models._ID);
 					String uploadRev = connection.result.data.getString(Models._REV);
-					
-					IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
+
+					IConnection upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
 					addToQueue(upload);
-				} else if(connection instanceof IUpload) {
+				} else if(connection.type == Models.IConnection.Type.UPLOAD) {
 					((IUpload) connection).update();
 				}
-				
-				
+
+
 				informaCam.saveState(pendingConnections);
-				
+
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
-			
+
 			break;
 		case Models.IResult.ResponseCodes.INIT_USER:										
 			try {
@@ -307,31 +321,39 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				organization.identity.inflate(connection.result.data.getJSONObject(Models.IIdentity.SOURCE));
 				informaCam.saveState(installedOrganizations);
 				
+				INotification notification = new INotification();
+				notification.label = informaCam.a.getString(R.string.key_sent);
+				notification.content = informaCam.a.getString(R.string.you_have_successfully_sent, organization.organizationName);
+				notification.type = Models.INotification.Type.KEY_SENT;
+				
+				informaCam.addNotification(notification);
+				
+
 				/*
 				 * XXX: we don't like this.
 				IConnection nextConnection = new IConnection();
 				nextConnection.knownCallback = Models.IResult.ResponseCodes.DOWNLOAD_ASSET;
-				
+
 				IParam user = new IParam();
 				user.key = IUser.BELONGS_TO_USER;
 				user.value = organization.identity._id;
-				
+
 				nextConnection.params = new ArrayList<IParam>();
 				nextConnection.params.add(user);
-				
+
 				String exportId = connection.result.data.getJSONObject(Models.IIdentity.CREDENTIALS).getString(Models._ID);
 				nextConnection.url = (connection.url + Models.IConnection.Routes.EXPORT + exportId);
 				nextConnection.port = connection.port;
 				nextConnection.destination = connection.destination;
-				
+
 				// this connection should be sticky; user should retry their credential download until it is available.
 				nextConnection.isSticky = true;
-				
-				
+
+
 				addToQueue(nextConnection);
 				informaCam.saveState(pendingConnections);
-				*/
-				
+				 */
+
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -342,22 +364,22 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				String rawContent = connection.result.data.getString(Models.IResult.CONTENT);
 				switch(connection.knownCallback) {
 				case Models.IResult.ResponseCodes.INSTALL_ICTD:
-						IOrganization mergeOrganization = KeyUtility.installICTD(rawContent, organization);
-						if(mergeOrganization != null) {
-							organization.inflate(mergeOrganization);
-							informaCam.saveState(installedOrganizations);
-						}
-					
+					IOrganization mergeOrganization = KeyUtility.installICTD(rawContent, organization);
+					if(mergeOrganization != null) {
+						organization.inflate(mergeOrganization);
+						informaCam.saveState(installedOrganizations);
+					}
+
 					break;
 				}
-				
+
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
 			break;
 		}
-		
+
 		if(!connection.isSticky) {
 			pendingConnections.queue.remove(connection);
 		}

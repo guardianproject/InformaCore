@@ -4,13 +4,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.ByteArrayBody;
-import org.apache.http.entity.mime.content.ContentBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.message.BasicNameValuePair;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.IOrganization;
@@ -22,6 +19,11 @@ import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models;
 
+import ch.boye.httpclientandroidlib.entity.mime.MultipartEntity;
+import ch.boye.httpclientandroidlib.entity.mime.content.ByteArrayBody;
+import ch.boye.httpclientandroidlib.entity.mime.content.ContentBody;
+import ch.boye.httpclientandroidlib.entity.mime.content.StringBody;
+
 import android.util.Log;
 
 public class IConnection extends Model {
@@ -31,6 +33,7 @@ public class IConnection extends Model {
 	public boolean isSticky = false;
 	public String url = null;
 	public int port = 443;
+	public int type = Models.IConnection.Type.NONE;
 	public IOrganization destination = null;
 	public String method = Models.IConnection.Methods.POST;
 	public ITransportCredentials transportCredentials = null;
@@ -124,7 +127,7 @@ public class IConnection extends Model {
 				ContentBody contentBody = new ByteArrayBody(informaCam.ioService.getBytes(d.entityName, d.source), d.entityName);
 				entity.addPart(d.key, contentBody);
 			}
-			post.setEntity(entity);
+			post.setEntity((HttpEntity) entity);
 		}
 		
 		return post;

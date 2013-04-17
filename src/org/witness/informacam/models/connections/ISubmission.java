@@ -19,10 +19,15 @@ public class ISubmission extends IConnection {
 	public JSONObject j3mDescriptor = null;
 	public String pathToNextConnectionData = null;
 	
+	public ISubmission() {}
+	
 	public ISubmission(IOrganization organization, String pathToNextConnectionData) {
 		super();
 		
-		this.params = new ArrayList<IParam>();
+		type = Models.IConnection.Type.SUBMISSION;
+		port = organization.requestPort;
+		
+		params = new ArrayList<IParam>();
 		
 		IParam param = new IParam();
 		param.key = Models._ID;
@@ -34,7 +39,7 @@ public class ISubmission extends IConnection {
 		param.value = organization.transportCredentials.userRev;
 		params.add(param);
 		
-		this.url = organization.requestUrl + "submissions/";
+		this.url = organization.requestUrl + Models.IConnection.Routes.SUBMISSIONS;
 		this.method = Models.IConnection.Methods.POST;
 		this.knownCallback = Models.IResult.ResponseCodes.UPLOAD_SUBMISSION;
 		

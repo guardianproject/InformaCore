@@ -1,7 +1,5 @@
 package org.witness.informacam;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -40,26 +38,26 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
-import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -95,6 +93,7 @@ public class InformaCam extends Service {
 
 	SharedPreferences.Editor ed;
 	private SharedPreferences sp;
+	NotificationManager notificationManager;
 
 	public class LocalBinder extends Binder {
 		public InformaCam getService() {
@@ -105,7 +104,7 @@ public class InformaCam extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(LOG, "ON START COMMAND RECEIVED");
-
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		return START_STICKY;
 	}
 
@@ -248,6 +247,17 @@ public class InformaCam extends Service {
 			byte[] installedOrganizationsBytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
 			if(installedOrganizationsBytes != null) {
 				installedOrganizations.inflate(installedOrganizationsBytes);
+				
+				/*
+				for(IOrganization o : installedOrganizations.organizations) {
+					o.identity._id = "c4a4638becf85d179b7898169a0331d6";
+					o.identity._rev = "3-f01e19014841d00ed365574c5958ec02";
+					o.requestUrl = "https://2x7njk43wdexnmwg.onion/";
+					o.requestPort = 444;
+				}
+				
+				saveState(installedOrganizations);
+				*/
 			}
 			
 			byte[] notificationsManifestBytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
@@ -516,6 +526,26 @@ public class InformaCam extends Service {
 	public void initUploads() {
 		uploaderService.init();
 	}
+	
+	public void addNotification(INotification notification) {
+		addNotification(notification, true);
+	}
+	
+	public void addNotification(INotification notification, boolean showOnTop) {
+		notificationsManifest.notifications.add(notification);
+		saveState(notificationsManifest);
+		
+		if(showOnTop) {
+			Notification n = new NotificationCompat.Builder(a)
+				.setContentTitle(notification.label)
+				.setContentText(notification.content)
+				.setContentIntent(PendingIntent.getActivity(this, 0, null, 0))
+				.getNotification();
+			
+			n.flags |= Notification.FLAG_AUTO_CANCEL;
+			notificationManager.notify(0, n);
+		}
+	}
 
 	public IOrganization installICTD(Uri ictdURI) {
 		IOrganization organization = null;
@@ -534,8 +564,7 @@ public class InformaCam extends Service {
 			notification.content = a.getString(R.string.x_has_verified_you, organization.organizationName);
 			notification.type = Models.INotification.Type.NEW_KEY;
 			
-			notificationsManifest.notifications.add(notification);
-			saveState(notificationsManifest);
+			addNotification(notification);
 			
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
