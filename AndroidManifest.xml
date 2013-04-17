@@ -14,4 +14,8 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" />
 
+    
+	<!-- ADD THE FOLLOWING TO YOUR MANIFEST: -->
+	<activity android:name="de.duenndns.ssl.MemorizingActivity" />
+	
 </manifest>
