@@ -206,10 +206,10 @@ public class UploaderService extends Service implements HttpUtilityListener {
 								}
 
 								if(connection.method.equals(Models.IConnection.Methods.POST)) {
-									connection = http.executeHttpPost(connection);
+									connection = http.executeHttpPost(connection, UploaderService.this.getApplicationContext());
 
 								} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
-									connection = http.executeHttpGet(connection);
+									connection = http.executeHttpGet(connection, UploaderService.this.getApplicationContext());
 								}
 
 								try {

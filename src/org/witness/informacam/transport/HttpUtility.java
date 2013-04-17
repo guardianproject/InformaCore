@@ -1,64 +1,47 @@
 package org.witness.informacam.transport;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import info.guardianproject.onionkit.trust.StrongHttpsClient;
+import info.guardianproject.onionkit.trust.StrongTrustManager;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
-
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.IKeyStore;
 import org.witness.informacam.models.IResult;
-import org.witness.informacam.models.ITransportCredentials;
 import org.witness.informacam.models.connections.IConnection;
-import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.App.Transport;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 
+import android.content.Context;
 import android.util.Log;
+import ch.boye.httpclientandroidlib.HttpResponse;
+import ch.boye.httpclientandroidlib.client.methods.HttpGet;
+import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 
 public class HttpUtility {
 	private final static String LOG = Transport.LOG;
+	
+	//these need to be moved to app preferences or at least app global constants; may want to support other proxy systems
+	private final static String PROXY_TYPE = "SOCKS";
 	private final static String PROXY_HOST = "127.0.0.1";
-	private final static int PROXY_PORT = 8118;
+	private final static int PROXY_PORT = 9050;
+
+	//single shared static instance so we don't have to reload keystores etc
+	private static DefaultHttpClient mHttpClient = null;
+	
 
 	private static IResult parseResponse(HttpResponse response) {
 		IResult result = new IResult();
@@ -106,21 +89,13 @@ public class HttpUtility {
 		return result;
 	}
 
-	public IConnection executeHttpGet(final IConnection connection) {
+	public IConnection executeHttpGet(final IConnection connection, final Context context) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
 			@Override
 			public IConnection call() throws Exception {
-				InformaCam informaCam = InformaCam.getInstance();
-
-				HttpClient http = new DefaultHttpClient();
 				
-				ISocketFactory iSocketFactory = new ISocketFactory(null, connection);
-				ClientConnectionManager ccm = http.getConnectionManager();
-				SchemeRegistry registry = ccm.getSchemeRegistry();
-				registry.register(new Scheme("https", iSocketFactory, connection.port));
-
-				http.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(PROXY_HOST, PROXY_PORT));
+				DefaultHttpClient http = getHttpClientInstance(context);
 				
 				HttpGet get = new HttpGet(connection.build());
 				
@@ -145,21 +120,13 @@ public class HttpUtility {
 		}
 	}
 
-	public IConnection executeHttpPost(final IConnection connection) {
+	public IConnection executeHttpPost(final IConnection connection, final Context context) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
 			@Override
 			public IConnection call() throws Exception {
-				InformaCam informaCam = InformaCam.getInstance();
 
-				HttpClient http = new DefaultHttpClient();
-				
-				ISocketFactory iSocketFactory = new ISocketFactory(null, connection);
-				ClientConnectionManager ccm = http.getConnectionManager();
-				SchemeRegistry registry = ccm.getSchemeRegistry();
-				registry.register(new Scheme("https", iSocketFactory, connection.port));
-
-				http.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(PROXY_HOST, PROXY_PORT));
+				DefaultHttpClient http = getHttpClientInstance (context);
 				
 				HttpPost post = new HttpPost(connection.url);
 				post = connection.build(post);
@@ -184,6 +151,20 @@ public class HttpUtility {
 		}
 	}
 	
+	private static synchronized DefaultHttpClient getHttpClientInstance (Context context) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, KeyManagementException, UnrecoverableKeyException
+	{
+
+		if (mHttpClient == null)
+		{
+			//this is where we want to chain in memorizingtrustmanager
+			StrongTrustManager sTrustManager = new StrongTrustManager(context);
+			mHttpClient = new StrongHttpsClient(context,sTrustManager);
+			((StrongHttpsClient)mHttpClient).useProxy(true, PROXY_TYPE, PROXY_HOST, PROXY_PORT);
+		}
+		
+		return mHttpClient;
+	}
+	/*
 	public class ISocketFactory extends org.apache.http.conn.ssl.SSLSocketFactory {
 		SSLContext sslContext;
 		
@@ -446,5 +427,5 @@ public class HttpUtility {
 			return defaultTrustManager.getAcceptedIssuers();
 		}
 
-	}
+	}*/
 }
