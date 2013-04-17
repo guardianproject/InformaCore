@@ -5,4 +5,3 @@ gen/*
 local.properties
 build.xml
 project.properties
-.settings/*
