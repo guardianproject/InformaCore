@@ -10,3 +10,6 @@
 [submodule "external/IOCipher"]
 	path = external/IOCipher
 	url = git://github.com/guardianproject/IOCipher.git
+[submodule "external/MemorizingTrustManager"]
+	path = external/MemorizingTrustManager
+	url = https://github.com/ge0rg/MemorizingTrustManager.git
