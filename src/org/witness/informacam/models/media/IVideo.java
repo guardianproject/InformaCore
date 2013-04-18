@@ -14,6 +14,10 @@ public class IVideo extends IMedia {
 	public String video, bitmapThumb, bitmapList, bitmapPreview = null;
 	public int width, height;
 	
+	public IVideo() {
+		super();
+	}
+	
 	@Override
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(bitmapThumb, Type.IOCIPHER);

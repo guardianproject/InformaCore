@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.IOrganization;
-import org.witness.informacam.models.IParam;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Models;
@@ -19,7 +18,9 @@ public class ISubmission extends IConnection {
 	public JSONObject j3mDescriptor = null;
 	public String pathToNextConnectionData = null;
 	
-	public ISubmission() {}
+	public ISubmission() {
+		super();
+	}
 	
 	public ISubmission(IOrganization organization, String pathToNextConnectionData) {
 		super();

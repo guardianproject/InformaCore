@@ -11,14 +11,14 @@ import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.KeyUtility;
-import org.witness.informacam.models.IIdentity;
-import org.witness.informacam.models.IInstalledOrganizations;
-import org.witness.informacam.models.IOrganization;
-import org.witness.informacam.models.IPendingConnections;
 import org.witness.informacam.models.connections.IConnection;
+import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.connections.IUpload;
 import org.witness.informacam.models.notifications.INotification;
+import org.witness.informacam.models.organizations.IIdentity;
+import org.witness.informacam.models.organizations.IInstalledOrganizations;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -146,7 +146,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				if(oh.isOrbotRunning()) {
 					stop();
 				}
-
 			}
 
 		};
@@ -168,9 +167,13 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	private int getConnectionStatus() {
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo ni = cm.getActiveNetworkInfo();
-		Log.d(LOG, "active network: " + ni.getTypeName());
+		try {
+			Log.d(LOG, "active network: " + ni.getTypeName());
 
-		return ni.getType();
+			return ni.getType();
+		} catch(NullPointerException e) {
+			return -1;
+		}
 	}
 
 	private void run() {
@@ -192,34 +195,34 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					@Override
 					public void run() {
 						android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
-						for(IConnection connection : pendingConnections.queue) {
-							Log.d(LOG, connection.asJson().toString());
-							if(!connection.isHeld) {
-								connection.isHeld = true;
+						for(Object connection : pendingConnections.queue) {
+							Log.d(LOG, ((IConnection) connection).asJson().toString());
+							if(!((IConnection) connection).isHeld) {
+								((IConnection) connection).isHeld = true;
 
-								Log.d(LOG, connection.asJson().toString());
+								Log.d(LOG, ((IConnection) connection).asJson().toString());
 								HttpUtility http = new HttpUtility();
 
-								if(connection.type == Models.IConnection.Type.UPLOAD) {
+								if(((IConnection) connection).type == Models.IConnection.Type.UPLOAD) {
 									
 									((IUpload) connection).setByteBufferSize(connectionType);
 								}
 
-								if(connection.method.equals(Models.IConnection.Methods.POST)) {
-									connection = http.executeHttpPost(connection);
+								if(((IConnection) connection).method.equals(Models.IConnection.Methods.POST)) {
+									connection = http.executeHttpPost(((IConnection) connection));
 
-								} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
-									connection = http.executeHttpGet(connection);
+								} else if(((IConnection) connection).method.equals(Models.IConnection.Methods.GET)) {
+									connection = http.executeHttpGet((IConnection) connection);
 								}
 
 								try {
-									if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
-										routeResult(connection);
+									if(((IConnection) connection).result.code == Integer.parseInt(Transport.Results.OK)) {
+										routeResult((IConnection) connection);
 									} else {
-										if(connection.numTries > Models.IConnection.MAX_TRIES && !connection.isSticky) {
+										if(((IConnection) connection).numTries > Models.IConnection.MAX_TRIES && !((IConnection) connection).isSticky) {
 											pendingConnections.queue.remove(connection);
 										} else {
-											connection.isHeld = false;
+											((IConnection) connection).isHeld = false;
 										}
 									}
 								} catch(NullPointerException e) {

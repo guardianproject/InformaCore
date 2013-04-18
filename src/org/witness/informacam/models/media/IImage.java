@@ -12,6 +12,10 @@ public class IImage extends IMedia {
 	public String bitmap;
 	public int width, height;
 	
+	public IImage() {
+		super();
+	}
+	
 	@Override
 	public void analyze() {
 		super.analyze();

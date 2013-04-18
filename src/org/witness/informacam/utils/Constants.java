@@ -434,6 +434,7 @@ public class Constants {
 		public static final String KEY_STORE = "keystore.jks";
 		public static final String CACHES = "informaCaches";
 		public static final String NOTIFICATIONS = "notificationsManifest";
+		public static final String DEX = "dexDump";
 	}
 
 	public final static class App {

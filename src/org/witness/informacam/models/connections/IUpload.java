@@ -4,8 +4,7 @@ import java.util.ArrayList;
 
 import org.bouncycastle.util.Arrays;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.IOrganization;
-import org.witness.informacam.models.IParam;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
@@ -21,7 +20,9 @@ public class IUpload extends IConnection {
 	public int byteBufferSize = 0;
 	public int totalBytes = 0;
 	
-	public IUpload() {}
+	public IUpload() {
+		super();
+	}
 	
 	public IUpload(IOrganization organization, String pathToData, String uploadId, String uploadRev) {
 		super();
@@ -37,7 +38,7 @@ public class IUpload extends IConnection {
 
 		IParam param = new IParam();
 		param.key = Models.IConnection.BELONGS_TO_USER;
-		param.value = organization.transportCredentials.userId;
+		param.value = organization.identity._id;
 		params.add(param);
 
 		this.url = organization.requestUrl + Models.IConnection.Routes.UPLOAD + uploadId;

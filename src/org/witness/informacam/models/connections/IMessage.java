@@ -2,18 +2,27 @@ package org.witness.informacam.models.connections;
 
 import java.util.ArrayList;
 
-import org.witness.informacam.models.IOrganization;
-import org.witness.informacam.models.IParam;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.util.Base64;
 
 public class IMessage extends IConnection {
+	public String messageTo = null;
+	public String messageContent = null;
+	
+	public IMessage() {
+		super();
+	}
+	
 	public IMessage(IOrganization organization, String messageText) {
 		super();
 		type = Models.IConnection.Type.MESSAGE;
 		url = organization.requestUrl + Models.IConnection.Routes.MESSAGES;
 		port = organization.requestPort;
+		
+		messageTo = organization.organizationName;
+		messageContent = Base64.encodeToString(messageText.getBytes(), Base64.DEFAULT);
 
 		params = new ArrayList<IParam>();
 		IParam param = new IParam();
@@ -23,7 +32,7 @@ public class IMessage extends IConnection {
 
 		param = new IParam();
 		param.key = Models.IConnection.CommonParams.MESSAGE_TO;
-		param.value = organization.organizationName;
+		param.value = messageTo;
 		params.add(param);
 
 		param = new IParam();
@@ -33,7 +42,7 @@ public class IMessage extends IConnection {
 
 		param = new IParam();
 		param.key = Models.IConnection.CommonParams.MESSAGE_CONTENT;
-		param.value = Base64.encodeToString(messageText.getBytes(), Base64.DEFAULT);
+		param.value = messageContent;
 		params.add(param);
 
 	}

@@ -1,6 +1,7 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.j3m;
 
 import org.json.JSONArray;
+import org.witness.informacam.models.Model;
 
 public class ISuckerCache extends Model {
 	public JSONArray cache = null;

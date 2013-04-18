@@ -22,7 +22,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.ISecretKey;
+import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;

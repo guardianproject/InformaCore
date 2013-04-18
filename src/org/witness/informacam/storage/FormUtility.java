@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.IForm;
-import org.witness.informacam.models.IInstalledForms;
+import org.witness.informacam.models.forms.IForm;
+import org.witness.informacam.models.forms.IInstalledForms;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Forms;
 import org.witness.informacam.utils.Constants.App.Storage.Type;

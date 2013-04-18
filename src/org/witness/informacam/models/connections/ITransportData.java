@@ -1,5 +1,6 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.connections;
 
+import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 public class ITransportData extends Model {

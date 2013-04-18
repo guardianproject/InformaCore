@@ -7,7 +7,7 @@ import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.models.IDCIMDescriptor;
+import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.IManifest;

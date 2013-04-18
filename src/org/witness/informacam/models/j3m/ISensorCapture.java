@@ -1,4 +1,4 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.j3m;
 
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.LogPack;

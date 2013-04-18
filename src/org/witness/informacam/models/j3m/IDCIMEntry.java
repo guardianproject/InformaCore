@@ -1,6 +1,7 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.j3m;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.util.Log;

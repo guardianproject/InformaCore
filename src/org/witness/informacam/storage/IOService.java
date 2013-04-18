@@ -11,8 +11,8 @@ import info.guardianproject.iocipher.VirtualFileSystem;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.crypto.KeyUtility;
-import org.witness.informacam.models.IOrganization;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;

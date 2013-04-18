@@ -1,8 +1,8 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.organizations;
+
+import org.witness.informacam.models.Model;
 
 public class ITransportCredentials extends Model {
 	public String certificatePath = null;
 	public String certificatePassword = null;
-	public String userId = null;
-	public String userRev = null;
 }

@@ -5,6 +5,10 @@ import java.util.List;
 
 public class IVideoRegion extends IRegion {
 	public List<IRegionBounds> trail = null;
+	
+	public IVideoRegion() {
+		super();
+	}
 
 	@Override
 	public void init(IRegionBounds bounds) {

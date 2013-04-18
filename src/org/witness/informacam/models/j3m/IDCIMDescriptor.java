@@ -1,4 +1,4 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.j3m;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -8,6 +8,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.GeoSucker;
+import org.witness.informacam.models.Model;
 import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;

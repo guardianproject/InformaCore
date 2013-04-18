@@ -17,7 +17,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
-import org.witness.informacam.models.ISuckerCache;
+import org.witness.informacam.models.j3m.ISuckerCache;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.utils.Constants.Actions;

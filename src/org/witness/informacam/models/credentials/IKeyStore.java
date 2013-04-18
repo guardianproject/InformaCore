@@ -1,4 +1,6 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.credentials;
+
+import org.witness.informacam.models.Model;
 
 public class IKeyStore extends Model {
 	public String path = null;

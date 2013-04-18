@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
@@ -12,18 +13,18 @@ import org.bouncycastle.openpgp.PGPException;
 import org.witness.informacam.crypto.AesUtility;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
-import org.witness.informacam.models.ICredentials;
-import org.witness.informacam.models.IInstalledOrganizations;
-import org.witness.informacam.models.IKeyStore;
-import org.witness.informacam.models.IMediaManifest;
-import org.witness.informacam.models.INotificationsManifest;
-import org.witness.informacam.models.IOrganization;
-import org.witness.informacam.models.IPendingConnections;
-import org.witness.informacam.models.ISecretKey;
-import org.witness.informacam.models.IUser;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.connections.IPendingConnections;
+import org.witness.informacam.models.credentials.IKeyStore;
+import org.witness.informacam.models.credentials.ISecretKey;
+import org.witness.informacam.models.credentials.IUser;
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.models.media.IMediaManifest;
 import org.witness.informacam.models.notifications.INotification;
+import org.witness.informacam.models.notifications.INotificationsManifest;
+import org.witness.informacam.models.organizations.ICredentials;
+import org.witness.informacam.models.organizations.IInstalledOrganizations;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.informa.InformaService;
@@ -34,6 +35,8 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+
+import dalvik.system.DexFile;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -90,6 +93,7 @@ public class InformaCam extends Service {
 	public Activity a = null;
 	public Handler h = new Handler();
 
+	public List<String> models = new ArrayList<String>();
 
 	SharedPreferences.Editor ed;
 	private SharedPreferences sp;
@@ -169,6 +173,8 @@ public class InformaCam extends Service {
 	public void startup() {
 		Log.d(LOG, "NOW we init!");
 		user = new IUser();
+		
+		setModels();
 
 		final int INIT = 1;
 		final int LOGIN = 2;
@@ -237,9 +243,9 @@ public class InformaCam extends Service {
 			
 			if(mediaManifestBytes != null) {
 				mediaManifest.inflate(mediaManifestBytes);
-				if(mediaManifest.media != null && mediaManifest.media.size() > 0) {
-					for(IMedia m : mediaManifest.media) {
-						m.isNew = false;
+				if(mediaManifest.media.size() > 0) {
+					for(Object m : mediaManifest.media) {
+						((IMedia) m).isNew = false;
 					}
 				}
 			}
@@ -286,6 +292,28 @@ public class InformaCam extends Service {
 		sendBroadcast(intent);
 	}
 
+	
+	private void setModels() {
+		
+		try {
+			String apkName = getPackageResourcePath();
+			java.io.File dexDump = ioService.getDir(IManifest.DEX, Context.MODE_PRIVATE);
+			if(!dexDump.exists()) {
+				dexDump.mkdir();
+			}
+			DexFile dex = DexFile.loadDex(apkName, new java.io.File(dexDump, "dex").getAbsolutePath(), 0);
+			for(Enumeration<String> classes = dex.entries(); classes.hasMoreElements() ;) {
+				String clz = classes.nextElement();
+				if(clz.contains("org.witness.informacam.models")) {
+					models.add(clz);
+				}
+			}
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+	}
+	
 	private void shutdown() {
 		for(BroadcastReceiver br : broadcasters) {
 			unregisterReceiver(br);
@@ -363,7 +391,6 @@ public class InformaCam extends Service {
 			Log.d(LOG, "bytes is null");
 		}
 
-		Log.d(LOG, "model is " + model.getClass().getName());
 		return model;
 
 	}
@@ -503,7 +530,6 @@ public class InformaCam extends Service {
 	}
 
 	public static InformaCam getInstance() {
-		Log.d(LOG, "no activity association, just returning instance");
 		return informaCam;
 	}
 

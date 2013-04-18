@@ -17,6 +17,8 @@ public class IRegionBounds extends Model {
 	public int displayWidth = 0;
 	public int displayHeight = 0;
 	
+	public IRegionBounds() {}
+	
 	public IRegionBounds(int top, int left, int width, int height) {
 		this(top, left, width, height, -1L);
 	}

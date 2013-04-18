@@ -1,6 +1,7 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.connections;
 
 import org.json.JSONObject;
+import org.witness.informacam.models.Model;
 
 public class IResult extends Model {
 	public int code = 0;

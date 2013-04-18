@@ -9,8 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.App;
-
 import android.util.Log;
 
 public class Model extends JSONObject {
@@ -58,9 +58,65 @@ public class Model extends JSONObject {
 		}
 	}
 
+	private Class<?> recast(Object m, JSONObject ja) {
+		InformaCam informaCam = InformaCam.getInstance();
+		
+		List<Class<?>> subclasses = new ArrayList<Class<?>>();
+		Class<?> clz = m.getClass();
+		Class<?> recast = null;
+		
+		String packagePath = clz.getName().replace(("." + clz.getSimpleName()), "");
+		
+		for(String model : informaCam.models) {
+			if(model.contains(packagePath) && !model.equals(clz.getName())) {
+				try {
+					Class<?> subClz = Class.forName(model);
+					if(subClz.getSuperclass().equals(clz)) {
+						//Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
+						subclasses.add(subClz);
+					}
+				} catch (ClassNotFoundException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+				
+			}
+		}
+		
+		if(subclasses.size() > 0) {
+			List<Class<?>> subClz_ = new ArrayList<Class<?>>(subclasses);
+			// loop through json to see if we have any of these fields. eliminate non-matches from list
+			for(Class<?> c : subclasses) {
+				try {
+					Object o = c.newInstance();
+					
+					for(Field subField : o.getClass().getDeclaredFields()) {
+						if(!ja.has(subField.getName())) {
+							subClz_.remove(c);
+							break;
+						}
+					}
+					
+				} catch (InstantiationException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+			
+			if(subClz_.size() == 1) {
+				Log.d(LOG, "downcast object to " + subClz_.get(0).getName());
+				recast = subClz_.get(0);
+			}
+		}
+		
+		return recast;
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {
-		//Log.d(LOG, "attempting to inflate object with values:\n" + values.toString());
 		fields = this.getClass().getFields();
 
 		for(Field f : fields) {
@@ -77,7 +133,6 @@ public class Model extends JSONObject {
 						List subValue = new ArrayList();
 
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
-						//Log.d(LOG, "UGH: " + clz.getName());
 
 						Object test = clz.newInstance();
 						if(test instanceof Model) {
@@ -88,6 +143,11 @@ public class Model extends JSONObject {
 						for(int i=0; i<ja.length(); i++) {
 							Object value = clz.newInstance();
 							if(isModel) {
+								Class<?> recast = recast(value, ja.getJSONObject(i));
+								if(recast != null) {
+									value = recast.newInstance();
+								}
+								
 								((Model) value).inflate(ja.getJSONObject(i));
 							} else {
 								value = ja.get(i);
@@ -102,11 +162,15 @@ public class Model extends JSONObject {
 						f.set(this, parseJSONAsFloatArray(values.getString(f.getName())));
 					} else if(isModel) {						
 						Class clz = (Class<?>) f.getType();
-						Model val = (Model) clz.newInstance();
+						// if clz has less fields than the json object, this could be a subclass
+						
+						Object val = clz.newInstance();
+						Class<?> recast = recast(val, values.getJSONObject(f.getName()));
+						if(recast  != null) {
+							val = recast.newInstance();
+						}
 
-						//Log.d(LOG, "the thing should read:\n" + values.getJSONObject(f.getName()).toString());
-
-						val.inflate(values.getJSONObject(f.getName()));
+						((Model) val).inflate(values.getJSONObject(f.getName()));
 						f.set(this, val);
 					} else {
 						f.set(this, values.get(f.getName()));
@@ -124,7 +188,7 @@ public class Model extends JSONObject {
 			} catch (InstantiationException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
-			} 
+			}
 		}
 
 		//Log.d(LOG, "finished inflating object, which is now\n" + this.asJson().toString());
@@ -157,17 +221,17 @@ public class Model extends JSONObject {
 		for(Field f : fields) {
 			f.setAccessible(true);
 
-			if(f.getName().contains("this$")) {
-				continue;
-			}
-
-			if(f.getName().equals("NULL") || f.getName().equals("LOG")) {
-				continue;
-			}
-
 			try {
 				Object value = f.get(this);
 				//Log.d(LOG, "HEY THIS TYPE " + f.getType().getSuperclass());
+
+				if(f.getName().contains("this$")) {
+					continue;
+				}
+
+				if(f.getName().equals("NULL") || f.getName().equals("LOG")) {
+					continue;
+				}
 
 				boolean isModel = false;
 

@@ -1,4 +1,4 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.forms;
 
 import info.guardianproject.odkparser.FormWrapper;
 import info.guardianproject.odkparser.utils.QD;

@@ -1,8 +1,9 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.organizations;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.models.Model;
 
 import android.util.Log;
 

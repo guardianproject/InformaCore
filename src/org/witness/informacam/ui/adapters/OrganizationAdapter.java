@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.witness.informacam.R;
-import org.witness.informacam.models.IOrganization;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.App;
 
 import android.app.Activity;

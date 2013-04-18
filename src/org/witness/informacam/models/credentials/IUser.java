@@ -1,4 +1,6 @@
-package org.witness.informacam.models;
+package org.witness.informacam.models.credentials;
+
+import org.witness.informacam.models.Model;
 
 public class IUser extends Model {
 	public boolean hasBaseImage = false;
