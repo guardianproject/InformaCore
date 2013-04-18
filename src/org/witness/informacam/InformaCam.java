@@ -133,6 +133,7 @@ public class InformaCam extends Service {
 		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
 		ed = sp.edit();
 		
+		informaCam = this;
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -159,8 +160,6 @@ public class InformaCam extends Service {
 				}
 			}
 		}).start();
-
-		informaCam = this;
 	}
 
 	@SuppressWarnings("deprecation")
