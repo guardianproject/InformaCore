@@ -1,5 +1,5 @@
 //
-//  org_witness_informa_utils_ImageConstructor.cpp
+//  org_witness_informacam_informa_embed_ImageConstructor.cpp
 //
 //
 //  Created by Harlo Holmes on 4/9/12.
