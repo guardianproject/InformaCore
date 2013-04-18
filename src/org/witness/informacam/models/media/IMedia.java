@@ -63,7 +63,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public CharSequence detailsAsText = null;
 
-	private String currentJ3MDescriptorHash = null;
 	private Handler resonseHandler;
 
 	public Bitmap getBitmap(String pathToFile) {
@@ -83,7 +82,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IRegion getRegionAtRect() {
-		return getRegionAtRect(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, -1L, true);
+		return getRegionAtRect(0, 0, 0, 0, -1L, false);
 	}
 
 	public IRegion getRegionAtRect(IRegionDisplay regionDisplay) {
@@ -155,7 +154,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		IRegion region = null;
 		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 			try {
-				region = addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height);
+				region = addRegion(0, 0, 0, 0);
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -163,7 +162,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 			try {
-				region = addRegion(0, 0, dcimEntry.exif.width, dcimEntry.exif.height, 0);
+				region = addRegion(0, 0, 0, 0, -1L);
 				((IVideoRegion) region).trail.get(0).endTime = dcimEntry.exif.duration;
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
@@ -212,6 +211,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return export(h, organization, false);
 	}
 
+	@SuppressWarnings("unused")
 	public boolean export(Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		resonseHandler = h;

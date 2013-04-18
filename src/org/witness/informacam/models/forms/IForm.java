@@ -35,7 +35,6 @@ public class IForm extends Model {
 			answers = new String[fw.questions.size()];
 			int answer = 0;
 			for(QD qd : fw.questions) {
-				Log.d(LOG, "old value: " + qd.initialValue);
 				answers[answer] = qd.initialValue != null ? qd.initialValue : "";
 				answer++;
 			}
