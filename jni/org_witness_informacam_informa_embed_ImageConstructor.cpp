@@ -16,7 +16,7 @@
 #include "redaction.h"
 
 #include <jni.h>
-#include "Java_org_witness_informacam_informa_embed_ImageConstructor.h"
+#include "org_witness_informacam_informa_embed_ImageConstructor.h"
 
 JNIEXPORT int JNICALL
 Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage

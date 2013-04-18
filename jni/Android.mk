@@ -3,6 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_LDLIBS := -llog
+LOCAL_CPPFLAGS += -fexceptions
 
 LOCAL_MODULE    := JpegRedaction
 LOCAL_SRC_FILES := iptc.cpp jpeg.cpp  tiff_ifd.cpp tiff_tag.cpp jpeg_decoder.cpp \
