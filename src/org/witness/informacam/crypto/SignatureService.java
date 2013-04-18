@@ -159,7 +159,7 @@ public class SignatureService extends Service {
 
 			@Override
 			public byte[] call() throws Exception {
-				return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);
+				return Base64.encode(KeyUtility.applySignature(data, secretKey, publicKey, privateKey), Base64.DEFAULT);
 			}
 		});
 		

@@ -72,6 +72,10 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 	
 	public LogPack forceReturn() {
 		double[] loc = updateLocation();
+		if(loc == null) {
+			Log.d(LOG, "location was null");
+		}
+		
 		return new LogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
 	}
 	
@@ -79,7 +83,7 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		return currentNmeaTime;
 	}
 	
-	private double[] updateLocation() {
+	public double[] updateLocation() {
 		try {
 			String bestProvider = lm.getBestProvider(criteria, false);
 			Location l = lm.getLastKnownLocation(bestProvider);
