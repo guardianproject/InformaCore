@@ -83,7 +83,7 @@ public class SignatureService extends Service {
 
 		authKey = sk.secretAuthToken;
 		secretKey = KeyUtility.extractSecretKey(sk.secretKey.getBytes());
-		privateKey = secretKey.extractPrivateKey(this.authKey.toCharArray(), new BouncyCastleProvider());
+		privateKey = secretKey.extractPrivateKey(authKey.toCharArray(), new BouncyCastleProvider());
 		publicKey = secretKey.getPublicKey();
 		
 		sk = null;

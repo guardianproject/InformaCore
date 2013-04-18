@@ -111,8 +111,6 @@ public class HttpUtility {
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
 			@Override
 			public IConnection call() throws Exception {
-				InformaCam informaCam = InformaCam.getInstance();
-
 				HttpClient http = new DefaultHttpClient();
 				
 				ISocketFactory iSocketFactory = new ISocketFactory(null, connection);
@@ -150,8 +148,6 @@ public class HttpUtility {
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
 			@Override
 			public IConnection call() throws Exception {
-				InformaCam informaCam = InformaCam.getInstance();
-
 				HttpClient http = new DefaultHttpClient();
 				
 				ISocketFactory iSocketFactory = new ISocketFactory(null, connection);
