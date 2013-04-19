@@ -79,6 +79,10 @@ public class SignatureService extends Service {
 	
 	@SuppressWarnings({"deprecation" })
 	public void initKey() throws PGPException {
+		if(informaCam == null) {
+			informaCam = InformaCam.getInstance();
+		}
+		
 		ISecretKey sk = (ISecretKey) informaCam.getModel(new ISecretKey());
 
 		authKey = sk.secretAuthToken;
@@ -159,7 +163,7 @@ public class SignatureService extends Service {
 
 			@Override
 			public byte[] call() throws Exception {
-				return Base64.encode(KeyUtility.applySignature(data, secretKey, publicKey, privateKey), Base64.DEFAULT);
+				return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);
 			}
 		});
 		

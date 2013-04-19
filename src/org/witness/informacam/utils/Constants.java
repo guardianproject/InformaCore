@@ -86,6 +86,7 @@ public class Constants {
 			public static final String MESSAGE_CODE = "message_code";
 			public static final String RETURNED_MEDIA = "informacam_returned_media";
 			public static final String INSTALL_NEW_KEY = "install_ictd_uri";
+			public static final String LOGOUT_USER = "logout_user";
 		}
 
 		public static final class Messages {

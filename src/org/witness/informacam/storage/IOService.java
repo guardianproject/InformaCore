@@ -351,6 +351,10 @@ public class IOService extends Service {
 	}
 
 	public void startDCIMObserver() {
+		if(informaCam == null) {
+			informaCam = InformaCam.getInstance();
+		}
+		
 		dcimObserver = new DCIMObserver(informaCam.a);
 	}
 	

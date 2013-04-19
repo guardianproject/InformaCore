@@ -332,7 +332,7 @@ public class InformaCam extends Service {
 	private void saveStates() {
 		saveState(user, new java.io.File(IManifest.USER));
 		saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-		
+		saveState(uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 	}
 
 	public void saveState(Model model, java.io.File cache) {
