@@ -11,13 +11,20 @@ public class IRegion extends Model {
 	public String formNamespace = null;
 	public String formPath = null;
 	
-	public IRegionBounds bounds;
-	private IRegionDisplay regionDisplay;
+	public IRegionBounds bounds = null;
+	private IRegionDisplay regionDisplay = null;
 	
 	public void init(IRegionBounds bounds) {
+		init(bounds, true);
+	}
+	
+	public void init(IRegionBounds bounds, boolean isNew) {
 		this.bounds = bounds;
 		regionDisplay = new IRegionDisplay(InformaCam.getInstance().a, bounds);
-		InformaCam.getInstance().informaService.addRegion(this);
+		
+		if(isNew) {
+			InformaCam.getInstance().informaService.addRegion(this);
+		}
 	}
 	
 	public IRegionDisplay getRegionDisplay() {

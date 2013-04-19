@@ -193,6 +193,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		region.init(new IRegionBounds(top, left, width, height, startTime));
+		
 		associatedRegions.add(region);
 		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
 
