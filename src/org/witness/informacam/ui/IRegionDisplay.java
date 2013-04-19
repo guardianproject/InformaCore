@@ -1,6 +1,7 @@
 package org.witness.informacam.ui;
 
 import org.witness.informacam.R;
+import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.models.media.IRegionBounds;
 import org.witness.informacam.utils.Constants.App;
 
@@ -21,6 +22,7 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	
 	public IRegionBounds bounds;
 	boolean isActive, isDragging;
+	public IRegion parent;
 	
 	public interface IRegionDisplayListener {
 		public void onSelected(IRegionDisplay regionDisplay);
@@ -28,11 +30,12 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	
 	private final static String LOG = App.LOG;
 	
-	public IRegionDisplay(Activity a, IRegionBounds bounds) {
+	public IRegionDisplay(Activity a, IRegion parent) {
 		super(a);
 		
 		this.a = a;
-		this.bounds = bounds;
+		this.parent = parent;
+		bounds = parent.bounds;
 		Log.d(LOG, bounds.asJson().toString());
 		
 		lp = new LayoutParams(bounds.displayWidth, bounds.displayHeight);

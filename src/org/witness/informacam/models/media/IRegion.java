@@ -20,7 +20,7 @@ public class IRegion extends Model {
 	
 	public void init(IRegionBounds bounds, boolean isNew) {
 		this.bounds = bounds;
-		regionDisplay = new IRegionDisplay(InformaCam.getInstance().a, bounds);
+		regionDisplay = new IRegionDisplay(InformaCam.getInstance().a, this);
 		
 		if(isNew) {
 			InformaCam.getInstance().informaService.addRegion(this);

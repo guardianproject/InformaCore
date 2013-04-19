@@ -13,7 +13,9 @@ import java.util.Vector;
 
 import org.javarosa.core.model.QuestionDef;
 import org.json.JSONObject;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Activity;
 import android.util.Log;
@@ -45,6 +47,12 @@ public class IForm extends Model {
 		
 		return answers;
 	}
+	
+	public void clear() {
+		for(QD qd : fw.questions) {
+			qd.clear();
+		}
+	}
 
 	public boolean associate(Activity a, View answerHolder, String questionId) {
 		return associate(a, null, answerHolder, questionId);
@@ -75,7 +83,7 @@ public class IForm extends Model {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<View> buildUI(Activity a, String[] initialValues, int[] inputLayout, int[] selectOneLayout, int[] selectMultiLayout, int[] audioCaptureLayout) {
+	public List<View> buildUI(Activity a, String pathToOldAnswers, int[] inputLayout, int[] selectOneLayout, int[] selectMultiLayout, int[] audioCaptureLayout) {
 		LayoutInflater li = LayoutInflater.from(a);
 		
 		if(this.a == null) {
@@ -84,13 +92,18 @@ public class IForm extends Model {
 
 		if(fw == null) {
 			try {
-				fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path));
+				if(pathToOldAnswers == null) {
+					fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path));
+				} else {
+					byte[] oldAnswers = InformaCam.getInstance().ioService.getBytes(pathToOldAnswers, Type.IOCIPHER);
+					fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path), oldAnswers);
+				}
 			} catch(FileNotFoundException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
 		}
-
+		
 		List<View> views = new Vector<View>();
 
 		int v = 0;
@@ -123,11 +136,7 @@ public class IForm extends Model {
 				Log.d(LOG, entry.getKey() + ": " + entry.getValue());
 			}
 
-			view = questionDef.buildUI(a, view, initialValues != null ? initialValues[v] : null);
-			if(view != null) {
-				questionDef.pin(initialValues != null ? initialValues[v] : null, questionDef.getAnswerHolder());
-			}
-
+			view = questionDef.buildUI(a, view);
 			view.setId(v);
 			views.add(view);
 			v++;
