@@ -95,49 +95,58 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IRegion getRegionAtRect(int top, int left, int width, int height, long timestamp, boolean byRealHeight) {
-		for(IRegion region : associatedRegions) {
-			IRegionBounds bounds = null;
+		if(associatedRegions != null) {
+			for(IRegion region : associatedRegions) {
+				IRegionBounds bounds = null;
 
-			if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-				bounds = ((IImageRegion) region).bounds;
-			} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-				bounds = ((IVideoRegion) region).getBoundsAtTime(timestamp);
-			}
+				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+					IImageRegion r = new IImageRegion();
+					r = (IImageRegion) region;
+					bounds = r.bounds;
+				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+					IVideoRegion r = new IVideoRegion();
+					try {
+						r = (IVideoRegion) region;
+					} catch(ClassCastException e) {
+						r.inflate(region.asJson());
+					}
+					
+					bounds = r.getBoundsAtTime(timestamp);
+				}
 
-			if(byRealHeight) {
-				if(bounds != null && bounds.top == top && bounds.left == left && bounds.width == width && bounds.height == height) {
-					if(region instanceof IImageRegion) {
-						return region;
-					} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
-						return region;
+				if(byRealHeight) {
+					if(bounds != null && bounds.top == top && bounds.left == left && bounds.width == width && bounds.height == height) {
+						if(region instanceof IImageRegion) {
+							return region;
+						} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
+							return region;
+						}
+					}
+				} else {
+					if(bounds != null && bounds.displayTop == top && bounds.displayLeft == left && bounds.displayWidth == width && bounds.displayHeight == height) {
+						if(region instanceof IImageRegion) {
+							return region;
+						} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
+							return region;
+						}
 					}
 				}
-			} else {
-				if(bounds != null && bounds.displayTop == top && bounds.displayLeft == left && bounds.displayWidth == width && bounds.displayHeight == height) {
-					if(region instanceof IImageRegion) {
-						return region;
-					} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
-						return region;
-					}
-				}
-			}
 
+			}
 		}
 
 		return null;
 	}
 
-	public List<IRegion> getRegionsWithForms() {
-		List<IRegion> regionsWithForms = null;
+	public List<IRegion> getRegionsWithForms(List<String> omitableNamespaces) {
+		List<IRegion> regionsWithForms = new ArrayList<IRegion>();
 
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
 				if(region.formNamespace != null) {
-					if(regionsWithForms == null) {
-						regionsWithForms = new ArrayList<IRegion>();
+					if(omitableNamespaces != null && !omitableNamespaces.contains(region.formNamespace)) {
+						regionsWithForms.add(region);
 					}
-
-					regionsWithForms.add(region);
 				}
 			}
 		}
@@ -193,7 +202,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		region.init(new IRegionBounds(top, left, width, height, startTime));
-		
+
 		associatedRegions.add(region);
 		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
 
@@ -284,7 +293,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				Log.d(LOG, "export to hidden service...");
 				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
 				IConnection submission = null; 
-				
+
 				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					submission = new ISubmission(organization, exportFile.getAbsolutePath().replace(".mp4", ".mkv"));
 					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
@@ -292,7 +301,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					submission = new ISubmission(organization, exportFile.getAbsolutePath());
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
-				
+
 				submission.isHeld = true;
 			}
 		} catch (JSONException e) {

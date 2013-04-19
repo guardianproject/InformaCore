@@ -5,7 +5,7 @@ import java.util.List;
 
 public class IVideoRegion extends IRegion {
 	public List<IRegionBounds> trail = null;
-	
+
 	public IVideoRegion() {
 		super();
 	}
@@ -19,14 +19,16 @@ public class IVideoRegion extends IRegion {
 	}
 
 	public IRegionBounds getBoundsAtTime(long timestamp) {
-		for(IRegionBounds bounds : trail) {
-			if(timestamp == -1) {
-				if(bounds.startTime == -1) {
-					return bounds;
-				}
-			} else {
-				if(bounds.startTime <= timestamp && timestamp <= bounds.endTime) {
-					return bounds;
+		if(trail != null) {
+			for(IRegionBounds bounds : trail) {
+				if(timestamp == -1) {
+					if(bounds.startTime == -1) {
+						return bounds;
+					}
+				} else {
+					if(bounds.startTime <= timestamp && timestamp <= bounds.endTime) {
+						return bounds;
+					}
 				}
 			}
 		}

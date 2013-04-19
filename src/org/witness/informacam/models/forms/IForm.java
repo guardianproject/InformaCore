@@ -30,7 +30,20 @@ public class IForm extends Model {
 	FormWrapper fw = null;
 	Activity a = null;
 	
-	public String[] populateAnswers(byte[] oldAnswers) {
+	public IForm() {
+		super();
+	}
+	
+	public IForm(IForm model, Activity a) {
+		this(model, a, null);
+	}
+	
+	public IForm(IForm model, Activity a, byte[] oldAnswers) {
+		super();
+		
+		this.inflate(model.asJson());
+		
+		this.a = a;
 		String[] answers = null;
 		try {
 			fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path), oldAnswers);
@@ -38,6 +51,7 @@ public class IForm extends Model {
 			int answer = 0;
 			for(QD qd : fw.questions) {
 				answers[answer] = qd.initialValue != null ? qd.initialValue : "";
+				Log.d(LOG, "this has initial value? " + String.valueOf(qd.initialValue));
 				answer++;
 			}
 		} catch (FileNotFoundException e) {
@@ -45,7 +59,12 @@ public class IForm extends Model {
 			e.printStackTrace();
 		}
 		
-		return answers;
+	}
+	
+	public void answerAll() {
+		for(QD qd : fw.questions) {
+			qd.answer();
+		}
 	}
 	
 	public void clear() {
@@ -54,28 +73,10 @@ public class IForm extends Model {
 		}
 	}
 
-	public boolean associate(Activity a, View answerHolder, String questionId) {
-		return associate(a, null, answerHolder, questionId);
-	}
-
-	public boolean associate(Activity a, String initialValue, View answerHolder, String questionId) {
-		if(this.a == null) {
-			this.a = a;
-		}
-
-		if(fw == null) {
-			try {
-				fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path));
-			} catch(FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return false;
-			}
-		}
-
+	public boolean associate(View answerHolder, String questionId) {
 		QD questionDef = fw.questions.get(fw.questions.indexOf(getQuestionDefByTitleId(questionId)));
 		if(questionDef != null) {
-			questionDef.pin(initialValue, answerHolder);
+			questionDef.pin(answerHolder);
 			return true;
 		}
 
@@ -83,26 +84,8 @@ public class IForm extends Model {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<View> buildUI(Activity a, String pathToOldAnswers, int[] inputLayout, int[] selectOneLayout, int[] selectMultiLayout, int[] audioCaptureLayout) {
+	public List<View> buildUI(int[] inputLayout, int[] selectOneLayout, int[] selectMultiLayout, int[] audioCaptureLayout) {
 		LayoutInflater li = LayoutInflater.from(a);
-		
-		if(this.a == null) {
-			this.a = a;
-		}
-
-		if(fw == null) {
-			try {
-				if(pathToOldAnswers == null) {
-					fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path));
-				} else {
-					byte[] oldAnswers = InformaCam.getInstance().ioService.getBytes(pathToOldAnswers, Type.IOCIPHER);
-					fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path), oldAnswers);
-				}
-			} catch(FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
 		
 		List<View> views = new Vector<View>();
 
@@ -128,13 +111,14 @@ public class IForm extends Model {
 				break;
 			}
 
+			/*
 			Map<String, Integer> viewMap = (Map<String, Integer>) view.getTag();
-			Log.d(LOG, "ok have a map:");
 			Iterator<Entry<String, Integer>> vIt = viewMap.entrySet().iterator();
 			while(vIt.hasNext()) {
 				Entry<String, Integer> entry = vIt.next();
 				Log.d(LOG, entry.getKey() + ": " + entry.getValue());
 			}
+			*/
 
 			view = questionDef.buildUI(a, view);
 			view.setId(v);

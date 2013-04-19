@@ -325,6 +325,9 @@ public class InformaCam extends Service {
 		stopService(ioServiceIntent);
 		stopService(signatureServiceIntent);
 		stopService(uploaderServiceIntent);
+		if(informaService != null) {
+			stopService(informaServiceIntent);
+		}
 
 		stopSelf();
 	}

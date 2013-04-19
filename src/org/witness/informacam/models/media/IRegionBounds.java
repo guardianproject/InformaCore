@@ -1,8 +1,6 @@
 package org.witness.informacam.models.media;
 
-import org.json.JSONObject;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.utils.Constants.Models;
 
 public class IRegionBounds extends Model {
 	public int top = 0;
@@ -42,24 +40,4 @@ public class IRegionBounds extends Model {
 	private void calculate() {
 		// TODO: turn display metrics into real metrics;
 	}
-	
-	@Override
-	public JSONObject asJson() {
-		JSONObject json = super.asJson();
-		/*
-		json.remove(Models.IRegion.DISPLAY_TOP);
-		json.remove(Models.IRegion.DISPLAY_LEFT);
-		json.remove(Models.IRegion.DISPLAY_WIDTH);
-		json.remove(Models.IRegion.DISPLAY_HEIGHT);
-		*/
-		
-		if(startTime == -1L) {
-			json.remove(Models.IRegion.Bounds.START_TIME);
-			json.remove(Models.IRegion.Bounds.END_TIME);
-			json.remove(Models.IRegion.Bounds.DURATION);
-		}
-		
-		return json;
-	}
-	
 }
