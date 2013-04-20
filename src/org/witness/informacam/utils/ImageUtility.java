@@ -89,12 +89,21 @@ public class ImageUtility {
 	}
 
 	public static Bitmap createThumb(Bitmap source, int[] dims) {
+		Log.d(LOG, "btw, dims: " + dims[0] + "x" + dims[1]);
+		
 		float scaleW = 96f/dims[0];
 		float scaleH = 96f/dims[1];
 
 		Matrix matrix = new Matrix();
 		matrix.postScale(scaleW, scaleH);
 
-		return Bitmap.createBitmap(source, 0, 0, dims[0], dims[1], matrix, false);
+		try {
+			return Bitmap.createBitmap(source, 0, 0, dims[0], dims[1], matrix, false);
+		} catch(IllegalArgumentException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+			
+			return Bitmap.createBitmap(source, 0, 0, dims[1], dims[0], matrix, false);
+		}
 	}
 }

@@ -43,7 +43,6 @@ public class VideoConstructor {
 		// just push a call to ffmpeg
 		fileBinDir = informaCam.a.getDir("bin",0);
 
-
 		if (!new java.io.File(fileBinDir,libraryAssets[0]).exists()) {
 			BinaryInstaller bi = new BinaryInstaller(informaCam.a.getApplicationContext(),fileBinDir);
 			try {
@@ -172,14 +171,18 @@ public class VideoConstructor {
 		}      
 
 	}
+	
+	public Bitmap getAFrame(java.io.File source, int[] dims) throws IOException {
+		return getAFrame(source, dims, 1);
+	}
 
-	public Bitmap getAFrame(java.io.File source, int[] dims) throws IOException {		
+	public Bitmap getAFrame(java.io.File source, int[] dims, int frame) throws IOException {		
 		final java.io.File tmp = new java.io.File(Storage.EXTERNAL_DIR, "bmp_" + System.currentTimeMillis());
 		String ffmpegBin = new java.io.File(fileBinDir,"ffmpeg").getAbsolutePath();
 		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 
 		String[] ffmpegCommand = new String[] {
-				ffmpegBin, "-t", "1", 
+				ffmpegBin, "-t", String.valueOf(frame), 
 				"-i", source.getAbsolutePath(),
 				"-ss", "0.5",
 				"-s", (dims[0] + "x" + dims[1]),

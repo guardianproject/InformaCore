@@ -48,7 +48,20 @@ public class MediaHasher
 	
 	}
 	
-	public static String getBitmapHash(File file) throws NoSuchAlgorithmException, IOException {
+	public static String getBitmapHash(Bitmap bitmap) throws NoSuchAlgorithmException, IOException {
+		String hash = "";
+		ByteBuffer buf;
+		
+		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
+		
+		bitmap.copyPixelsToBuffer(buf);
+		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		buf.clear();
+		buf = null;
+		return hash;
+	}
+	
+	public static String getBitmapHash(java.io.File file) throws NoSuchAlgorithmException, IOException {
 		Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
 		String hash = "";
 		ByteBuffer buf;
@@ -62,7 +75,21 @@ public class MediaHasher
 		return hash;
 	}
 	
-	public static String getBitmapHash(FileInputStream fis) throws NoSuchAlgorithmException, IOException {
+	public static String getBitmapHash(info.guardianproject.iocipher.FileInputStream fis) throws NoSuchAlgorithmException, IOException {
+		Bitmap bitmap = BitmapFactory.decodeStream(fis);
+		String hash = "";
+		ByteBuffer buf;
+		
+		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
+		
+		bitmap.copyPixelsToBuffer(buf);
+		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		buf.clear();
+		buf = null;
+		return hash;
+	}
+	
+	public static String getBitmapHash(java.io.FileInputStream fis) throws NoSuchAlgorithmException, IOException {
 		Bitmap bitmap = BitmapFactory.decodeStream(fis);
 		String hash = "";
 		ByteBuffer buf;
