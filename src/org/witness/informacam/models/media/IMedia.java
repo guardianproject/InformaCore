@@ -307,17 +307,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3mObject.toString().getBytes())));			
 			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 
+			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
+			
+			// zip *FIRST
+			byte[] j3mZip = IOUtility.zipBytes(j3mObject.toString().getBytes(), j3mFile.getName(), Type.IOCIPHER);
 
 			// base64
-			byte[] j3mBytes = Base64.encode(j3mObject.toString().getBytes(), Base64.DEFAULT);
-
-			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
+			byte[] j3mBytes = Base64.encode(j3mZip, Base64.DEFAULT);
 			if(organization != null) {
 				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
 			}
 
-			byte[] j3mZip = IOUtility.zipBytes(j3mBytes, j3mFile.getName(), Type.IOCIPHER);
-			informaCam.ioService.saveBlob(j3mZip, j3mFile);
+			informaCam.ioService.saveBlob(j3mBytes, j3mFile);
 
 			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
 			info.guardianproject.iocipher.File original = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);

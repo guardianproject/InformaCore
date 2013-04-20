@@ -1,12 +1,21 @@
 package org.witness.informacam.informa.embed;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.connections.IUpload;
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Bitmap.CompressFormat;
+import android.util.Log;
 
 public class ImageConstructor {
 	info.guardianproject.iocipher.File pathToImage;
@@ -20,6 +29,8 @@ public class ImageConstructor {
 	int destination;
 	IMedia media;
 	IConnection connection;
+	
+	private final static String LOG = Informa.LOG;
 
 	static {
 		System.loadLibrary("JpegRedaction");
@@ -51,7 +62,22 @@ public class ImageConstructor {
 		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToImage.getAbsolutePath(), Type.IOCIPHER), clone, true);
 
 		version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToImage.getName());
-		int c = constructImage(clone.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
+		Bitmap b = BitmapFactory.decodeFile(clone.getAbsolutePath());
+		try {
+			java.io.FileOutputStream fos = new java.io.FileOutputStream(version);
+			b.compress(CompressFormat.JPEG, 100, fos);
+			fos.flush();
+			fos.close();
+		} catch (FileNotFoundException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		b.recycle();
+		
+		int c = constructImage(version.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
 
 		if(c > 0) {
 			finish();
@@ -77,8 +103,8 @@ public class ImageConstructor {
 		}
 		
 		// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-		clone.delete();
-		version.delete();
+		//clone.delete();
+		//version.delete();
 		
 	}
 }
