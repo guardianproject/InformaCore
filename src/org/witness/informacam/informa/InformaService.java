@@ -428,6 +428,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public long onUpdate(LogPack logPack) {
 		long timestamp = ((GeoSucker) _geo).getTime();
 		onUpdate(timestamp, logPack);
+		
 		return timestamp;
 	}
 

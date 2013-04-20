@@ -23,10 +23,9 @@ public class IMediaManifest extends Model {
 	}
 	
 	public IMedia getById(String mediaId) {
-		for(Object m : media) {
-			if(((IMedia) m)._id.equals(mediaId)) {
-				Log.d(LOG, "this media " + ((IMedia) m).asJson().toString());
-				return (IMedia) m;
+		for(IMedia m : media) {
+			if(m._id.equals(mediaId)) {
+				return m;
 			}
 		}
 		
@@ -38,9 +37,9 @@ public class IMediaManifest extends Model {
 			return;
 		}
 		
-		for(Object m : media) {
+		for(IMedia m : media) {
 			try {
-				((IMedia) m).put(Models.IMediaManifest.Sort.IS_SHOWING, true);
+				m.put(Models.IMediaManifest.Sort.IS_SHOWING, true);
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -49,32 +48,32 @@ public class IMediaManifest extends Model {
 		
 		switch(order) {
 		case Models.IMediaManifest.Sort.DATE_DESC:
-			Comparator<Object> DateDesc = new Comparator<Object>() {
+			Comparator<IMedia> DateDesc = new Comparator<IMedia>() {
 
 				@Override
-				public int compare(Object m1, Object m2) {
-					return (((IMedia) m1).dcimEntry.timeCaptured > ((IMedia) m2).dcimEntry.timeCaptured ? -1 : (m1==m2 ? 0 : 1));
+				public int compare(IMedia m1, IMedia m2) {
+					return m1.dcimEntry.timeCaptured > m2.dcimEntry.timeCaptured ? -1 : (m1==m2 ? 0 : 1);
 				}
 				
 			};
 			Collections.sort(media, DateDesc);
 			break;
 		case Models.IMediaManifest.Sort.DATE_ASC:
-			Comparator<Object> DateAsc = new Comparator<Object>() {
+			Comparator<IMedia> DateAsc = new Comparator<IMedia>() {
 
 				@Override
-				public int compare(Object m1, Object m2) {
-					return (((IMedia) m1).dcimEntry.timeCaptured < ((IMedia) m2).dcimEntry.timeCaptured ? -1 : (m1==m2 ? 0 : 1));
+				public int compare(IMedia m1, IMedia m2) {
+					return m1.dcimEntry.timeCaptured < m2.dcimEntry.timeCaptured ? -1 : (m1==m2 ? 0 : 1);
 				}
 				
 			};
 			Collections.sort(media, DateAsc);
 			break;
 		case Models.IMediaManifest.Sort.TYPE_PHOTO:
-			for(Object m : media) {
-				if(!((IMedia) m).dcimEntry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+			for(IMedia m : media) {
+				if(!m.dcimEntry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 					try {
-						((IMedia) m).put(Models.IMediaManifest.Sort.IS_SHOWING, false);
+						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
 					} catch(JSONException e) {
 						Log.e(LOG, e.toString());
 						e.printStackTrace();
@@ -83,10 +82,10 @@ public class IMediaManifest extends Model {
 			}
 			break;
 		case Models.IMediaManifest.Sort.TYPE_VIDEO:
-			for(Object m : media) {
-				if(!((IMedia) m).dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+			for(IMedia m : media) {
+				if(!m.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 					try {
-						((IMedia) m).put(Models.IMediaManifest.Sort.IS_SHOWING, false);
+						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
 					} catch(JSONException e) {
 						Log.e(LOG, e.toString());
 						e.printStackTrace();

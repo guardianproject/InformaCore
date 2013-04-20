@@ -169,6 +169,7 @@ public class Constants {
 			public final static int TIMESTAMPS_RESOLVED= 270;
 			public final static int FORM_EDITED = 269;
 			
+			
 			public final static class Keys {
 				public final static String USER_ACTION = "userActionReported";
 				public final static String TYPE = "captureEventType";
@@ -223,6 +224,12 @@ public class Constants {
 	public final static class Models {
 		public static final String _ID = "_id";
 		public static final String _REV = "_rev";
+		
+		public class LogCache {
+			public final static String CACHE = "cache";
+			public final static String TIME_OFFSET = "timeOffset";
+		}
+		
 		public class INotification {
 			public class Type {
 				public final static int NEW_KEY = 600;
@@ -247,6 +254,7 @@ public class Constants {
 			public static final String DISPLAY_LEFT = "displayLeft";
 			public static final String DISPLAY_WIDTH = "displayWidth";
 			public static final String DISPLAY_HEIGHT = "displayHeight";
+			public static final String BOUNDS = "bounds";
 			
 			public class Bounds {
 				public final static String TOP = "top";
@@ -291,6 +299,12 @@ public class Constants {
 			public static final String J3M = "j3m";
 			public static final String J3M_DESCRIPTOR = "j3m_descriptor";
 			public static final String VERSION = "versionForExport";
+			
+			public class Data {
+
+				public static final String SENSOR_PLAYBACK = "sensorPlayback";
+				
+			}
 			
 			public class Image {
 				public static final String BITMAP = "bitmap";

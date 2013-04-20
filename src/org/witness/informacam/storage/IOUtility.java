@@ -23,10 +23,22 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.xml.sax.SAXException;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -52,6 +64,53 @@ public class IOUtility {
 			c.close();
 		}
 		return uri;
+	}
+	
+	public final static JSONObject xmlToJson(InputStream is) {
+		
+		try {
+			JSONObject j = new JSONObject();
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db;
+			db = dbf.newDocumentBuilder();
+			Document doc = db.parse(is);
+			doc.getDocumentElement().normalize();
+
+			NodeList answers = doc.getDocumentElement().getChildNodes();
+			Log.d(LOG, "there are " + answers.getLength() + " child nodes");
+			for(int n=0; n<answers.getLength(); n++) {
+				Node node = answers.item(n);
+
+				Log.d(LOG, "node: " + node.getNodeName());
+				if(node.getNodeType() == Node.ELEMENT_NODE) {
+					try {
+						Element el = (Element) node;
+						j.put(node.getNodeName(), el.getFirstChild().getNodeValue());
+					} catch(NullPointerException e) {
+						continue;
+					}
+				}
+			}
+			
+			return j;
+		} catch (ParserConfigurationException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (DOMException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (SAXException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 
 	public final static byte[] getBytesFromBitmap(Bitmap bitmap, boolean asBase64) {

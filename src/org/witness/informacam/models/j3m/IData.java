@@ -6,5 +6,6 @@ import org.witness.informacam.models.Model;
 
 public class IData extends Model {
 	public List<ISensorCapture> sensorCapture;
+	public List<IRegionData> regionData;
 	public IExif exif;
 }

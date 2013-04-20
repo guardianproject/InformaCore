@@ -1,12 +1,15 @@
 package org.witness.informacam.models.media;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
@@ -20,6 +23,8 @@ import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntent;
+import org.witness.informacam.models.j3m.IRegionData;
+import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.IMail;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
@@ -29,6 +34,8 @@ import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
+import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
+import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
@@ -63,7 +70,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public CharSequence detailsAsText = null;
 
-	private Handler resonseHandler;
+	private Handler responseHandler;
 
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
@@ -105,12 +112,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					bounds = r.bounds;
 				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					IVideoRegion r = new IVideoRegion();
-					try {
-						r = (IVideoRegion) region;
-					} catch(ClassCastException e) {
-						r.inflate(region.asJson());
-					}
-					
+					r = (IVideoRegion) region;
 					bounds = r.getBoundsAtTime(timestamp);
 				}
 
@@ -119,7 +121,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						if(region instanceof IImageRegion) {
 							return region;
 						} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
-							return region;
+							IVideoRegion r = new IVideoRegion();
+							r = (IVideoRegion) region;
+							return r;
 						}
 					}
 				} else {
@@ -127,7 +131,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						if(region instanceof IImageRegion) {
 							return region;
 						} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
-							return region;
+							IVideoRegion r = new IVideoRegion();
+							r = (IVideoRegion) region;
+							return r;
 						}
 					}
 				}
@@ -160,33 +166,21 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IRegion addRegion() {
-		IRegion region = null;
-		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-			try {
-				region = addRegion(0, 0, 0, 0);
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-
-		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-			try {
-				region = addRegion(0, 0, 0, 0, -1L);
-				((IVideoRegion) region).trail.get(0).endTime = dcimEntry.exif.duration;
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+		try {
+			return addRegion(0, 0, 0, 0);
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
 		}
 
-		return region;
+		return null;
 	}
 
 	public IRegion addRegion(int top, int left, int width, int height) throws JSONException {
-		return addRegion(top, left, width, height, -1L);
+		return addRegion(top, left, width, height, -1L, -1L);
 	}
 
-	public IRegion addRegion(int top, int left, int width, int height, long startTime) throws JSONException {
+	public IRegion addRegion(int top, int left, int width, int height, long startTime, long endTime) throws JSONException {
 		if(associatedRegions == null) {
 			Log.d(LOG, "initing associatedRegions");
 			associatedRegions = new ArrayList<IRegion>();
@@ -201,7 +195,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			region = new IRegion();
 		}
 
-		region.init(new IRegionBounds(top, left, width, height, startTime));
+		region.init(new IRegionBounds(top, left, width, height, startTime, endTime));
 
 		associatedRegions.add(region);
 		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
@@ -224,7 +218,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	@SuppressWarnings("unused")
 	public boolean export(Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-		resonseHandler = h;
+		responseHandler = h;
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				
+			}
+		});
+
 		InformaCam informaCam = InformaCam.getInstance();
 
 		// create data package
@@ -234,8 +235,49 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		data.exif = dcimEntry.exif;
 		if(associatedCaches != null && associatedCaches.size() > 0) { 
 			for(String ac : associatedCaches) {
-				// TODO: render these to data.sensorCapture 
+				try {
+					// get the data and loop through capture types
+					byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
+					JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
 
+					for(int i=0; i<cache.length(); i++) {
+						JSONObject entry = cache.getJSONObject(i);
+						long ts = Long.parseLong((String) entry.keys().next());
+
+						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
+
+						switch(captureEvent.getInt(CaptureEvent.Keys.TYPE)) {
+						case CaptureEvent.SENSOR_PLAYBACK:
+							if(data.sensorCapture == null) {
+								data.sensorCapture = new ArrayList<ISensorCapture>();
+							}
+
+							data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
+							break;
+						}
+					}
+
+					c = null;
+				} catch (JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}				
+			}
+		}
+
+		if(associatedRegions != null && associatedRegions.size() > 0) {
+			for(IRegion r : associatedRegions) {
+				if(r.formPath != null) {
+					if(data.regionData == null) {
+						data.regionData = new ArrayList<IRegionData>();
+					}
+					
+					// TODO: get locations from cache
+					byte[] formBytes = informaCam.ioService.getBytes(r.formPath, Type.IOCIPHER);
+					if(formBytes != null) {
+						data.regionData.add(new IRegionData(r, IOUtility.xmlToJson(new ByteArrayInputStream(formBytes))));
+					}
+				}
 			}
 		}
 
@@ -362,7 +404,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		b.putString(Models.IMedia.VERSION, version.getAbsolutePath());
 		Message msg = new Message();
 		msg.setData(b);
-		resonseHandler.sendMessage(msg);
+		responseHandler.sendMessage(msg);
 	}
 
 	@Override
@@ -373,7 +415,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		b.putString(Models.IMedia.VERSION, version.getAbsolutePath());
 		Message msg = new Message();
 		msg.setData(b);
-		resonseHandler.sendMessage(msg);
+		responseHandler.sendMessage(msg);
 
 		Intent intent = new Intent()
 		.setAction(Intent.ACTION_SEND)

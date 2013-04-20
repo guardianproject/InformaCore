@@ -57,8 +57,12 @@ public class Model extends JSONObject {
 			e.printStackTrace();
 		}
 	}
+	
+	public Class<?> recast() {
+		return recast(this, this.asJson());
+	}
 
-	private Class<?> recast(Object m, JSONObject ja) {
+	public Class<?> recast(Object m, JSONObject ja) {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		List<Class<?>> subclasses = new ArrayList<Class<?>>();
@@ -72,7 +76,7 @@ public class Model extends JSONObject {
 				try {
 					Class<?> subClz = Class.forName(model);
 					if(subClz.getSuperclass().equals(clz)) {
-						//Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
+						Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
 						subclasses.add(subClz);
 					}
 				} catch (ClassNotFoundException e) {
@@ -91,6 +95,7 @@ public class Model extends JSONObject {
 					Object o = c.newInstance();
 					
 					for(Field subField : o.getClass().getDeclaredFields()) {
+						//Log.d(LOG, "is subfield " + subField.getName() + " in json\n" + ja.toString());
 						if(!ja.has(subField.getName())) {
 							subClz_.remove(c);
 							break;
@@ -114,6 +119,26 @@ public class Model extends JSONObject {
 		
 		return recast;
 	}
+	
+	public Object asCast() {
+		Class<?> clz = recast(this, this.asJson());
+		if(clz != null) {
+			try {
+				Object asCast = clz.newInstance();
+				((Model) asCast).inflate(this.asJson());
+				return asCast;
+			} catch (InstantiationException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+		}
+		
+		return this;
+		
+	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {
@@ -131,7 +156,6 @@ public class Model extends JSONObject {
 
 					if(f.getType() == List.class) {
 						List subValue = new ArrayList();
-
 						Class clz = (Class<?>) ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
 
 						Object test = clz.newInstance();
@@ -163,7 +187,6 @@ public class Model extends JSONObject {
 					} else if(isModel) {						
 						Class clz = (Class<?>) f.getType();
 						// if clz has less fields than the json object, this could be a subclass
-						
 						Object val = clz.newInstance();
 						Class<?> recast = recast(val, values.getJSONObject(f.getName()));
 						if(recast  != null) {
@@ -223,7 +246,7 @@ public class Model extends JSONObject {
 
 			try {
 				Object value = f.get(this);
-				//Log.d(LOG, "HEY THIS TYPE " + f.getType().getSuperclass());
+				//Log.d(LOG, "HEY THIS TYPE " + f.getT)ype().getSuperclass());
 
 				if(f.getName().contains("this$")) {
 					continue;

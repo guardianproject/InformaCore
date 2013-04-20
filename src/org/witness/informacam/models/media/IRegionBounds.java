@@ -18,15 +18,16 @@ public class IRegionBounds extends Model {
 	public IRegionBounds() {}
 	
 	public IRegionBounds(int top, int left, int width, int height) {
-		this(top, left, width, height, -1L);
+		this(top, left, width, height, -1L, -1L);
 	}
 	
-	public IRegionBounds(int top, int left, int width, int height, long startTime) {
+	public IRegionBounds(int top, int left, int width, int height, long startTime, long endTime) {
 		this.displayTop = top;
 		this.displayLeft = left;
 		this.displayWidth = width;
 		this.displayHeight = height;
 		this.startTime = startTime;
+		this.endTime = endTime;
 	}
 	
 	public long getDuration() {

@@ -345,7 +345,7 @@ public class InformaCam extends Service {
 
 	public void saveState(Model model, info.guardianproject.iocipher.File cache) {
 		ioService.saveBlob(model.asJson().toString().getBytes(), cache);
-		Log.d(LOG, "saved state for " + cache.getAbsolutePath());
+		Log.d(LOG, "saved state for " + cache.getAbsolutePath() + "\n" + model.asJson().toString());
 	}
 
 	public void saveState(Model model) {
