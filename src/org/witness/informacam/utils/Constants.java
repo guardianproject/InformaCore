@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
+import org.witness.informacam.models.j3m.ILogPack;
+
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Message;
@@ -30,8 +32,8 @@ public class Constants {
 	}
 	
 	public interface SuckerCacheListener {
-		public void onUpdate(long timestamp, LogPack logPack);
-		public long onUpdate(LogPack logPack);
+		public void onUpdate(long timestamp, ILogPack ILogPack);
+		public long onUpdate(ILogPack ILogPack);
 	}
 	
 	public interface HttpUtilityListener {
@@ -66,6 +68,7 @@ public class Constants {
 			public static final int RETRY_SAVE = 104;
 			public static final int RETRY_GET = 105;
 			public static final int INFORMA_SERVICE = 106;
+			public static final int BACKGROUND_PROCESSOR = 107;
 		}
 
 		public final static class Keys {
@@ -172,12 +175,13 @@ public class Constants {
 			
 			public final static class Keys {
 				public final static String USER_ACTION = "userActionReported";
-				public final static String TYPE = "captureEventType";
+				public final static String TYPE = "captureTypes";
 				public final static String MATCH_TIMESTAMP = "captureEventMatchTimestamp";
 				public final static String TIMESTAMP = "captureEventTimestamp";
 				public final static String ON_VIDEO_START = "timestampOnVideoStart";
 				public final static String MEDIA_CAPTURE_COMPLETE = "mediaCapturedComplete";
 				public final static String METADATA_CAPTURED = "metadataCaptured";
+				public final static String REGION_LOCATION_DATA = "regionLocationData";
 			}
 		}
 
@@ -234,6 +238,8 @@ public class Constants {
 			public class Type {
 				public final static int NEW_KEY = 600;
 				public static final int KEY_SENT = 601;
+				public static final int EXPORTED_MEDIA = 602;
+				public static final int SHARED_MEDIA = 603;
 			}
 		}
 		
@@ -328,6 +334,11 @@ public class Constants {
 				public static final String SIZE = "size";
 				public static final String HASH = "hash";
 				public static final String FILE_NAME = "file_name";
+			}
+			
+			public class TempKeys {
+				public final static String IS_SELECTED = "isBatchSelected";
+				public final static String SHOULD_SHOW = "shouldShow";
 			}
 		}
 
@@ -495,6 +506,10 @@ public class Constants {
 			}
 		}
 
+		public final static class Background {
+			public final static String LOG = "******************** InformaCam : BackgroundProcessor ********************";
+		}
+		
 		public final static class Storage {
 			public final static String LOG = "******************** InformaCam : Storage ********************";
 			public static final String ROOT = "informaCamIOCipher";

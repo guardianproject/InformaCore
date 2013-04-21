@@ -23,7 +23,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.ISecretKey;
-import org.witness.informacam.utils.LogPack;
+import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -95,7 +95,7 @@ public class SignatureService extends Service {
 		
 	}
 	
-	public boolean isVerified(final LogPack data) {
+	public boolean isVerified(final ILogPack data) {
 		boolean isVerified = false;
 
 		ExecutorService ex = Executors.newFixedThreadPool(100);

@@ -4,9 +4,9 @@ import java.util.TimerTask;
 
 import org.json.JSONException;
 import org.witness.informacam.informa.SensorLogger;
+import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
-import org.witness.informacam.utils.LogPack;
 
 import android.content.Context;
 import android.location.Criteria;
@@ -59,7 +59,7 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 					try {
 						double[] loc = updateLocation();
 						if (loc != null)
-							sendToBuffer(new LogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]"));
+							sendToBuffer(new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]"));
 					} catch(NullPointerException e) {
 						Log.e(LOG, "location NPE", e);
 					}
@@ -70,13 +70,13 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		getTimer().schedule(getTask(), 0, Geo.LOG_RATE);
 	}
 	
-	public LogPack forceReturn() {
+	public ILogPack forceReturn() {
 		double[] loc = updateLocation();
 		if(loc == null) {
 			Log.d(LOG, "location was null");
 		}
 		
-		return new LogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		return new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
 	}
 	
 	public long getTime() {

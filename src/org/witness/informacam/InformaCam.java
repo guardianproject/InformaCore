@@ -28,6 +28,7 @@ import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.informa.InformaService;
+import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -82,12 +83,13 @@ public class InformaCam extends Service {
 	
 	public IUser user;
 
-	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent;
+	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent, backgroundProcessorIntent;
 
 	public UploaderService uploaderService = null;
 	public IOService ioService = null;
 	public SignatureService signatureService = null;
 	public InformaService informaService = null;
+	public BackgroundProcessor backgroundProcessor = null;
 
 	private static InformaCam informaCam;
 	public Activity a = null;
@@ -129,6 +131,7 @@ public class InformaCam extends Service {
 		signatureServiceIntent = new Intent(this, SignatureService.class);
 		uploaderServiceIntent = new Intent(this, UploaderService.class);
 		informaServiceIntent = new Intent(this, InformaService.class);
+		backgroundProcessorIntent = new Intent(this, BackgroundProcessor.class);
 
 		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
 		ed = sp.edit();
@@ -290,7 +293,6 @@ public class InformaCam extends Service {
 		Intent intent = new Intent(Actions.INFORMACAM_START).putExtra(Codes.Keys.SERVICE, data);
 		sendBroadcast(intent);
 	}
-
 	
 	private void setModels() {
 		
@@ -318,15 +320,19 @@ public class InformaCam extends Service {
 			unregisterReceiver(br);
 		}
 
-		ioService.unmount();
-
 		saveStates();
-
+		
+		ioService.unmount();
 		stopService(ioServiceIntent);
 		stopService(signatureServiceIntent);
 		stopService(uploaderServiceIntent);
+		
 		if(informaService != null) {
 			stopService(informaServiceIntent);
+		}
+		
+		if(backgroundProcessor != null) {
+			stopService(backgroundProcessorIntent);
 		}
 
 		stopSelf();
@@ -547,7 +553,7 @@ public class InformaCam extends Service {
 		return informaCam;
 	}
 
-	public void associateActivity(Activity a) {
+	private void associateActivity(Activity a) {
 		this.a = a;
 	}
 
@@ -556,7 +562,7 @@ public class InformaCam extends Service {
 	}
 	
 	public void addNotification(INotification notification) {
-		addNotification(notification, true);
+		addNotification(notification, false);
 	}
 	
 	public void addNotification(INotification notification, boolean showOnTop) {
@@ -564,6 +570,7 @@ public class InformaCam extends Service {
 		saveState(notificationsManifest);
 		
 		if(showOnTop) {
+			/*	TODO:
 			Notification n = new NotificationCompat.Builder(a)
 				.setContentTitle(notification.label)
 				.setContentText(notification.content)
@@ -572,6 +579,7 @@ public class InformaCam extends Service {
 			
 			n.flags |= Notification.FLAG_AUTO_CANCEL;
 			notificationManager.notify(0, n);
+			*/
 		}
 	}
 
@@ -635,8 +643,10 @@ public class InformaCam extends Service {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {				
-				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
+			if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {
+				int serviceCode = intent.getIntExtra(Codes.Keys.SERVICE, 0);
+				
+				switch(serviceCode) {
 				case Codes.Routes.SIGNATURE_SERVICE:
 					signatureService = SignatureService.getInstance();
 					break;
@@ -648,6 +658,9 @@ public class InformaCam extends Service {
 					break;
 				case Codes.Routes.INFORMA_SERVICE:
 					informaService = InformaService.getInstance();
+					break;
+				case Codes.Routes.BACKGROUND_PROCESSOR:
+					backgroundProcessor = BackgroundProcessor.getInstance();
 					break;
 				}
 
@@ -666,7 +679,7 @@ public class InformaCam extends Service {
 					return;
 				}
 
-				if(intent.getIntExtra(Codes.Keys.SERVICE, 0) != Codes.Routes.INFORMA_SERVICE) {
+				if(serviceCode != Codes.Routes.INFORMA_SERVICE && serviceCode != Codes.Routes.BACKGROUND_PROCESSOR) {
 					new Thread(new Runnable() {
 						@Override
 						public void run() {

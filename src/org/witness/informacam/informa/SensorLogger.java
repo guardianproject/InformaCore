@@ -3,6 +3,7 @@ package org.witness.informacam.informa;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -10,10 +11,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
-import org.witness.informacam.utils.LogPack;
 
 import android.app.Activity;
 import android.util.Log;
@@ -90,12 +91,15 @@ public class SensorLogger<T> {
 		return logged;
 	}
 	
-	public LogPack forceReturn() throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, JSONException {
+	public ILogPack forceReturn() throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, JSONException {
 		if(_sucker.getClass().getDeclaredMethod("forceReturn", null) != null) {
 			Method fr = _sucker.getClass().getDeclaredMethod("forceReturn", null);
 			
-			LogPack logPack = (LogPack) fr.invoke(_sucker, null);
-			logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
+			ILogPack logPack = (ILogPack) fr.invoke(_sucker, null);
+			if(logPack.captureTypes == null) {
+				logPack.captureTypes = new ArrayList<Integer>();
+			}
+			logPack.captureTypes.add(CaptureEvent.SENSOR_PLAYBACK);
 			
 			return logPack;
 		}
@@ -103,15 +107,17 @@ public class SensorLogger<T> {
 		return null;
 	}
 
-	public void sendToBuffer(final LogPack logPack) {
+	public void sendToBuffer(final ILogPack logPack) {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					logPack.put(CaptureEvent.Keys.TYPE, CaptureEvent.SENSOR_PLAYBACK);
+					if(logPack.captureTypes == null) {
+						logPack.captureTypes = new ArrayList<Integer>();
+					}
+					logPack.captureTypes.add(CaptureEvent.SENSOR_PLAYBACK);
 					((SuckerCacheListener) informaCam.informaService).onUpdate(logPack);
 				} catch(NullPointerException e) {}
-				catch (JSONException e) {}
 			}
 		}).start();
 		

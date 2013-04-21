@@ -5,9 +5,9 @@ import java.util.TimerTask;
 
 import org.json.JSONException;
 import org.witness.informacam.informa.SensorLogger;
+import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Accelerometer;
-import org.witness.informacam.utils.LogPack;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -23,7 +23,7 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 	SensorManager sm;
 	List<Sensor> availableSensors;
 	boolean hasAccelerometer, hasOrientation, hasLight, hasMagneticField;
-	org.witness.informacam.utils.LogPack currentAccelerometer, currentLight, currentMagField;
+	org.witness.informacam.models.j3m.ILogPack currentAccelerometer, currentLight, currentMagField;
 	
 	private final static String LOG = Suckers.LOG;
 			
@@ -86,8 +86,8 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 			sendToBuffer(currentLight);
 	}
 	
-	public LogPack forceReturn() throws JSONException {
-		LogPack fr = new LogPack(Accelerometer.Keys.ACC, currentAccelerometer);
+	public ILogPack forceReturn() throws JSONException {
+		ILogPack fr = new ILogPack(Accelerometer.Keys.ACC, currentAccelerometer);
 		fr.put(Accelerometer.Keys.ORIENTATION, currentMagField);
 		fr.put(Accelerometer.Keys.LIGHT, currentLight);
 		return fr;
@@ -100,7 +100,7 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 	public void onSensorChanged(SensorEvent event) {
 		synchronized(this) {
 			if(getIsRunning()) {
-				LogPack sVals = new LogPack();
+				ILogPack sVals = new ILogPack();
 				
 				try {				
 					switch(event.sensor.getType()) {

@@ -1,9 +1,6 @@
 package org.witness.informacam.models.media;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -29,6 +26,7 @@ import org.witness.informacam.models.j3m.IIntent;
 import org.witness.informacam.models.j3m.IRegionData;
 import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.IMail;
+import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.ui.IRegionDisplay;
@@ -39,14 +37,11 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
-import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -225,8 +220,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public boolean export(Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		responseHandler = h;
+
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
+
+		INotification notification = new INotification();
+		notification.icon = bitmapThumb;
 
 		// create data package
 		if(data == null) {
@@ -235,7 +234,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		data.exif = dcimEntry.exif;
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
-		
+
 		if(associatedCaches != null && associatedCaches.size() > 0) { 
 			for(String ac : associatedCaches) {
 				try {
@@ -248,15 +247,24 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						long ts = Long.parseLong((String) entry.keys().next());
 
 						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
+						
+						Log.d(LOG, "this entry: " + entry.toString());
+						
+						JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
 
-						switch(captureEvent.getInt(CaptureEvent.Keys.TYPE)) {
-						case CaptureEvent.SENSOR_PLAYBACK:
-							if(data.sensorCapture == null) {
-								data.sensorCapture = new ArrayList<ISensorCapture>();
+						for(int ct=0; ct<captureTypes.length(); ct++) {
+							switch((Integer) captureTypes.get(ct)) {
+							case CaptureEvent.SENSOR_PLAYBACK:
+								if(data.sensorCapture == null) {
+									data.sensorCapture = new ArrayList<ISensorCapture>();
+								}
+
+								data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
+								break;
+							case CaptureEvent.REGION_GENERATED:
+								Log.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
+								break;
 							}
-
-							data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
-							break;
 						}
 					}
 
@@ -296,7 +304,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		genealogy.localMediaPath = dcimEntry.fileName;
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
-		
+
 		if(intent == null) {
 			intent = new IIntent();
 		}
@@ -305,8 +313,17 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
+		notification.label = informaCam.a.getString(R.string.export);
+
+		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? informaCam.a.getString(R.string.image) :informaCam.a.getString(R.string.video);
+		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
+			mimeType = informaCam.a.getString(R.string.log);
+		}
+
+		notification.content = informaCam.a.getString(R.string.you_exported_this_x, mimeType);
 		if(organization != null) {
 			intent.intendedDestination = organization.organizationName;
+			notification.content = informaCam.a.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
 		}
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
@@ -346,7 +363,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, shareFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.FILE_SYSTEM);
 				}
-				
+
+				notification.type = Models.INotification.Type.EXPORTED_MEDIA;				
+
 			} else {
 				// create a iocipher file
 				Log.d(LOG, "export to hidden service...");
@@ -362,9 +381,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				}
 
 				submission.isHeld = true;
+				notification.type = Models.INotification.Type.SHARED_MEDIA;
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			informaCam.addNotification(notification);
+
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
@@ -422,19 +444,19 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		b.putString(key, what);
 		Message msg = new Message();
 		msg.setData(b);
-		
+
 		responseHandler.sendMessage(msg);
 	}
-	
+
 	private void sendMessage(String key, int what) {
 		Bundle b = new Bundle();
 		b.putInt(key, what);
 		Message msg = new Message();
 		msg.setData(b);
-		
+
 		responseHandler.sendMessage(msg);
 	}
-	
+
 	@Override
 	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());

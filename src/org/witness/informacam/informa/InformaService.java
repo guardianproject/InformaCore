@@ -18,6 +18,7 @@ import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.j3m.ISuckerCache;
+import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.utils.Constants.Actions;
@@ -28,7 +29,6 @@ import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
-import org.witness.informacam.utils.LogPack;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -62,7 +62,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public SensorLogger<PhoneSucker> _phone;
 	public SensorLogger<AccelerometerSucker> _acc;
 
-	private LoadingCache<Long, LogPack> cache;
+	private LoadingCache<Long, ILogPack> cache;
 	InformaCam informaCam;
 
 	Handler h = new Handler();
@@ -157,10 +157,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private void initCache() {
 		startTime = System.currentTimeMillis();
 		cache = CacheBuilder.newBuilder()
-				.build(new CacheLoader<Long, LogPack>() {
+				.build(new CacheLoader<Long, ILogPack>() {
 
 					@Override
-					public LogPack load(Long timestamp) throws Exception {
+					public ILogPack load(Long timestamp) throws Exception {
 						return cache.getUnchecked(timestamp);
 					}
 
@@ -177,10 +177,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		ISuckerCache suckerCache = new ISuckerCache();
 		JSONArray cacheArray = new JSONArray();
-		Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
 		while(cIt.hasNext()) {
 			JSONObject cacheMap = new JSONObject();
-			Entry<Long, LogPack> c = cIt.next();
+			Entry<Long, ILogPack> c = cIt.next();
 			try {
 				cacheMap.put(String.valueOf(c.getKey()), c.getValue());
 				cacheArray.put(cacheMap);
@@ -235,16 +235,16 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return informaService;
 	}
 
-	public List<LogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException {
+	public List<ILogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
-		Future<List<LogPack>> query = ex.submit(new Callable<List<LogPack>>() {
+		Future<List<ILogPack>> query = ex.submit(new Callable<List<ILogPack>>() {
 
 			@Override
-			public List<LogPack> call() throws Exception {
-				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
-				List<LogPack> events = new ArrayList<LogPack>();
+			public List<ILogPack> call() throws Exception {
+				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+				List<ILogPack> events = new ArrayList<ILogPack>();
 				while(cIt.hasNext()) {
-					Entry<Long, LogPack> entry = cIt.next();
+					Entry<Long, ILogPack> entry = cIt.next();
 					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
 						events.add(entry.getValue());
 				}
@@ -253,22 +253,22 @@ public class InformaService extends Service implements SuckerCacheListener {
 			}
 		});
 
-		List<LogPack> events = query.get();
+		List<ILogPack> events = query.get();
 		ex.shutdown();
 
 		return events;
 	}
 
-	public List<Entry<Long, LogPack>> getAllEventsByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
+	public List<Entry<Long, ILogPack>> getAllEventsByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
-		Future<List<Entry<Long, LogPack>>> query = ex.submit(new Callable<List<Entry<Long, LogPack>>>() {
+		Future<List<Entry<Long, ILogPack>>> query = ex.submit(new Callable<List<Entry<Long, ILogPack>>>() {
 
 			@Override
-			public List<Entry<Long, LogPack>> call() throws Exception {
-				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
-				List<Entry<Long, LogPack>> events = new ArrayList<Entry<Long, LogPack>>();
+			public List<Entry<Long, ILogPack>> call() throws Exception {
+				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+				List<Entry<Long, ILogPack>> events = new ArrayList<Entry<Long, ILogPack>>();
 				while(cIt.hasNext()) {
-					Entry<Long, LogPack> entry = cIt.next();
+					Entry<Long, ILogPack> entry = cIt.next();
 					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
 						events.add(entry);
 				}
@@ -277,22 +277,22 @@ public class InformaService extends Service implements SuckerCacheListener {
 			}
 		});
 
-		List<Entry<Long, LogPack>> events = query.get();
+		List<Entry<Long, ILogPack>> events = query.get();
 		ex.shutdown();
 
 		return events;
 	}
 
-	public Entry<Long, LogPack> getEventByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
+	public Entry<Long, ILogPack> getEventByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
-		Future<Entry<Long, LogPack>> query = ex.submit(new Callable<Entry<Long, LogPack>>() {
+		Future<Entry<Long, ILogPack>> query = ex.submit(new Callable<Entry<Long, ILogPack>>() {
 
 			@Override
-			public Entry<Long, LogPack> call() throws Exception {
-				Iterator<Entry<Long, LogPack>> cIt = cache.asMap().entrySet().iterator();
-				Entry<Long, LogPack> entry = null;
+			public Entry<Long, ILogPack> call() throws Exception {
+				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+				Entry<Long, ILogPack> entry = null;
 				while(cIt.hasNext() && entry == null) {
-					Entry<Long, LogPack> e = cIt.next();
+					Entry<Long, ILogPack> e = cIt.next();
 					if(e.getValue().has(CaptureEvent.Keys.TYPE) && e.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
 						entry = e;
 				}
@@ -301,48 +301,48 @@ public class InformaService extends Service implements SuckerCacheListener {
 			}
 		});
 
-		Entry<Long, LogPack> entry = query.get();
+		Entry<Long, ILogPack> entry = query.get();
 		ex.shutdown();
 
 		return entry;
 	}
 
-	public LogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
+	public ILogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
 		ex = Executors.newFixedThreadPool(100);
-		Future<LogPack> query = ex.submit(new Callable<LogPack>() {
+		Future<ILogPack> query = ex.submit(new Callable<ILogPack>() {
 
 			@Override
-			public LogPack call() throws Exception {
-				Iterator<LogPack> cIt = cache.asMap().values().iterator();
-				LogPack logPack = null;
-				while(cIt.hasNext() && logPack == null) {
-					LogPack lp = cIt.next();
+			public ILogPack call() throws Exception {
+				Iterator<ILogPack> cIt = cache.asMap().values().iterator();
+				ILogPack ILogPack = null;
+				while(cIt.hasNext() && ILogPack == null) {
+					ILogPack lp = cIt.next();
 
 					if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
-						logPack = lp;
+						ILogPack = lp;
 				}
 
-				return logPack;
+				return ILogPack;
 			}
 
 		});
-		LogPack logPack = query.get();
+		ILogPack ILogPack = query.get();
 		ex.shutdown();
 
-		return logPack;
+		return ILogPack;
 	}
 
 	@SuppressWarnings("unchecked")
 	public boolean removeRegion(IRegion region) {
 		try { 
-			LogPack logPack = cache.getIfPresent(region.timestamp);
-			if(logPack.has(CaptureEvent.Keys.TYPE) && logPack.getInt(CaptureEvent.Keys.TYPE) == CaptureEvent.REGION_GENERATED) {
-				logPack.remove(CaptureEvent.Keys.TYPE);
+			ILogPack ILogPack = cache.getIfPresent(region.timestamp);
+			if(ILogPack.has(CaptureEvent.Keys.TYPE) && ILogPack.getInt(CaptureEvent.Keys.TYPE) == CaptureEvent.REGION_GENERATED) {
+				ILogPack.remove(CaptureEvent.Keys.TYPE);
 			}
 
 			Iterator<String> repIt = region.asJson().keys();
 			while(repIt.hasNext()) {
-				logPack.remove(repIt.next());
+				ILogPack.remove(repIt.next());
 			}
 
 			return true;
@@ -359,29 +359,37 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	@SuppressWarnings("unchecked")
 	public void addRegion(IRegion region) {
-		LogPack logPack = new LogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED);
+		ILogPack ILogPack = new ILogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED, true);
+		ILogPack regionLocationData = ((GeoSucker) _geo).forceReturn();
+		try {
+			ILogPack.put(CaptureEvent.Keys.REGION_LOCATION_DATA, regionLocationData);
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
 		Iterator<String> rIt = region.asJson().keys();
 		while(rIt.hasNext()) {
 			String key = rIt.next();
 			try {
-				logPack.put(key, region.asJson().get(key));
+				ILogPack.put(key, region.asJson().get(key));
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}
 		}
 
-		region.timestamp = onUpdate(logPack);
+		Log.d(LOG, "HEY NEW REGION: " + ILogPack.asJson().toString());
+		region.timestamp = onUpdate(ILogPack);
 	}
 
 	@SuppressWarnings("unchecked")
 	public void updateRegion(IRegion region) {
 		try {
-			LogPack logPack = cache.getIfPresent(region.timestamp);
+			ILogPack ILogPack = cache.getIfPresent(region.timestamp);
 			Iterator<String> repIt = region.asJson().keys();
 			while(repIt.hasNext()) {
 				String key = repIt.next();
-				logPack.put(key, region.asJson().get(key));
+				ILogPack.put(key, region.asJson().get(key));
 			}
 		} catch(JSONException e) {
 			Log.e(LOG, e.toString());
@@ -391,43 +399,43 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	@SuppressWarnings({ "unchecked", "unused" })
-	private LogPack JSONObjectToLogPack(JSONObject json) throws JSONException {
-		LogPack logPack = new LogPack();
+	private ILogPack JSONObjectToILogPack(JSONObject json) throws JSONException {
+		ILogPack ILogPack = new ILogPack();
 		Iterator<String> jIt = json.keys();
 		while(jIt.hasNext()) {
 			String key = jIt.next();
-			logPack.put(key, json.get(key));
+			ILogPack.put(key, json.get(key));
 		}
-		return logPack;
+		return ILogPack;
 	}
 
 	@SuppressWarnings("unused")
-	private void pushToSucker(SensorLogger<?> sucker, LogPack logPack) throws JSONException {
+	private void pushToSucker(SensorLogger<?> sucker, ILogPack ILogPack) throws JSONException {
 		if(sucker.getClass().equals(PhoneSucker.class))
-			_phone.sendToBuffer(logPack);
+			_phone.sendToBuffer(ILogPack);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void onUpdate(long timestamp, LogPack logPack) {
+	public void onUpdate(long timestamp, ILogPack ILogPack) {
 		try {
-			LogPack lp = cache.getIfPresent(timestamp);
+			ILogPack lp = cache.getIfPresent(timestamp);
 			if(lp != null) {
 				Iterator<String> lIt = lp.keys();
 				while(lIt.hasNext()) {
 					String key = lIt.next();
-					logPack.put(key, lp.get(key));	
+					ILogPack.put(key, lp.get(key));	
 				}
 			}
 
-			cache.put(timestamp, logPack);
+			cache.put(timestamp, ILogPack);
 		} catch(JSONException e) {}
 	}
 
 	@Override
-	public long onUpdate(LogPack logPack) {
+	public long onUpdate(ILogPack ILogPack) {
 		long timestamp = ((GeoSucker) _geo).getTime();
-		onUpdate(timestamp, logPack);
+		onUpdate(timestamp, ILogPack);
 		
 		return timestamp;
 	}
@@ -444,15 +452,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 			if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
 				try {
 					BluetoothDevice bd = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					LogPack logPack = new LogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());
-					logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());
-					onUpdate(logPack);
+					ILogPack ILogPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());
+					ILogPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());
+					onUpdate(ILogPack);
 
 				} catch(JSONException e) {}
 
 			} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-				LogPack logPack = new LogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
-				onUpdate(logPack);
+				ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
+				onUpdate(ILogPack);
 
 			}
 

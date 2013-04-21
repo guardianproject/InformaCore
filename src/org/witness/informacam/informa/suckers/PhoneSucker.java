@@ -6,8 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.informa.SensorLogger;
+import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
-import org.witness.informacam.utils.LogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 
 import android.bluetooth.BluetoothAdapter;
@@ -71,7 +71,7 @@ public class PhoneSucker extends SensorLogger {
 			public void run() {
 				if(getIsRunning()) {
 					try {
-						sendToBuffer(new LogPack(Phone.Keys.CELL_ID, getCellId()));
+						sendToBuffer(new ILogPack(Phone.Keys.CELL_ID, getCellId()));
 						
 						// find other bluetooth devices around
 						if(hasBluetooth && !ba.isDiscovering())
@@ -136,8 +136,8 @@ public class PhoneSucker extends SensorLogger {
 		return wifi;
 	}
 	
-	public LogPack forceReturn() throws JSONException {
-		LogPack fr = new LogPack(Phone.Keys.IMEI, getIMEI());
+	public ILogPack forceReturn() throws JSONException {
+		ILogPack fr = new ILogPack(Phone.Keys.IMEI, getIMEI());
 		fr.put(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, ba.getAddress());
 		fr.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, ba.getName());
 		fr.put(Phone.Keys.CELL_ID, getCellId());
