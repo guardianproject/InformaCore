@@ -7,5 +7,7 @@ public class ITransportData extends Model {
 	public int source = Type.IOCIPHER;
 	public String key = null;
 	public String entityName = null;
+	public int totalBytes = 0;
+	public int[] byteRange = new int[] {0, -1};
 	
 }

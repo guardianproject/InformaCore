@@ -11,20 +11,26 @@ import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.models.Model;
 
 import android.util.Log;
 
 public class ISubmission extends IConnection {
-	public JSONObject j3mDescriptor = null;
 	public String pathToNextConnectionData = null;
 	
 	public ISubmission() {
 		super();
 	}
 	
+	public ISubmission(Object connection) {
+		super();
+		inflate(((Model) connection).asJson());
+	}
+	
 	public ISubmission(IOrganization organization, String pathToNextConnectionData) {
 		super();
 		
+		destination = organization;
 		type = Models.IConnection.Type.SUBMISSION;
 		port = organization.requestPort;
 		
@@ -49,9 +55,10 @@ public class ISubmission extends IConnection {
 	public void Set(info.guardianproject.iocipher.File mediaFile) {
 		InformaCam informaCam = InformaCam.getInstance();
 		try {
-			j3mDescriptor = new JSONObject();
+			JSONObject j3mDescriptor = new JSONObject();
 			j3mDescriptor.put(Models.IMedia.j3m.SIZE, mediaFile.length());
-			j3mDescriptor.put(Models.IMedia.j3m.HASH, MediaHasher.hash(informaCam.ioService.getBytes(mediaFile.getAbsolutePath(), Type.IOCIPHER), "SHA-1"));			
+			j3mDescriptor.put(Models.IMedia.j3m.HASH, MediaHasher.hash(informaCam.ioService.getBytes(mediaFile.getAbsolutePath(), Type.IOCIPHER), "SHA-1"));
+			j3mDescriptor.put(Models.IMedia.j3m.FILE_NAME, mediaFile.getName());
 			
 			IParam param = new IParam();
 			param.key = Models.IMedia.J3M_DESCRIPTOR;

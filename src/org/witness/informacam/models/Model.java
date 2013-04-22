@@ -184,6 +184,8 @@ public class Model extends JSONObject {
 						f.set(this, values.getString(f.getName()).getBytes());
 					} else if(f.getType() == float[].class) {
 						f.set(this, parseJSONAsFloatArray(values.getString(f.getName())));
+					} else if(f.getType() == int[].class) {
+						f.set(this, parseJSONAsIntArray(values.getString(f.getName())));
 					} else if(isModel) {						
 						Class clz = (Class<?>) f.getType();
 						// if clz has less fields than the json object, this could be a subclass
@@ -216,6 +218,26 @@ public class Model extends JSONObject {
 
 		//Log.d(LOG, "finished inflating object, which is now\n" + this.asJson().toString());
 	}
+	
+	public static int[] parseJSONAsIntArray(String value) {
+		String[] intStrings = value.substring(1, value.length() - 1).split(",");
+		int[] ints = new int[intStrings.length];
+
+		for(int f=0; f<intStrings.length; f++) {
+			ints[f] = Integer.parseInt(intStrings[f]);
+		}
+
+		return ints;
+	}
+	
+	public static JSONArray parseIntArrayAsJSON(int[] ints) {
+		JSONArray intArray = new JSONArray();
+		for(int f : ints) {
+			intArray.put(f);
+		}
+
+		return intArray;
+	}
 
 	public static float[] parseJSONAsFloatArray(String value) {
 		String[] floatStrings = value.substring(1, value.length() - 1).split(",");
@@ -228,13 +250,18 @@ public class Model extends JSONObject {
 		return floats;
 	}
 
-	public String parseFloatArrayAsJSON(float[] floats) {
-		StringBuffer floatString = new StringBuffer();
+	public static JSONArray parseFloatArrayAsJSON(float[] floats) {
+		JSONArray floatArray = new JSONArray();
 		for(float f : floats) {
-			floatString.append("," + f);
+			try {
+				floatArray.put(f);
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
 
-		return "[" + floatString.toString().substring(1) + "]";
+		return floatArray;
 	}
 
 	public JSONObject asJson() {
@@ -278,6 +305,8 @@ public class Model extends JSONObject {
 					json.put(f.getName(), new String((byte[]) value));
 				} else if(f.getType() == float[].class) {
 					json.put(f.getName(), parseFloatArrayAsJSON((float[]) value));
+				} else if(f.getType() == int[].class) {
+					json.put(f.getName(), parseIntArrayAsJSON((int[]) value));
 				} else if(isModel) {
 					json.put(f.getName(), ((Model) value).asJson());
 				} else {

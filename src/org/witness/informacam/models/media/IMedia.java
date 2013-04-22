@@ -108,34 +108,22 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				IRegionBounds bounds = null;
 
 				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-					IImageRegion r = new IImageRegion();
-					r = (IImageRegion) region;
-					bounds = r.bounds;
+					IImageRegion imageRegion = new IImageRegion(region);
+					region = imageRegion;
 				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-					IVideoRegion r = new IVideoRegion();
-					r = (IVideoRegion) region;
-					bounds = r.getBoundsAtTime(timestamp);
+					IVideoRegion videoRegion = new IVideoRegion(region);
+					videoRegion = (IVideoRegion) region;
+					bounds = videoRegion.getBoundsAtTime(timestamp);
+					region = videoRegion;
 				}
 
 				if(byRealHeight) {
 					if(bounds != null && bounds.top == top && bounds.left == left && bounds.width == width && bounds.height == height) {
-						if(region instanceof IImageRegion) {
-							return region;
-						} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
-							IVideoRegion r = new IVideoRegion();
-							r = (IVideoRegion) region;
-							return r;
-						}
+						return region;
 					}
 				} else {
 					if(bounds != null && bounds.displayTop == top && bounds.displayLeft == left && bounds.displayWidth == width && bounds.displayHeight == height) {
-						if(region instanceof IImageRegion) {
-							return region;
-						} else if(region instanceof IVideoRegion && (bounds.startTime <= timestamp && timestamp <= bounds.endTime)) {
-							IVideoRegion r = new IVideoRegion();
-							r = (IVideoRegion) region;
-							return r;
-						}
+						return region;
 					}
 				}
 
@@ -161,6 +149,13 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return regionsWithForms;
 	}
 
+	public void save() {
+		InformaCam informaCam = InformaCam.getInstance();
+		informaCam.mediaManifest.getById(_id).inflate(asJson());
+		Log.d(LOG, "THIS MEDIA:\n" + asJson().toString());
+		informaCam.saveState(informaCam.mediaManifest);
+	}
+	
 	public boolean rename(String alias) {
 		this.alias = alias;
 		return true;
@@ -187,15 +182,16 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			associatedRegions = new ArrayList<IRegion>();
 		}
 
-		IRegion region;
+		IRegion region = new IRegion();
+		
 		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-			region = new IImageRegion();
+			IImageRegion imageRegion = new IImageRegion(region);
+			region = imageRegion;
 		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-			region = new IVideoRegion();
-		} else {
-			region = new IRegion();
+			IVideoRegion videoRegion = new IVideoRegion(region);
+			region = videoRegion;
 		}
-
+		
 		region.init(new IRegionBounds(top, left, width, height, startTime, endTime));
 
 		associatedRegions.add(region);
@@ -364,7 +360,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, shareFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.FILE_SYSTEM);
 				}
 
-				notification.type = Models.INotification.Type.EXPORTED_MEDIA;				
+				notification.type = Models.INotification.Type.SHARED_MEDIA;				
 
 			} else {
 				// create a iocipher file
@@ -381,7 +377,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				}
 
 				submission.isHeld = true;
-				notification.type = Models.INotification.Type.SHARED_MEDIA;
+				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);

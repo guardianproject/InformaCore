@@ -3,20 +3,28 @@ package org.witness.informacam.models.media;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.util.Log;
+
 public class IVideoRegion extends IRegion {
 	public List<IVideoTrail> trail = null;
 
 	public IVideoRegion() {
 		super();
 	}
+	
+	public IVideoRegion(IRegion region) {
+		super();
+		inflate(region);
+	}
 
 	@Override
 	public void init(IRegionBounds bounds) {
-		super.init(bounds);
-
 		trail = new ArrayList<IVideoTrail>();
 		IVideoTrail v = new IVideoTrail(bounds.startTime, bounds);		
-		trail.add(v);		
+		trail.add(v);
+		
+		Log.d(LOG, "HEY I AM A VIDEO REGION");
+		super.init(bounds);
 	}
 	
 	public void setBoundsAtTime(long timestamp, IRegionBounds bounds) {

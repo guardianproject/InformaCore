@@ -29,16 +29,6 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -52,6 +42,18 @@ import org.witness.informacam.utils.Constants.App.Transport;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
+
+import ch.boye.httpclientandroidlib.HttpHost;
+import ch.boye.httpclientandroidlib.HttpResponse;
+import ch.boye.httpclientandroidlib.client.HttpClient;
+import ch.boye.httpclientandroidlib.client.methods.HttpGet;
+import ch.boye.httpclientandroidlib.client.methods.HttpPost;
+import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
+import ch.boye.httpclientandroidlib.conn.params.ConnRoutePNames;
+import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
+import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
+import ch.boye.httpclientandroidlib.conn.scheme.SocketFactory;
+import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 
 import android.util.Log;
 
@@ -146,6 +148,7 @@ public class HttpUtility {
 	public IConnection executeHttpPost(final IConnection connection) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
+			@SuppressWarnings("deprecation")
 			@Override
 			public IConnection call() throws Exception {
 				HttpClient http = new DefaultHttpClient();
@@ -180,18 +183,18 @@ public class HttpUtility {
 		}
 	}
 	
-	public class ISocketFactory extends org.apache.http.conn.ssl.SSLSocketFactory {
+	public class ISocketFactory extends ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory {
 		SSLContext sslContext;
 		
 		public ISocketFactory(KeyStore keyStore, IConnection connection) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
-			super(null);
+			super((KeyStore) null);
 		
 			sslContext = SSLContext.getInstance ("TLS");
 			ITrustManager itm = new ITrustManager();
 			X509KeyManager[] km = null;
 
-			if(connection.transportCredentials != null) {
-				km = itm.getKeyManagers(connection.transportCredentials);
+			if(connection.destination.transportCredentials != null) {
+				km = itm.getKeyManagers(connection.destination.transportCredentials);
 			}
 
 			sslContext.init (km, new TrustManager[] { itm }, new SecureRandom ());

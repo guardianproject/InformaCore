@@ -24,6 +24,11 @@ public class IImage extends IMedia {
 	public IImage() {
 		super();
 	}
+	
+	public IImage(IMedia media) {
+		super();
+		inflate(media.asJson());
+	}
 
 	@Override
 	public void analyze() {

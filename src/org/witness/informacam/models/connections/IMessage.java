@@ -17,6 +17,8 @@ public class IMessage extends IConnection {
 	
 	public IMessage(IOrganization organization, String messageText) {
 		super();
+		destination = organization;
+		
 		type = Models.IConnection.Type.MESSAGE;
 		url = organization.requestUrl + Models.IConnection.Routes.MESSAGES;
 		port = organization.requestPort;

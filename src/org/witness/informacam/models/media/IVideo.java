@@ -18,6 +18,11 @@ public class IVideo extends IMedia {
 		super();
 	}
 	
+	public IVideo(IMedia media) {
+		super();
+		inflate(media.asJson());
+	}
+	
 	@Override
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(bitmapThumb, Type.IOCIPHER);

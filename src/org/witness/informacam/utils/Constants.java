@@ -365,6 +365,8 @@ public class Constants {
 			
 			public static final int MAX_TRIES = 10;
 			public static final String PATH_TO_NEXT_CONNECTION_DATA = "pathToNextConnectionData";
+			public static final String BYTES_TRANSFERRED = "bytes_transferred";
+			public static final String BYTES_TRANSFERRED_VERIFIED = "bytes_transferred_verified";
 			
 			public class Type {
 				public static final int NONE = 799;
@@ -412,6 +414,7 @@ public class Constants {
 				public final static int INIT_USER = 44;
 				public static final int INSTALL_ICTD = 45;
 				public static final int UPLOAD_SUBMISSION = 46;
+				public static final int UPLOAD_CHUNK = 47;
 			}
 		}
 

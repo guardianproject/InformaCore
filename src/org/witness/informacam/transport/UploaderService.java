@@ -175,18 +175,56 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			return -1;
 		}
 	}
+	
+	private boolean runOrbotCheck() {
+		if(!oh.isOrbotInstalled()) {
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					oh.promptToInstall(informaCam.a);
+
+				}
+			});
+
+			return false;
+		}
+
+		if(!oh.isOrbotRunning()) {
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					oh.requestOrbotStart(informaCam.a);
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							checkForOrbotStartup();
+						}
+					}).start();
+				}
+			});
+
+			return false;
+		}
+		
+		return true;
+	}
 
 	private void run() {
 		informaCam = InformaCam.getInstance();
 
 		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null && !isRunning) {
 			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
+			
 			/*
 			pendingConnections.queue.clear();
 			informaCam.saveState(pendingConnections);
-			 */
-
+			*/
+			
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
+				if(!runOrbotCheck()) {
+					return;
+				}
+				
 				isRunning = true;
 				registerConnectivityUpdates();
 				connectionType = getConnectionStatus();
@@ -195,34 +233,38 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					@Override
 					public void run() {
 						android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
-						for(Object connection : pendingConnections.queue) {
-							Log.d(LOG, ((IConnection) connection).asJson().toString());
-							if(!((IConnection) connection).isHeld) {
-								((IConnection) connection).isHeld = true;
+						for(IConnection connection : pendingConnections.queue) {
+							//connection.isHeld = false;
+							
+							Log.d(LOG, "HELLO CONNECTION:\n" + connection.asJson().toString());
+							if(!connection.isHeld) {
+								connection.isHeld = true;
 
-								Log.d(LOG, ((IConnection) connection).asJson().toString());
 								HttpUtility http = new HttpUtility();
 
-								if(((IConnection) connection).type == Models.IConnection.Type.UPLOAD) {
+								if(connection.type == Models.IConnection.Type.UPLOAD) {
+									IUpload upload = new IUpload(connection);									
+									upload.setByteBufferSize(connectionType);
+									upload.update();
 									
-									((IUpload) connection).setByteBufferSize(connectionType);
+									connection = upload;
 								}
 
-								if(((IConnection) connection).method.equals(Models.IConnection.Methods.POST)) {
-									connection = http.executeHttpPost(((IConnection) connection));
+								if(connection.method.equals(Models.IConnection.Methods.POST)) {
+									connection = http.executeHttpPost(connection);
 
-								} else if(((IConnection) connection).method.equals(Models.IConnection.Methods.GET)) {
-									connection = http.executeHttpGet((IConnection) connection);
+								} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
+									connection = http.executeHttpGet(connection);
 								}
 
 								try {
-									if(((IConnection) connection).result.code == Integer.parseInt(Transport.Results.OK)) {
-										routeResult((IConnection) connection);
+									if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
+										routeResult(connection);
 									} else {
-										if(((IConnection) connection).numTries > Models.IConnection.MAX_TRIES && !((IConnection) connection).isSticky) {
+										if(connection.numTries > Models.IConnection.MAX_TRIES && !connection.isSticky) {
 											pendingConnections.queue.remove(connection);
 										} else {
-											((IConnection) connection).isHeld = false;
+											connection.isHeld = false;
 										}
 									}
 								} catch(NullPointerException e) {
@@ -243,32 +285,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 	public void init() {
 		isRunning = false;
-		if(!oh.isOrbotInstalled()) {
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					oh.promptToInstall(informaCam.a);
 
-				}
-			});
-
-			return;
-		}
-
-		if(!oh.isOrbotRunning()) {
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					oh.requestOrbotStart(informaCam.a);
-					new Thread(new Runnable() {
-						@Override
-						public void run() {
-							checkForOrbotStartup();
-						}
-					}).start();
-				}
-			});
-
+		if(!runOrbotCheck()) {
 			return;
 		}
 
@@ -303,13 +321,22 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					String uploadId = connection.result.data.getString(Models._ID);
 					String uploadRev = connection.result.data.getString(Models._REV);
 
-					IConnection upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
+					IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
 					addToQueue(upload);
 				} else if(connection.type == Models.IConnection.Type.UPLOAD) {
-					((IUpload) connection).update();
+					int bytesReceived = connection.result.data.getInt(Models.IConnection.BYTES_TRANSFERRED_VERIFIED);
+					
+					IUpload upload = new IUpload(connection);	
+					upload.lastByte = bytesReceived;
+					
+					upload.setByteBufferSize(connectionType);
+					upload.update();
+					upload.isHeld = false;
+					
+					pendingConnections.getById(connection._id).inflate(upload.asJson());
 				}
 
-
+				
 				informaCam.saveState(pendingConnections);
 
 			} catch (JSONException e) {
@@ -330,33 +357,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				notification.type = Models.INotification.Type.KEY_SENT;
 				
 				informaCam.addNotification(notification);
-				
-
-				/*
-				 * XXX: we don't like this.
-				IConnection nextConnection = new IConnection();
-				nextConnection.knownCallback = Models.IResult.ResponseCodes.DOWNLOAD_ASSET;
-
-				IParam user = new IParam();
-				user.key = IUser.BELONGS_TO_USER;
-				user.value = organization.identity._id;
-
-				nextConnection.params = new ArrayList<IParam>();
-				nextConnection.params.add(user);
-
-				String exportId = connection.result.data.getJSONObject(Models.IIdentity.CREDENTIALS).getString(Models._ID);
-				nextConnection.url = (connection.url + Models.IConnection.Routes.EXPORT + exportId);
-				nextConnection.port = connection.port;
-				nextConnection.destination = connection.destination;
-
-				// this connection should be sticky; user should retry their credential download until it is available.
-				nextConnection.isSticky = true;
-
-
-				addToQueue(nextConnection);
-				informaCam.saveState(pendingConnections);
-				 */
-
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
