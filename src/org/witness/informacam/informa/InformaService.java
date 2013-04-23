@@ -195,6 +195,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		Log.d(LOG, suckerCache.asJson().toString());
 		informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
 
+		/*
 		if(associatedMedia != null) {
 			Object media = informaCam.mediaManifest.getById(associatedMedia._id);
 			if(((IMedia) media).associatedCaches == null) {
@@ -203,6 +204,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			((IMedia) media).associatedCaches.add(cacheFile.getAbsolutePath());
 			informaCam.saveState(informaCam.mediaManifest);
 		}
+		*/
 	}
 
 	@Override

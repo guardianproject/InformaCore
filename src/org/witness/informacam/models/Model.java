@@ -95,7 +95,7 @@ public class Model extends JSONObject {
 					Object o = c.newInstance();
 					
 					for(Field subField : o.getClass().getDeclaredFields()) {
-						//Log.d(LOG, "is subfield " + subField.getName() + " in json\n" + ja.toString());
+						Log.d(LOG, "is subfield " + subField.getName() + " in json\n" + ja.toString());
 						if(!ja.has(subField.getName())) {
 							subClz_.remove(c);
 							break;

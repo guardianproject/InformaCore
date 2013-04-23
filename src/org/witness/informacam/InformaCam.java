@@ -246,8 +246,8 @@ public class InformaCam extends Service {
 			if(mediaManifestBytes != null) {
 				mediaManifest.inflate(mediaManifestBytes);
 				if(mediaManifest.media.size() > 0) {
-					for(Object m : mediaManifest.media) {
-						((IMedia) m).isNew = false;
+					for(IMedia m : mediaManifest.media) {
+						m.isNew = false;
 					}
 				}
 			}
@@ -566,6 +566,10 @@ public class InformaCam extends Service {
 	}
 	
 	public void addNotification(INotification notification, boolean showOnTop) {
+		if(notificationsManifest.notifications == null) {
+			notificationsManifest.notifications = new ArrayList<INotification>();
+		}
+		
 		notificationsManifest.notifications.add(notification);
 		saveState(notificationsManifest);
 		
@@ -606,6 +610,9 @@ public class InformaCam extends Service {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (SecurityException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}

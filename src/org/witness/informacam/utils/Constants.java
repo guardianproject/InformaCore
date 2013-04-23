@@ -1,7 +1,5 @@
 package org.witness.informacam.utils;
 
-import info.guardianproject.iocipher.File;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -504,6 +502,7 @@ public class Constants {
 			public final static String LOG = "******************** InformaCam : Transport ********************";
 			
 			public final static class Results {
+				public final static String OK_BUT_FAIL = "500: Internal Server Error";
 				public final static String OK = "200";
 				public final static String[] FAIL = {"404", "500"};
 			}

@@ -52,7 +52,6 @@ import ch.boye.httpclientandroidlib.conn.ClientConnectionManager;
 import ch.boye.httpclientandroidlib.conn.params.ConnRoutePNames;
 import ch.boye.httpclientandroidlib.conn.scheme.Scheme;
 import ch.boye.httpclientandroidlib.conn.scheme.SchemeRegistry;
-import ch.boye.httpclientandroidlib.conn.scheme.SocketFactory;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 
 import android.util.Log;
@@ -79,6 +78,10 @@ public class HttpUtility {
 			InputStream is = response.getEntity().getContent();
 			for(String line : org.apache.commons.io.IOUtils.readLines(is)) {
 				sb.append(line);
+				if(line.contains(Transport.Results.OK_BUT_FAIL)) {
+					result.code = Integer.parseInt(Transport.Results.FAIL[1]);
+				}
+				
 				resultBuffer.append(line);
 			}
 
@@ -87,7 +90,11 @@ public class HttpUtility {
 				result.data = resultObject.getJSONObject(Models.IResult.DATA);
 				result.responseCode = resultObject.getInt(Models.IResult.RESPONSE_CODE);
 			} else {
-				result.reason = resultObject.getString(Models.IResult.REASON);
+				if(resultObject.has(Models.IResult.REASON)) {
+					result.reason = resultObject.getString(Models.IResult.REASON);
+				} else {
+					result.reason = Transport.Results.OK_BUT_FAIL;
+				}
 			}
 
 		} catch (IllegalStateException e) {
@@ -111,6 +118,7 @@ public class HttpUtility {
 	public IConnection executeHttpGet(final IConnection connection) {
 		ExecutorService ex = Executors.newFixedThreadPool(100);
 		Future<IConnection> future = ex.submit(new Callable<IConnection>() {
+			@SuppressWarnings("deprecation")
 			@Override
 			public IConnection call() throws Exception {
 				HttpClient http = new DefaultHttpClient();
@@ -132,16 +140,23 @@ public class HttpUtility {
 			}
 
 		});
+		
 		try {
 			return future.get();
 		} catch (InterruptedException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return null;
+
+			connection.result = new IResult();
+			connection.result.code = Integer.parseInt(Transport.Results.FAIL[1]);
+			return connection;
 		} catch (ExecutionException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return null;
+
+			connection.result = new IResult();
+			connection.result.code = Integer.parseInt(Transport.Results.FAIL[1]);
+			return connection;
 		}
 	}
 
@@ -170,16 +185,23 @@ public class HttpUtility {
 			}
 
 		});
+		
 		try {
 			return future.get();
 		} catch (InterruptedException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return null;
+			
+			connection.result = new IResult();
+			connection.result.code = Integer.parseInt(Transport.Results.FAIL[1]);
+			return connection;
 		} catch (ExecutionException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return null;
+			
+			connection.result = new IResult();
+			connection.result.code = Integer.parseInt(Transport.Results.FAIL[1]);
+			return connection;
 		}
 	}
 	
@@ -219,6 +241,7 @@ public class HttpUtility {
 		private InformaCam informaCam;
 		private IKeyStore keyStoreManifest;
 		
+		@SuppressWarnings("unused")
 		private boolean hasKeyStore;
 
 		private final static String LOG = Crypto.LOG;

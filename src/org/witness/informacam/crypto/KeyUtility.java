@@ -9,8 +9,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -36,7 +34,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.organizations.IOrganization;
-import org.witness.informacam.storage.IOService;
+import org.witness.informacam.models.organizations.ITransportCredentials;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -253,7 +251,7 @@ public class KeyUtility {
 				keyStoreManifest.path = IManifest.KEY_STORE;
 				keyStoreManifest.lastModified = System.currentTimeMillis();
 				informaCam.saveState(keyStoreManifest);
-				Log.d(LOG, "JUST SAVED KEY MANIFEST AND KEY STORE\n" + keyStoreManifest.asJson().toString());
+				Log.d(LOG, "KEY STORE INITED");
 			}
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
@@ -386,6 +384,7 @@ public class KeyUtility {
 		
 		if(organization == null) {
 			organization = new IOrganization();
+			organization.transportCredentials = new ITransportCredentials();
 		}
 		
 		// decrypt
@@ -444,13 +443,17 @@ public class KeyUtility {
 									}
 									
 									if(value.indexOf("https://") != -1) {
-										urlBase = value.substring(value.indexOf("http://") + 8);
+										urlBase = value.substring(value.indexOf("https://") + 8);
 									}
 									
 									if(urlBase != null) {
 										String[] urlAndPort = urlBase.split(":");
 										if(urlAndPort.length > 1) {
-											organization.requestUrl = urlAndPort[0] + "/";
+											organization.requestUrl = "https://" + urlAndPort[0] + "/";
+											if(urlAndPort[1].contains("/")) {
+												urlAndPort[1] = urlAndPort[1].replace("/", "");
+											}
+											
 											organization.requestPort = Integer.parseInt(urlAndPort[1]);
 										}
 									} else {
@@ -458,7 +461,7 @@ public class KeyUtility {
 										organization.requestUrl = urlBase;
 									}
 									
-									Log.d(LOG, "urlBase: " + urlBase);
+									Log.d(LOG, "urlBase: " + urlBase + "\nrequestUrl: " + organization.requestUrl);
 									
 									
 								} if(key.equals(Models.ITransportCredentials.PASSWORD)) {

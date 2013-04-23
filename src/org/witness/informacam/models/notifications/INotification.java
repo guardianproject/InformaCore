@@ -12,4 +12,8 @@ public class INotification extends Model {
 	public int iconSource = Type.IOCIPHER;
 	public int type = 0;
 	
+	public INotification() {
+		super();
+	}
+	
 }

@@ -47,11 +47,11 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	private final static String LOG = App.Transport.LOG; 
 
 	OrbotHelper oh;
-	public IPendingConnections pendingConnections = new IPendingConnections();
+	public IPendingConnections pendingConnections;
 	private boolean isRunning = false;
 	private int connectionType = -1;
 
-	InformaCam informaCam = InformaCam.getInstance();
+	InformaCam informaCam;
 
 	Handler handler = new Handler();
 	Timer queueMaster;
@@ -210,11 +210,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	private void run() {
-		informaCam = InformaCam.getInstance();
-
-		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null && !isRunning) {
-			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
-			
+		if(!isRunning) {
 			/*
 			pendingConnections.queue.clear();
 			informaCam.saveState(pendingConnections);
@@ -283,8 +279,27 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 	}
 
+	private void initPendingConnections() {
+		informaCam = InformaCam.getInstance();
+		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null) {
+			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
+		} else {
+			 pendingConnections = new IPendingConnections();
+		}
+	}
+	
 	public void init() {
 		isRunning = false;
+		
+		if(pendingConnections == null) {
+			initPendingConnections();
+		}
+		
+		if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
+			for(IConnection connection : pendingConnections.queue) {
+				connection.isHeld = false;
+			}
+		}
 
 		if(!runOrbotCheck()) {
 			return;
@@ -295,10 +310,15 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	public void addToQueue(IConnection connection) {
+		if(pendingConnections == null) {
+			initPendingConnections();
+		}
+		
 		if(pendingConnections.queue == null) {
 			pendingConnections.queue = new ArrayList<IConnection>();
 		}
 
+		Log.d(LOG, "Adding a new connection.\n" + connection.asJson().toString());
 		pendingConnections.queue.add(connection);
 		informaCam.saveState(pendingConnections);
 		if(!this.isRunning) {
@@ -385,6 +405,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 		if(!connection.isSticky) {
 			pendingConnections.queue.remove(connection);
+			informaCam.saveState(pendingConnections);
 		}
 	}
 

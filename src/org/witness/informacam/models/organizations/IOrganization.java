@@ -14,8 +14,12 @@ public class IOrganization extends Model {
 	public int requestPort = 443;
 	public String publicKeyPath = null;
 	public String organizationFingerprint = null;
-	public ITransportCredentials transportCredentials = new ITransportCredentials();
-	public IIdentity identity = new IIdentity();
+	public ITransportCredentials transportCredentials = null;
+	public IIdentity identity = null;
+	
+	public IOrganization() {
+		super();
+	}
 	
 	public JSONObject inflateContent(String contentString) {
 		try {

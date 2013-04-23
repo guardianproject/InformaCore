@@ -12,10 +12,4 @@ public class IImageRegion extends IRegion {
 		inflate(region);
 	}
 	
-	@Override
-	public void init(IRegionBounds bounds) {
-		this.bounds = bounds;
-		super.init(bounds);
-	}
-	
 }

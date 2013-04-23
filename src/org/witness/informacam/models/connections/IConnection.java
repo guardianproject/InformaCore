@@ -64,6 +64,10 @@ public class IConnection extends Model {
 		data.key = key;
 		data.source = source;
 	}
+	
+	public void setData(String entityName) {
+		setData("file", entityName);
+	}
 
 	public void setData(String key, String entityName) {
 		setData(key, entityName, Type.IOCIPHER);
