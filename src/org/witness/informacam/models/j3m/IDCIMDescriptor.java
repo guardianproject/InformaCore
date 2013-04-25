@@ -155,11 +155,11 @@ public class IDCIMDescriptor extends Model {
 			entry.size = file.length();
 			entry.timeCaptured = file.lastModified();
 			
-			if(!entry.isAvailable()) {
+			if(entry.timeCaptured < startTime) {
 				return null;
 			}
 			
-			if(entry.timeCaptured < startTime) {
+			if(!entry.isAvailable()) {
 				return null;
 			}
 			

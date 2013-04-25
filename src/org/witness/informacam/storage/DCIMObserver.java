@@ -75,9 +75,9 @@ public class DCIMObserver {
 				dcimDescriptor.thumbnails = null;
 
 				if(informaCam.ioService.saveBlob(dcimDescriptor, new info.guardianproject.iocipher.File(IManifest.DCIM))) {					
-					for(Object media : dcimDescriptor.dcimEntries) {
-						for(Object m : informaCam.mediaManifest.media) {
-							((IMedia) m).isNew = false;
+					for(IMedia media : dcimDescriptor.dcimEntries) {
+						for(IMedia m : informaCam.mediaManifest.media) {
+							m.isNew = false;
 						}
 
 						informaCam.mediaManifest.media.add((IMedia) media);

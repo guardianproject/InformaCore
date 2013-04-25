@@ -23,7 +23,6 @@ public class IVideoRegion extends IRegion {
 		IVideoTrail v = new IVideoTrail(bounds.startTime, bounds);		
 		trail.add(v);
 		
-		Log.d(LOG, "HEY I AM A VIDEO REGION");
 		super.init(bounds);
 	}
 	

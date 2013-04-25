@@ -13,6 +13,10 @@ public class IRegion extends Model {
 
 	public IRegionBounds bounds = null;
 	private IRegionDisplay regionDisplay = null;
+	
+	public IRegion() {
+		super();
+	}
 
 	public void init(IRegionBounds bounds) {
 		init(bounds, true);

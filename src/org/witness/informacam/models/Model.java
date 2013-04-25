@@ -3,6 +3,8 @@ package org.witness.informacam.models;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -71,6 +73,8 @@ public class Model extends JSONObject {
 		
 		String packagePath = clz.getName().replace(("." + clz.getSimpleName()), "");
 		
+		
+		
 		for(String model : informaCam.models) {
 			if(model.contains(packagePath) && !model.equals(clz.getName())) {
 				try {
@@ -88,6 +92,28 @@ public class Model extends JSONObject {
 		}
 		
 		if(subclasses.size() > 0) {
+			/*
+			List<String> superClassKeys = new ArrayList<String>();
+			List<String> subClassKeys = new ArrayList<String>();
+			
+			for(Field superClassKey : clz.getDeclaredFields()) {
+				Log.d(LOG, "superclass key: " + superClassKey.getName());
+				superClassKeys.add(superClassKey.getName());
+			}
+			
+			// create a list of keys unique to this subclass
+			Iterator<String> jIt = ja.keys();
+			while(jIt.hasNext()) {
+				String key = jIt.next();
+				Log.d(LOG, "this key: " + key);
+				if(!superClassKeys.contains(key)) {
+					// ignore all the keys that are in the superclass
+					subClassKeys.add(key);
+				}
+				
+			}
+			*/
+			
 			List<Class<?>> subClz_ = new ArrayList<Class<?>>(subclasses);
 			// loop through json to see if we have any of these fields. eliminate non-matches from list
 			for(Class<?> c : subclasses) {
@@ -95,7 +121,6 @@ public class Model extends JSONObject {
 					Object o = c.newInstance();
 					
 					for(Field subField : o.getClass().getDeclaredFields()) {
-						Log.d(LOG, "is subfield " + subField.getName() + " in json\n" + ja.toString());
 						if(!ja.has(subField.getName())) {
 							subClz_.remove(c);
 							break;

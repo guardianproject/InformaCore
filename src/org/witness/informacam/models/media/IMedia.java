@@ -107,10 +107,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			for(IRegion region : associatedRegions) {
 				IRegionBounds bounds = null;
 
-				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-					IImageRegion imageRegion = new IImageRegion(region);
-					region = imageRegion;
-				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					IVideoRegion videoRegion = new IVideoRegion(region);
 					videoRegion = (IVideoRegion) region;
 					bounds = videoRegion.getBoundsAtTime(timestamp);
@@ -149,10 +146,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return regionsWithForms;
 	}
 
-	public void save() {
+	public void save() {		
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.mediaManifest.getById(_id).inflate(asJson());
-		Log.d(LOG, "THIS MEDIA:\n" + asJson().toString());
+		
 		informaCam.saveState(informaCam.mediaManifest);
 	}
 	
@@ -184,10 +181,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		IRegion region = new IRegion();
 		
-		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-			IImageRegion imageRegion = new IImageRegion(region);
-			region = imageRegion;
-		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+		if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 			IVideoRegion videoRegion = new IVideoRegion(region);
 			region = videoRegion;
 		}

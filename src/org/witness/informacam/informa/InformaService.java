@@ -192,7 +192,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 		suckerCache.timeOffset = realStartTime;
 		suckerCache.cache = cacheArray;
 
-		Log.d(LOG, suckerCache.asJson().toString());
 		informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
 
 		/*
