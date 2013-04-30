@@ -1,7 +1,6 @@
 package org.witness.informacam.models.media;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;

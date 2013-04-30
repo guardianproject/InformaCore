@@ -14,4 +14,8 @@ public class IUser extends Model {
 
 	public String alias = null;
 	public String pgpKeyFingerprint = null;
+	
+	public IUser() {
+		super();
+	}
 }

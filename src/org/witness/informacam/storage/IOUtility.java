@@ -1,25 +1,17 @@
 package org.witness.informacam.storage;
 
-import info.guardianproject.iocipher.File;
-
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -215,7 +207,6 @@ public class IOUtility {
 
 	}
 
-	@SuppressWarnings("rawtypes")
 	public static List<String> unzipFile (byte[] rawContent, String root, int destination) {
 		IOService ioService = InformaCam.getInstance().ioService;
 		List<String> paths = new ArrayList<String>();

@@ -1,6 +1,5 @@
 package org.witness.informacam.ui;
 
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 

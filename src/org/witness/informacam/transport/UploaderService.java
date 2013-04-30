@@ -175,7 +175,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			return -1;
 		}
 	}
-	
+
 	private boolean runOrbotCheck() {
 		if(!oh.isOrbotInstalled()) {
 			handler.post(new Runnable() {
@@ -205,7 +205,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -214,13 +214,13 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			/*
 			pendingConnections.queue.clear();
 			informaCam.saveState(pendingConnections);
-			*/
-			
+			 */
+
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				if(!runOrbotCheck()) {
 					return;
 				}
-				
+
 				isRunning = true;
 				registerConnectivityUpdates();
 				connectionType = getConnectionStatus();
@@ -231,7 +231,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
 						for(IConnection connection : pendingConnections.queue) {
 							//connection.isHeld = false;
-							
+
 							Log.d(LOG, "HELLO CONNECTION:\n" + connection.asJson().toString());
 							if(!connection.isHeld) {
 								connection.isHeld = true;
@@ -242,7 +242,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 									IUpload upload = new IUpload(connection);									
 									upload.setByteBufferSize(connectionType);
 									upload.update();
-									
+
 									connection = upload;
 								}
 
@@ -284,17 +284,17 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null) {
 			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
 		} else {
-			 pendingConnections = new IPendingConnections();
+			pendingConnections = new IPendingConnections();
 		}
 	}
-	
+
 	public void init() {
 		isRunning = false;
-		
+
 		if(pendingConnections == null) {
 			initPendingConnections();
 		}
-		
+
 		if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 			for(IConnection connection : pendingConnections.queue) {
 				connection.isHeld = false;
@@ -313,7 +313,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		if(pendingConnections == null) {
 			initPendingConnections();
 		}
-		
+
 		if(pendingConnections.queue == null) {
 			pendingConnections.queue = new ArrayList<IConnection>();
 		}
@@ -345,18 +345,25 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					addToQueue(upload);
 				} else if(connection.type == Models.IConnection.Type.UPLOAD) {
 					int bytesReceived = connection.result.data.getInt(Models.IConnection.BYTES_TRANSFERRED_VERIFIED);
-					
-					IUpload upload = new IUpload(connection);	
-					upload.lastByte = bytesReceived;
-					
-					upload.setByteBufferSize(connectionType);
-					upload.update();
-					upload.isHeld = false;
-					
-					pendingConnections.getById(connection._id).inflate(upload.asJson());
+
+					if(connection.result.data.has(Models.IConnection.PROGRESS)) {
+						double progress = connection.result.data.getDouble(Models.IConnection.PROGRESS);
+
+						// TODO: update notifications with progress.
+
+						IUpload upload = new IUpload(connection);	
+						upload.lastByte = bytesReceived;
+
+						upload.setByteBufferSize(connectionType);
+						upload.update();
+						upload.isHeld = false;
+
+						pendingConnections.getById(connection._id).inflate(upload.asJson());
+					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
+						// TODO:  this is finished.  remove from queue...
+					}
 				}
 
-				
 				informaCam.saveState(pendingConnections);
 
 			} catch (JSONException e) {
@@ -370,12 +377,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				organization.identity = new IIdentity();
 				organization.identity.inflate(connection.result.data.getJSONObject(Models.IIdentity.SOURCE));
 				informaCam.saveState(installedOrganizations);
-				
-				INotification notification = new INotification();
-				notification.label = informaCam.a.getString(R.string.key_sent);
-				notification.content = informaCam.a.getString(R.string.you_have_successfully_sent, organization.organizationName);
-				notification.type = Models.INotification.Type.KEY_SENT;
-				
+
+				INotification notification = new INotification(informaCam.a.getString(R.string.key_sent), informaCam.a.getString(R.string.you_have_successfully_sent, organization.organizationName), Models.INotification.Type.KEY_SENT);
 				informaCam.addNotification(notification);
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());

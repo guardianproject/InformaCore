@@ -63,6 +63,11 @@ public class ISubmission extends IConnection {
 			IParam param = new IParam();
 			param.key = Models.IMedia.J3M_DESCRIPTOR;
 			param.value = j3mDescriptor;
+			
+			if(params == null) {
+				params = new ArrayList<IParam>();
+			}
+			
 			params.add(param);
 			
 			isHeld = false;

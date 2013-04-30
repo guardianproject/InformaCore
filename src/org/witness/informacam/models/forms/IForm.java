@@ -5,17 +5,11 @@ import info.guardianproject.odkparser.utils.QD;
 
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Vector;
 
-import org.javarosa.core.model.QuestionDef;
 import org.json.JSONObject;
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Activity;
 import android.util.Log;
@@ -83,7 +77,6 @@ public class IForm extends Model {
 		return false;
 	}
 
-	@SuppressWarnings("unchecked")
 	public List<View> buildUI(int[] inputLayout, int[] selectOneLayout, int[] selectMultiLayout, int[] audioCaptureLayout) {
 		LayoutInflater li = LayoutInflater.from(a);
 		
@@ -110,15 +103,6 @@ public class IForm extends Model {
 				view.setTag(QD.map(audioCaptureLayout));
 				break;
 			}
-
-			/*
-			Map<String, Integer> viewMap = (Map<String, Integer>) view.getTag();
-			Iterator<Entry<String, Integer>> vIt = viewMap.entrySet().iterator();
-			while(vIt.hasNext()) {
-				Entry<String, Integer> entry = vIt.next();
-				Log.d(LOG, entry.getKey() + ": " + entry.getValue());
-			}
-			*/
 
 			view = questionDef.buildUI(a, view);
 			view.setId(v);

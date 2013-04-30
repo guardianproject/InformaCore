@@ -21,7 +21,6 @@ import ch.boye.httpclientandroidlib.entity.mime.content.ContentBody;
 import ch.boye.httpclientandroidlib.entity.mime.content.StringBody;
 import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
-import android.util.Base64;
 import android.util.Log;
 
 public class IConnection extends Model {
@@ -102,11 +101,15 @@ public class IConnection extends Model {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		byte[] fileBytes = informaCam.ioService.getBytes(data.entityName, data.source);
-		byte[] d = Arrays.copyOfRange(fileBytes, data.byteRange[0], data.byteRange[1]);
-		Log.d(LOG, "sending chunk size " + d.length + " (" + data.byteRange[0] + " - " + data.byteRange[1] + ")");
-		fileBytes = null;
+		if(!data.isWholeUpload) {
+			byte[] d = Arrays.copyOfRange(fileBytes, data.byteRange[0], data.byteRange[1]);
+			Log.d(LOG, "sending chunk size " + d.length + " (" + data.byteRange[0] + " - " + data.byteRange[1] + ")");
+			fileBytes = null;
 		
-		return d;
+			return d;
+		} else {
+			return fileBytes;
+		}
 	}
 
 	public HttpPost build(HttpPost post) {

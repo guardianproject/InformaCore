@@ -3,7 +3,6 @@ package org.witness.informacam.storage;
 import java.io.File;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.utils.Constants.App.Storage;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -15,9 +14,7 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 
-public class InformaCamMediaScanner implements MediaScannerConnectionClient {
-	private static String LOG = Storage.LOG;
-	
+public class InformaCamMediaScanner implements MediaScannerConnectionClient {	
 	private MediaScannerConnection msc;
 	private File f;
 	private Activity a;

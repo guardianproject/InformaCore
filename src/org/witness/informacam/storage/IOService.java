@@ -6,13 +6,10 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Vector;
 
-import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.VirtualFileSystem;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -24,7 +21,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 

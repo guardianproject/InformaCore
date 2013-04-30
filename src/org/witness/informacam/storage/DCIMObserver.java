@@ -1,6 +1,5 @@
 package org.witness.informacam.storage;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -11,13 +10,10 @@ import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
-import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
@@ -26,7 +22,6 @@ import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 
-@SuppressLint("NewApi")
 public class DCIMObserver {
 	private final static String LOG = Storage.LOG;
 

@@ -33,7 +33,7 @@ public class IMediaManifest extends Model {
 	}
 	
 	public void sortBy(int order) {
-		if(media.size() < 0) {
+		if(media == null || media.size() == 0) {
 			return;
 		}
 		

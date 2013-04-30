@@ -9,5 +9,6 @@ public class ITransportData extends Model {
 	public String entityName = null;
 	public int totalBytes = 0;
 	public int[] byteRange = new int[] {0, -1};
+	public boolean isWholeUpload = false;
 	
 }

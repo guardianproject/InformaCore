@@ -3,7 +3,6 @@ package org.witness.informacam.ui;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
@@ -15,13 +14,11 @@ import org.witness.informacam.utils.Constants.App.Camera;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
-import org.witness.informacam.utils.InformaCamBroadcaster;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,7 +32,6 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	private boolean doInit = true;
 	private Intent cameraIntent = null;
 	private ComponentName cameraComponent = null;
-	private String packageName;
 
 	private InformaCam informaCam;
 
@@ -45,10 +41,13 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_camera_waiter);
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				setContentView(R.layout.activity_camera_waiter);
+			}
+		});
 		
-		packageName = this.getClass().getName();
-
 		try {
 			Iterator<String> i = savedInstanceState.keySet().iterator();
 			while(i.hasNext()) {

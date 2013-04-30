@@ -39,6 +39,10 @@ public class IDCIMDescriptor extends Model {
 	public List<IMedia> dcimEntries = null;
 	public List<IDCIMEntry> thumbnails = null;
 	public int numEntries = 0;
+	
+	public IDCIMDescriptor() {
+		super();
+	}
 
 	public void startSession() {
 		startTime = System.currentTimeMillis();

@@ -42,9 +42,7 @@ import dalvik.system.DexFile;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -61,7 +59,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -191,6 +188,7 @@ public class InformaCam extends Service {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
+				
 				Log.d(LOG, "CURRENT USER:\n" + user.asJson().toString());
 
 				if(user.isLoggedIn) {
@@ -255,24 +253,16 @@ public class InformaCam extends Service {
 			byte[] installedOrganizationsBytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
 			if(installedOrganizationsBytes != null) {
 				installedOrganizations.inflate(installedOrganizationsBytes);
-				
-				/*
-				for(IOrganization o : installedOrganizations.organizations) {
-					o.identity._id = "c4a4638becf85d179b7898169a0331d6";
-					o.identity._rev = "3-f01e19014841d00ed365574c5958ec02";
-					o.requestUrl = "https://2x7njk43wdexnmwg.onion/";
-					o.requestPort = 444;
-				}
-				
-				saveState(installedOrganizations);
-				*/
 			}
 			
 			byte[] notificationsManifestBytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
 			if(notificationsManifestBytes != null) {
 				notificationsManifest.inflate(notificationsManifestBytes);
-				Log.d(LOG, "notifcations" + notificationsManifest.asJson().toString());
+				Log.d(LOG, "notifications now:\n" + notificationsManifest.asJson().toString());
+				
+				/*
 				List<INotification> cleanup = new ArrayList<INotification>();
+				
 				for(INotification n : notificationsManifest.notifications) {
 					if(n.type == 0) {
 						cleanup.add(n);
@@ -282,7 +272,9 @@ public class InformaCam extends Service {
 				for(INotification n : cleanup) {
 					notificationsManifest.notifications.remove(n);
 				}
+				*/
 				
+				notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
 				saveState(notificationsManifest);
 			}
 
@@ -599,11 +591,7 @@ public class InformaCam extends Service {
 			organization = KeyUtility.installICTD(rc);
 			saveState(installedOrganizations);
 			
-			INotification notification = new INotification();
-			notification.label = a.getString(R.string.key_installed);
-			notification.content = a.getString(R.string.x_has_verified_you, organization.organizationName);
-			notification.type = Models.INotification.Type.NEW_KEY;
-			
+			INotification notification = new INotification(a.getString(R.string.key_installed), a.getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
 			addNotification(notification);
 			
 		} catch (FileNotFoundException e) {

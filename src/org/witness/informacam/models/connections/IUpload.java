@@ -8,6 +8,7 @@ import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
+import android.annotation.SuppressLint;
 import android.net.ConnectivityManager;
 import android.util.Log;
 
@@ -52,6 +53,7 @@ public class IUpload extends IConnection {
 		update();
 	}
 	
+	@SuppressLint("DefaultLocale")
 	public void update() {
 		setByteRange();
 		
@@ -89,7 +91,8 @@ public class IUpload extends IConnection {
 			break;
 		}
 		
-		//byteBufferSize = data.totalBytes;
+		byteBufferSize = data.totalBytes;
+		data.isWholeUpload = true;
 		
 		Log.d(LOG, "setting byte buffer size to " + byteBufferSize);
 	}

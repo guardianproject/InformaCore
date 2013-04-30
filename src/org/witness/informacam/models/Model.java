@@ -3,8 +3,6 @@ package org.witness.informacam.models;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -18,31 +16,6 @@ import android.util.Log;
 public class Model extends JSONObject {
 	public final static String LOG = App.LOG;
 	Field[] fields;
-
-	@SuppressWarnings("rawtypes")
-	public Object getObjectByParameter(List root, String key, Object value) {
-		for(Object o : root) {
-			try {
-				Field f = o.getClass().getDeclaredField(key);
-				Object v = f.get(o);
-
-				if(v.equals(value)) {
-					return o;
-				}
-			} catch (NoSuchFieldException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
-
-		return null;
-	}
 
 	public void inflate(byte[] jsonStringBytes) {
 		try {
@@ -60,10 +33,6 @@ public class Model extends JSONObject {
 		}
 	}
 	
-	public Class<?> recast() {
-		return recast(this, this.asJson());
-	}
-
 	public Class<?> recast(Object m, JSONObject ja) {
 		InformaCam informaCam = InformaCam.getInstance();
 		
@@ -72,8 +41,6 @@ public class Model extends JSONObject {
 		Class<?> recast = null;
 		
 		String packagePath = clz.getName().replace(("." + clz.getSimpleName()), "");
-		
-		
 		
 		for(String model : informaCam.models) {
 			if(model.contains(packagePath) && !model.equals(clz.getName())) {
@@ -91,29 +58,7 @@ public class Model extends JSONObject {
 			}
 		}
 		
-		if(subclasses.size() > 0) {
-			/*
-			List<String> superClassKeys = new ArrayList<String>();
-			List<String> subClassKeys = new ArrayList<String>();
-			
-			for(Field superClassKey : clz.getDeclaredFields()) {
-				Log.d(LOG, "superclass key: " + superClassKey.getName());
-				superClassKeys.add(superClassKey.getName());
-			}
-			
-			// create a list of keys unique to this subclass
-			Iterator<String> jIt = ja.keys();
-			while(jIt.hasNext()) {
-				String key = jIt.next();
-				Log.d(LOG, "this key: " + key);
-				if(!superClassKeys.contains(key)) {
-					// ignore all the keys that are in the superclass
-					subClassKeys.add(key);
-				}
-				
-			}
-			*/
-			
+		if(subclasses.size() > 0) {			
 			List<Class<?>> subClz_ = new ArrayList<Class<?>>(subclasses);
 			// loop through json to see if we have any of these fields. eliminate non-matches from list
 			for(Class<?> c : subclasses) {
@@ -145,26 +90,6 @@ public class Model extends JSONObject {
 		return recast;
 	}
 	
-	public Object asCast() {
-		Class<?> clz = recast(this, this.asJson());
-		if(clz != null) {
-			try {
-				Object asCast = clz.newInstance();
-				((Model) asCast).inflate(this.asJson());
-				return asCast;
-			} catch (InstantiationException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
-		
-		return this;
-		
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {
 		fields = this.getClass().getFields();
@@ -240,8 +165,6 @@ public class Model extends JSONObject {
 				e.printStackTrace();
 			}
 		}
-
-		//Log.d(LOG, "finished inflating object, which is now\n" + this.asJson().toString());
 	}
 	
 	public static int[] parseJSONAsIntArray(String value) {
@@ -298,7 +221,6 @@ public class Model extends JSONObject {
 
 			try {
 				Object value = f.get(this);
-				//Log.d(LOG, "HEY THIS TYPE " + f.getT)ype().getSuperclass());
 
 				if(f.getName().contains("this$")) {
 					continue;
@@ -317,7 +239,6 @@ public class Model extends JSONObject {
 				if(f.getType() == List.class) {
 					JSONArray subValue = new JSONArray();
 					for(Object v : (List<?>) value) {
-						// Log.d(LOG, v.getClass().getName());
 						if(v instanceof Model) {
 							subValue.put(((Model) v).asJson());
 						} else {

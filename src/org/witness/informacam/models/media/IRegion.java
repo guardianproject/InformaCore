@@ -27,6 +27,7 @@ public class IRegion extends Model {
 		regionDisplay = new IRegionDisplay(InformaCam.getInstance().a, this);
 
 		if(isNew) {
+			this.bounds.calculate();
 			InformaCam.getInstance().informaService.addRegion(this);
 		}
 	}
@@ -36,6 +37,7 @@ public class IRegion extends Model {
 	}
 
 	public void update() {
+		bounds.calculate();
 		InformaCam.getInstance().informaService.updateRegion(this);
 	}
 

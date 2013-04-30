@@ -375,6 +375,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			
+			notification.generateId();
 			informaCam.addNotification(notification);
 
 		} catch (JSONException e) {

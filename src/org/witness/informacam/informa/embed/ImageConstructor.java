@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.ISubmission;
-import org.witness.informacam.models.connections.IUpload;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;

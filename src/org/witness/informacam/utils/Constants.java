@@ -225,7 +225,7 @@ public class Constants {
 
 	public final static class Models {
 		public static final String _ID = "_id";
-		public static final String _REV = "_rev";
+		public static final String _REV = "_rev";		
 		
 		public class LogCache {
 			public final static String CACHE = "cache";
@@ -297,6 +297,13 @@ public class Constants {
 				public final static String IS_SHOWING = "isShowing";
 			}
 		}
+		
+		public class INotificationManifest {
+			public class Sort {
+				public final static int DATE_DESC = IMediaManifest.Sort.DATE_DESC;
+				public final static int DATE_ASC = IMediaManifest.Sort.DATE_ASC;
+			}
+		}
 
 		public class IMedia {
 			public final static String _ID = "_id";
@@ -365,6 +372,8 @@ public class Constants {
 			public static final String PATH_TO_NEXT_CONNECTION_DATA = "pathToNextConnectionData";
 			public static final String BYTES_TRANSFERRED = "bytes_transferred";
 			public static final String BYTES_TRANSFERRED_VERIFIED = "bytes_transferred_verified";
+			public static final String PROGRESS = "progress";
+			public static final String PARENT = "parent";
 			
 			public class Type {
 				public static final int NONE = 799;

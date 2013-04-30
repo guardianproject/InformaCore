@@ -14,7 +14,6 @@ import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Bitmap.Config;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 
 public class ImageUtility {

@@ -28,13 +28,11 @@ import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Base64;
 import android.util.Log;
 
 public class SignatureService extends Service {

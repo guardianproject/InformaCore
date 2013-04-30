@@ -2,6 +2,8 @@ package org.witness.informacam.models.media;
 
 import org.witness.informacam.models.Model;
 
+import android.util.Log;
+
 public class IRegionBounds extends Model {
 	public int top = 0;
 	public int left = 0;
@@ -38,7 +40,8 @@ public class IRegionBounds extends Model {
 		}
 	}
 	
-	private void calculate() {
+	public void calculate() {
+		Log.d(LOG, "at this point, i recalculate the real width/height and coords");
 		// TODO: turn display metrics into real metrics;
 	}
 }
