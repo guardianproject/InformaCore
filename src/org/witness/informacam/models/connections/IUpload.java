@@ -91,6 +91,7 @@ public class IUpload extends IConnection {
 			break;
 		}
 		
+		// hey guess what: just take care of the whole thing before fretting about opportunistic upload oK?
 		byteBufferSize = data.totalBytes;
 		data.isWholeUpload = true;
 		

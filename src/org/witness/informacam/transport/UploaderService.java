@@ -71,7 +71,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				Log.d(LOG, "connextivity status changed");
 				connectionType = getConnectionStatus();
 			}
-
 		}
 
 	}
@@ -361,6 +360,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						pendingConnections.getById(connection._id).inflate(upload.asJson());
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
 						// TODO:  this is finished.  remove from queue...
+						pendingConnections.queue.remove(connection);
 					}
 				}
 
