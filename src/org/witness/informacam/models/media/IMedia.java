@@ -372,6 +372,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 				submission.isHeld = true;
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
+				submission.associatedNotification = notification;
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);

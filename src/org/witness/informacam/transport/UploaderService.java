@@ -341,6 +341,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					String uploadRev = connection.result.data.getString(Models._REV);
 
 					IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
+					upload.associatedNotification = connection.associatedNotification;
+					
 					addToQueue(upload);
 				} else if(connection.type == Models.IConnection.Type.UPLOAD) {
 					int bytesReceived = connection.result.data.getInt(Models.IConnection.BYTES_TRANSFERRED_VERIFIED);
@@ -356,6 +358,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						upload.setByteBufferSize(connectionType);
 						upload.update();
 						upload.isHeld = false;
+						upload.associatedNotification = connection.associatedNotification;
 
 						pendingConnections.getById(connection._id).inflate(upload.asJson());
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {

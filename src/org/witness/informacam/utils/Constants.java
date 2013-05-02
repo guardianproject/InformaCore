@@ -491,6 +491,7 @@ public class Constants {
 			public static final class Intents {
 				public final static String CAMERA = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
 				public final static String CAMCORDER = MediaStore.ACTION_VIDEO_CAPTURE;
+				public final static String CAMERA_SIMPLE = MediaStore.ACTION_IMAGE_CAPTURE;
 			}
 
 			public static final class Authority {
