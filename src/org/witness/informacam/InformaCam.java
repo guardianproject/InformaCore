@@ -554,10 +554,14 @@ public class InformaCam extends Service {
 	}
 	
 	public void addNotification(INotification notification) {
-		addNotification(notification, false);
+		addNotification(notification, false, null);
 	}
 	
-	public void addNotification(INotification notification, boolean showOnTop) {
+	public void addNotification(INotification notification, Handler callback) {
+		addNotification(notification, false, callback);
+	}
+	
+	public void addNotification(INotification notification, boolean showOnTop, Handler callback) {
 		if(notificationsManifest.notifications == null) {
 			notificationsManifest.notifications = new ArrayList<INotification>();
 		}
@@ -577,9 +581,19 @@ public class InformaCam extends Service {
 			notificationManager.notify(0, n);
 			*/
 		}
+		
+		if(callback != null) {
+			Message msg = new Message();
+			Bundle msgData = new Bundle();
+			
+			msgData.putInt(Models.INotification.CLASS, Models.INotification.Type.NEW_KEY);
+			msgData.putInt(Models.INotification.ID, notificationsManifest.notifications.indexOf(notification));
+			msg.setData(msgData);
+			callback.sendMessage(msg);
+		}
 	}
 
-	public IOrganization installICTD(Uri ictdURI) {
+	public IOrganization installICTD(Uri ictdURI, Handler callback) {
 		IOrganization organization = null;
 
 		try {
@@ -592,7 +606,7 @@ public class InformaCam extends Service {
 			saveState(installedOrganizations);
 			
 			INotification notification = new INotification(a.getString(R.string.key_installed), a.getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
-			addNotification(notification);
+			addNotification(notification, callback);
 			
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());

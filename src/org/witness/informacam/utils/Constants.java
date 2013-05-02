@@ -239,6 +239,9 @@ public class Constants {
 				public static final int EXPORTED_MEDIA = 602;
 				public static final int SHARED_MEDIA = 603;
 			}
+
+			public static final String ID = "notification_id";
+			public static final String CLASS = "handler_message_type";
 		}
 		
 		public class IGenealogy {
