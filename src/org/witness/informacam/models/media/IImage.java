@@ -36,7 +36,11 @@ public class IImage extends IMedia {
 
 		byte[] bytes = informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER);
 
-		final Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+		BitmapFactory.Options opts = new BitmapFactory.Options();
+		opts.inPurgeable = true;
+		opts.inInputShareable = false;
+		
+		final Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
 		height = bitmap_.getHeight();
 		width = bitmap_.getWidth();
 

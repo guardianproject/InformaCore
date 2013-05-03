@@ -74,6 +74,25 @@ public class TimeUtility {
 	}
 	
 	@SuppressLint("SimpleDateFormat")
+	public final static String millisecondsToDayOnly(long ms) {
+		DateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy");
+		Date d = new Date(ms);
+		return dateFormat.format(d);
+	}
+	
+	public final static long minusOneDay(long ms) {
+		return ms - (24 * 60 * 60 * 1000);
+	}
+	
+	public final static long plusOneDay(long ms) {
+		return ms + (24 * 60 * 60 * 1000);
+	}
+	
+	public final static int millisecondsToHours(long ms) {
+		return (int) (((ms/1000)/60)/60);
+	}
+	
+	@SuppressLint("SimpleDateFormat")
 	public final static String[] millisecondsToDatestampAndTimestamp(long ms) {
 		DateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy");
 		DateFormat timeFormat = new SimpleDateFormat("hh:mm a");

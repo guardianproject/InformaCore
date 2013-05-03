@@ -193,7 +193,7 @@ public class IDCIMDescriptor extends Model {
 			boolean getThumbnailFromMediaMetadata = false;
 			boolean bruteForceThumbnailFromMedia = false;
 						
-			Bitmap b;			
+			Bitmap b = null;			
 			b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 			if(b == null) {
 				b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
