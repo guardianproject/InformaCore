@@ -1,13 +1,17 @@
 package org.witness.informacam.utils;
 
+import info.guardianproject.bouncycastle.util.encoders.Hex;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Formatter;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -40,25 +44,37 @@ public class MediaHasher
 		  
 		  byte[] messageDigest = digester.digest();
 		  
-		// Create Hex String
+		// Create Hex String WTF?!
+		  	/*
 	        StringBuffer hexString = new StringBuffer();
 	        for (int i=0; i<messageDigest.length; i++)
 	            hexString.append(Integer.toHexString(0xFF & messageDigest[i]));
-	        return hexString.toString();
+	        */
+	        
+	        return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
 	
 	}
 	
 	public static String getBitmapHash(Bitmap bitmap) throws NoSuchAlgorithmException, IOException {
-		String hash = "";
-		ByteBuffer buf;
+		MessageDigest digester = MessageDigest.getInstance("SHA-1");
 		
-		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
+		for(int h=0; h<bitmap.getHeight(); h++) {
+			int[] row = new int[bitmap.getWidth()];
+			bitmap.getPixels(row, 0, row.length, 0, h, row.length, 1);
+			
+			byte[] rowBytes = new byte[row.length];
+			for(int b=0; b<row.length; b++) {
+				rowBytes[b] = (byte) row[b];
+			}
+			
+			digester.update(rowBytes);
+			rowBytes = null;
+			row = null;
+			
+		}
 		
-		bitmap.copyPixelsToBuffer(buf);
-		hash = MediaHasher.hash(buf.array(), "SHA-1");
-		buf.clear();
-		buf = null;
-		return hash;
+		byte[] messageDigest = digester.digest();
+		return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
 	}
 	
 	public static String getBitmapHash(java.io.File file) throws NoSuchAlgorithmException, IOException {

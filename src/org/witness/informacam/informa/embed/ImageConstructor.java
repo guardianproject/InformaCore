@@ -102,8 +102,8 @@ public class ImageConstructor {
 		}
 		
 		// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-		//clone.delete();
-		//version.delete();
+		clone.delete();
+		version.delete();
 		
 	}
 }

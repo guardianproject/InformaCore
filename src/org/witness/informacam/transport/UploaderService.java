@@ -213,7 +213,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			/*
 			pendingConnections.queue.clear();
 			informaCam.saveState(pendingConnections);
-			 */
+			*/
 
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				if(!runOrbotCheck()) {
@@ -231,7 +231,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						for(IConnection connection : pendingConnections.queue) {
 							//connection.isHeld = false;
 
-							Log.d(LOG, "HELLO CONNECTION:\n" + connection.asJson().toString());
+							//Log.d(LOG, "HELLO CONNECTION:\n" + connection.asJson().toString());
 							if(!connection.isHeld) {
 								connection.isHeld = true;
 
@@ -344,6 +344,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					upload.associatedNotification = connection.associatedNotification;
 					
 					addToQueue(upload);
+					pendingConnections.queue.remove(connection);
 				} else if(connection.type == Models.IConnection.Type.UPLOAD) {
 					int bytesReceived = connection.result.data.getInt(Models.IConnection.BYTES_TRANSFERRED_VERIFIED);
 
@@ -362,7 +363,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 						pendingConnections.getById(connection._id).inflate(upload.asJson());
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
-						// TODO:  this is finished.  remove from queue...
+						// TODO:  this is finished.  remove from queue... but persist parent data
+						Log.d(LOG, "HUZZAH!!!  AN UPLOAD:\n" + connection.result.asJson().toString());
 						pendingConnections.queue.remove(connection);
 					}
 				}

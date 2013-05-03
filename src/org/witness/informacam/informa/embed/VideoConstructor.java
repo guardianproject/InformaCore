@@ -237,7 +237,7 @@ public class VideoConstructor {
 		// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
 		version.delete();
 		clone.delete();
-		//metadata.delete();
+		metadata.delete();
 		
 	}
 }
