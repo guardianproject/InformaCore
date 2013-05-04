@@ -51,7 +51,10 @@ public class IOService extends Service {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		IOService = this;
-		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE));
+		sendBroadcast(new Intent()
+			.setAction(Actions.ASSOCIATE_SERVICE)
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
 	@Override
@@ -67,7 +70,10 @@ public class IOService extends Service {
 			f.delete();
 		}
 		
-		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+		sendBroadcast(new Intent()
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE)
+			.setAction(Actions.DISASSOCIATE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 		
 	}
 

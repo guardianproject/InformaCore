@@ -47,7 +47,7 @@ public class Model extends JSONObject {
 				try {
 					Class<?> subClz = Class.forName(model);
 					if(subClz.getSuperclass().equals(clz)) {
-						Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
+						//Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
 						subclasses.add(subClz);
 					}
 				} catch (ClassNotFoundException e) {

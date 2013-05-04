@@ -54,7 +54,6 @@ public class Constants {
 		public static final String INFORMACAM_STOP = "org.witness.informacam.action.INFORMACAM_STOP";
 		public static final String INFORMA_START = "org.witness.informacam.action.INFORMA_SERVICE_START";
 		public static final String INFORMA_STOP = "org.witness.informacam.action.INFORMA_SERVICE_STOP";
-
 	}
 
 	public final static class Codes {
@@ -88,6 +87,7 @@ public class Constants {
 			public static final String RETURNED_MEDIA = "informacam_returned_media";
 			public static final String INSTALL_NEW_KEY = "install_ictd_uri";
 			public static final String LOGOUT_USER = "logout_user";
+			public static final String RESTRICT_TO_PROCESS = "restrict_to_process";
 		}
 
 		public static final class Messages {
@@ -418,6 +418,7 @@ public class Constants {
 			public final static String REASON = "reason";
 			public static final String RESPONSE_CODE = "response_code";
 			public static final String CONTENT = "content";
+			public static final String RESULT_CODE = "result";
 			
 			public class ResponseCodes {
 				public static final int DOWNLOAD_ASSET = 43;

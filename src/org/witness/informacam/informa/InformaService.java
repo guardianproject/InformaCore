@@ -103,7 +103,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 		_acc = new AccelerometerSucker();
 
 		informaService = InformaService.this;
-		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE).setAction(Actions.ASSOCIATE_SERVICE));
+		sendBroadcast(new Intent()
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)
+			.setAction(Actions.ASSOCIATE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 
 		init();
 	}
@@ -148,7 +151,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
-				sendBroadcast(new Intent().setAction(Actions.INFORMA_START));
+				sendBroadcast(new Intent()
+					.setAction(Actions.INFORMA_START)
+					.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
 			}
 		});
 
@@ -228,8 +233,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 			unregisterReceiver(b);
 		}
 
-		sendBroadcast(new Intent().setAction(Actions.INFORMACAM_STOP));
-		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+		sendBroadcast(new Intent()
+			.setAction(Actions.INFORMACAM_STOP)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
+		sendBroadcast(new Intent()
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)
+			.setAction(Actions.DISASSOCIATE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
 	public static InformaService getInstance() {

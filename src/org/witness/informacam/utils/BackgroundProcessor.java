@@ -43,13 +43,19 @@ public class BackgroundProcessor extends Service {
 		tasks = new ArrayList<Thread>();
 		
 		backgroundProcessor = this;
-		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.BACKGROUND_PROCESSOR));
+		sendBroadcast(new Intent()
+			.setAction(Actions.ASSOCIATE_SERVICE)
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.BACKGROUND_PROCESSOR)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.BACKGROUND_PROCESSOR).setAction(Actions.DISASSOCIATE_SERVICE));
+		sendBroadcast(new Intent()
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.BACKGROUND_PROCESSOR)
+			.setAction(Actions.DISASSOCIATE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 	
 	public static BackgroundProcessor getInstance() {

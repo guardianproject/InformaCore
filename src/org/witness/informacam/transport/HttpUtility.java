@@ -87,7 +87,13 @@ public class HttpUtility {
 
 			JSONObject resultObject = (JSONObject) new JSONTokener(resultBuffer.toString()).nextValue();
 			if(result.code == Integer.parseInt(Transport.Results.OK)) {
-				result.data = resultObject.getJSONObject(Models.IResult.DATA);
+				// this gets re-cast to the json object instead of the status line (b/c reasons)
+				result.code = resultObject.getInt(Models.IResult.RESULT_CODE);
+				if(result.code == Integer.parseInt(Transport.Results.OK)) { 
+					result.data = resultObject.getJSONObject(Models.IResult.DATA);
+				} else {
+					result.reason = resultObject.getString(Models.IResult.REASON);
+				}
 				result.responseCode = resultObject.getInt(Models.IResult.RESPONSE_CODE);
 			} else {
 				if(resultObject.has(Models.IResult.REASON)) {

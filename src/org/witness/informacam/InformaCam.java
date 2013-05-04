@@ -36,10 +36,12 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.InnerBroadcaster;
 
 import dalvik.system.DexFile;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.NotificationManager;
@@ -72,7 +74,7 @@ public class InformaCam extends Service {
 	public final LocalBinder binder = new LocalBinder();
 	private final static String LOG = App.LOG;
 
-	private List<BroadcastReceiver> broadcasters = new Vector<BroadcastReceiver>();
+	private List<InnerBroadcaster> broadcasters = new Vector<InnerBroadcaster>();
 
 	public IMediaManifest mediaManifest = new IMediaManifest();
 	public IInstalledOrganizations installedOrganizations = new IInstalledOrganizations();
@@ -97,9 +99,14 @@ public class InformaCam extends Service {
 	SharedPreferences.Editor ed;
 	private SharedPreferences sp;
 	NotificationManager notificationManager;
+	
+	private int processId;
 
 	public class LocalBinder extends Binder {
 		public InformaCam getService() {
+			processId = android.os.Process.myPid();
+			
+			Log.d(LOG, "HELLO PROCESS: " + processId);
 			return InformaCam.this;
 		}
 	}
@@ -116,12 +123,106 @@ public class InformaCam extends Service {
 		super.onCreate();
 		Log.d(LOG, "InformaCam service started via intent");
 
-		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE)));
-		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.UPLOADER_UPDATE)));
-		broadcasters.add(new IBroadcaster(new IntentFilter(Actions.DISASSOCIATE_SERVICE)));
+		broadcasters.add(new InnerBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE), processId) {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				super.onReceive(context, intent);
+				if(!isIntended) {
+					return;
+				}
+				
+				if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {
+					int serviceCode = intent.getIntExtra(Codes.Keys.SERVICE, 0);
+					
+					switch(serviceCode) {
+					case Codes.Routes.SIGNATURE_SERVICE:
+						signatureService = SignatureService.getInstance();
+						break;
+					case Codes.Routes.IO_SERVICE:
+						ioService = IOService.getInstance();
+						break;
+					case Codes.Routes.UPLOADER_SERVICE:
+						uploaderService = UploaderService.getInstance();
+						break;
+					case Codes.Routes.INFORMA_SERVICE:
+						informaService = InformaService.getInstance();
+						break;
+					case Codes.Routes.BACKGROUND_PROCESSOR:
+						backgroundProcessor = BackgroundProcessor.getInstance();
+						break;
+					}
+
+					if(signatureService == null) {
+						Log.d(LOG, "cannot init yet (signature) ... trying again");
+						return;
+					}
+
+					if(uploaderService == null) {
+						Log.d(LOG, "cannot init yet (uploader) ... trying again");
+						return;
+					}
+
+					if(ioService == null) {
+						Log.d(LOG, "cannot init yet (io) ... trying again");
+						return;
+					}
+
+					if(serviceCode != Codes.Routes.INFORMA_SERVICE && serviceCode != Codes.Routes.BACKGROUND_PROCESSOR) {
+						new Thread(new Runnable() {
+							@Override
+							public void run() {
+								startup();
+							}
+						}).start();
+					}
+
+				} 
+			}
+		});
+		
+		broadcasters.add(new InnerBroadcaster(new IntentFilter(Actions.UPLOADER_UPDATE), processId) {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				super.onReceive(context, intent);
+				if(!isIntended) {
+					return;
+				}
+				
+				if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
+					switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
+					case Codes.Routes.INFORMA_SERVICE:
+						informaService = null;
+						sendBroadcast(new Intent()
+							.setAction(Actions.INFORMA_STOP)
+							.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId));
+						break;
+					}
+				}
+			}
+		});
+		
+		
+		broadcasters.add(new InnerBroadcaster(new IntentFilter(Actions.DISASSOCIATE_SERVICE), processId) {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				super.onReceive(context, intent);
+				if(!isIntended) {
+					return;
+				}
+				
+				if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
+					switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
+					case Codes.Transport.MUST_INSTALL_TOR:
+						break;
+					case Codes.Transport.MUST_START_TOR:
+						break;
+					}
+				}
+			}
+		});
 
 		for(BroadcastReceiver br : broadcasters) {
-			registerReceiver(br, ((IBroadcaster) br).intentFilter);
+			registerReceiver(br, ((InnerBroadcaster) br).intentFilter);
 		}
 
 		ioServiceIntent = new Intent(this, IOService.class);
@@ -282,7 +383,10 @@ public class InformaCam extends Service {
 			break;
 		}
 
-		Intent intent = new Intent(Actions.INFORMACAM_START).putExtra(Codes.Keys.SERVICE, data);
+		// TODO: here
+		Intent intent = new Intent(Actions.INFORMACAM_START)
+			.putExtra(Codes.Keys.SERVICE, data)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId);
 		sendBroadcast(intent);
 	}
 	
@@ -521,6 +625,10 @@ public class InformaCam extends Service {
 
 		return false;
 	}
+	
+	public int getProcess() {
+		return processId;
+	}
 
 	public void update(Bundle data) {
 		Message message = new Message();
@@ -639,80 +747,5 @@ public class InformaCam extends Service {
 	@Override
 	public IBinder onBind(Intent intent) {
 		return binder;
-	}
-
-	private class IBroadcaster extends BroadcastReceiver {
-		private final static String LOG = App.LOG;
-
-		IntentFilter intentFilter;
-
-		public IBroadcaster(IntentFilter intentFilter) {
-			this.intentFilter = intentFilter;
-		}
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {
-				int serviceCode = intent.getIntExtra(Codes.Keys.SERVICE, 0);
-				
-				switch(serviceCode) {
-				case Codes.Routes.SIGNATURE_SERVICE:
-					signatureService = SignatureService.getInstance();
-					break;
-				case Codes.Routes.IO_SERVICE:
-					ioService = IOService.getInstance();
-					break;
-				case Codes.Routes.UPLOADER_SERVICE:
-					uploaderService = UploaderService.getInstance();
-					break;
-				case Codes.Routes.INFORMA_SERVICE:
-					informaService = InformaService.getInstance();
-					break;
-				case Codes.Routes.BACKGROUND_PROCESSOR:
-					backgroundProcessor = BackgroundProcessor.getInstance();
-					break;
-				}
-
-				if(signatureService == null) {
-					Log.d(LOG, "cannot init yet (signature) ... trying again");
-					return;
-				}
-
-				if(uploaderService == null) {
-					Log.d(LOG, "cannot init yet (uploader) ... trying again");
-					return;
-				}
-
-				if(ioService == null) {
-					Log.d(LOG, "cannot init yet (io) ... trying again");
-					return;
-				}
-
-				if(serviceCode != Codes.Routes.INFORMA_SERVICE && serviceCode != Codes.Routes.BACKGROUND_PROCESSOR) {
-					new Thread(new Runnable() {
-						@Override
-						public void run() {
-							startup();
-						}
-					}).start();
-				}
-
-			} else if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
-				switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
-				case Codes.Routes.INFORMA_SERVICE:
-					informaService = null;
-					sendBroadcast(new Intent().setAction(Actions.INFORMA_STOP));
-					break;
-				}
-			} else if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
-				switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
-				case Codes.Transport.MUST_INSTALL_TOR:
-					break;
-				case Codes.Transport.MUST_START_TOR:
-					break;
-				}
-			}
-		}
-
 	}
 }

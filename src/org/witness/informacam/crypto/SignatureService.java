@@ -65,13 +65,19 @@ public class SignatureService extends Service {
 		informaCam = InformaCam.getInstance();
 
 		signatureService = this;
-		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE));
+		sendBroadcast(new Intent()
+			.setAction(Actions.ASSOCIATE_SERVICE)
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+		sendBroadcast(new Intent()
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE)
+			.setAction(Actions.DISASSOCIATE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 	
 	

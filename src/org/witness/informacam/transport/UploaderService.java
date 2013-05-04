@@ -27,6 +27,7 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Transport;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.InnerBroadcaster;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -56,24 +57,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	Handler handler = new Handler();
 	Timer queueMaster;
 
-	List<Broadcaster> br = new ArrayList<Broadcaster>();
-
-	class Broadcaster extends BroadcastReceiver {
-		IntentFilter intentFilter;
-
-		public Broadcaster(IntentFilter intentFilter) {
-			this.intentFilter = intentFilter;
-		}
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")) {
-				Log.d(LOG, "connextivity status changed");
-				connectionType = getConnectionStatus();
-			}
-		}
-
-	}
+	List<InnerBroadcaster> br = new ArrayList<InnerBroadcaster>();
 
 	public class LocalBinder extends Binder {
 		public UploaderService getService() {
@@ -91,10 +75,27 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		Log.d(LOG, "started.");
 		oh = new OrbotHelper(this);
 
-		br.add(new Broadcaster(new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE")));
+		br.add(new InnerBroadcaster(new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"), android.os.Process.myPid()) {
+			
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				super.onReceive(context, intent);
+				if(!isIntended) {
+					return;
+				}
+				
+				if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")) {
+					Log.d(LOG, "connextivity status changed");
+					connectionType = getConnectionStatus();
+				}
+			}
+		});
 
 		uploaderService = this;
-		sendBroadcast(new Intent().setAction(Actions.ASSOCIATE_SERVICE).putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE));
+		sendBroadcast(new Intent()
+			.setAction(Actions.ASSOCIATE_SERVICE)
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
 	@Override
@@ -109,7 +110,10 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 		unregisterConnectivityUpdates();
 		informaCam.saveState(pendingConnections);
-		sendBroadcast(new Intent().putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE).setAction(Actions.DISASSOCIATE_SERVICE));
+		sendBroadcast(new Intent()
+			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
+			.setAction(Actions.DISASSOCIATE_SERVICE)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
 	public static UploaderService getInstance() {
@@ -153,7 +157,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 	private void registerConnectivityUpdates() {
 		for(BroadcastReceiver b : br) {
-			registerReceiver(b, ((Broadcaster) b).intentFilter);
+			registerReceiver(b, ((InnerBroadcaster) b).intentFilter);
 		}
 	}
 
