@@ -200,8 +200,7 @@ public class InformaCam extends Service {
 				}
 			}
 		});
-		
-		
+			
 		broadcasters.add(new InnerBroadcaster(new IntentFilter(Actions.DISASSOCIATE_SERVICE), processId) {
 			@Override
 			public void onReceive(Context context, Intent intent) {

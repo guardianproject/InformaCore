@@ -1,5 +1,7 @@
 package org.witness.informacam.utils;
 
+import info.guardianproject.iocipher.File;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -314,6 +316,10 @@ public class Constants {
 			public static final String J3M_DESCRIPTOR = "j3m_descriptor";
 			public static final String VERSION = "versionForExport";
 			
+			public class ILog {
+				public final static String ATTACHED_MEDIA = "attachedMedia";
+			}
+			
 			public class Data {
 
 				public static final String SENSOR_PLAYBACK = "sensorPlayback";
@@ -535,6 +541,8 @@ public class Constants {
 			public static final String EXTERNAL_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/InformaCam";
 			public static final String FORM_ROOT = "forms";
 			public static final String ORGS_ROOT = "organizations";
+			public static final String LOG_DUMP = "iLogs";
+			public static final String ATTACHED_MEDIA = "attachedMedia";
 
 			public final static class Type {
 

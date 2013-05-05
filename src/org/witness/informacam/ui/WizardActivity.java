@@ -50,7 +50,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 
 	List<Fragment> fragments = new Vector<Fragment>();
 	public List<Fragment> subFragments = null;
-	
+
 	boolean mainWizardCanContinue = false;
 	boolean subWizardCanContinue = true;
 
@@ -60,9 +60,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		packageName = this.getPackageName();
 
 		Log.d(LOG, "hello " + packageName);
-		
+
 		informaCam = InformaCam.getInstance(this);
-		
+
 		setContentView(R.layout.activity_wizard);
 
 		fragments.add(Fragment.instantiate(this, WizardStepOne.class.getName()));
@@ -70,7 +70,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		fragments.add(Fragment.instantiate(this, WizardStepThree.class.getName()));
 
 		viewPager = (ViewPager) findViewById(R.id.view_pager_root);
-		
+
 		if(getIntent().hasExtra(Codes.Extras.WIZARD_SUPPLEMENT)) {
 			subFragments = new Vector<Fragment>();
 			for(String f : getIntent().getStringArrayListExtra(Codes.Extras.WIZARD_SUPPLEMENT)) {
@@ -78,7 +78,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			}
 			subFragments.add(Fragment.instantiate(this, WizardSubFragmentFinish.class.getName()));
 		}
-		
+
 		initLayout();
 	}
 
@@ -102,14 +102,14 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			public boolean onTouch(View v, MotionEvent event) {
 				return true;
 			}
-			
+
 		});
 
 		TabHost.TabSpec tabSpec = null;
-		
+
 		@SuppressWarnings("unused")
 		View indicator = null;
-		
+
 		int i = 1;
 
 		for(Fragment f : fragments) {
@@ -200,20 +200,21 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.hasCompletedWizard = true;
 		informaCam.user.lastLogIn = System.currentTimeMillis();
 		informaCam.user.isLoggedIn = true;
-		
+
 		Log.d(LOG, "new user: " + informaCam.user.asJson());
 		informaCam.ioService.saveBlob(informaCam.user, new java.io.File(IManifest.USER));
-		
-		for(IConnection connection : informaCam.uploaderService.pendingConnections.queue) {
-			connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
-			connection.setParam(IUser.ALIAS, informaCam.user.alias);
-			connection.setData(IUser.PUBLIC_CREDENTIALS);
-			connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
-			connection.isHeld = false;
+
+		if(!informaCam.user.isInOfflineMode) {
+			for(IConnection connection : informaCam.uploaderService.pendingConnections.queue) {
+				connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
+				connection.setParam(IUser.ALIAS, informaCam.user.alias);
+				connection.setData(IUser.PUBLIC_CREDENTIALS);
+				connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
+				connection.isHeld = false;
+			}
+
+			informaCam.ioService.saveBlob(informaCam.uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 		}
-		
-		informaCam.ioService.saveBlob(informaCam.uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
-		
 		setResult(Activity.RESULT_OK);
 		finish();
 	}
@@ -221,9 +222,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	@Override
 	public void onUpdate(Message message) {
 		((InformaCamEventListener) fragments.get(2)).onUpdate(message);
-		
+
 	}
-	
+
 	public void autoAdvance() {
 		Log.d(LOG, "advancing to " + (viewPager.getCurrentItem() + 1));
 		viewPager.setCurrentItem(viewPager.getCurrentItem() + 1);

@@ -71,7 +71,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public CharSequence detailsAsText = null;
 
-	private Handler responseHandler;
+	protected Handler responseHandler;
 
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
@@ -206,7 +206,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return export(h, organization, false);
 	}
 
-	@SuppressWarnings("unused")
 	public boolean export(Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		responseHandler = h;
@@ -385,7 +384,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			e.printStackTrace();
 		}
 
-		return false;
+		return true;
 	}
 
 	public String renderDetailsAsText(int depth) {
@@ -432,7 +431,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return seed;
 	}
 
-	private void sendMessage(String key, String what) {
+	protected void sendMessage(String key, String what) {
 		Bundle b = new Bundle();
 		b.putString(key, what);
 		Message msg = new Message();
@@ -441,7 +440,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		responseHandler.sendMessage(msg);
 	}
 
-	private void sendMessage(String key, int what) {
+	protected void sendMessage(String key, int what) {
 		Bundle b = new Bundle();
 		b.putInt(key, what);
 		Message msg = new Message();
