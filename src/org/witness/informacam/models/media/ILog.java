@@ -25,6 +25,7 @@ import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.TimeUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Models;
@@ -61,6 +62,20 @@ public class ILog extends IMedia {
 	public ILog(IMedia media) {
 		super();
 		inflate(media.asJson());
+	}
+	
+	public static ILog getLogByDay(long timestamp) {
+		ILog iLog = null;
+		List<IMedia> availableLogs = InformaCam.getInstance().mediaManifest.getAllByType(MimeType.LOG);
+		for(IMedia l : availableLogs) {
+			ILog log = new ILog(l);
+			if(TimeUtility.matchesDay(timestamp, log.startTime)) {
+				iLog = log;
+				break;
+			}
+		}
+		
+		return iLog;
 	}
 
 	@Override

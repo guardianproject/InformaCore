@@ -120,4 +120,9 @@ public class TimeUtility {
 			ts = ts.replace("-","0.");
 		return ts;
 	}
+
+	public static boolean matchesDay(long t1, long t2) {
+		// TODO: if t1 is within 24 hours of t2
+		return false;
+	}
 }
