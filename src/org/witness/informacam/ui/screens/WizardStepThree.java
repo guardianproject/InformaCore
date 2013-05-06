@@ -128,6 +128,7 @@ public class WizardStepThree extends Fragment implements OnClickListener, Inform
 		idx=0;
 		for(Fragment f : subFragments) {
 			if(fragment.getClass().getSimpleName().equals(f.getClass().getSimpleName())) {
+				((WizardListener) subFragments.get(0)).onSubFragmentInitialized();
 				break;
 			}
 			idx++;
@@ -158,6 +159,8 @@ public class WizardStepThree extends Fragment implements OnClickListener, Inform
 			
 			((ImageView) subFragmentProgress.getChildAt(i)).setImageDrawable(getResources().getDrawable(dot));
 		}
+		
+		
 		
 	}
 

@@ -41,7 +41,6 @@ import org.witness.informacam.utils.InnerBroadcaster;
 import dalvik.system.DexFile;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.NotificationManager;

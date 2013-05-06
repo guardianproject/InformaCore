@@ -1,7 +1,5 @@
 package org.witness.informacam.utils;
 
-import info.guardianproject.iocipher.File;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +27,7 @@ public class Constants {
 		public FragmentManager returnFragmentManager();
 		public void wizardCompleted();
 		public void onSubFragmentCompleted();
+		public void onSubFragmentInitialized();
 	}
 	
 	public interface SuckerCacheListener {

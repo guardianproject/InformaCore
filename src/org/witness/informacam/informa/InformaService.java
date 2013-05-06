@@ -234,7 +234,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		}
 
 		sendBroadcast(new Intent()
-			.setAction(Actions.INFORMACAM_STOP)
+			.setAction(Actions.INFORMA_STOP)
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
 		sendBroadcast(new Intent()
 			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)

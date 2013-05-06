@@ -1,7 +1,5 @@
 package org.witness.informacam.models.media;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -16,6 +14,8 @@ import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
+import org.witness.informacam.models.forms.IForm;
+import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntent;
@@ -23,6 +23,7 @@ import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
@@ -39,14 +40,27 @@ import android.util.Log;
 
 public class ILog extends IMedia {
 	public long autoLogInterval = 10 * (60 * 1000);	// 10 minutes?
+	public boolean shouldAutoLog = false;
+
 	public long startTime = 0L;
 	public long endTime = 0L;
+
 	public List<IMedia> attachedMedia = null;
+	public IForm attachedForm = null;
+	public String formPath = null;
 
 	private Handler proxyHandler;
 
 	public ILog() {
 		super();
+		
+		dcimEntry = new IDCIMEntry();
+		dcimEntry.mediaType = MimeType.LOG;
+	}
+
+	public ILog(IMedia media) {
+		super();
+		inflate(media.asJson());
 	}
 
 	@Override
@@ -141,14 +155,17 @@ public class ILog extends IMedia {
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 		// XXX: will i need this to have been created already? create local path to save log to...
-		try {
-			rootFolder = MediaHasher.hash(("log_" + String.valueOf(startTime)).getBytes(), "SHA-1");
-		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+		if(rootFolder == null) {
+			try {
+				rootFolder = MediaHasher.hash(("log_" + String.valueOf(startTime)).getBytes(), "SHA-1");
+
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
 
 		info.guardianproject.iocipher.File rootFolder_ = new info.guardianproject.iocipher.File(rootFolder);
@@ -239,17 +256,17 @@ public class ILog extends IMedia {
 			if(share) {
 				java.io.File log = new java.io.File(Storage.EXTERNAL_DIR, logName);
 				IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.FILE_SYSTEM);
-				
+
 				if(organization != null) {
 					byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.FILE_SYSTEM);
 					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
 					informaCam.ioService.saveBlob(j3mBytes, log, true);
 				}
-				
+
 			} else {
 				info.guardianproject.iocipher.File log = new info.guardianproject.iocipher.File(rootFolder, logName);
 				IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.IOCIPHER);
-				
+
 				if(organization != null) {
 					byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
 					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
@@ -259,7 +276,7 @@ public class ILog extends IMedia {
 
 			progress += 5;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
-			
+
 			notification.generateId();
 			informaCam.addNotification(notification);
 

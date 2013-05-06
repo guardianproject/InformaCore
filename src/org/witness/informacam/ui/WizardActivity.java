@@ -162,10 +162,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		public void onTabChanged(String tabId) {}
 
 		@Override
-		public void onPageScrollStateChanged(int state) {
-			// TODO Auto-generated method stub
-
-		}
+		public void onPageScrollStateChanged(int state) {}
 
 		@Override
 		public void onPageScrolled(int arg0, float arg1, int arg2) {}
@@ -232,4 +229,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 
 	@Override
 	public void onSubFragmentCompleted() {}
+
+	@Override
+	public void onSubFragmentInitialized() {}
 }

@@ -22,6 +22,25 @@ public class IMediaManifest extends Model {
 		InformaCam.getInstance().saveState(((Model) this), new info.guardianproject.iocipher.File(IManifest.MEDIA));
 	}
 	
+	public List<IMedia> getAllByType(String mimeType) {
+		List<IMedia> mediaByType = null;
+		for(IMedia m : media) {
+			if(m.dcimEntry.mediaType.equals(mimeType)) {
+				if(mediaByType == null) {
+					mediaByType = new ArrayList<IMedia>();
+				}
+				
+				mediaByType.add(m);
+			}
+		}
+		
+		if(mediaByType == null) {
+			Log.d(LOG, "no, media is null");
+		}
+		
+		return mediaByType;
+	}
+	
 	public IMedia getById(String mediaId) {
 		for(IMedia m : media) {
 			if(m._id.equals(mediaId)) {
