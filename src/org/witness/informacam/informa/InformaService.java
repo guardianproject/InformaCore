@@ -67,6 +67,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	Handler h = new Handler();
 	IMedia associatedMedia = null;
+	
+	boolean mustUseSystemTime = false;
 
 	private InformaBroadcaster[] broadcasters = {
 			new InformaBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)),

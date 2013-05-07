@@ -34,6 +34,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	private ComponentName cameraComponent = null;
 
 	private InformaCam informaCam;
+	private boolean controlsInforma = true;
 
 	Bundle bundle;
 	Handler h = new Handler();
@@ -93,7 +94,12 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			setResult(Activity.RESULT_CANCELED);
 			finish();
 		} else {
-			informaCam.startInforma();
+			if(informaCam.informaService == null) {
+				informaCam.startInforma();
+			} else {
+				controlsInforma = false;
+				onInformaStart(null);
+			}
 		}
 	}
 
@@ -139,7 +145,10 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 				try{
 					Log.d(LOG, "unregistering dcim observers");
 					informaCam.ioService.stopDCIMObserver();
-					informaCam.stopInforma();
+					
+					if(controlsInforma) {
+						informaCam.stopInforma();
+					}
 				} catch(NullPointerException e) {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();

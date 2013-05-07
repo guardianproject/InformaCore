@@ -32,16 +32,17 @@ public class Model extends JSONObject {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public Class<?> recast(Object m, JSONObject ja) {
 		InformaCam informaCam = InformaCam.getInstance();
-		
+
 		List<Class<?>> subclasses = new ArrayList<Class<?>>();
 		Class<?> clz = m.getClass();
 		Class<?> recast = null;
-		
+
 		String packagePath = clz.getName().replace(("." + clz.getSimpleName()), "");
-		
+		//Log.d(LOG, "original object is: " + ja.toString());
+
 		for(String model : informaCam.models) {
 			if(model.contains(packagePath) && !model.equals(clz.getName())) {
 				try {
@@ -54,24 +55,26 @@ public class Model extends JSONObject {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
-				
+
 			}
 		}
-		
+
 		if(subclasses.size() > 0) {			
 			List<Class<?>> subClz_ = new ArrayList<Class<?>>(subclasses);
 			// loop through json to see if we have any of these fields. eliminate non-matches from list
 			for(Class<?> c : subclasses) {
 				try {
 					Object o = c.newInstance();
-					
 					for(Field subField : o.getClass().getDeclaredFields()) {
-						if(!ja.has(subField.getName())) {
-							subClz_.remove(c);
-							break;
+						if(subField.getModifiers() == Field.DECLARED) {
+							//Log.d(LOG, "does object have " + subField.getName() + "?");
+							if(!ja.has(subField.getName())) {
+								subClz_.remove(c);
+								break;
+							}
 						}
 					}
-					
+
 				} catch (InstantiationException e) {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
@@ -80,16 +83,16 @@ public class Model extends JSONObject {
 					e.printStackTrace();
 				}
 			}
-			
+
 			if(subClz_.size() == 1) {
 				Log.d(LOG, "downcast object to " + subClz_.get(0).getName());
 				recast = subClz_.get(0);
 			}
 		}
-		
+
 		return recast;
 	}
-	
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {
 		fields = this.getClass().getFields();
@@ -121,7 +124,7 @@ public class Model extends JSONObject {
 								if(recast != null) {
 									value = recast.newInstance();
 								}
-								
+
 								((Model) value).inflate(ja.getJSONObject(i));
 							} else {
 								value = ja.get(i);
@@ -166,7 +169,7 @@ public class Model extends JSONObject {
 			}
 		}
 	}
-	
+
 	public static int[] parseJSONAsIntArray(String value) {
 		String[] intStrings = value.substring(1, value.length() - 1).split(",");
 		int[] ints = new int[intStrings.length];
@@ -177,7 +180,7 @@ public class Model extends JSONObject {
 
 		return ints;
 	}
-	
+
 	public static JSONArray parseIntArrayAsJSON(int[] ints) {
 		JSONArray intArray = new JSONArray();
 		for(int f : ints) {

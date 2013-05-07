@@ -46,7 +46,7 @@ public class ILog extends IMedia {
 	public long startTime = 0L;
 	public long endTime = 0L;
 
-	public List<IMedia> attachedMedia = null;
+	public List<String> attachedMedia = new ArrayList<String>();
 	public IForm attachedForm = null;
 	public String formPath = null;
 
@@ -198,8 +198,9 @@ public class ILog extends IMedia {
 				e.printStackTrace();
 			}
 
-			for(IMedia m : attachedMedia) {
+			for(String s : attachedMedia) {
 				// exported only to iocipher! not a share!
+				IMedia m = informaCam.mediaManifest.getById(s);
 				if(m.export(h, organization, false)) {
 					progress += progressIncrement;
 					sendMessage(Codes.Keys.UI.PROGRESS, progress);

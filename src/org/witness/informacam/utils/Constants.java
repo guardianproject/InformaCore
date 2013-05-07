@@ -160,7 +160,7 @@ public class Constants {
 
 	public final static class Suckers {
 		public final static String LOG = "******************** InformaCam : Suckers ********************";
-		public static final int GPS_WAIT_MAX = 100;
+		public static final int GPS_WAIT_MAX = 60;
 
 		public final static class CaptureEvent {
 			public final static int METADATA_CAPTURED = 272;
@@ -314,6 +314,10 @@ public class Constants {
 			public static final String J3M = "j3m";
 			public static final String J3M_DESCRIPTOR = "j3m_descriptor";
 			public static final String VERSION = "versionForExport";
+			
+			public class Flags {
+				public final static String IS_NEW = "isNew";
+			}
 			
 			public class ILog {
 				public final static String ATTACHED_MEDIA = "attachedMedia";

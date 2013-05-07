@@ -74,6 +74,7 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		double[] loc = updateLocation();
 		if(loc == null) {
 			Log.d(LOG, "location was null");
+			loc = new double[] {0d, 0d};
 		}
 		
 		return new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");

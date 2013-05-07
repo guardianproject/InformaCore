@@ -10,6 +10,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.util.Log;
 
@@ -22,15 +23,43 @@ public class IMediaManifest extends Model {
 		InformaCam.getInstance().saveState(((Model) this), new info.guardianproject.iocipher.File(IManifest.MEDIA));
 	}
 	
-	public List<IMedia> getAllByType(String mimeType) {
-		List<IMedia> mediaByType = null;
+	public List getAllByType(String mimeType) {
+		List mediaByType = null;
 		for(IMedia m : media) {
 			if(m.dcimEntry.mediaType.equals(mimeType)) {
 				if(mediaByType == null) {
 					mediaByType = new ArrayList<IMedia>();
 				}
 				
-				mediaByType.add(m);
+				if(mimeType.equals(MimeType.IMAGE)) {
+					if(mediaByType == null) {
+						mediaByType = new ArrayList<IImage>();
+					}
+					
+					IImage m_ = new IImage(m);
+					mediaByType.add(m_);
+					continue;
+				}
+				
+				if(mimeType.equals(MimeType.VIDEO)) {
+					if(mediaByType == null) {
+						mediaByType = new ArrayList<IVideo>();
+					}
+					
+					IVideo m_ = new IVideo(m);
+					mediaByType.add(m_);
+					continue;
+				}
+				
+				if(mimeType.equals(MimeType.LOG)) {
+					if(mediaByType == null) {
+						mediaByType = new ArrayList<ILog>();
+					}
+					
+					ILog m_ = new ILog(m);
+					mediaByType.add(m_);
+					continue;
+				}
 			}
 		}
 		
