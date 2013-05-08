@@ -75,6 +75,7 @@ public class Constants {
 			public static final String VALUE = "value";
 			public static final String UPLOADER = "uploader";
 			public static final String DCIM_DESCRIPTOR = "dcimDescriptor";
+			public static final String BATCH_EXPORT_FINISHED = "batchExportFinished";
 
 			public static final class UI {
 				public static final String PROGRESS = "progress";

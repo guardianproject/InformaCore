@@ -48,7 +48,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	private final static String LOG = App.Transport.LOG; 
 
 	OrbotHelper oh;
-	public IPendingConnections pendingConnections;
+	public IPendingConnections pendingConnections = null;
 	private boolean isRunning = false;
 	private int connectionType = -1;
 
@@ -109,7 +109,10 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		unregisterConnectivityUpdates();
-		informaCam.saveState(pendingConnections);
+		if(pendingConnections != null) {
+			informaCam.saveState(pendingConnections);
+		}
+		
 		sendBroadcast(new Intent()
 			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
 			.setAction(Actions.DISASSOCIATE_SERVICE)
@@ -163,7 +166,12 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 	private void unregisterConnectivityUpdates() {
 		for(BroadcastReceiver b : br) {
-			unregisterReceiver(b);
+			try {
+				unregisterReceiver(b);
+			} catch(IllegalArgumentException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
 	}
 

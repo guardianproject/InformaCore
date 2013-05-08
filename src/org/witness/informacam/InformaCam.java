@@ -105,7 +105,6 @@ public class InformaCam extends Service {
 		public InformaCam getService() {
 			processId = android.os.Process.myPid();
 			
-			Log.d(LOG, "HELLO PROCESS: " + processId);
 			return InformaCam.this;
 		}
 	}
@@ -264,7 +263,6 @@ public class InformaCam extends Service {
 	@SuppressWarnings("deprecation")
 	public int[] getDimensions() {
 		Display display = a.getWindowManager().getDefaultDisplay();
-		Log.d(LOG, "querying window manager for display size: " + display.getWidth() + "," + display.getHeight());
 		return new int[] {display.getWidth(),display.getHeight()};
 	}
 
@@ -288,11 +286,11 @@ public class InformaCam extends Service {
 				fis.read(ubytes);
 				user.inflate(ubytes);
 				
-				Log.d(LOG, "CURRENT USER:\n" + user.asJson().toString());
-
 				if(user.isLoggedIn) {
 					// test to see if ioCipher is mounted
+					
 					if(ioService.isMounted() || attemptLogin()) {
+						Log.d(LOG, "USER IS LOGGED IN");
 						startCode = RUN;
 					} else {
 						startCode = LOGIN;
@@ -357,7 +355,6 @@ public class InformaCam extends Service {
 			byte[] notificationsManifestBytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
 			if(notificationsManifestBytes != null) {
 				notificationsManifest.inflate(notificationsManifestBytes);
-				Log.d(LOG, "notifications now:\n" + notificationsManifest.asJson().toString());
 				
 				/*
 				List<INotification> cleanup = new ArrayList<INotification>();
@@ -381,7 +378,6 @@ public class InformaCam extends Service {
 			break;
 		}
 
-		// TODO: here
 		Intent intent = new Intent(Actions.INFORMACAM_START)
 			.putExtra(Codes.Keys.SERVICE, data)
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId);
@@ -409,9 +405,14 @@ public class InformaCam extends Service {
 		}
 	}
 	
-	private void shutdown() {
+	public void shutdown() {
 		for(BroadcastReceiver br : broadcasters) {
-			unregisterReceiver(br);
+			try {
+				unregisterReceiver(br);
+			} catch(IllegalArgumentException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
 
 		saveStates();
@@ -428,39 +429,92 @@ public class InformaCam extends Service {
 		if(backgroundProcessor != null) {
 			stopService(backgroundProcessorIntent);
 		}
+		
+		Intent intent = new Intent(Actions.INFORMACAM_STOP)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId);
+		
+		sendBroadcast(intent);
 
 		stopSelf();
 	}
 
 	private void saveStates() {
-		saveState(user, new java.io.File(IManifest.USER));
-		saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-		saveState(uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+		try {
+			saveState(user, new java.io.File(IManifest.USER));
+		} catch(NullPointerException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		try {
+			saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+		} catch(NullPointerException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		try {
+			saveState(uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+		} catch(NullPointerException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
 	}
 
 	public void saveState(Model model, java.io.File cache) {
 		ioService.saveBlob(model.asJson().toString().getBytes(), cache);
-		Log.d(LOG, "saved state for " + cache.getAbsolutePath());
+		//Log.d(LOG, "saved state for " + cache.getAbsolutePath());
 	}
 
 	public void saveState(Model model, info.guardianproject.iocipher.File cache) {
 		ioService.saveBlob(model.asJson().toString().getBytes(), cache);
-		Log.d(LOG, "saved state for " + cache.getAbsolutePath() + "\n" + model.asJson().toString());
 	}
 
 	public void saveState(Model model) {
 		if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-			saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
-			saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			
 		} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
-			saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
-			saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
-			saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
-			saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -483,8 +537,6 @@ public class InformaCam extends Service {
 
 			if(bytes != null) {
 				model.inflate(bytes);
-			} else {
-				Log.d(LOG, "BYTES IS NULLLLL");
 			}
 
 		} catch(NullPointerException e) {
@@ -591,7 +643,6 @@ public class InformaCam extends Service {
 
 	public boolean isAbsolutelyLoggedIn() {
 		try {
-			Log.d(LOG, "status: " + String.valueOf(ioService.isMounted() && user.isLoggedIn));
 			return (ioService.isMounted() && user.isLoggedIn);
 		} catch(NullPointerException e) {
 			return false;
@@ -738,8 +789,8 @@ public class InformaCam extends Service {
 
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
 		Log.d(LOG, "INFORMA CAM SERVICE HAS BEEN DESTROYED");
+		super.onDestroy();
 	}
 
 	@Override
