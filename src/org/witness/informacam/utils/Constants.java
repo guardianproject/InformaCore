@@ -90,6 +90,7 @@ public class Constants {
 			public static final String INSTALL_NEW_KEY = "install_ictd_uri";
 			public static final String LOGOUT_USER = "logout_user";
 			public static final String RESTRICT_TO_PROCESS = "restrict_to_process";
+			public static final String CAMERA_TYPE = "camera_type";
 		}
 
 		public static final class Messages {

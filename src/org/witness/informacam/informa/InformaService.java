@@ -201,16 +201,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
 
-		/*
 		if(associatedMedia != null) {
-			Object media = informaCam.mediaManifest.getById(associatedMedia._id);
-			if(((IMedia) media).associatedCaches == null) {
-				((IMedia) media).associatedCaches = new ArrayList<String>();
+			IMedia media = informaCam.mediaManifest.getById(associatedMedia._id);
+			if(media.associatedCaches == null) {
+				media.associatedCaches = new ArrayList<String>();
 			}
-			((IMedia) media).associatedCaches.add(cacheFile.getAbsolutePath());
+			media.associatedCaches.add(cacheFile.getAbsolutePath());
+			//Log.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
 			informaCam.saveState(informaCam.mediaManifest);
 		}
-		*/
 	}
 
 	@Override
