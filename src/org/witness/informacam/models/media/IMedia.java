@@ -362,16 +362,25 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				IConnection submission = null; 
 
 				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-					submission = new ISubmission(organization, exportFile.getAbsolutePath().replace(".mp4", ".mkv"));
+					if(organization != null) {
+						submission = new ISubmission(organization, exportFile.getAbsolutePath().replace(".mp4", ".mkv"));
+					}
+					
 					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-					submission = new ISubmission(organization, exportFile.getAbsolutePath());
+					if(organization != null) {
+						submission = new ISubmission(organization, exportFile.getAbsolutePath());
+					}
+					
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
 
-				submission.isHeld = true;
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
-				submission.associatedNotification = notification;
+				
+				if(submission != null) {
+					submission.isHeld = true;
+					submission.associatedNotification = notification;
+				}
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);

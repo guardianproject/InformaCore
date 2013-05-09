@@ -51,6 +51,7 @@ public class ILog extends IMedia {
 	public String formPath = null;
 
 	private Handler proxyHandler;
+	private Map<String, byte[]> j3mZip;
 
 	public ILog() {
 		super();
@@ -78,6 +79,33 @@ public class ILog extends IMedia {
 		return iLog;
 	}
 
+	public void sealLog(boolean share, IOrganization organization) {
+		InformaCam informaCam = InformaCam.getInstance();
+		
+		// zip up everything, encrypt if required
+		String logName = ("log_" + System.currentTimeMillis() + ".zip");
+		if(share) {
+			java.io.File log = new java.io.File(Storage.EXTERNAL_DIR, logName);
+			IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.FILE_SYSTEM);
+
+			if(organization != null) {
+				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.FILE_SYSTEM);
+				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+				informaCam.ioService.saveBlob(j3mBytes, log, true);
+			}
+
+		} else {
+			info.guardianproject.iocipher.File log = new info.guardianproject.iocipher.File(rootFolder, logName);
+			IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.IOCIPHER);
+
+			if(organization != null) {
+				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
+				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+				informaCam.ioService.saveBlob(j3mBytes, log);
+			}
+		}
+	}
+	
 	@Override
 	public boolean export(Handler h) {
 		return export(h, null, true);
@@ -90,22 +118,33 @@ public class ILog extends IMedia {
 
 	@SuppressLint("HandlerLeak")
 	@Override
-	public boolean export(Handler h, IOrganization organization, boolean share) {
+	public boolean export(Handler h, final IOrganization organization, final boolean share) {
 		Log.d(LOG, "exporting a log!");
 		proxyHandler = h;
+		j3mZip = new HashMap<String, byte[]>();
+		
 		responseHandler = new Handler() {
+			public int mediaHandled = 0;
+			
 			@Override
 			public void handleMessage(Message msg) {
 				Bundle b = msg.getData();
+				
 				if(b.containsKey(Models.IMedia.VERSION)) {
-					try {
-						JSONObject versionManifest = new JSONObject();
-						versionManifest.put("absolutePath", b.getString(Models.IMedia.VERSION));
-						versionManifest.put("name", b.getString(Models.IMedia.VERSION).substring(b.getString(Models.IMedia.VERSION).lastIndexOf("/")));
-						getJSONArray(Models.IMedia.ILog.ATTACHED_MEDIA).put(versionManifest);
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
+					InformaCam informaCam = InformaCam.getInstance();
+					String version = b.getString(Models.IMedia.VERSION);
+					
+					Log.d(LOG, "WE HAVE A VERSION:::: " + version);
+					
+					byte[] versionBytes = informaCam.ioService.getBytes(version, Type.IOCIPHER);
+					j3mZip.put(version.substring(version.lastIndexOf("/")) + 1, versionBytes);
+					
+					versionBytes = null;
+					mediaHandled++;
+					
+					if(mediaHandled == ILog.this.attachedMedia.size()) {
+						Log.d(LOG, "Handled all the media!");
+						sealLog(share, organization);
 					}
 				}
 			}
@@ -113,9 +152,8 @@ public class ILog extends IMedia {
 
 		int progress = 0;
 
-		InformaCam informaCam = InformaCam.getInstance();
-		Map<String, byte[]> j3mZip = new HashMap<String, byte[]>();
-
+		final InformaCam informaCam = InformaCam.getInstance();
+		
 		INotification notification = new INotification();
 		// its icon will probably be some sort of stock thing
 
@@ -123,6 +161,9 @@ public class ILog extends IMedia {
 		if(data == null) {
 			data = new IData();
 		}
+		
+		// TODO: add region data!
+		
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -168,66 +209,7 @@ public class ILog extends IMedia {
 		}
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-		// XXX: will i need this to have been created already? create local path to save log to...
-		if(rootFolder == null) {
-			try {
-				rootFolder = MediaHasher.hash(("log_" + String.valueOf(startTime)).getBytes(), "SHA-1");
-
-			} catch (NoSuchAlgorithmException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
-
-		info.guardianproject.iocipher.File rootFolder_ = new info.guardianproject.iocipher.File(rootFolder);
-		if(!rootFolder_.exists()) {
-			rootFolder_.mkdir();
-		}
-
-		if(attachedMedia != null && attachedMedia.size() > 0) {
-			int progressIncrement = (int) (50/(attachedMedia.size() * 2));
-
-			try {
-				put(Models.IMedia.ILog.ATTACHED_MEDIA, new JSONArray());
-			} catch(JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-
-			for(String s : attachedMedia) {
-				// exported only to iocipher! not a share!
-				IMedia m = informaCam.mediaManifest.getById(s);
-				if(m.export(h, organization, false)) {
-					progress += progressIncrement;
-					sendMessage(Codes.Keys.UI.PROGRESS, progress);
-				}
-			}
-
-			// push bytes to j3mZip
-			try {
-				JSONArray attachedMedia = getJSONArray(Models.IMedia.ILog.ATTACHED_MEDIA);
-				for(int a=0; a<attachedMedia.length(); a++) {
-					JSONObject versionManifest = attachedMedia.getJSONObject(a);
-
-					byte[] versionBytes = informaCam.ioService.getBytes(versionManifest.getString("absolutePath"), Type.IOCIPHER);
-					j3mZip.put(versionManifest.getString("name"), versionBytes);
-
-					versionBytes = null;
-					informaCam.ioService.delete(versionManifest.getString("absolutePath"), Type.IOCIPHER);
-
-					progress += progressIncrement;
-					sendMessage(Codes.Keys.UI.PROGRESS, progress);
-				}
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
-
+		
 		if(genealogy == null) {
 			genealogy = new IGenealogy();
 		}
@@ -267,29 +249,6 @@ public class ILog extends IMedia {
 
 			j3mZip.put("log.j3m", j3mObject.toString().getBytes());
 
-			// zip up everything, encrypt if required
-			String logName = ("log_" + System.currentTimeMillis());
-			if(share) {
-				java.io.File log = new java.io.File(Storage.EXTERNAL_DIR, logName);
-				IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.FILE_SYSTEM);
-
-				if(organization != null) {
-					byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.FILE_SYSTEM);
-					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
-					informaCam.ioService.saveBlob(j3mBytes, log, true);
-				}
-
-			} else {
-				info.guardianproject.iocipher.File log = new info.guardianproject.iocipher.File(rootFolder, logName);
-				IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.IOCIPHER);
-
-				if(organization != null) {
-					byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
-					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
-					informaCam.ioService.saveBlob(j3mBytes, log);
-				}
-			}			
-
 			progress += 5;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -299,6 +258,27 @@ public class ILog extends IMedia {
 		} catch(JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+		}
+		
+		if(attachedMedia != null && attachedMedia.size() > 0) {
+			int progressIncrement = (int) (50/(attachedMedia.size() * 2));
+
+			for(final String s : attachedMedia) {
+				// exported only to iocipher! not a share!
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						IMedia m = informaCam.mediaManifest.getById(s);
+						m.export(responseHandler, organization, false);
+					}
+				}).start();
+				
+				progress += progressIncrement;
+				sendMessage(Codes.Keys.UI.PROGRESS, progress);
+				
+			}
+		} else {
+			sealLog(share, organization);
 		}
 
 		return true;

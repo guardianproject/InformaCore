@@ -89,10 +89,13 @@ public class ImageConstructor {
 			info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
 			
-			ISubmission submission = new ISubmission();	// downcast the connection to submission
-			submission.inflate(connection.asJson());
+			if(connection != null) {
+				ISubmission submission = new ISubmission();	// downcast the connection to submission
+				submission.inflate(connection.asJson());
 			
-			submission.Set(newImage);
+				submission.Set(newImage);
+			}
+			
 			media.onMetadataEmbeded(newImage);
 			
 		} else if(destination == Type.FILE_SYSTEM) {

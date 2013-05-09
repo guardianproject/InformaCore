@@ -223,10 +223,13 @@ public class VideoConstructor {
 			info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
 			
-			ISubmission submission = new ISubmission();	// downcast the connection to submission
-			submission.inflate(connection.asJson());
+			if(connection != null) {
+				ISubmission submission = new ISubmission();	// downcast the connection to submission
+				submission.inflate(connection.asJson());
 			
-			submission.Set(newVideo);
+				submission.Set(newVideo);
+			}
+			
 			media.onMetadataEmbeded(newVideo);			
 		} else if(destination == Type.FILE_SYSTEM) {
 			java.io.File newVideo = new java.io.File(pathToNewVideo);

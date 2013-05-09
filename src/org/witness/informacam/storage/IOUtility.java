@@ -154,11 +154,17 @@ public class IOUtility {
 			case Type.INTERNAL_STORAGE:
 				zos = new ZipOutputStream(new java.io.FileOutputStream(fileName));
 				break;
+			case Type.FILE_SYSTEM:
+				zos = new ZipOutputStream(new java.io.FileOutputStream(fileName));
+				break;
 			}
 
 			Iterator<Entry<String, byte[]>> i = elements.entrySet().iterator();
 			while(i.hasNext()) {
 				Entry<String, byte[]> file = i.next();
+				
+				Log.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + file.getValue().length + ")");
+				
 				ZipEntry ze = new ZipEntry(file.getKey());
 				zos.putNextEntry(ze);
 
