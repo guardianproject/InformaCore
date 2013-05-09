@@ -6,12 +6,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.witness.informacam.utils.Constants.Time;
 import org.witness.informacam.utils.Constants.Time.DateFormats;
 
 import android.annotation.SuppressLint;
 import android.util.Log;
 
 public class TimeUtility {
+	private final static String LOG = Time.LOG;
+	
 	public final static long timestampToMillis(String ts, String dateFormat) throws ParseException {
 		//2012:06:12 10:42:04
 		if(dateFormat == null)
@@ -122,7 +125,12 @@ public class TimeUtility {
 	}
 
 	public static boolean matchesDay(long t1, long t2) {
-		// TODO: if t1 is within 24 hours of t2
+		//Log.d(LOG, "COMPARING " + millisecondsToDayOnly(t1) + " to " + millisecondsToDayOnly(t2));
+		return millisecondsToDayOnly(t1).equals(millisecondsToDayOnly(t2));
+	}
+	
+	public static boolean matchesWeek(long t1, long t2) {
+		// TODO
 		return false;
 	}
 }

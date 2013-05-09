@@ -8,6 +8,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.TimeUtility;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
@@ -78,6 +79,45 @@ public class IMediaManifest extends Model {
 		}
 		
 		return null;
+	}
+	
+	public List<IMedia> getByDay(long timestamp, String mimeType) {
+		return getByDay(timestamp, mimeType, -1);
+	}
+	
+	public List<IMedia> getByDay(long timestamp) {
+		return getByDay(timestamp, null, -1);
+	}
+	
+	public List<IMedia> getByDay(long timestamp, String mimeType, int limit) {
+		List<IMedia> media_ = media;
+		List<IMedia> matches = null;
+		if(mimeType != null) {
+			media_ = this.getAllByType(mimeType);
+		}
+		
+		for(IMedia m : media_) {
+			//Log.d(LOG, "MEDIA: " + m.asJson().toString());
+			boolean doesMatch = false;
+			if(!m.dcimEntry.mediaType.equals(MimeType.LOG)) {
+				doesMatch = TimeUtility.matchesDay(timestamp, m.dcimEntry.timeCaptured);
+			} else {
+				doesMatch = TimeUtility.matchesDay(timestamp, ((ILog) m).startTime);
+			}
+			
+			if(doesMatch) {
+				if(matches == null) {
+					matches = new ArrayList<IMedia>();
+				}
+				
+				matches.add(m);
+				if(limit != -1 && matches.size() == limit) {
+					break;
+				}
+			}			
+		}
+		
+		return matches;
 	}
 	
 	public void sortBy(int order) {

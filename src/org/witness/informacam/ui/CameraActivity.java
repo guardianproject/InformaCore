@@ -32,6 +32,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	private boolean doInit = true;
 	private Intent cameraIntent = null;
 	private ComponentName cameraComponent = null;
+	private String cameraIntentFlag = Camera.Intents.CAMERA;
 
 	private InformaCam informaCam;
 	private boolean controlsInforma = true;
@@ -53,6 +54,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			Iterator<String> i = savedInstanceState.keySet().iterator();
 			while(i.hasNext()) {
 				String outState = i.next();
+				Log.d(LOG, "outstate: " + outState);
 				if(outState.equals(Camera.TAG) && savedInstanceState.getBoolean(Camera.TAG)) {
 					doInit = false;
 				}
@@ -62,6 +64,19 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 		try {
 			informaCam = InformaCam.getInstance(this);
 			if(doInit) {
+				if(getIntent().hasExtra(Codes.Extras.CAMERA_TYPE)) {
+					int cameraType = getIntent().getIntExtra(Codes.Extras.CAMERA_TYPE, -1);
+					switch(cameraType) {
+					case Camera.Type.CAMERA:
+						cameraIntentFlag = Camera.Intents.CAMERA_SIMPLE;
+						break;
+					case Camera.Type.CAMCORDER:
+						cameraIntentFlag = Camera.Intents.CAMCORDER;
+						break;
+					}
+					
+				}
+				
 				init();
 			}
 		} catch(NullPointerException e) {
@@ -75,7 +90,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	}
 
 	private void init() {
-		List<ResolveInfo> resolveInfo = getPackageManager().queryIntentActivities(new Intent(Actions.CAMERA), 0);
+		List<ResolveInfo> resolveInfo = getPackageManager().queryIntentActivities(new Intent(cameraIntentFlag), 0);
 
 		for(ResolveInfo ri : resolveInfo) {
 			String packageName = ri.activityInfo.packageName;
@@ -186,23 +201,17 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	public void onInformaStart(Intent intent) {
 		informaCam.ioService.startDCIMObserver();
 		
-		cameraIntent = new Intent(Camera.Intents.CAMERA);
+		cameraIntent = new Intent(cameraIntentFlag);
 		cameraIntent.setComponent(cameraComponent);
 		startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
 		
 	}
 
 	@Override
-	public void onInformaCamStop(Intent intent) {
-		// TODO Auto-generated method stub
-
-	}
+	public void onInformaCamStop(Intent intent) {}
 
 	@Override
-	public void onInformaStop(Intent intent) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void onInformaStop(Intent intent) {}
 
 	
 }
