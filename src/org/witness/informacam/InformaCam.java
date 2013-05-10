@@ -31,6 +31,7 @@ import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
@@ -334,6 +335,11 @@ public class InformaCam extends Service {
 			} catch (PGPException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
+			}
+			
+			java.io.File icDump = new java.io.File(Storage.EXTERNAL_DIR);
+			if(!icDump.exists()) {
+				icDump.mkdir();
 			}
 			
 			byte[] mediaManifestBytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
