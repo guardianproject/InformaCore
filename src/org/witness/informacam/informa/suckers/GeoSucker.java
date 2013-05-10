@@ -7,6 +7,7 @@ import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
+import org.witness.informacam.utils.Constants.Time;
 
 import android.content.Context;
 import android.location.Criteria;
@@ -32,17 +33,23 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		
 		lm = (LocationManager) a.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
 		
-		if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+		if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+		} else {
+			Log.d(LOG, "NETWORK PROVIDER is unavailable");
+		}
 		
-		if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER))
+		if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-		
+		} else {
+			Log.d(LOG, "GPS PROVIDER is unavailable");
+		}
+				
 		lm.addNmeaListener(new NmeaListener() {
 
 			@Override
 			public void onNmeaReceived(long timestamp, String nmea) {
-				//Log.d(Constants.Time.LOG, "but nmea says: " + timestamp);
+				//Log.d(Time.LOG, "but nmea says: timestamp: " + timestamp + "\n(" + nmea + ")");
 				currentNmeaTime = timestamp;
 			}
 			
@@ -89,10 +96,12 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 			String bestProvider = lm.getBestProvider(criteria, false);
 			Location l = lm.getLastKnownLocation(bestProvider);
 			
-			if (l != null)
+			if (l != null) {
+				Log.d(LOG, "lat/lng: " + l.getLatitude() + ", " + l.getLongitude());
 				return new double[] {l.getLatitude(),l.getLongitude()};
-			else
+			} else {
 				return null;
+			}
 			
 		} catch(NullPointerException e) {
 			Log.e(LOG,"location NPE", e);

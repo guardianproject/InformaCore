@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
@@ -68,7 +69,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	Handler h = new Handler();
 	String associatedMedia = null;
 	
-	boolean mustUseSystemTime = false;
+	public boolean mustUseSystemTime = false;
+	Intent stopIntent = new Intent().setAction(Actions.INFORMA_STOP);
 
 	private InformaBroadcaster[] broadcasters = {
 			new InformaBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)),
@@ -115,9 +117,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	public long getCurrentTime() {
 		try {
-			return ((GeoSucker) _geo).getTime();
+			if(!mustUseSystemTime) {
+				return ((GeoSucker) _geo).getTime();
+			} else {
+				return System.currentTimeMillis();
+			}
 		} catch(NullPointerException e) {
-			return 0;
+			return System.currentTimeMillis();
 		}
 	}
 
@@ -133,20 +139,32 @@ public class InformaService extends Service implements SuckerCacheListener {
 				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
 				
 				Log.d(LOG, "time: " + currentTime);
+				if(currentLocation != null) {
+					Log.d(LOG, "location: " + currentLocation[0] + ", " + currentLocation[1]);
+				}
+				
 				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
 
 					if(GPS_WAITING < Suckers.GPS_WAIT_MAX) {
 						h.postDelayed(this, 200);
+						return;
 					} else {
-						Toast.makeText(InformaService.this, "NO GPS!", Toast.LENGTH_LONG).show();
+						Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
+						
+						/*
+						stopIntent.putExtra(Codes.Extras.GPS_FAILURE, true);
 						stopSelf();
+						*/
+						mustUseSystemTime = true;
+						currentTime = System.currentTimeMillis();
 					}
-					return;
+					
 				}
 
 				realStartTime = currentTime;
 				onUpdate(((GeoSucker) _geo).forceReturn());
+				
 				try {
 					onUpdate(((PhoneSucker) _phone).forceReturn());
 				} catch (JSONException e) {
@@ -234,9 +252,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 			unregisterReceiver(b);
 		}
 
-		sendBroadcast(new Intent()
-			.setAction(Actions.INFORMA_STOP)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
+		sendBroadcast(stopIntent.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
+		
 		sendBroadcast(new Intent()
 			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)
 			.setAction(Actions.DISASSOCIATE_SERVICE)

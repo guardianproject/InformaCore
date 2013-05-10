@@ -92,6 +92,7 @@ public class Constants {
 			public static final String LOGOUT_USER = "logout_user";
 			public static final String RESTRICT_TO_PROCESS = "restrict_to_process";
 			public static final String CAMERA_TYPE = "camera_type";
+			public static final String GPS_FAILURE = "gps_failure";
 		}
 
 		public static final class Messages {

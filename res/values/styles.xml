@@ -31,4 +31,8 @@
 	    <item name="android:padding">4dip</item>
 	    <item name="android:layout_marginBottom">10dip</item>
 	</style>
+	
+	<style name="popup">
+	    <item name="android:background">@drawable/white</item>
+	</style>
 </resources>
