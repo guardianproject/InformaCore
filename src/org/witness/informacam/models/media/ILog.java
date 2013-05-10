@@ -139,71 +139,12 @@ public class ILog extends IMedia {
 		// its icon will probably be some sort of stock thing
 		
 		// append its data sensory data, form data, etc.
-		if(data == null) {
-			data = new IData();
-		}
-		
-		progress += 5;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-		if(associatedCaches != null && associatedCaches.size() > 0) { 
-			for(String ac : associatedCaches) {
-				try {
-					// get the data and loop through capture types
-					byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
-					JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
-
-					for(int i=0; i<cache.length(); i++) {
-						JSONObject entry = cache.getJSONObject(i);
-						long ts = Long.parseLong((String) entry.keys().next());
-
-						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
-
-						Log.d(LOG, "this entry: " + entry.toString());
-
-						JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
-
-						for(int ct=0; ct<captureTypes.length(); ct++) {
-							switch((Integer) captureTypes.get(ct)) {
-							case CaptureEvent.SENSOR_PLAYBACK:
-								if(data.sensorCapture == null) {
-									data.sensorCapture = new ArrayList<ISensorCapture>();
-								}
-
-								data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
-								break;
-							case CaptureEvent.REGION_GENERATED:
-								Log.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
-								break;
-							}
-						}
-					}
-
-					c = null;
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				}				
-			}
-		}
+		mungeSensorLogs(proxyHandler);
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 		
-		if(genealogy == null) {
-			genealogy = new IGenealogy();
-		}
-
-		genealogy.createdOnDevice = informaCam.user.pgpKeyFingerprint;
+		mungeGenealogyAndIntent();
 		genealogy.dateCreated = this.startTime;
-		genealogy.localMediaPath = rootFolder;
-		progress += 5;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-		if(intent == null) {
-			intent = new IIntent();
-		}
-		intent.alias = informaCam.user.alias;
-		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -240,6 +181,8 @@ public class ILog extends IMedia {
 		}
 		
 		if(attachedMedia != null && attachedMedia.size() > 0) {
+			data.attachments = attachedMedia;
+			
 			int progressIncrement = (int) (50/(attachedMedia.size() * 2));
 
 			for(final String s : attachedMedia) {

@@ -178,6 +178,19 @@ public class InformaService extends Service implements SuckerCacheListener {
 		});
 
 	}
+	
+	public void flushCache() {
+		flushCache(null);
+	}
+	
+	public void flushCache(IMedia m) {
+		saveCache();
+		initCache();
+		
+		if(m != null) {
+			associateMedia(m);
+		}
+	}
 
 	private void initCache() {
 		startTime = System.currentTimeMillis();
@@ -224,7 +237,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 			if(media.associatedCaches == null) {
 				media.associatedCaches = new ArrayList<String>();
 			}
-			media.associatedCaches.add(cacheFile.getAbsolutePath());
+			
+			if(!media.associatedCaches.contains(cacheFile.getAbsolutePath())) { 
+				media.associatedCaches.add(cacheFile.getAbsolutePath());
+			}
+			
 			Log.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
 			media.save();
 		}

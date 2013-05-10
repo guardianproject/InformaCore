@@ -326,6 +326,8 @@ public class Constants {
 			public class ILog {
 				public final static String ATTACHED_MEDIA = "attachedMedia";
 				public final static String IS_CLOSED = "isClosed";
+				public final static String START_TIME = "startTime";
+				public final static String END_TIME = "endTime";
 			}
 			
 			public class Data {

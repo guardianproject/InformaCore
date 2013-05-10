@@ -34,6 +34,8 @@ public class ILogPack extends Model {
 				this.put(key, value);
 			} catch(JSONException e) {}
 		}
+		
+		//Log.d(LOG, asJson().toString());
 	}
 
 	@SuppressWarnings("unchecked")

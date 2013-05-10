@@ -8,4 +8,5 @@ public class IData extends Model {
 	public List<ISensorCapture> sensorCapture = null;
 	public List<IRegionData> regionData = null;
 	public IExif exif = null;
+	public List<String> attachments = null;
 }

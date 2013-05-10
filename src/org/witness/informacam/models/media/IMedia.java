@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -151,10 +152,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public void save() {		
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.mediaManifest.getById(_id).inflate(asJson());
-		
+
 		informaCam.saveState(informaCam.mediaManifest);
 	}
-	
+
 	public boolean rename(String alias) {
 		this.alias = alias;
 		return true;
@@ -182,12 +183,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		IRegion region = new IRegion();
-		
+
 		if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 			IVideoRegion videoRegion = new IVideoRegion(region);
 			region = videoRegion;
 		}
-		
+
 		region.init(new IRegionBounds(top, left, width, height, startTime, endTime));
 
 		associatedRegions.add(region);
@@ -198,6 +199,82 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public void removeRegion(IRegion region) {
 		region.delete(this);
+	}
+
+	protected void mungeGenealogyAndIntent() {
+		InformaCam informaCam = InformaCam.getInstance();
+
+		if(genealogy == null) {
+			genealogy = new IGenealogy();
+		}
+
+		genealogy.createdOnDevice = informaCam.user.pgpKeyFingerprint;
+		genealogy.localMediaPath = rootFolder;
+
+		if(intent == null) {
+			intent = new IIntent();
+		}
+		intent.alias = informaCam.user.alias;
+		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
+	}
+	
+	protected void mungeSensorLogs() {
+		mungeSensorLogs(null);
+	}
+
+	protected void mungeSensorLogs(Handler h) {
+		if(data == null) {
+			data = new IData();
+		}
+		
+		if(associatedCaches != null && associatedCaches.size() > 0) {
+			int progress = 0;
+			int progressInterval = (int) (40/associatedCaches.size());
+			
+			InformaCam informaCam = InformaCam.getInstance();
+			data.sensorCapture = new ArrayList<ISensorCapture>();
+
+			for(String ac : associatedCaches) {
+				try {
+					// get the data and loop through capture types
+					byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
+					JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
+
+					for(int i=0; i<cache.length(); i++) {
+						JSONObject entry = cache.getJSONObject(i);
+						long ts = Long.parseLong((String) entry.keys().next());
+
+						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
+						
+						if(captureEvent.has(CaptureEvent.Keys.TYPE)) {
+							// TODO: this should be better formulated.
+							JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
+
+							for(int ct=0; ct<captureTypes.length(); ct++) {
+								switch((Integer) captureTypes.get(ct)) {
+								case CaptureEvent.SENSOR_PLAYBACK:
+									data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
+									break;
+								case CaptureEvent.REGION_GENERATED:
+									Log.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
+									break;
+								}
+							}
+						} else {
+							data.sensorCapture.add(new ISensorCapture(ts, captureEvent));
+						}
+					}
+
+					c = null;
+					
+					progress += progressInterval;
+					sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+				} catch (JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}				
+			}
+		}
 	}
 
 	public boolean export(Handler h) {
@@ -226,46 +303,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		if(associatedCaches != null && associatedCaches.size() > 0) { 
-			for(String ac : associatedCaches) {
-				try {
-					// get the data and loop through capture types
-					byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
-					JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
-
-					for(int i=0; i<cache.length(); i++) {
-						JSONObject entry = cache.getJSONObject(i);
-						long ts = Long.parseLong((String) entry.keys().next());
-
-						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
-						
-						Log.d(LOG, "this entry: " + entry.toString());
-						
-						JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
-
-						for(int ct=0; ct<captureTypes.length(); ct++) {
-							switch((Integer) captureTypes.get(ct)) {
-							case CaptureEvent.SENSOR_PLAYBACK:
-								if(data.sensorCapture == null) {
-									data.sensorCapture = new ArrayList<ISensorCapture>();
-								}
-
-								data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
-								break;
-							case CaptureEvent.REGION_GENERATED:
-								Log.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
-								break;
-							}
-						}
-					}
-
-					c = null;
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				}				
-			}
-		}
+		mungeSensorLogs();
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -287,21 +325,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		if(genealogy == null) {
-			genealogy = new IGenealogy();
-		}
-		genealogy.createdOnDevice = informaCam.user.pgpKeyFingerprint;
-		genealogy.dateCreated = dcimEntry.timeCaptured;
-		genealogy.localMediaPath = dcimEntry.fileName;
-		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-		if(intent == null) {
-			intent = new IIntent();
-		}
-		intent.alias = informaCam.user.alias;
-		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
-		progress += 10;
+		mungeGenealogyAndIntent();
+		progress += 20;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 		notification.label = informaCam.a.getString(R.string.export);
@@ -367,18 +392,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					if(organization != null) {
 						submission = new ISubmission(organization, exportFile.getAbsolutePath().replace(".mp4", ".mkv"));
 					}
-					
+
 					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					if(organization != null) {
 						submission = new ISubmission(organization, exportFile.getAbsolutePath());
 					}
-					
+
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
 
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
-				
+
 				if(submission != null) {
 					submission.isHeld = true;
 					submission.associatedNotification = notification;
@@ -386,11 +411,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
-			
+
 			notification.generateId();
 			informaCam.addNotification(notification);
 
 		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (ConcurrentModificationException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
@@ -441,23 +469,39 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return seed;
 	}
-
+	
 	protected void sendMessage(String key, String what) {
+		sendMessage(key, what, null);
+	}
+	
+	protected void sendMessage(String key, int what) {
+		sendMessage(key, what, null);
+	}
+
+	protected void sendMessage(String key, String what, Handler h) {
 		Bundle b = new Bundle();
 		b.putString(key, what);
 		Message msg = new Message();
 		msg.setData(b);
 
-		responseHandler.sendMessage(msg);
+		if(h == null) {
+			responseHandler.sendMessage(msg);
+		} else {
+			h.sendMessage(msg);
+		}
 	}
 
-	protected void sendMessage(String key, int what) {
+	protected void sendMessage(String key, int what, Handler h) {
 		Bundle b = new Bundle();
 		b.putInt(key, what);
 		Message msg = new Message();
 		msg.setData(b);
 
-		responseHandler.sendMessage(msg);
+		if(h == null) {
+			responseHandler.sendMessage(msg);
+		} else {
+			h.sendMessage(msg);
+		}
 	}
 
 	@Override
