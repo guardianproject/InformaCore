@@ -61,6 +61,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public boolean isNew = false;
 	public List<String> associatedCaches = null;
 	public List<IRegion> associatedRegions = null;
+	public int width = 0;
+	public int height = 0;
 
 	public IDCIMEntry dcimEntry = null;
 

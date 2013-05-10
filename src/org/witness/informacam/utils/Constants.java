@@ -55,6 +55,7 @@ public class Constants {
 		public static final String INFORMACAM_STOP = "org.witness.informacam.action.INFORMACAM_STOP";
 		public static final String INFORMA_START = "org.witness.informacam.action.INFORMA_SERVICE_START";
 		public static final String INFORMA_STOP = "org.witness.informacam.action.INFORMA_SERVICE_STOP";
+		public static final String PERSISTENT_SERVICE = "org.witness.informacam.action.PERSISTENT_SERVICE";
 	}
 
 	public final static class Codes {

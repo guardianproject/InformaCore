@@ -17,7 +17,6 @@ import android.util.Log;
 
 public class IImage extends IMedia {
 	public String bitmap;
-	public int width, height;
 
 	public IImage() {
 		super();

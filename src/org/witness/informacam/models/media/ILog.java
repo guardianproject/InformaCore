@@ -1,7 +1,5 @@
 package org.witness.informacam.models.media;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,6 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
-import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.TimeUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
@@ -63,20 +60,6 @@ public class ILog extends IMedia {
 	public ILog(IMedia media) {
 		super();
 		inflate(media.asJson());
-	}
-	
-	public static ILog getLogByDay(long timestamp) {
-		ILog iLog = null;
-		List<IMedia> availableLogs = InformaCam.getInstance().mediaManifest.getAllByType(MimeType.LOG);
-		for(IMedia l : availableLogs) {
-			ILog log = new ILog(l);
-			if(TimeUtility.matchesDay(timestamp, log.startTime)) {
-				iLog = log;
-				break;
-			}
-		}
-		
-		return iLog;
 	}
 
 	public void sealLog(boolean share, IOrganization organization) {
@@ -133,11 +116,9 @@ public class ILog extends IMedia {
 				if(b.containsKey(Models.IMedia.VERSION)) {
 					InformaCam informaCam = InformaCam.getInstance();
 					String version = b.getString(Models.IMedia.VERSION);
-					
-					Log.d(LOG, "WE HAVE A VERSION:::: " + version);
-					
+										
 					byte[] versionBytes = informaCam.ioService.getBytes(version, Type.IOCIPHER);
-					j3mZip.put(version.substring(version.lastIndexOf("/")) + 1, versionBytes);
+					j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
 					
 					versionBytes = null;
 					mediaHandled++;
@@ -156,13 +137,11 @@ public class ILog extends IMedia {
 		
 		INotification notification = new INotification();
 		// its icon will probably be some sort of stock thing
-
-		// create its data
+		
+		// append its data sensory data, form data, etc.
 		if(data == null) {
 			data = new IData();
 		}
-		
-		// TODO: add region data!
 		
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);

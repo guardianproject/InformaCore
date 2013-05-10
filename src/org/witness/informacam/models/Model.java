@@ -3,7 +3,13 @@ package org.witness.informacam.models;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,25 +39,34 @@ public class Model extends JSONObject {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public Class<?> recast(Object m, JSONObject ja) {
 		InformaCam informaCam = InformaCam.getInstance();
 
-		List<Class<?>> subclasses = new ArrayList<Class<?>>();
+		Set<Map<Class<?>, List<String>>> subclasses = new HashSet<Map<Class<?>, List<String>>>();
+		
 		Class<?> clz = m.getClass();
 		Class<?> recast = null;
 
 		String packagePath = clz.getName().replace(("." + clz.getSimpleName()), "");
-		//Log.d(LOG, "original object is: " + ja.toString());
 
 		for(String model : informaCam.models) {
 			if(model.contains(packagePath) && !model.equals(clz.getName())) {
 				try {
 					Class<?> subClz = Class.forName(model);
 					if(subClz.getSuperclass().equals(clz)) {
-						//Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
-						if(!subclasses.contains(subClz)) {
-							subclasses.add(subClz);
+						Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
+						
+						List<String> fieldSet = new ArrayList<String>();
+						for(Field subField : subClz.getDeclaredFields()) {
+							if(subField.getModifiers() == Field.DECLARED) {
+								fieldSet.add(subField.getName());
+							}
 						}
+						Map<Class<?>, List<String>> subClz_ = new HashMap<Class<?>, List<String>>();
+						subClz_.put(subClz, fieldSet);
+						
+						subclasses.add(subClz_);
 					}
 				} catch (ClassNotFoundException e) {
 					Log.e(LOG, e.toString());
@@ -62,36 +77,36 @@ public class Model extends JSONObject {
 		}
 
 		if(subclasses.size() > 0) {			
-			List<Class<?>> subClz_ = new ArrayList<Class<?>>(subclasses);
 			// loop through json to see if we have any of these fields. eliminate non-matches from list
-			for(Class<?> c : subclasses) {
-				try {
-					Object o = c.newInstance();
-					for(Field subField : o.getClass().getDeclaredFields()) {
-						if(subField.getModifiers() == Field.DECLARED) {
-							//Log.d(LOG, "does object have " + subField.getName() + "?");
-							if(!ja.has(subField.getName())) {
-								subClz_.remove(c);
-								break;
-							}
-						}
+			Iterator<String> kIt = ja.keys();
+			while(kIt.hasNext()) {
+				String keyToFind = kIt.next();
+				int keyFoundInClasses = 0;
+				
+				Class<?> c = null;
+				
+				for(Map<Class<?>, List<String>> subClz : subclasses) {
+					// does property in key set belong exclusively to
+					Entry<Class<?>, List<String>> entry = subClz.entrySet().iterator().next();
+					
+					List<String> ls = entry.getValue();
+					
+					//Log.d(LOG, "parsing " + entry.getKey().getName() + " to see if it contains " + keyToFind);
+					
+					if(ls.contains(keyToFind)) {
+						keyFoundInClasses++;
+						c = entry.getKey();
 					}
-
-				} catch (InstantiationException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+				}
+				
+				//Log.d(LOG, "found " + keyToFind + " in " + keyFoundInClasses + " class(es)");
+				if(keyFoundInClasses == 1) {
+					Log.d(LOG, "downcast object to " + c.getName());
+					return c;
 				}
 			}
-
-			if(subClz_.size() == 1) {
-				Log.d(LOG, "downcast object to " + subClz_.get(0).getName());
-				recast = subClz_.get(0);
-			}
 		}
-
+		
 		return recast;
 	}
 

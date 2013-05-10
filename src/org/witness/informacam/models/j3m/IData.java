@@ -5,7 +5,7 @@ import java.util.List;
 import org.witness.informacam.models.Model;
 
 public class IData extends Model {
-	public List<ISensorCapture> sensorCapture;
-	public List<IRegionData> regionData;
-	public IExif exif;
+	public List<ISensorCapture> sensorCapture = null;
+	public List<IRegionData> regionData = null;
+	public IExif exif = null;
 }

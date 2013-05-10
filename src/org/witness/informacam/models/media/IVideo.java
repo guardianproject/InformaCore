@@ -10,8 +10,7 @@ import android.graphics.BitmapFactory;
 import android.util.Base64;
 
 public class IVideo extends IMedia {
-	public String video, bitmapThumb, bitmapList, bitmapPreview = null;
-	public int width, height;
+	public String video = null;
 	
 	public IVideo() {
 		super();

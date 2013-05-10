@@ -66,7 +66,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	InformaCam informaCam;
 
 	Handler h = new Handler();
-	IMedia associatedMedia = null;
+	String associatedMedia = null;
 	
 	boolean mustUseSystemTime = false;
 
@@ -122,7 +122,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	public void associateMedia(IMedia media) {
-		this.associatedMedia = media;
+		this.associatedMedia = media._id;
 	}
 
 	private void init() {
@@ -202,13 +202,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 		informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
 
 		if(associatedMedia != null) {
-			IMedia media = informaCam.mediaManifest.getById(associatedMedia._id);
+			IMedia media = informaCam.mediaManifest.getById(associatedMedia);
 			if(media.associatedCaches == null) {
 				media.associatedCaches = new ArrayList<String>();
 			}
 			media.associatedCaches.add(cacheFile.getAbsolutePath());
-			//Log.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
-			informaCam.saveState(informaCam.mediaManifest);
+			Log.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
+			media.save();
 		}
 	}
 
