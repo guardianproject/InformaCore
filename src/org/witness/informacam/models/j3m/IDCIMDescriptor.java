@@ -13,6 +13,7 @@ import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Models;
@@ -39,7 +40,7 @@ public class IDCIMDescriptor extends Model {
 	public List<IMedia> dcimEntries = null;
 	public List<IDCIMEntry> thumbnails = null;
 	public int numEntries = 0;
-	
+
 	public IDCIMDescriptor() {
 		super();
 	}
@@ -56,59 +57,69 @@ public class IDCIMDescriptor extends Model {
 		Log.d(LOG, "saved a dcim descriptor:\n" + asJson().toString());		
 	}
 
-	public void addEntry(Uri authority, Context c, boolean isThumbnail) {
-		IDCIMEntry entry = new IDCIMEntry();
-		try {
-			entry.put(Models.IDCIMEntry.AUTHORITY, authority.toString());
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-
-		String sortBy = "date_added DESC";
-
-		if(isThumbnail) {
-			sortBy = null;
-			entry.mediaType = Models.IDCIMEntry.THUMBNAIL;
-		}
-
-		Cursor cursor = c.getContentResolver().query(authority, null, null, null, sortBy);
-		if(cursor != null && cursor.moveToFirst()) {
-			entry.fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
-
-			if(!isThumbnail) {
-				entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
-				entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
-			}
-
-			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
-			cursor.close();
-		}
-
-		entry = analyze(entry, c);
-		if(entry != null) {
-			if(!isThumbnail) {
-				IMedia media = new IMedia();
-				media.dcimEntry = entry;
-				media._id = media.generateId(entry.originalHash);
+	public void addEntry(final Uri authority, final Context c, final boolean isThumbnail) {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				IDCIMEntry entry = new IDCIMEntry();
 				
-				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-					IImage image = new IImage();
-					image.inflate(media.asJson());
-					image.analyze();
-					dcimEntries.add(image);
-				} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
-					IVideo video = new IVideo();
-					video.inflate(media.asJson());
-					video.analyze();
-					dcimEntries.add(video);
+				try {
+					entry.put(Models.IDCIMEntry.AUTHORITY, authority.toString());
+				} catch (JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
 				}
 
-				numEntries++;
-			} else {
-				thumbnails.add(entry);
+				String sortBy = "date_added DESC";
+
+				if(isThumbnail) {
+					sortBy = null;
+					entry.mediaType = Models.IDCIMEntry.THUMBNAIL;
+				}
+
+				Cursor cursor = c.getContentResolver().query(authority, null, null, null, sortBy);
+				if(cursor != null && cursor.moveToFirst()) {
+					entry.fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
+
+					if(!isThumbnail) {
+						entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
+						entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
+						
+						if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
+							entry.mediaType = MimeType.VIDEO;
+						}
+					}
+
+					entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
+					cursor.close();
+				}
+
+
+				entry = analyze(entry, c);
+				if(entry != null) {
+					if(!isThumbnail) {
+						IMedia media = new IMedia();
+						media.dcimEntry = entry;
+						media._id = media.generateId(entry.originalHash);
+
+						if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+							IImage image = new IImage(media);
+							image.analyze();
+							dcimEntries.add(image);
+						} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+							IVideo video = new IVideo(media);
+							video.analyze();
+							dcimEntries.add(video);
+						}
+
+						numEntries++;
+					} else {
+						thumbnails.add(entry);
+					}
+				}
 			}
-		}
+		}).start();
+
 
 	}
 
@@ -143,7 +154,7 @@ public class IDCIMDescriptor extends Model {
 		entry.fileName = newFile.getAbsolutePath();
 		entry.thumbnailFileName = newFileThumb.getAbsolutePath();
 		entry.thumbnailFile = null;
-		
+
 		newFile = null;
 		newFileThumb = null;
 	}
@@ -158,15 +169,15 @@ public class IDCIMDescriptor extends Model {
 			entry.name = file.getName();
 			entry.size = file.length();
 			entry.timeCaptured = file.lastModified();
-			
+
 			if(entry.timeCaptured < startTime) {
 				return null;
 			}
-			
+
 			if(!entry.isAvailable()) {
 				return null;
 			}
-			
+
 			entry.originalHash = MediaHasher.hash(file, "SHA-1");
 
 			if(entry.uri == null) {
@@ -192,21 +203,24 @@ public class IDCIMDescriptor extends Model {
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 			boolean getThumbnailFromMediaMetadata = false;
 			boolean bruteForceThumbnailFromMedia = false;
-						
+
 			Bitmap b = null;			
 			b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 			if(b == null) {
 				b = MediaStore.Images.Thumbnails.getThumbnail(c.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
 			}
 
-			if(b == null && entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+			if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 				getThumbnailFromMediaMetadata = true;
-			} else if(b == null && entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+				Log.d(LOG, "definitely getting THUMBNAIL from METADATA RESOURCE");
+			}
+			
+			if(b == null && entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 				bruteForceThumbnailFromMedia = true;
 			}
 
 			entry.exif = new IExif();
-			
+
 			try {
 				entry.exif.location = Model.parseJSONAsFloatArray(((GeoSucker) InformaCam.getInstance().informaService._geo).forceReturn().getString(Geo.Keys.GPS_COORDS));
 			} catch (JSONException e) {
@@ -217,7 +231,7 @@ public class IDCIMDescriptor extends Model {
 				e.printStackTrace();
 				entry.exif.location = new float[] {0f,0f};
 			}
-			
+
 			Log.d(LOG, "MEDIA TYPE: " + entry.mediaType);
 			if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 				try {
@@ -239,9 +253,7 @@ public class IDCIMDescriptor extends Model {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
-				
-				Log.d(LOG, "entry: " + entry.asJson().toString());
-				
+
 				if(bruteForceThumbnailFromMedia) {
 					byte[] bytes = InformaCam.getInstance().ioService.getBytes(entry.fileName, Type.FILE_SYSTEM);
 					Bitmap b_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -249,10 +261,12 @@ public class IDCIMDescriptor extends Model {
 					entry.exif.width = b_.getWidth();
 					entry.exif.height = b_.getHeight();
 					b_.recycle();
-					
-					
+
+
 				}
 			} else {
+				Log.d(LOG, "VIDEO entry: " + entry.asJson().toString());
+				
 				MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 				mmr.setDataSource(entry.fileName);
 
@@ -265,10 +279,16 @@ public class IDCIMDescriptor extends Model {
 					// returned null
 					entry.exif.orientation = ExifInterface.ORIENTATION_NORMAL;
 				}
-
+				Log.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
+				
 				if(getThumbnailFromMediaMetadata) {
 					Bitmap b_ = mmr.getFrameAtTime();
-					Log.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
+					if(b_ == null) {
+						Log.d(LOG, "I COULD NOT GET A BITMAP AT ANY FRAME");
+					} else {
+						Log.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
+					}
+					
 					byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
 
 					info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
@@ -284,10 +304,13 @@ public class IDCIMDescriptor extends Model {
 					info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(reviewDump, "PREVIEW_" + entry.name);
 					InformaCam.getInstance().ioService.saveBlob(previewBytes, preview);
 					previewBytes = null;
-					
+
 					entry.previewFrame = preview.getAbsolutePath();
 
-					b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
+					if(b == null) {
+						b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
+					}
+					
 					b_.recycle();
 				}
 			}

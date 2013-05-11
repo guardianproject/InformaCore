@@ -117,12 +117,17 @@ public class DCIMObserver {
 
 		@Override
 		public void onChange(boolean selfChange) {
-			this.onChange(selfChange, null);
+			Log.d(LOG, "ON CHANGE CALLED (no URI)");
+			onChange(selfChange, null);
 
 		}
 
 		@Override
 		public void onChange(boolean selfChange, Uri uri) {
+			if(uri != null) {
+				Log.d(LOG, "ON CHANGE CALLED (with URI!)");
+			}
+			
 			boolean isThumbnail = false;
 
 			if(

@@ -347,6 +347,7 @@ public class Constants {
 			public class MimeType {
 				public final static String IMAGE = "image/jpeg";
 				public final static String VIDEO = "video/mp4";
+				public final static String VIDEO_3GPP = "video/3gpp";
 				public static final String LOG = "informacam/log";
 			}
 
