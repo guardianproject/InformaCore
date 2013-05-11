@@ -75,6 +75,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public CharSequence detailsAsText = null;
 
 	protected Handler responseHandler;
+	private boolean debugMode = true;
 
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
@@ -355,13 +356,17 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
 
-			// zip *FIRST
-			byte[] j3mZip = IOUtility.zipBytes(j3mObject.toString().getBytes(), j3mFile.getName(), Type.IOCIPHER);
+			byte[] j3mBytes = j3mObject.toString().getBytes();
+			
+			if(!debugMode) {
+				// zip *FIRST
+				byte[] j3mZip = IOUtility.zipBytes(j3mBytes, j3mFile.getName(), Type.IOCIPHER);
 
-			// base64
-			byte[] j3mBytes = Base64.encode(j3mZip, Base64.DEFAULT);
-			if(organization != null) {
-				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+				// base64
+				j3mBytes = Base64.encode(j3mZip, Base64.DEFAULT);
+				if(organization != null) {
+					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+				}
 			}
 
 			informaCam.ioService.saveBlob(j3mBytes, j3mFile);

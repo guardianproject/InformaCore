@@ -37,6 +37,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.MediaColumns;
@@ -196,7 +197,9 @@ public class IOUtility {
 				fis.read(bytes);
 				fis.close();
 
-				bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+				BitmapFactory.Options opts = new BitmapFactory.Options();
+				opts.inPurgeable = true;
+				bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
 				bytes = null;
 			} catch (FileNotFoundException e) {
 				Log.e(LOG, e.toString());
