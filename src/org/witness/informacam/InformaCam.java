@@ -564,9 +564,7 @@ public class InformaCam extends Service {
 			public void onCancel(DialogInterface dialog) {
 				a.finish();
 			}
-
 		});
-
 
 		if(odl != null) {
 			d.setOnDismissListener(odl);
@@ -590,9 +588,7 @@ public class InformaCam extends Service {
 					waiter.setVisibility(View.GONE);
 					commit.setVisibility(View.VISIBLE);
 				}
-
 			}
-
 		});
 
 		final Button cancel = (Button) view.findViewById(R.id.login_cancel);
@@ -623,9 +619,7 @@ public class InformaCam extends Service {
 					ioService.saveBlob(data, file);
 					break;
 				}
-
 			}
-
 		};
 		promptForLogin(odl);
 	}

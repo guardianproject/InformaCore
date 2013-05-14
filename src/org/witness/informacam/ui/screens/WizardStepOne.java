@@ -32,28 +32,59 @@ public class WizardStepOne extends Fragment {
 
 	Handler handler = new Handler();
 
-	int[] allIn = new int[] {0,0,0};
-	final int[] ALL_IN = new int[] {1,1,1};
+	int[] allIn = new int[] {0,0};
+	final int[] ALL_IN = new int[] {1,1};
 
 	private InformaCam informaCam = InformaCam.getInstance();
+	
+	private void checkAlias(String s) {
+		if(s.length() >= 2) {
+			try {
+				informaCam.user.put(IUser.ALIAS, s);
+				allIn[0] = 1;
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+		} else {
+			allIn[0] = 0;
+		}
+
+		doIfAllIn();
+	}
+	
+	private void checkPassword(String s1, String s2) {
+		try {
+			if(s1.length() >= 10) {
+				if(String.valueOf(s1).equals(s2)) {
+					informaCam.user.put(IUser.PASSWORD, s1);
+					passwordStatusText.setText(getString(R.string.ok));
+					
+					allIn[1] = 1;
+				} else {
+					passwordStatusText.setText(getString(R.string.sorry_your_password_doesnt));
+					allIn[1] = 0;
+				}
+			} else {
+				passwordStatusText.setText(getString(R.string.your_password_should_be));
+				allIn[1] = 0;
+				
+			}
+		} catch(JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+			
+			allIn[1] = 0;
+		}
+		
+		doIfAllIn();
+	}
 
 	TextWatcher readAlias = new TextWatcher() {
 
 		@Override
 		public void afterTextChanged(Editable s) {
-			if(s.length() >= 2) {
-				try {
-					informaCam.user.put(IUser.ALIAS, s);
-					allIn[0] = 1;
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				}
-			} else {
-				allIn[0] = 0;
-			}
-
-			doIfAllIn();
+			checkAlias(s.toString());
 		}
 
 		@Override
@@ -69,35 +100,14 @@ public class WizardStepOne extends Fragment {
 
 		@Override
 		public void afterTextChanged(Editable s) {
-			try {
-				if(s.length() >= 10) {
-					allIn[1] = 1;
-
-					if(String.valueOf(s).equals(passwordAgain.getText().toString())) {
-						informaCam.user.put(IUser.PASSWORD, s);
-						passwordStatusText.setText(getString(R.string.ok));
-					} else {
-						passwordStatusText.setText(getString(R.string.sorry_your_password_doesnt));
-					}
-				} else {
-					passwordStatusText.setText(getString(R.string.your_password_should_be));
-					allIn[1] = 0;
-				}
-			} catch(JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-			doIfAllIn();
+			checkPassword(s.toString(), passwordAgain.getText().toString());
 		}
 
 		@Override
 		public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
 		@Override
-		public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-
-		}
+		public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
 	};
 
@@ -105,22 +115,7 @@ public class WizardStepOne extends Fragment {
 
 		@Override
 		public void afterTextChanged(Editable s) {
-			try {
-				if(String.valueOf(s).equals(password.getText().toString())) {
-					informaCam.user.put(IUser.PASSWORD, s);
-					passwordStatusText.setText(getString(R.string.ok));
-
-					allIn[2] = 1;
-				} else {
-					passwordStatusText.setText(getString(R.string.sorry_your_password_doesnt));
-					allIn[2] = 0;
-				}
-
-			} catch(JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-			doIfAllIn();
+			checkPassword(password.getText().toString(), s.toString());
 		}
 
 		@Override
@@ -174,7 +169,7 @@ public class WizardStepOne extends Fragment {
 
 	private void doIfAllIn() {
 		Log.d(LOG, "doing if all in...");
-		Log.d(LOG, allIn[0] + " " + allIn[1] + " " + allIn[2]);
+		Log.d(LOG, allIn[0] + " " + allIn[1]);
 		for(int i: allIn) {
 			if(i == 0) {
 				return;
