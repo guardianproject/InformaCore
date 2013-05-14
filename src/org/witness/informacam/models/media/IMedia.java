@@ -94,11 +94,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IRegion getRegionAtRect() {
-		return getRegionAtRect(0, 0, 0, 0, -1L, false);
+		return getRegionAtRect(0, 0, 0, 0, 0, false);
 	}
 
 	public IRegion getRegionAtRect(IRegionDisplay regionDisplay) {
-		return getRegionAtRect(regionDisplay, -1L);
+		return getRegionAtRect(regionDisplay, 0);
 	}
 
 	public IRegion getRegionAtRect(IRegionDisplay regionDisplay, long timestamp) {
@@ -116,6 +116,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					videoRegion = (IVideoRegion) region;
 					bounds = videoRegion.getBoundsAtTime(timestamp);
 					region = videoRegion;
+				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+					bounds = region.bounds;
 				}
 
 				if(byRealHeight) {

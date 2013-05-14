@@ -58,58 +58,61 @@ public class DCIMObserver {
 
 	public void destroy() {
 		dcimDescriptor.stopSession();
-
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				for(IDCIMEntry entry : dcimDescriptor.thumbnails) {
-					informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
-					informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
-				}
-
-				dcimDescriptor.thumbnails = null;
-				
-				informaCam.saveState(dcimDescriptor);
-				//if(informaCam.ioService.saveBlob(dcimDescriptor, new info.guardianproject.iocipher.File(IManifest.DCIM))) {					
-				for(IMedia media : dcimDescriptor.dcimEntries) {
-					for(IMedia m : informaCam.mediaManifest.media) {
-						m.isNew = false;
+		
+		// XXX: wait until all dcimEntries are accounted for before continuing!
+		if(dcimDescriptor.isFinishedAnalyzing()) {
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					for(IDCIMEntry entry : dcimDescriptor.thumbnails) {
+						informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
+						informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
 					}
 
-					informaCam.mediaManifest.media.add((IMedia) media);
-				}
+					dcimDescriptor.thumbnails = null;
 
-				// save it
-				if(informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA))) {
-					Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
+					informaCam.saveState(dcimDescriptor);
 
-					Bundle data = new Bundle();
-					data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
+					for(IMedia media : dcimDescriptor.dcimEntries) {
+						for(IMedia m : informaCam.mediaManifest.media) {
+							m.isNew = false;
+						}
 
-					Message message = new Message();
-					message.setData(data);
-
-					try {
-						((InformaCamEventListener) informaCam.a).onUpdate(message);
-					} catch(ClassCastException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
+						informaCam.mediaManifest.media.add((IMedia) media);
 					}
-				}
-				/*
+
+					// save it
+					if(informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA))) {
+						Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
+
+						Bundle data = new Bundle();
+						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
+
+						Message message = new Message();
+						message.setData(data);
+
+						try {
+							((InformaCamEventListener) informaCam.a).onUpdate(message);
+						} catch(ClassCastException e) {
+							Log.e(LOG, e.toString());
+							e.printStackTrace();
+						}
+					}
+					/*
 				} else {
 					Log.d(LOG, "SO COULD NOT SAVE DCIM DESCRIPTOR??");
 				}
-				*/
+					 */
+				}
+			}).start();
+
+
+			for(ContentObserver o : observers) {
+				a.getContentResolver().unregisterContentObserver(o);
 			}
-		}).start();
 
-
-		for(ContentObserver o : observers) {
-			a.getContentResolver().unregisterContentObserver(o);
+			Log.d(LOG, "DCIM OBSERVER STOPPED");
 		}
-
-		Log.d(LOG, "DCIM OBSERVER STOPPED");
 	}
 
 	class Observer extends ContentObserver {

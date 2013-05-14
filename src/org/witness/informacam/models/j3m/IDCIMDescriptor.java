@@ -161,6 +161,14 @@ public class IDCIMDescriptor extends Model {
 		newFile = null;
 		newFileThumb = null;
 	}
+	
+	public boolean isFinishedAnalyzing() {
+		do {
+			Log.d(LOG, "actually, not yet. dcimEntries are at size " + dcimEntries.size());
+		} while(dcimEntries.size() < numEntries);
+
+		return true;
+	}
 
 	@SuppressLint("InlinedApi")
 	private IDCIMEntry analyze(IDCIMEntry entry, Context c) {

@@ -156,8 +156,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 						stopIntent.putExtra(Codes.Extras.GPS_FAILURE, true);
 						stopSelf();
 						*/
-						mustUseSystemTime = true;
-						currentTime = System.currentTimeMillis();
+						if(currentTime == 0) {
+							mustUseSystemTime = true;
+							currentTime = System.currentTimeMillis();
+						}
 					}
 					
 				}
