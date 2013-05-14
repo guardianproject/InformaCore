@@ -141,4 +141,14 @@ public class IConnection extends Model {
 
 		return post;
 	}
+
+	public void save() {
+		InformaCam informaCam = InformaCam.getInstance();
+		
+		IPendingConnections pendingConnections = informaCam.uploaderService.pendingConnections;
+		pendingConnections.getById(_id).inflate(asJson());
+		
+		informaCam.saveState(pendingConnections);
+		
+	}
 }

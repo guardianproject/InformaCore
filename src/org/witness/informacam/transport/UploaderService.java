@@ -268,8 +268,15 @@ public class UploaderService extends Service implements HttpUtilityListener {
 									if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
 										routeResult(connection);
 									} else {
-										if(connection.numTries > Models.IConnection.MAX_TRIES && !connection.isSticky) {
-											pendingConnections.queue.remove(connection);
+										
+										if(connection.numTries > Models.IConnection.MAX_TRIES) {
+											if(!connection.isSticky) {
+												pendingConnections.queue.remove(connection);
+											} else {
+												if(connection.result.responseCode == Models.IConnection.ResponseCodes.INVALID_TICKET) {
+													pendingConnections.queue.remove(connection);
+												}
+											}
 										} else {
 											connection.isHeld = false;
 										}
@@ -279,7 +286,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 									e.printStackTrace();
 								}
 
-								informaCam.saveState(pendingConnections);
+								connection.save();
 							}
 						}
 						isRunning = false;

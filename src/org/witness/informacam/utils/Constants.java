@@ -395,6 +395,10 @@ public class Constants {
 			public static final String PROGRESS = "progress";
 			public static final String PARENT = "parent";
 			
+			public class ResponseCodes {
+				public static final int INVALID_TICKET = 48;
+			}
+			
 			public class Type {
 				public static final int NONE = 799;
 				public static final int MESSAGE = 800;
