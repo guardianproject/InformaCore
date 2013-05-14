@@ -18,6 +18,7 @@ import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.credentials.IUser;
+import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IMediaManifest;
 import org.witness.informacam.models.notifications.INotification;
@@ -517,6 +518,13 @@ public class InformaCam extends Service {
 		} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
 			try {
 				saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+			} catch(NullPointerException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+		} else if(model.getClass().getName().equals(IDCIMDescriptor.class.getName())) {
+			try {
+				saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
 			} catch(NullPointerException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();

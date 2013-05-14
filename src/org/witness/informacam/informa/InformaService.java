@@ -505,8 +505,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 				} catch(JSONException e) {}
 
 			} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-				ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
-				onUpdate(ILogPack);
+				try {
+					ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
+					onUpdate(ILogPack);
+				} catch(NullPointerException e) {
+					Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+					e.printStackTrace();
+				}
 
 			}
 

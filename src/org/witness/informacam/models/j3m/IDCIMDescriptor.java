@@ -98,6 +98,8 @@ public class IDCIMDescriptor extends Model {
 				entry = analyze(entry, c);
 				if(entry != null) {
 					if(!isThumbnail) {
+						numEntries++;
+						
 						IMedia media = new IMedia();
 						media.dcimEntry = entry;
 						media._id = media.generateId(entry.originalHash);
@@ -112,7 +114,8 @@ public class IDCIMDescriptor extends Model {
 							dcimEntries.add(video);
 						}
 
-						numEntries++;
+						
+						Log.d(LOG, "DCIM DESCRIPTOR UPDATED BY SELF:\n" + asJson().toString());
 					} else {
 						thumbnails.add(entry);
 					}

@@ -68,34 +68,39 @@ public class DCIMObserver {
 				}
 
 				dcimDescriptor.thumbnails = null;
-
-				if(informaCam.ioService.saveBlob(dcimDescriptor, new info.guardianproject.iocipher.File(IManifest.DCIM))) {					
-					for(IMedia media : dcimDescriptor.dcimEntries) {
-						for(IMedia m : informaCam.mediaManifest.media) {
-							m.isNew = false;
-						}
-
-						informaCam.mediaManifest.media.add((IMedia) media);
+				
+				informaCam.saveState(dcimDescriptor);
+				//if(informaCam.ioService.saveBlob(dcimDescriptor, new info.guardianproject.iocipher.File(IManifest.DCIM))) {					
+				for(IMedia media : dcimDescriptor.dcimEntries) {
+					for(IMedia m : informaCam.mediaManifest.media) {
+						m.isNew = false;
 					}
 
-					// save it
-					if(informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA))) {
-						Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
+					informaCam.mediaManifest.media.add((IMedia) media);
+				}
 
-						Bundle data = new Bundle();
-						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
+				// save it
+				if(informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA))) {
+					Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
 
-						Message message = new Message();
-						message.setData(data);
+					Bundle data = new Bundle();
+					data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
 
-						try {
-							((InformaCamEventListener) informaCam.a).onUpdate(message);
-						} catch(ClassCastException e) {
-							Log.e(LOG, e.toString());
-							e.printStackTrace();
-						}
+					Message message = new Message();
+					message.setData(data);
+
+					try {
+						((InformaCamEventListener) informaCam.a).onUpdate(message);
+					} catch(ClassCastException e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
 					}
 				}
+				/*
+				} else {
+					Log.d(LOG, "SO COULD NOT SAVE DCIM DESCRIPTOR??");
+				}
+				*/
 			}
 		}).start();
 

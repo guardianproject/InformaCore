@@ -2,9 +2,9 @@ package org.witness.informacam.models.connections;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import org.bouncycastle.util.Arrays;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.notifications.INotification;
