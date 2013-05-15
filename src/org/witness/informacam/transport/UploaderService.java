@@ -3,6 +3,7 @@ package org.witness.informacam.transport;
 import info.guardianproject.onionkit.ui.OrbotHelper;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,8 +54,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	private int connectionType = -1;
 
 	InformaCam informaCam;
-
-	Handler handler = new Handler();
 	Timer queueMaster;
 
 	List<InnerBroadcaster> br = new ArrayList<InnerBroadcaster>();
@@ -76,14 +75,14 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		oh = new OrbotHelper(this);
 
 		br.add(new InnerBroadcaster(new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"), android.os.Process.myPid()) {
-			
+
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				super.onReceive(context, intent);
 				if(!isIntended) {
 					return;
 				}
-				
+
 				if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")) {
 					Log.d(LOG, "connextivity status changed");
 					connectionType = getConnectionStatus();
@@ -93,9 +92,9 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 		uploaderService = this;
 		sendBroadcast(new Intent()
-			.setAction(Actions.ASSOCIATE_SERVICE)
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
+		.setAction(Actions.ASSOCIATE_SERVICE)
+		.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
+		.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
 	@Override
@@ -112,11 +111,11 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		if(pendingConnections != null) {
 			informaCam.saveState(pendingConnections);
 		}
-		
+
 		sendBroadcast(new Intent()
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
-			.setAction(Actions.DISASSOCIATE_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
+		.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
+		.setAction(Actions.DISASSOCIATE_SERVICE)
+		.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
 	public static UploaderService getInstance() {
@@ -188,6 +187,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	private boolean runOrbotCheck() {
+		Handler handler = new Handler();
+
 		if(!oh.isOrbotInstalled()) {
 			handler.post(new Runnable() {
 				@Override
@@ -225,7 +226,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			/*
 			pendingConnections.queue.clear();
 			informaCam.saveState(pendingConnections);
-			*/
+			 */
 
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				if(!runOrbotCheck()) {
@@ -240,57 +241,60 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					@Override
 					public void run() {
 						android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
-						for(IConnection connection : pendingConnections.queue) {
-							//connection.isHeld = false;
 
-							//Log.d(LOG, "HELLO CONNECTION:\n" + connection.asJson().toString());
-							if(!connection.isHeld) {
-								connection.isHeld = true;
+						synchronized(pendingConnections.queue) {
+							for(IConnection connection : pendingConnections.queue) {
+								//connection.isHeld = false;
 
-								HttpUtility http = new HttpUtility();
+								//Log.d(LOG, "HELLO CONNECTION:\n" + connection.asJson().toString());
+								if(!connection.isHeld) {
+									connection.isHeld = true;
 
-								if(connection.type == Models.IConnection.Type.UPLOAD) {
-									IUpload upload = new IUpload(connection);									
-									upload.setByteBufferSize(connectionType);
-									upload.update();
+									HttpUtility http = new HttpUtility();
 
-									connection = upload;
-								}
+									if(connection.type == Models.IConnection.Type.UPLOAD) {
+										IUpload upload = new IUpload(connection);									
+										upload.setByteBufferSize(connectionType);
+										upload.update();
 
-								if(connection.method.equals(Models.IConnection.Methods.POST)) {
-									connection = http.executeHttpPost(connection);
-
-								} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
-									connection = http.executeHttpGet(connection);
-								}
-
-								try {
-									if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
-										routeResult(connection);
-									} else {
-										
-										if(connection.numTries > Models.IConnection.MAX_TRIES) {
-											if(!connection.isSticky) {
-												pendingConnections.queue.remove(connection);
-											} else {
-												if(connection.result.responseCode == Models.IConnection.ResponseCodes.INVALID_TICKET) {
-													pendingConnections.queue.remove(connection);
-												}
-											}
-										} else {
-											connection.isHeld = false;
-										}
+										connection = upload;
 									}
-								} catch(NullPointerException e) {
-									Log.e(LOG, e.toString());
-									e.printStackTrace();
+
+									if(connection.method.equals(Models.IConnection.Methods.POST)) {
+										connection = http.executeHttpPost(connection);
+
+									} else if(connection.method.equals(Models.IConnection.Methods.GET)) {
+										connection = http.executeHttpGet(connection);
+									}
+
+									try {
+										if(connection.result.code == Integer.parseInt(Transport.Results.OK)) {
+											routeResult(connection);
+										} else {
+
+											if(connection.numTries > Models.IConnection.MAX_TRIES) {
+												if(!connection.isSticky) {
+													pendingConnections.queue.remove(connection);
+												} else {
+													if(connection.result.responseCode == Models.IConnection.ResponseCodes.INVALID_TICKET) {
+														pendingConnections.queue.remove(connection);
+													}
+												}
+											} else {
+												connection.isHeld = false;
+											}
+										}
+									} catch(NullPointerException e) {
+										Log.e(LOG, e.toString());
+										e.printStackTrace();
+									}
+
+									connection.save();
 								}
-
-								connection.save();
 							}
-						}
-						isRunning = false;
 
+							isRunning = false;
+						}
 					}
 				}).start();
 			}
@@ -332,13 +336,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			initPendingConnections();
 		}
 
-		if(pendingConnections.queue == null) {
-			pendingConnections.queue = new ArrayList<IConnection>();
-		}
-
-		Log.d(LOG, "Adding a new connection.\n" + connection.asJson().toString());
-		pendingConnections.queue.add(connection);
-		informaCam.saveState(pendingConnections);
+		pendingConnections.add(connection);
 		if(!this.isRunning) {
 			run();
 		}
@@ -361,13 +359,16 @@ public class UploaderService extends Service implements HttpUtilityListener {
 
 					IUpload upload = new IUpload(organization, ((ISubmission) connection).pathToNextConnectionData, uploadId, uploadRev);
 					upload.associatedNotification = connection.associatedNotification;
-					
+
 					addToQueue(upload);
-					pendingConnections.queue.remove(connection);
+					pendingConnections.remove(connection);
 				} else if(connection.type == Models.IConnection.Type.UPLOAD) {
 					int bytesReceived = connection.result.data.getInt(Models.IConnection.BYTES_TRANSFERRED_VERIFIED);
 
-					if(connection.result.data.has(Models.IConnection.PROGRESS)) {
+					// XXX: redo this.
+					if(connection.result.responseCode == Models.IConnection.ResponseCodes.INVALID_TICKET) {
+						pendingConnections.remove(connection);
+					} else if(connection.result.data.has(Models.IConnection.PROGRESS)) {
 						double progress = connection.result.data.getDouble(Models.IConnection.PROGRESS);
 
 						// TODO: update notifications with progress.
@@ -381,15 +382,13 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						upload.associatedNotification = connection.associatedNotification;
 
 						pendingConnections.getById(connection._id).inflate(upload.asJson());
+						informaCam.saveState(pendingConnections);
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
 						// TODO:  this is finished.  remove from queue... but persist parent data
 						Log.d(LOG, "HUZZAH!!!  AN UPLOAD:\n" + connection.result.asJson().toString());
-						pendingConnections.queue.remove(connection);
+						pendingConnections.remove(connection);
 					}
 				}
-
-				informaCam.saveState(pendingConnections);
-
 			} catch (JSONException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -431,8 +430,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		if(!connection.isSticky) {
-			pendingConnections.queue.remove(connection);
-			informaCam.saveState(pendingConnections);
+			pendingConnections.remove(connection);
 		}
 	}
 

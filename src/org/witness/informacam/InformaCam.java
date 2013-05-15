@@ -188,13 +188,11 @@ public class InformaCam extends Service {
 					return;
 				}
 				
-				if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
-					switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
-					case Codes.Routes.INFORMA_SERVICE:
-						informaService = null;
-						sendBroadcast(new Intent()
-							.setAction(Actions.INFORMA_STOP)
-							.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId));
+				if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
+					switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
+					case Codes.Transport.MUST_INSTALL_TOR:
+						break;
+					case Codes.Transport.MUST_START_TOR:
 						break;
 					}
 				}
@@ -209,11 +207,13 @@ public class InformaCam extends Service {
 					return;
 				}
 				
-				if(intent.getAction().equals(Actions.UPLOADER_UPDATE)) {
-					switch(intent.getIntExtra(Codes.Keys.UPLOADER, 0)) {
-					case Codes.Transport.MUST_INSTALL_TOR:
-						break;
-					case Codes.Transport.MUST_START_TOR:
+				if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
+					switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
+					case Codes.Routes.INFORMA_SERVICE:
+						informaService = null;
+						sendBroadcast(new Intent()
+							.setAction(Actions.INFORMA_STOP)
+							.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId));
 						break;
 					}
 				}
@@ -660,7 +660,6 @@ public class InformaCam extends Service {
 	public boolean attemptLogin() {
 		String password = sp.getString(Models.IUser.PASSWORD, null);
 		return password == null ? false : attemptLogin(password);
-
 	}
 
 	public boolean attemptLogin(String password) {

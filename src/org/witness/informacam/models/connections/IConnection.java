@@ -146,7 +146,10 @@ public class IConnection extends Model {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		IPendingConnections pendingConnections = informaCam.uploaderService.pendingConnections;
-		pendingConnections.getById(_id).inflate(asJson());
+		
+		synchronized(pendingConnections) {
+			pendingConnections.getById(_id).inflate(asJson());
+		}
 		
 		informaCam.saveState(pendingConnections);
 		

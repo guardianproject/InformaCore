@@ -6,6 +6,7 @@ import java.util.Vector;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.connections.IConnection;
+import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
@@ -202,15 +203,19 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.ioService.saveBlob(informaCam.user, new java.io.File(IManifest.USER));
 
 		if(!informaCam.user.isInOfflineMode) {
-			for(IConnection connection : informaCam.uploaderService.pendingConnections.queue) {
-				connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
-				connection.setParam(IUser.ALIAS, informaCam.user.alias);
-				connection.setData(IUser.PUBLIC_CREDENTIALS);
-				connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
-				connection.isHeld = false;
+			IPendingConnections pendingConnections = informaCam.uploaderService.pendingConnections;
+			
+			synchronized(pendingConnections.queue) {
+				for(IConnection connection : pendingConnections.queue) {
+					connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
+					connection.setParam(IUser.ALIAS, informaCam.user.alias);
+					connection.setData(IUser.PUBLIC_CREDENTIALS);
+					connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
+					connection.isHeld = false;
+					
+					connection.save();
+				}
 			}
-
-			informaCam.ioService.saveBlob(informaCam.uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 		}
 		setResult(Activity.RESULT_OK);
 		finish();
