@@ -38,6 +38,7 @@ public class IConnection extends Model {
 	public IResult result = null;
 	public int knownCallback = 0;
 	public INotification associatedNotification = null;
+	public boolean slatedForRemoval = false;
 
 	public List<IParam> params = null;
 	public ITransportData data = null;
@@ -146,12 +147,9 @@ public class IConnection extends Model {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		IPendingConnections pendingConnections = informaCam.uploaderService.pendingConnections;
-		
-		synchronized(pendingConnections) {
-			pendingConnections.getById(_id).inflate(asJson());
-		}
+		pendingConnections.getById(_id).inflate(asJson());
 		
 		informaCam.saveState(pendingConnections);
-		
+
 	}
 }

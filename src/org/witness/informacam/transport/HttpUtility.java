@@ -94,6 +94,7 @@ public class HttpUtility {
 				} else {
 					result.reason = resultObject.getString(Models.IResult.REASON);
 				}
+				
 				result.responseCode = resultObject.getInt(Models.IResult.RESPONSE_CODE);
 			} else {
 				if(resultObject.has(Models.IResult.REASON)) {
@@ -106,15 +107,19 @@ public class HttpUtility {
 		} catch (IllegalStateException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+			result.code = Integer.parseInt(Transport.Results.FAIL[1]);
 		} catch (IOException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+			result.code = Integer.parseInt(Transport.Results.FAIL[1]);
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+			result.code = Integer.parseInt(Transport.Results.FAIL[1]);
 		} catch (ClassCastException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+			result.code = Integer.parseInt(Transport.Results.FAIL[1]);
 		}
 
 		Log.d(LOG, "REQUEST RESULT:\n" + sb.toString());
@@ -200,15 +205,15 @@ public class HttpUtility {
 			
 			connection.result = new IResult();
 			connection.result.code = Integer.parseInt(Transport.Results.FAIL[1]);
-			return connection;
 		} catch (ExecutionException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 			
 			connection.result = new IResult();
 			connection.result.code = Integer.parseInt(Transport.Results.FAIL[1]);
-			return connection;
 		}
+		
+		return connection;
 	}
 	
 	public class ISocketFactory extends ch.boye.httpclientandroidlib.conn.ssl.SSLSocketFactory {

@@ -205,16 +205,15 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		if(!informaCam.user.isInOfflineMode) {
 			IPendingConnections pendingConnections = informaCam.uploaderService.pendingConnections;
 			
-			synchronized(pendingConnections.queue) {
-				for(IConnection connection : pendingConnections.queue) {
-					connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
-					connection.setParam(IUser.ALIAS, informaCam.user.alias);
-					connection.setData(IUser.PUBLIC_CREDENTIALS);
-					connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
-					connection.isHeld = false;
-					
-					connection.save();
-				}
+			for(IConnection connection : pendingConnections.queue) {
+				connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
+				connection.setParam(IUser.ALIAS, informaCam.user.alias);
+				connection.setData(IUser.PUBLIC_CREDENTIALS);
+				connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
+				connection.isHeld = false;
+
+				connection.save();
+
 			}
 		}
 		setResult(Activity.RESULT_OK);

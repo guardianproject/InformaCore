@@ -71,7 +71,6 @@ public class ISubmission extends IConnection {
 			params.add(param);
 			
 			isHeld = false;
-			informaCam.uploaderService.addToQueue(this);
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();

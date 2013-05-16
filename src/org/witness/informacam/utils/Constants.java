@@ -43,6 +43,10 @@ public class Constants {
 		public void onMetadataEmbeded(info.guardianproject.iocipher.File version);
 		public void onMetadataEmbeded(java.io.File version);
 	}
+	
+	public interface ListAdapterListener {
+		public void updateAdapter(int which);
+	}
 
 	public final static class Actions {
 		public final static String INIT = "org.witness.informacam.action.INIT";
@@ -136,6 +140,11 @@ public class Constants {
 			public static final int TYPE_IMAGE = 400;
 			public static final int TYPE_VIDEO = 401;
 			public static final int TYPE_JOURNAL = 402;
+		}
+
+		public class Adapters {
+			public static final int NOTIFICATIONS = 1;
+			public static final int ORGANIZATIONS = 2;
 		}
 	}
 	

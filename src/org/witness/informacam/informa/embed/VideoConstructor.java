@@ -228,6 +228,7 @@ public class VideoConstructor {
 				submission.inflate(connection.asJson());
 			
 				submission.Set(newVideo);
+				submission.save();
 			}
 			
 			media.onMetadataEmbeded(newVideo);			

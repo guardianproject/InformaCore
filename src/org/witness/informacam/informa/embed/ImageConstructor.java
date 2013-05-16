@@ -61,7 +61,11 @@ public class ImageConstructor {
 		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToImage.getAbsolutePath(), Type.IOCIPHER), clone, true);
 
 		version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToImage.getName());
-		Bitmap b = BitmapFactory.decodeFile(clone.getAbsolutePath());
+		BitmapFactory.Options opts = new BitmapFactory.Options();
+		opts.inPurgeable = true;
+		
+		Bitmap b = BitmapFactory.decodeFile(clone.getAbsolutePath(), opts);
+		
 		try {
 			java.io.FileOutputStream fos = new java.io.FileOutputStream(version);
 			b.compress(CompressFormat.JPEG, 100, fos);
@@ -85,17 +89,19 @@ public class ImageConstructor {
 
 	public void finish() {
 		// move back to iocipher
+		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destination + ")");
 		if(destination == Type.IOCIPHER) {
 			info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
 			
 			if(connection != null) {
-				ISubmission submission = new ISubmission();	// downcast the connection to submission
-				submission.inflate(connection.asJson());
+				ISubmission submission = new ISubmission(connection);	// downcast the connection to submission
 			
 				submission.Set(newImage);
+				submission.save();
 			}
 			
+			Log.d(LOG, "OK FINISHED UP for media id: " + media._id);
 			media.onMetadataEmbeded(newImage);
 			
 		} else if(destination == Type.FILE_SYSTEM) {

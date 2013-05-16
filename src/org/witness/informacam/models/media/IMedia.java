@@ -75,7 +75,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public CharSequence detailsAsText = null;
 
 	protected Handler responseHandler;
-	private boolean debugMode = true;
+	protected boolean debugMode = true;
 
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
@@ -290,8 +290,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public boolean export(Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		System.gc();
+		
 		responseHandler = h;
-
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -378,6 +379,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
 			info.guardianproject.iocipher.File original = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
 
+			notification.generateId();
 			if(share) {
 				// create a java.io.file
 				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);
@@ -388,39 +390,56 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				}
 
 				notification.type = Models.INotification.Type.SHARED_MEDIA;				
-
+				informaCam.addNotification(notification);
 			} else {
 				// create a iocipher file
-				Log.d(LOG, "export to hidden service...");
+				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
+				
 				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
 				IConnection submission = null; 
 
 				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					if(organization != null) {
+						notification.taskComplete = false;
+						informaCam.addNotification(notification);
+						
 						submission = new ISubmission(organization, exportFile.getAbsolutePath().replace(".mp4", ".mkv"));
+						submission.isHeld = true;
+						submission.associatedNotification = notification;
+						
+						informaCam.uploaderService.pendingConnections.add(submission);
+						informaCam.uploaderService.pendingConnections.save();						
 					}
 
 					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					if(organization != null) {
+						notification.taskComplete = false;
+						informaCam.addNotification(notification);
+						
 						submission = new ISubmission(organization, exportFile.getAbsolutePath());
+						submission.isHeld = true;
+						submission.associatedNotification = notification;
+						
+						informaCam.uploaderService.pendingConnections.add(submission);
+						informaCam.uploaderService.pendingConnections.save();
 					}
 
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
 
-				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
-
+				
+				/*
 				if(submission != null) {
-					submission.isHeld = true;
-					submission.associatedNotification = notification;
+					submission.save();
 				}
+				*/
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-			notification.generateId();
-			informaCam.addNotification(notification);
+			
+			
 
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
@@ -513,19 +532,21 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	@Override
 	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
+		Log.d(LOG, "OK, EMBEDDED!!!");
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
 	}
 
 	@Override
 	public void onMetadataEmbeded(java.io.File version) {
+		Log.d(LOG, "(Java File?) OK, EMBEDDED!!!");
 		Activity a = InformaCam.getInstance().a;
 
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
 
 		Intent intent = new Intent()
-		.setAction(Intent.ACTION_SEND)
-		.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(version))
-		.setType("file/");
+			.setAction(Intent.ACTION_SEND)
+			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(version))
+			.setType("file/");
 
 		a.startActivity(Intent.createChooser(intent, a.getString(R.string.send)));
 	}	

@@ -22,6 +22,7 @@ public class INotification extends Model {
 	public int iconSource = Type.IOCIPHER;
 	public int type = 0;
 	public String _id = null;
+	public boolean taskComplete = true;
 	
 	public INotification() {
 		super();
