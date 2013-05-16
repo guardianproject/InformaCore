@@ -251,10 +251,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						//for(Iterator<IConnection> cIt = pendingConnections.queue.iterator(); cIt.hasNext() ;) {
 						for(IConnection connection : pendingConnections.queue) {
 							//connection.isHeld = false;
-							Log.d(LOG, "CONNECTION " + connection._id + " SLATED FOR REMOVAL? " + String.valueOf(connection.slatedForRemoval));
-
 							if(!connection.isHeld && !connection.slatedForRemoval) {
-								Log.d(LOG, "HELLO CONNECTION " + connection._id + ":\n" + connection.asJson().toString());
 								connection.isHeld = true;
 
 								HttpUtility http = new HttpUtility();
@@ -286,7 +283,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 									} else {
 										
 										if(connection.result.responseCode == Models.IConnection.ResponseCodes.INVALID_TICKET) {
-											Log.d(LOG, "TICKET INVALID");
 											pendingConnections.remove(connection);
 											continue;
 										}
@@ -344,9 +340,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				
 				IConnection connection = cIt.next();
 				connection.isHeld = false;
-				
-				// XXX: HEY!
-				//cIt.remove();
 			}
 			
 			informaCam.saveState(pendingConnections);
@@ -411,7 +404,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						upload.save();
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
 						// TODO:  this is finished.  remove from queue... but persist parent data
-						Log.d(LOG, "HUZZAH!!!  AN UPLOAD:\n" + connection.result.asJson().toString());
 						connection.associatedNotification.taskComplete = true;
 						informaCam.updateNotification(connection.associatedNotification);
 						
@@ -461,7 +453,6 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		if(!connection.isSticky) {
-			//pendingConnections.remove(connection);
 			return true;
 		} else {
 			return false;

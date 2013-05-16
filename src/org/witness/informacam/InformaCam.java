@@ -364,20 +364,6 @@ public class InformaCam extends Service {
 			if(notificationsManifestBytes != null) {
 				notificationsManifest.inflate(notificationsManifestBytes);
 				
-				/*
-				List<INotification> cleanup = new ArrayList<INotification>();
-				
-				for(INotification n : notificationsManifest.notifications) {
-					if(n.type == 0) {
-						cleanup.add(n);
-					}
-				}
-				
-				for(INotification n : cleanup) {
-					notificationsManifest.notifications.remove(n);
-				}
-				*/
-				
 				notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
 				saveState(notificationsManifest);
 			}

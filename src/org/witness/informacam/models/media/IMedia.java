@@ -427,19 +427,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
-
-				
-				/*
-				if(submission != null) {
-					submission.save();
-				}
-				*/
 			}
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-			
-			
 
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
@@ -532,13 +522,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	@Override
 	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
-		Log.d(LOG, "OK, EMBEDDED!!!");
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
 	}
 
 	@Override
 	public void onMetadataEmbeded(java.io.File version) {
-		Log.d(LOG, "(Java File?) OK, EMBEDDED!!!");
 		Activity a = InformaCam.getInstance().a;
 
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
