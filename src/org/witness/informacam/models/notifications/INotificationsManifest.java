@@ -4,8 +4,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.ListAdapterListener;
 import org.witness.informacam.utils.Constants.Models;
+
+import android.util.Log;
 
 public class INotificationsManifest extends Model {
 	public List<INotification> notifications = null;

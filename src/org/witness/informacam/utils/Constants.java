@@ -143,6 +143,7 @@ public class Constants {
 		}
 
 		public class Adapters {
+			public static final int ALL = 0;
 			public static final int NOTIFICATIONS = 1;
 			public static final int ORGANIZATIONS = 2;
 		}

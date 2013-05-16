@@ -718,6 +718,22 @@ public class InformaCam extends Service {
 		uploaderService.init();
 	}
 	
+	public void updateNotification(INotification notification) {
+		notificationsManifest.getById(notification._id).inflate(notification.asJson());
+		saveState(notificationsManifest);
+		
+		try {
+			((ListAdapterListener) a).updateAdapter(Codes.Adapters.NOTIFICATIONS);
+		} catch(ClassCastException e) {
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+			e.printStackTrace();
+		} catch(NullPointerException e) {
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+			e.printStackTrace();
+		}
+		
+	}
+	
 	public void addNotification(INotification notification) {
 		addNotification(notification, false, null);
 	}
@@ -759,10 +775,10 @@ public class InformaCam extends Service {
 		
 		try {
 			((ListAdapterListener) a).updateAdapter(Codes.Adapters.NOTIFICATIONS);
-		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
 		} catch(ClassCastException e) {
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+			e.printStackTrace();
+		} catch(NullPointerException e) {
 			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
 			e.printStackTrace();
 		}

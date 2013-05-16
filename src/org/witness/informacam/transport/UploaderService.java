@@ -412,8 +412,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
 						// TODO:  this is finished.  remove from queue... but persist parent data
 						Log.d(LOG, "HUZZAH!!!  AN UPLOAD:\n" + connection.result.asJson().toString());
-						informaCam.notificationsManifest.getById(connection.associatedNotification._id).taskComplete = true;
-						informaCam.saveState(informaCam.notificationsManifest);
+						connection.associatedNotification.taskComplete = true;
+						informaCam.updateNotification(connection.associatedNotification);
 						
 						return true;
 					}
