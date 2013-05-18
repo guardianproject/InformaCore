@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.ui.IRegionDisplay;
 
 import android.net.Uri;
 import android.os.Environment;
@@ -14,6 +15,11 @@ import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
 
 public class Constants {
+	
+	public interface IRegionDisplayListener {
+		public void onSelected(IRegionDisplay regionDisplay);
+		public int[] getSpecs();
+	}
 
 	public interface ModelListener {
 		public void requestUpdate();

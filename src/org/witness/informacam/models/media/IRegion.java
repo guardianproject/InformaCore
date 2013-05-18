@@ -3,6 +3,7 @@ package org.witness.informacam.models.media;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.ui.IRegionDisplay;
+import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 public class IRegion extends Model {
 	public String id = null;
@@ -23,11 +24,13 @@ public class IRegion extends Model {
 	}
 
 	public void init(IRegionBounds bounds, boolean isNew) {
+		InformaCam informaCam = InformaCam.getInstance();
+		
 		this.bounds = bounds;
-		regionDisplay = new IRegionDisplay(InformaCam.getInstance().a, this);
+		regionDisplay = new IRegionDisplay(informaCam.a, this);
 
 		if(isNew) {
-			this.bounds.calculate();
+			this.bounds.calculate(((IRegionDisplayListener) informaCam.a).getSpecs());
 			InformaCam.getInstance().informaService.addRegion(this);
 		}
 	}
@@ -37,8 +40,10 @@ public class IRegion extends Model {
 	}
 
 	public void update() {
-		bounds.calculate();
-		InformaCam.getInstance().informaService.updateRegion(this);
+		InformaCam informaCam = InformaCam.getInstance();
+		
+		bounds.calculate(((IRegionDisplayListener) informaCam.a).getSpecs());
+		informaCam.informaService.updateRegion(this);
 	}
 
 	public void delete(IMedia parent) {

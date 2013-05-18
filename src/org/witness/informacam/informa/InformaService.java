@@ -442,6 +442,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 		} catch(JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+		} catch(NullPointerException e) {
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+			e.printStackTrace();
+			
+			addRegion(region);
 		}
 
 	}

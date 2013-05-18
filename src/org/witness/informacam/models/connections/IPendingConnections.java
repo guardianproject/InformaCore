@@ -1,10 +1,14 @@
 package org.witness.informacam.models.connections;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 
 import android.util.Log;
 
@@ -13,32 +17,27 @@ public class IPendingConnections extends Model {
 	public List<IConnection> removal = null;
 	public List<IConnection> addition = null;
 
-	public IConnection getById(long id) {
-		for(IConnection connection : queue) {
-			if(connection._id == id) {
-				return connection;
+	public IConnection getById(final long id) {
+		Collection<IConnection> connections = Collections2.filter(queue, new Predicate<IConnection>() {
+			@Override
+			public boolean apply(IConnection connection) {
+				return connection._id == id;
 			}
-
-		}
-
-		return null;
+		});
+		
+		return connections.iterator().next();
 	}
 	
 	public void save() {
 		Log.d(LOG, "queue size: " + queue.size());
 		
 		if(removal != null && removal.size() > 0) {
-			for(IConnection connection : removal) {
-				Log.d(LOG, "removing connection " + connection._id);
-				queue.remove(connection);
-			}
-			
+			queue.removeAll(removal);			
 			removal = null;
 		}
 		
 		if(addition != null && addition.size() > 0) {
 			queue.addAll(addition);
-			
 			addition = null;
 		}
 		

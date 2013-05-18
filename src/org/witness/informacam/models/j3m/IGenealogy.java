@@ -9,4 +9,6 @@ public class IGenealogy extends Model {
 	public long dateCreated = 0L;
 	public String createdOnDevice = null;
 	public List<String> hashes = null;
+	
+	//public List<IPatch> patches = null;
 }

@@ -4,6 +4,7 @@ import org.witness.informacam.R;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.models.media.IRegionBounds;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
@@ -23,10 +24,6 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	public IRegionBounds bounds;
 	boolean isActive, isDragging;
 	public IRegion parent;
-	
-	public interface IRegionDisplayListener {
-		public void onSelected(IRegionDisplay regionDisplay);
-	}
 	
 	private final static String LOG = App.LOG;
 	

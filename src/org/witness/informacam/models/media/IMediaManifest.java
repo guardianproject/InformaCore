@@ -1,6 +1,7 @@
 package org.witness.informacam.models.media;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -13,6 +14,9 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+
 import android.util.Log;
 
 public class IMediaManifest extends Model {
@@ -24,61 +28,27 @@ public class IMediaManifest extends Model {
 		InformaCam.getInstance().saveState(((Model) this), new info.guardianproject.iocipher.File(IManifest.MEDIA));
 	}
 	
-	public List getAllByType(String mimeType) {
-		List mediaByType = null;
-		for(IMedia m : media) {
-			if(m.dcimEntry.mediaType.equals(mimeType)) {
-				if(mediaByType == null) {
-					mediaByType = new ArrayList<IMedia>();
-				}
-				
-				if(mimeType.equals(MimeType.IMAGE)) {
-					if(mediaByType == null) {
-						mediaByType = new ArrayList<IImage>();
-					}
-					
-					IImage m_ = new IImage(m);
-					mediaByType.add(m_);
-					continue;
-				}
-				
-				if(mimeType.equals(MimeType.VIDEO)) {
-					if(mediaByType == null) {
-						mediaByType = new ArrayList<IVideo>();
-					}
-					
-					IVideo m_ = new IVideo(m);
-					mediaByType.add(m_);
-					continue;
-				}
-				
-				if(mimeType.equals(MimeType.LOG)) {
-					if(mediaByType == null) {
-						mediaByType = new ArrayList<ILog>();
-					}
-					
-					ILog m_ = new ILog(m);
-					mediaByType.add(m_);
-					continue;
-				}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List getAllByType(final String mimeType) {
+		Collection<IMedia> media_ = Collections2.filter(media, new Predicate<IMedia>() {
+			@Override
+			public boolean apply(IMedia m) {
+				return m.dcimEntry.mediaType.equals(mimeType);
 			}
-		}
+		});
 		
-		if(mediaByType == null) {
-			Log.d(LOG, "no, media is null");
-		}
-		
-		return mediaByType;
+		return new ArrayList(media_);
 	}
 	
-	public IMedia getById(String mediaId) {
-		for(IMedia m : media) {
-			if(m._id.equals(mediaId)) {
-				return m;
+	public IMedia getById(final String mediaId) {
+		Collection<IMedia> media_ = Collections2.filter(media, new Predicate<IMedia>() {
+			@Override
+			public boolean apply(IMedia m) {
+				return m._id.equals(mediaId);
 			}
-		}
+		});
 		
-		return null;
+		return media_.iterator().next();
 	}
 	
 	public List<IMedia> getByDay(long timestamp, String mimeType) {
@@ -89,35 +59,24 @@ public class IMediaManifest extends Model {
 		return getByDay(timestamp, null, -1);
 	}
 	
-	public List<IMedia> getByDay(long timestamp, String mimeType, int limit) {
-		List<IMedia> media_ = media;
-		List<IMedia> matches = null;
-		if(mimeType != null) {
-			media_ = this.getAllByType(mimeType);
-		}
-		
-		for(IMedia m : media_) {
-			//Log.d(LOG, "MEDIA: " + m.asJson().toString());
-			boolean doesMatch = false;
-			if(!m.dcimEntry.mediaType.equals(MimeType.LOG)) {
-				doesMatch = TimeUtility.matchesDay(timestamp, m.dcimEntry.timeCaptured);
-			} else {
-				doesMatch = TimeUtility.matchesDay(timestamp, ((ILog) m).startTime);
+	public List<IMedia> getByDay(final long timestamp, final String mimeType, int limit) {
+		@SuppressWarnings("unchecked")
+		Collection<IMedia> media_ = Collections2.filter(mimeType == null ? media : getAllByType(mimeType), new Predicate<IMedia>() {
+			@Override
+			public boolean apply(IMedia m) {
+				if(m.dcimEntry.mediaType.equals(MimeType.LOG)) {
+					return TimeUtility.matchesDay(timestamp, ((ILog) m).startTime);
+				} else {
+					return TimeUtility.matchesDay(timestamp, m.dcimEntry.timeCaptured);
+				}
 			}
-			
-			if(doesMatch) {
-				if(matches == null) {
-					matches = new ArrayList<IMedia>();
-				}
-				
-				matches.add(m);
-				if(limit != -1 && matches.size() == limit) {
-					break;
-				}
-			}			
+		});
+		
+		if(limit != -1) {
+			return new ArrayList<IMedia>(media_).subList(0, (limit - 1));
 		}
 		
-		return matches;
+		return new ArrayList<IMedia>(media_);
 	}
 	
 	public void sortBy(int order) {
@@ -159,7 +118,7 @@ public class IMediaManifest extends Model {
 			break;
 		case Models.IMediaManifest.Sort.TYPE_PHOTO:
 			for(IMedia m : media) {
-				if(!m.dcimEntry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+				if(!m.dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					try {
 						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
 					} catch(JSONException e) {
@@ -171,7 +130,7 @@ public class IMediaManifest extends Model {
 			break;
 		case Models.IMediaManifest.Sort.TYPE_VIDEO:
 			for(IMedia m : media) {
-				if(!m.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+				if(!m.dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					try {
 						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
 					} catch(JSONException e) {

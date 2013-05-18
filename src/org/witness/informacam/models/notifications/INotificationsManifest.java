@@ -1,5 +1,7 @@
 package org.witness.informacam.models.notifications;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -10,25 +12,27 @@ import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.ListAdapterListener;
 import org.witness.informacam.utils.Constants.Models;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+
 import android.util.Log;
 
 public class INotificationsManifest extends Model {
-	public List<INotification> notifications = null;
+	public List<INotification> notifications = new ArrayList<INotification>();
 	
 	public INotificationsManifest() {
 		super();
 	}
 	
-	public INotification getById(String _id) {
-		if(notifications != null) {
-			for(INotification notification : notifications) {
-				if(notification._id.equals(_id)) {
-					return notification;
-				}
+	public INotification getById(final String _id) {
+		Collection<INotification> notifications_ = Collections2.filter(notifications, new Predicate<INotification>() {
+			@Override
+			public boolean apply(INotification notification) {
+				return notification._id.equals(_id);
 			}
-		}
+		});
 		
-		return null;
+		return notifications_.iterator().next();
 	}
 	
 	public void sortBy(int order) {
