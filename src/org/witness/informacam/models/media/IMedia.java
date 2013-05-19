@@ -320,7 +320,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 					// TODO: get locations from cache
 					byte[] formBytes = informaCam.ioService.getBytes(r.formPath, Type.IOCIPHER);
-					if(formBytes != null) {
+					if(formBytes != null && formBytes.length > 0) {
 						data.regionData.add(new IRegionData(r, IOUtility.xmlToJson(new ByteArrayInputStream(formBytes))));
 					}
 				}
