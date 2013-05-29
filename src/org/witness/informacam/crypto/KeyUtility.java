@@ -321,7 +321,6 @@ public class KeyUtility {
 			}
 			
 			if(sig.verify()) {
-				Log.d(LOG, "signature verified");
 				return true;
 			}
 			
@@ -337,11 +336,10 @@ public class KeyUtility {
 		}
 		
 		
-		Log.d(LOG, "signature verification failed so fuck you.");
 		return false;
 	}
 
-	@SuppressWarnings({ "deprecation", "unchecked" })
+	@SuppressWarnings({ "deprecation" })
 	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
 		BouncyCastleProvider bc = new BouncyCastleProvider();
 		Security.addProvider(bc);
@@ -387,80 +385,6 @@ public class KeyUtility {
 		}
 		
 		return null;
-		
-		/*
-		int buffSize = 1 <<16;
-		BouncyCastleProvider bc = new BouncyCastleProvider();
-
-		Security.addProvider(bc);
-
-		ByteArrayInputStream bais = new ByteArrayInputStream(data);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-		try {
-			OutputStream targetOut = new ArmoredOutputStream(baos);
-
-			PGPCompressedDataGenerator cdGen = new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
-			OutputStream compressedOut = cdGen.open(targetOut, new byte[buffSize]);
-
-			PGPSignatureGenerator sGen = new PGPSignatureGenerator(publicKey.getAlgorithm(), PGPUtil.SHA1, bc);
-			sGen.initSign(PGPSignature.BINARY_DOCUMENT, privateKey);
-			Iterator<String> uId = secretKey.getUserIDs();
-			while(uId.hasNext()) {
-				String userId = (String) uId.next();
-
-				PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-				spGen.setSignerUserID(false, userId);
-				sGen.setHashedSubpackets(spGen.generate());
-
-				// we only need the first userId
-				break;
-			}
-
-			sGen.generateOnePassVersion(false).encode(compressedOut);
-
-			PGPLiteralDataGenerator ldGen = new PGPLiteralDataGenerator();
-			OutputStream literalOut = ldGen.open(compressedOut, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, new Date(System.currentTimeMillis()), new byte[buffSize]);
-
-			byte[] buf = new byte[buffSize];
-			int read;
-
-			while((read = bais.read(buf, 0, buf.length)) > 0) {
-				literalOut.write(buf, 0, read);
-				sGen.update(buf, 0, read);
-			}
-
-			literalOut.close();
-			ldGen.close();
-
-			sGen.generate().encode(compressedOut);
-			compressedOut.close();
-			cdGen.close();
-
-			bais.close();
-
-			targetOut.close();
-			return baos.toByteArray();
-		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (PGPException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-
-		return null;
-		*/
-
 	}
 
 	public static IOrganization installICTD(String rc) {
