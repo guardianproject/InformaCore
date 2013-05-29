@@ -50,6 +50,10 @@ public class Constants {
 		public void onMetadataEmbeded(java.io.File version);
 	}
 	
+	public interface VideoConstructorListener {
+		public void onCommandFinished(java.io.File result);
+	}
+	
 	public interface ListAdapterListener {
 		public void updateAdapter(int which);
 	}
@@ -375,6 +379,7 @@ public class Constants {
 				public static final String SIZE = "size";
 				public static final String HASH = "hash";
 				public static final String FILE_NAME = "file_name";
+				public static final String J3M = "j3m";
 			}
 			
 			public class TempKeys {

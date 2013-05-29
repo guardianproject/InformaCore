@@ -7,6 +7,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -107,7 +108,7 @@ public class ImageConstructor {
 		} else if(destination == Type.FILE_SYSTEM) {
 			java.io.File newImage = new java.io.File(pathToNewImage);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
-			media.onMetadataEmbeded(newImage);
+			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
 		}
 		
 		// TODO: do cleanup, but these should be super-obliterated rather than just deleted.

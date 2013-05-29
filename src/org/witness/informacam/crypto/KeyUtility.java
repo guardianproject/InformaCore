@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.KeyPair;
@@ -294,9 +295,100 @@ public class KeyUtility {
 		return false;
 
 	}
+	
+	@SuppressWarnings("deprecation")
+	public static boolean verifySig(byte[] signature, byte[] data, PGPPublicKey publicKey) {
+		BouncyCastleProvider bc = new BouncyCastleProvider();
+		Security.addProvider(bc);
+		
+		ByteArrayInputStream bais_sig = new ByteArrayInputStream(signature);
+		ByteArrayInputStream bais_data = new ByteArrayInputStream(data);
+		
+		try {
+			InputStream is = PGPUtil.getDecoderStream(bais_sig);
+			PGPObjectFactory objFactory = new PGPObjectFactory(is);
+			
+			PGPCompressedData cData1 = (PGPCompressedData) objFactory.nextObject();
+			objFactory = new PGPObjectFactory(cData1.getDataStream());
+			
+			PGPSignatureList sigList = (PGPSignatureList) objFactory.nextObject();
+			PGPSignature sig = sigList.get(0);
+			sig.initVerify(publicKey, bc);
+			
+			int ch;
+			while((ch = bais_data.read()) >= 0) {
+				sig.update((byte) ch);
+			}
+			
+			if(sig.verify()) {
+				Log.d(LOG, "signature verified");
+				return true;
+			}
+			
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (PGPException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		
+		Log.d(LOG, "signature verification failed so fuck you.");
+		return false;
+	}
 
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
+		BouncyCastleProvider bc = new BouncyCastleProvider();
+		Security.addProvider(bc);
+
+		ByteArrayInputStream bais = new ByteArrayInputStream(data);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		
+		OutputStream targetOut = new ArmoredOutputStream(baos);
+		
+		try {
+			PGPSignatureGenerator sGen = new PGPSignatureGenerator(secretKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1, bc);
+			sGen.initSign(PGPSignature.BINARY_DOCUMENT, privateKey);
+			
+			PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedDataGenerator.ZLIB);
+			BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(targetOut));
+			
+			int ch;
+			while((ch = bais.read()) >= 0) {
+				sGen.update((byte) ch);
+			}
+			sGen.generate().encode(bOut);
+			
+			cGen.close();
+			bOut.close();
+			targetOut.close();
+			
+			Log.d(LOG, "NOW VERIFYING...");
+			if(verifySig(baos.toByteArray(), data, secretKey.getPublicKey())) {			
+				return baos.toByteArray();
+			}
+		} catch (NoSuchAlgorithmException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (PGPException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
+		
+		/*
 		int buffSize = 1 <<16;
 		BouncyCastleProvider bc = new BouncyCastleProvider();
 
@@ -324,6 +416,7 @@ public class KeyUtility {
 				// we only need the first userId
 				break;
 			}
+
 			sGen.generateOnePassVersion(false).encode(compressedOut);
 
 			PGPLiteralDataGenerator ldGen = new PGPLiteralDataGenerator();
@@ -364,29 +457,32 @@ public class KeyUtility {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
+
 		return null;
+		*/
+
 	}
-	
+
 	public static IOrganization installICTD(String rc) {
 		return installICTD(rc.getBytes());
 	}
-	
+
 	public static IOrganization installICTD(String rc, IOrganization organization) {
 		return installICTD(rc.getBytes(), organization);
 	}
-	
+
 	public static IOrganization installICTD(byte[] rc) {
 		return installICTD(rc, null);
 	}
 
 	public static IOrganization installICTD(byte[] rc, IOrganization organization) {
 		InformaCam informaCam = InformaCam.getInstance();
-		
+
 		if(organization == null) {
 			organization = new IOrganization();
 			organization.transportCredentials = new ITransportCredentials();
 		}
-		
+
 		// decrypt
 		byte[] rawContent = EncryptionUtility.decrypt(rc);
 		if(rawContent == null) {
@@ -441,11 +537,11 @@ public class KeyUtility {
 									if(value.indexOf("http://") != -1) {
 										urlBase = value.substring(value.indexOf("http://") + 7);
 									}
-									
+
 									if(value.indexOf("https://") != -1) {
 										urlBase = value.substring(value.indexOf("https://") + 8);
 									}
-									
+
 									if(urlBase != null) {
 										String[] urlAndPort = urlBase.split(":");
 										if(urlAndPort.length > 1) {
@@ -453,17 +549,17 @@ public class KeyUtility {
 											if(urlAndPort[1].contains("/")) {
 												urlAndPort[1] = urlAndPort[1].replace("/", "");
 											}
-											
+
 											organization.requestPort = Integer.parseInt(urlAndPort[1]);
 										}
 									} else {
 										urlBase = value + ((value.charAt(value.length() - 1) == '/') ? "" : "/");
 										organization.requestUrl = urlBase;
 									}
-									
+
 									Log.d(LOG, "urlBase: " + urlBase + "\nrequestUrl: " + organization.requestUrl);
-									
-									
+
+
 								} if(key.equals(Models.ITransportCredentials.PASSWORD)) {
 									organization.transportCredentials.certificatePassword = value;
 								}
@@ -484,28 +580,28 @@ public class KeyUtility {
 					// check to see if asc matches org fingerprint
 					try {
 						byte[] keyBlock = informaCam.ioService.getBytes(file.getAbsolutePath(), Type.IOCIPHER);
-						
+
 						String fingerprint = new String(Hex.encode(KeyUtility.extractPublicKeyFromBytes(Base64.encode(keyBlock, Base64.DEFAULT)).getFingerprint()));
-						
+
 						// try to match this up with an existing org
 						boolean found = false;
 						for(IOrganization org :informaCam.installedOrganizations.organizations) {
 							if(fingerprint.equals(org.organizationFingerprint)) {
 								organization.publicKeyPath = file.getAbsolutePath();
 								org.inflate(organization.asJson());
-								
+
 								organization = org;
 								found = true;
 								Log.d(LOG, "importing key with fingerprint: " + fingerprint + "\nwhich should match " + org.organizationFingerprint);
 								break;
 							}
 						}
-						
+
 						if(!found) {
 							Log.e(LOG, "this fingerprint does not match the organization fingerprint.");
 							return null;
 						}
-						
+
 					} catch (IOException e) {
 						Log.e(LOG, e.toString());
 						e.printStackTrace();
@@ -513,8 +609,8 @@ public class KeyUtility {
 						Log.e(LOG, e.toString());
 						e.printStackTrace();
 					}
-					
-					
+
+
 				}
 			}
 		}

@@ -161,10 +161,13 @@ public class ILog extends IMedia {
 		JSONObject j3mObject = null;
 		try {
 			j3mObject = new JSONObject();
-			j3mObject.put(Models.IMedia.j3m.DATA, data.asJson());
-			j3mObject.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
-			j3mObject.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3mObject.toString().getBytes())));			
+			JSONObject j3m = new JSONObject();
+			
+			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
+			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 
 			j3mZip.put("log.j3m", j3mObject.toString().getBytes());

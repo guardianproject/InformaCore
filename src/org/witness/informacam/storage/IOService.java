@@ -1,5 +1,6 @@
 package org.witness.informacam.storage;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,7 +113,14 @@ public class IOService extends Service {
 	public boolean saveBlob(byte[] data, java.io.File file, boolean delete, String uri) {
 		try {
 			java.io.FileOutputStream fos = openFileOutput(file.getName(), MODE_PRIVATE);
-			fos.write(data);
+			ByteArrayInputStream bais = new ByteArrayInputStream(data);
+			data = null;
+			
+			byte[] buf = new byte[1024];
+			int b;
+			while((b = bais.read(buf)) > 0) {
+				fos.write(buf, 0, b);
+			}
 			fos.flush();
 			fos.close();
 			
@@ -155,7 +163,15 @@ public class IOService extends Service {
 		Log.d(LOG, "touch " + file.getAbsolutePath());
 		try {
 			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
-			fos.write(data);
+			
+			ByteArrayInputStream bais = new ByteArrayInputStream(data);
+			data = null;
+			
+			byte[] buf = new byte[1024];
+			int b;
+			while((b = bais.read(buf)) > 0) {
+				fos.write(buf, 0, b);
+			}			
 			fos.flush();
 			fos.close();
 			

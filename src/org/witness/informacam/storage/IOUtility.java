@@ -122,13 +122,21 @@ public class IOUtility {
 
 	public static byte[] zipBytes(byte[] bytes, String fileName, int source) {
 		try {
+			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+			bytes = null;
+			
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();			
 			ZipOutputStream zos = new ZipOutputStream(baos);
 			ZipEntry ze = new ZipEntry(fileName);
-			ze.setSize(bytes.length);
+			ze.setSize(bais.available());
 			
 			zos.putNextEntry(ze);
-			zos.write(bytes);
+			byte[] buf = new byte[1024];
+			int b;
+			while((b = bais.read(buf)) > 0) {
+				zos.write(buf, 0, b);
+			}
+			
 			zos.closeEntry();
 			zos.close();
 			
@@ -169,7 +177,13 @@ public class IOUtility {
 				ZipEntry ze = new ZipEntry(file.getKey());
 				zos.putNextEntry(ze);
 
-				zos.write(file.getValue());
+				ByteArrayInputStream bais = new ByteArrayInputStream(file.getValue());
+				byte[] buf = new byte[1024];
+				int b;
+				while((b = bais.read(buf)) > 0) {
+					zos.write(buf, 0, b);
+				}
+				
 				zos.flush();
 			}
 
