@@ -304,7 +304,7 @@ public class InformaCam extends Service {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
 			e.printStackTrace();
 			startCode = INIT;
 

@@ -203,7 +203,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.ioService.saveBlob(informaCam.user, new java.io.File(IManifest.USER));
 
 		if(!informaCam.user.isInOfflineMode) {
-			IPendingConnections pendingConnections = informaCam.uploaderService.pendingConnections;
+			IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
 			
 			for(IConnection connection : pendingConnections.queue) {
 				connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
