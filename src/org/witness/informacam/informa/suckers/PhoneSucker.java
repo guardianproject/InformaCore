@@ -138,9 +138,15 @@ public class PhoneSucker extends SensorLogger {
 	
 	public ILogPack forceReturn() throws JSONException {
 		ILogPack fr = new ILogPack(Phone.Keys.IMEI, getIMEI());
-		fr.put(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, ba.getAddress());
-		fr.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, ba.getName());
-		fr.put(Phone.Keys.CELL_ID, getCellId());
+		if(ba != null) {
+			fr.put(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, ba.getAddress());
+			fr.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, ba.getName());
+		}
+		
+		String cId = getCellId() ;
+		if(cId != null) {
+			fr.put(Phone.Keys.CELL_ID, cId);
+		}
 		
 		return fr;
 	}
