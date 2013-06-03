@@ -9,8 +9,10 @@ import java.util.Vector;
 
 import info.guardianproject.iocipher.VirtualFileSystem;
 
+import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -22,6 +24,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -245,7 +248,7 @@ public class IOService extends Service {
 				iFis.read(bytes);
 				iFis.close();
 			} catch (FileNotFoundException e) {
-				Log.d(LOG, "no, no bytes");
+				Log.d(LOG, "no, no bytes (" + pathToData + ")");
 				return null;
 			} catch (IOException e) {
 				Log.e(LOG, e.toString());
@@ -285,7 +288,7 @@ public class IOService extends Service {
 			break;
 		}
 
-		Log.d(LOG, "bytes here: " + bytes.length);
+		Log.d(LOG, "(" + pathToData + ") bytes here: " + bytes.length);
 		return bytes;
 	}
 	
@@ -376,8 +379,18 @@ public class IOService extends Service {
 		dcimObserver = new DCIMObserver(informaCam.a);
 	}
 	
+	public int getDCIMDescriptorSize() {
+		return dcimObserver.dcimDescriptor.numEntries;
+	}
+	
 	public void stopDCIMObserver() {
-		dcimObserver.destroy();
+		Handler h = new Handler();
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				dcimObserver.destroy();
+			}
+		});
 	}
 
 	public boolean isMounted() {

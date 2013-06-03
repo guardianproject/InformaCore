@@ -26,7 +26,7 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
-public class CameraActivity extends Activity implements InformaCamEventListener, InformaCamStatusListener {
+public class CameraActivity extends Activity implements InformaCamStatusListener {
 	private final static String LOG = App.Camera.LOG;
 
 	private boolean doInit = true;
@@ -49,7 +49,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 				setContentView(R.layout.activity_camera_waiter);
 			}
 		});
-		
+
 		try {
 			Iterator<String> i = savedInstanceState.keySet().iterator();
 			while(i.hasNext()) {
@@ -74,19 +74,16 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 						cameraIntentFlag = Camera.Intents.CAMCORDER;
 						break;
 					}
-					
+
 				}
-				
+
 				init();
 			}
 		} catch(NullPointerException e) {
-			Log.e(LOG, "HEY THERE IS NOT INFORMACAM INSTANCE!");
 			e.printStackTrace();
-			
+
 			startService(new Intent(this, InformaCam.class));
 		}
-
-
 	}
 
 	private void init() {
@@ -95,7 +92,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 		for(ResolveInfo ri : resolveInfo) {
 			String packageName = ri.activityInfo.packageName;
 			String name = ri.activityInfo.name;
-			
+
 			Log.d(LOG, "found camera app: " + packageName);
 
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
@@ -121,7 +118,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	@Override
 	public void onResume() {
 		super.onResume();
-		
+
 	}
 
 	@Override
@@ -133,7 +130,7 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	public void onStop() {
 		super.onStop();
 
-	
+
 	}
 
 	@Override
@@ -154,39 +151,11 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
-		h.post(new Runnable() {
-			@Override
-			public void run() {
-				try{
-					Log.d(LOG, "unregistering dcim observers");
-					informaCam.ioService.stopDCIMObserver();
-					
-					if(controlsInforma) {
-						informaCam.stopInforma();
-					}
-				} catch(NullPointerException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-
-	@Override
-	public void onUpdate(Message message) {
-		byte[] dcimBytes = informaCam.ioService.getBytes(IManifest.DCIM, Type.IOCIPHER);
-		if(dcimBytes != null) {
-			IDCIMDescriptor dcimDescriptor = new IDCIMDescriptor();
-			dcimDescriptor.inflate(dcimBytes);
-
-			Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor.asJson().toString());
-			setResult(Activity.RESULT_OK, result);
-			finish();
+		if(controlsInforma) {
+			informaCam.stopInforma();
 		} else {
-			setResult(Activity.RESULT_CANCELED);
-			finish();
+			onInformaStop(null);
 		}
-
 	}
 
 	@Override
@@ -196,22 +165,27 @@ public class CameraActivity extends Activity implements InformaCamEventListener,
 			init();
 		}
 	}
-	
+
 	@Override
 	public void onInformaStart(Intent intent) {
 		informaCam.ioService.startDCIMObserver();
-		
+
 		cameraIntent = new Intent(cameraIntentFlag);
 		cameraIntent.setComponent(cameraComponent);
 		startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
-		
 	}
 
 	@Override
 	public void onInformaCamStop(Intent intent) {}
 
 	@Override
-	public void onInformaStop(Intent intent) {}
+	public void onInformaStop(Intent intent) {
+		informaCam.ioService.stopDCIMObserver();
+		
+		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptorSize());
+		setResult(Activity.RESULT_OK, result);
+		finish();
+	}
 
-	
+
 }

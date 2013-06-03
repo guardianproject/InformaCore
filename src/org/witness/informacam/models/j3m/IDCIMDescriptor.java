@@ -88,6 +88,8 @@ public class IDCIMDescriptor extends Model {
 						if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
 							entry.mediaType = MimeType.VIDEO;
 						}
+						
+						numEntries++;
 					}
 
 					entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
@@ -98,8 +100,6 @@ public class IDCIMDescriptor extends Model {
 				entry = analyze(entry, c);
 				if(entry != null) {
 					if(!isThumbnail) {
-						numEntries++;
-						
 						IMedia media = new IMedia();
 						media.dcimEntry = entry;
 						media._id = media.generateId(entry.originalHash);

@@ -184,7 +184,7 @@ public class Constants {
 
 	public final static class Suckers {
 		public final static String LOG = "******************** InformaCam : Suckers ********************";
-		public static final int GPS_WAIT_MAX = 60;
+		public static final int GPS_WAIT_MAX = 30;
 
 		public final static class CaptureEvent {
 			public final static int METADATA_CAPTURED = 272;
