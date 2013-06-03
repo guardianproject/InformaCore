@@ -7,13 +7,13 @@ if ! type -P android &> /dev/null; then
 fi
 readarray <<END
 external/android-ffmpeg-java
-external/OnionKit/library
+external/OnionKit/libonionkit
 external/IOCipher
 external/ODKFormParser
 END
 
 for project in "${MAPFILE[@]}"; do
-    android update lib-project --path $project -t 14
+    android update lib-project --path $project -t 1
 done
 
 android update project --path .
