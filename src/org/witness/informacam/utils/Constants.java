@@ -83,6 +83,10 @@ public class Constants {
 			public static final int INFORMA_SERVICE = 106;
 			public static final int BACKGROUND_PROCESSOR = 107;
 		}
+		
+		public final static class Tasks {
+			public final static int ANALYZE_MEDIA = 1;
+		}
 
 		public final static class Keys {
 			public final static String SERVICE = "service";

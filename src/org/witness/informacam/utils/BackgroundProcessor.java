@@ -2,6 +2,11 @@ package org.witness.informacam.utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.Actions;
@@ -17,17 +22,54 @@ import android.util.Log;
 public class BackgroundProcessor extends Service {
 	InformaCam informaCam;
 	
+	public class BackgroundTask {
+		public int type;
+		public String pathToData;
+		
+		public BackgroundTask(int type, String pathToData) {
+			this.type = type;
+			this.pathToData = pathToData;
+		}
+	}
+	
 	private static BackgroundProcessor backgroundProcessor;
 	
 	private final static String LOG = Background.LOG;
 	private final IBinder binder = new LocalBinder();
-	
-	List<Thread> tasks;
-	
+		
 	public class LocalBinder extends Binder {
 		public BackgroundProcessor getService() {
 			return BackgroundProcessor.this;
 		}
+	}
+	
+	public Object doTask(final BackgroundTask task) {
+		ExecutorService ex = Executors.newFixedThreadPool(100);
+		Future<Object> result = ex.submit(new Callable<Object>() {
+			
+
+			@Override
+			public Object call() throws Exception {
+				if(task.type == Codes.Tasks.ANALYZE_MEDIA) {
+					
+				}
+				
+				return null;
+			}
+		});
+		
+		
+		try {
+			return result.get();
+		} catch (InterruptedException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 	
 	@Override
@@ -39,9 +81,7 @@ public class BackgroundProcessor extends Service {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		informaCam = InformaCam.getInstance();
-		
-		tasks = new ArrayList<Thread>();
-		
+				
 		backgroundProcessor = this;
 		sendBroadcast(new Intent()
 			.setAction(Actions.ASSOCIATE_SERVICE)
@@ -60,10 +100,6 @@ public class BackgroundProcessor extends Service {
 	
 	public static BackgroundProcessor getInstance() {
 		return backgroundProcessor;
-	}
-	
-	public void addTask(Thread thread) {
-		tasks.add(thread);
 	}
 
 }
