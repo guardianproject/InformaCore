@@ -25,9 +25,20 @@ Follow these steps to setup your dev environment:
 
 5. Build IOCipher
 
-    cd external/IOCipher/
-    make -C external
-    ndk-build
+    make -C external/IOCipher/external/
+    ndk-build -C external/IOCipher/
+
+ Note: the 'make' build is setup to work with the Android NDK r8e. If you are
+ using an older version, or you are using the 32-bit NDK on a 64-bit system,
+ then you might need to set some variables manually as part of the command
+ line.  For example, using the 32-bit NDK on a 64-bit system:
+
+    make -C external/IOCipher/external NDK_PROCESSOR=x86
+
+ Or using an older compiler version:
+
+    make -C external/IOCipher/external NDK_COMPILER_VERSION=4.4.3
+
 
 6. **Using Eclipse**
 
