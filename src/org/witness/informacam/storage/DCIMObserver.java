@@ -58,61 +58,7 @@ public class DCIMObserver {
 
 	public void destroy() {
 		dcimDescriptor.stopSession();
-		
-		// XXX: wait until all dcimEntries are accounted for before continuing!
-//		if(dcimDescriptor.isFinishedAnalyzing()) {
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					for(IDCIMEntry entry : dcimDescriptor.thumbnails) {
-						informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
-						informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
-					}
-
-					dcimDescriptor.thumbnails = null;
-
-					informaCam.saveState(dcimDescriptor);
-
-					for(IMedia media : dcimDescriptor.dcimEntries) {
-						for(IMedia m : informaCam.mediaManifest.media) {
-							m.isNew = false;
-						}
-
-						informaCam.mediaManifest.media.add((IMedia) media);
-					}
-
-					// save it
-					if(informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA))) {
-						Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
-
-						Bundle data = new Bundle();
-						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
-
-						Message message = new Message();
-						message.setData(data);
-
-						try {
-							((InformaCamEventListener) informaCam.a).onUpdate(message);
-						} catch(ClassCastException e) {
-							Log.e(LOG, e.toString());
-							e.printStackTrace();
-						}
-					}
-					/*
-				} else {
-					Log.d(LOG, "SO COULD NOT SAVE DCIM DESCRIPTOR??");
-				}
-					 */
-				}
-			}).start();
-
-
-			for(ContentObserver o : observers) {
-				a.getContentResolver().unregisterContentObserver(o);
-			}
-
-			Log.d(LOG, "DCIM OBSERVER STOPPED");
-	//	}
+			
 	}
 
 	class Observer extends ContentObserver {
