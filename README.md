@@ -39,8 +39,11 @@ Follow these steps to setup your dev environment:
 
     make -C external/IOCipher/external NDK_COMPILER_VERSION=4.4.3
 
+6. Build JNI for JpegRedaction
 
-6. **Using Eclipse**
+    ndk-build
+
+7. **Using Eclipse**
 
     Import into Eclipse (using the "existing projects" option) the projects in this order:
 
