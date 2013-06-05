@@ -60,7 +60,7 @@ public class DCIMObserver {
 		dcimDescriptor.stopSession();
 		
 		// XXX: wait until all dcimEntries are accounted for before continuing!
-		if(dcimDescriptor.isFinishedAnalyzing()) {
+//		if(dcimDescriptor.isFinishedAnalyzing()) {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -112,7 +112,7 @@ public class DCIMObserver {
 			}
 
 			Log.d(LOG, "DCIM OBSERVER STOPPED");
-		}
+	//	}
 	}
 
 	class Observer extends ContentObserver {
