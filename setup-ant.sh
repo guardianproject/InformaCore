@@ -13,9 +13,7 @@ external/ODKFormParser
 END
 
 for project in "${MAPFILE[@]}"; do
-    android update lib-project --path $project -t 1
+    android update lib-project --path $project
 done
 
-android update project --path .
-
-
+android update project --path . --subprojects
