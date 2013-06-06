@@ -235,6 +235,7 @@ public class InformaCam extends Service {
 		ed = sp.edit();
 		
 		informaCam = this;
+		
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -344,7 +345,7 @@ public class InformaCam extends Service {
 				icDump.mkdir();
 			}
 			
-			byte[] mediaManifestBytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+			byte[] mediaManifestBytes = getInstance().ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 			
 			if(mediaManifestBytes != null) {
 				mediaManifest.inflate(mediaManifestBytes);
@@ -525,15 +526,15 @@ public class InformaCam extends Service {
 			if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 				bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-				bytes = informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
+				bytes = getInstance().ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
-				bytes = informaCam.ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
+				bytes = getInstance().ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
-				bytes = informaCam.ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+				bytes = getInstance().ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
-				bytes = informaCam.ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
+				bytes = getInstance().ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
-				bytes = informaCam.ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
+				bytes = getInstance().ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
 			}
 
 			if(bytes != null) {
@@ -680,20 +681,20 @@ public class InformaCam extends Service {
 		((InformaCamEventListener) a).onUpdate(message);
 	}
 
-	public static InformaCam getInstance() {
+	public synchronized static InformaCam getInstance() {
 		return informaCam;
 	}
 
 	public static InformaCam getInstance(Activity a) {
-		informaCam.associateActivity(a);
+		getInstance().associateActivity(a);
 		Log.d(LOG, "associating to activity " + a.getClass().getName());
-		return informaCam;
+		return getInstance();
 	}
 
 	public static InformaCam getInstance(FragmentActivity a) {
-		informaCam.associateActivity(a);
+		getInstance().associateActivity(a);
 		Log.d(LOG, "associating to activity " + a.getClass().getName());
-		return informaCam;
+		return getInstance();
 	}
 
 	private void associateActivity(Activity a) {
