@@ -12,12 +12,13 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.media.IMedia;
-import org.witness.informacam.utils.Constants.Ffmpeg;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Ffmpeg;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -36,18 +37,17 @@ public class VideoConstructor {
 	String pathToNewVideo;
 	int destination;
 
-	InformaCam informaCam;
 	IMedia media;
 	IConnection connection;
 
 	private final static String LOG = Ffmpeg.LOG;
 
-	public VideoConstructor() {
+	public VideoConstructor(Context context) {
 		// just push a call to ffmpeg
-		fileBinDir = informaCam.a.getDir("bin",0);
+		fileBinDir =  context.getDir("bin",0);
 
 		if (!new java.io.File(fileBinDir,libraryAssets[0]).exists()) {
-			BinaryInstaller bi = new BinaryInstaller(informaCam.a.getApplicationContext(),fileBinDir);
+			BinaryInstaller bi = new BinaryInstaller(context,fileBinDir);
 			try {
 				bi.installFromRaw();
 			} catch (FileNotFoundException e) {
@@ -60,11 +60,11 @@ public class VideoConstructor {
 		}
 	}
 	
-	public VideoConstructor(IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) {
-		this(media, pathToVideo, pathToJ3M, pathToNewVideo, destination, null);
+	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) {
+		this(context, media, pathToVideo, pathToJ3M, pathToNewVideo, destination, null);
 	}
 
-	public VideoConstructor(IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, IConnection connection) {
+	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, IConnection connection) {
 		this.pathToVideo = pathToVideo;
 		this.pathToJ3M = pathToJ3M;
 		this.media = media;
@@ -72,13 +72,12 @@ public class VideoConstructor {
 		this.destination = destination;
 		this.connection = connection;
 
-		informaCam = InformaCam.getInstance();
 
-		fileBinDir = informaCam.a.getDir("bin",0);
+		fileBinDir = context.getDir("bin",0);
 
 
 		if (!new java.io.File(fileBinDir,libraryAssets[0]).exists()) {
-			BinaryInstaller bi = new BinaryInstaller(informaCam.a.getApplicationContext(),fileBinDir);
+			BinaryInstaller bi = new BinaryInstaller(context,fileBinDir);
 			try {
 				bi.installFromRaw();
 			} catch (FileNotFoundException e) {
@@ -90,6 +89,8 @@ public class VideoConstructor {
 			}
 		}
 
+		InformaCam informaCam = InformaCam.getInstance();
+		
 		metadata = new java.io.File(Storage.EXTERNAL_DIR, "metadata_" + pathToJ3M.getName());
 		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER), metadata, true);
 
@@ -244,6 +245,9 @@ public class VideoConstructor {
 
 	public void finish() {
 		// move back to iocipher
+		
+		InformaCam informaCam = InformaCam.getInstance();
+		
 		if(destination == Type.IOCIPHER) {
 			info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);

@@ -17,7 +17,7 @@ import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 
 import android.app.Activity;
-import android.util.Log;
+import android.content.Context;
 
 public class SensorLogger<T> {
 	public T _sucker;
@@ -30,16 +30,12 @@ public class SensorLogger<T> {
 	File mLog;
 	JSONArray mBuffer;
 	
-	protected Activity a;
-	InformaCam informaCam;
-		
+	Context mContext;
 	boolean isRunning;
 	
 	private final static String LOG = Suckers.LOG; 
 		
-	public SensorLogger() {
-		informaCam = InformaCam.getInstance();
-		a = informaCam.a;
+	public SensorLogger(Context context) {
 		isRunning = true;
 	}
 	
@@ -116,10 +112,20 @@ public class SensorLogger<T> {
 						logPack.captureTypes = new ArrayList<Integer>();
 					}
 					logPack.captureTypes.add(CaptureEvent.SENSOR_PLAYBACK);
-					((SuckerCacheListener) informaCam.informaService).onUpdate(logPack);
+					if (mSuckerCacheListener != null)
+						mSuckerCacheListener.onUpdate(logPack);
+					
+					//((SuckerCacheListener) informaCam.informaService).onUpdate(logPack);
 				} catch(NullPointerException e) {}
 			}
 		}).start();
 		
+	}
+	
+	private SuckerCacheListener mSuckerCacheListener;
+	
+	public void setSuckerCacheListener (SuckerCacheListener scl)
+	{
+		mSuckerCacheListener = scl;
 	}
 }

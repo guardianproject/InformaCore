@@ -1,5 +1,7 @@
 package org.witness.informacam.storage;
 
+import info.guardianproject.iocipher.VirtualFileSystem;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,63 +9,34 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Vector;
 
-import info.guardianproject.iocipher.VirtualFileSystem;
-
-import org.json.JSONObject;
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.j3m.IDCIMDescriptor;
-import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Models;
 
-import android.app.Service;
-import android.content.Intent;
+import android.content.Context;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.Handler;
-import android.os.IBinder;
 import android.util.Log;
 
-public class IOService extends Service {
-	private final IBinder binder = new LocalBinder();
-	private static IOService IOService = null;
-
+public class IOService {
+	
 	private VirtualFileSystem vfs = null;
 	private DCIMObserver dcimObserver = null;
-	private InformaCam informaCam = InformaCam.getInstance();
-	
 	private List<java.io.File> cleanupQueue = new Vector<java.io.File>();
 
 	private final static String LOG = App.Storage.LOG;
 	
-	public class LocalBinder extends Binder {
-		public IOService getService() {
-			return IOService.this;
-		}
+	private Context mContext = null;
+	
+	public IOService (Context context)
+	{
+		mContext = context;
 	}
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
-
-	@Override
-	public void onCreate() {
-		Log.d(LOG, "started.");
-		IOService = this;
-		sendBroadcast(new Intent()
-			.setAction(Actions.ASSOCIATE_SERVICE)
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
-	}
-
-	@Override
 	public void onDestroy() {
-		super.onDestroy();
 
 		if(vfs != null) {
 			vfs.unmount();
@@ -74,17 +47,9 @@ public class IOService extends Service {
 			f.delete();
 		}
 		
-		sendBroadcast(new Intent()
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.IO_SERVICE)
-			.setAction(Actions.DISASSOCIATE_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
-		
+	
 	}
 
-	public static IOService getInstance() {
-		return IOService;
-	}
-	
 	public boolean saveBlob(byte[] data, java.io.File file, boolean isPublic) {
 		if(!isPublic) {
 			return saveBlob(data, file);
@@ -115,7 +80,7 @@ public class IOService extends Service {
 
 	public boolean saveBlob(byte[] data, java.io.File file, boolean delete, String uri) {
 		try {
-			java.io.FileOutputStream fos = openFileOutput(file.getName(), MODE_PRIVATE);
+			java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
 			ByteArrayInputStream bais = new ByteArrayInputStream(data);
 			data = null;
 			
@@ -132,7 +97,7 @@ public class IOService extends Service {
 			}
 			
 			if(uri != null) {
-				getContentResolver().delete(Uri.parse(uri), null, null);
+				mContext.getContentResolver().delete(Uri.parse(uri), null, null);
 			}
 			
 			return true;
@@ -154,16 +119,24 @@ public class IOService extends Service {
 
 	public boolean saveBlob(byte[] data, info.guardianproject.iocipher.File file, boolean delete, String uri) {
 
+		
 		if(vfs == null) {
+			//we shouldn't call UI code here
+			/*
+			 *
 			Log.d(LOG, "also, VFS IS NULL SO...");
+			
+			InformaCam informaCam = (InformaCam)mContext.getApplication();
 			
 			if(!informaCam.attemptLogin()) {
 				informaCam.promptForLogin(Codes.Routes.RETRY_SAVE, data, file);
 				return false;
-			}
+			}*/
+			return false;
 		}
 		
 		Log.d(LOG, "touch " + file.getAbsolutePath());
+		
 		try {
 			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
 			
@@ -183,7 +156,7 @@ public class IOService extends Service {
 			}
 			
 			if(uri != null) {
-				getContentResolver().delete(Uri.parse(uri), null, null);
+				mContext.getContentResolver().delete(Uri.parse(uri), null, null);
 			}
 			
 			return true;
@@ -215,7 +188,7 @@ public class IOService extends Service {
 			java.io.FileInputStream fis;
 			
 			try {
-				fis = openFileInput(pathToData);
+				fis = mContext.openFileInput(pathToData);
 				bytes = new byte[fis.available()];
 				fis.read(bytes);
 				fis.close();
@@ -231,12 +204,16 @@ public class IOService extends Service {
 		case Storage.Type.IOCIPHER:
 			
 			if(vfs == null) {
+				return null;
+				/*
 				Log.d(LOG, "also, VFS IS NULL SO...");
+				
+				InformaCam informaCam = (InformaCam)getApplication();
 				
 				if(!informaCam.attemptLogin()) {
 					informaCam.promptForLogin();
 					return null;
-				}
+				}*/
 			}
 			
 			info.guardianproject.iocipher.FileInputStream iFis;
@@ -260,7 +237,7 @@ public class IOService extends Service {
 			break;
 		case Storage.Type.APPLICATION_ASSET:
 			try {
-				InputStream is = getAssets().open(pathToData, MODE_PRIVATE);
+				InputStream is = mContext.getAssets().open(pathToData, Context.MODE_PRIVATE);
 				bytes = new byte[is.available()];
 				is.read(bytes);
 				is.close();
@@ -322,7 +299,7 @@ public class IOService extends Service {
 
 	public boolean initIOCipher(String authToken) {
 		try {
-			java.io.File storageRoot = new java.io.File(getExternalFilesDir(Storage.ROOT).getAbsolutePath(), Storage.IOCIPHER);
+			java.io.File storageRoot = new java.io.File(mContext.getExternalFilesDir(Storage.ROOT).getAbsolutePath(), Storage.IOCIPHER);
 			vfs = new VirtualFileSystem(storageRoot);
 			vfs.mount(authToken);
 			
@@ -350,7 +327,7 @@ public class IOService extends Service {
 	public boolean delete(String pathToFile, int source) {
 		switch(source) {
 		case Storage.Type.INTERNAL_STORAGE:
-			return deleteFile(pathToFile);
+			return mContext.deleteFile(pathToFile);
 		case Storage.Type.IOCIPHER:
 			info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToFile);
 			if(file.isDirectory()) {
@@ -360,7 +337,7 @@ public class IOService extends Service {
 			}
 			return file.delete();
 		case Storage.Type.CONTENT_RESOLVER:
-			return getContentResolver().delete(Uri.parse(pathToFile), null, null) > 0 ? true : false;
+			return mContext.getContentResolver().delete(Uri.parse(pathToFile), null, null) > 0 ? true : false;
 		default:
 			return false;
 		}
@@ -371,12 +348,9 @@ public class IOService extends Service {
 		vfs.unmount();
 	}
 
-	public void startDCIMObserver() {
-		if(informaCam == null) {
-			informaCam = InformaCam.getInstance();
-		}
-		
-		dcimObserver = new DCIMObserver(informaCam.a);
+	public void startDCIMObserver(InformaCamEventListener listener) {
+	
+		dcimObserver = new DCIMObserver(mContext, listener);
 	}
 	
 	public int getDCIMDescriptorSize() {

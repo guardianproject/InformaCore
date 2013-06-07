@@ -32,18 +32,18 @@ import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.ui.IRegionDisplay;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -84,7 +84,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public boolean delete() {
 		InformaCam informaCam = InformaCam.getInstance();
 
-		if(informaCam.mediaManifest.media.remove(this)) {
+		if(informaCam.mediaManifest.removeMediaItem(this)) {
 			informaCam.ioService.delete(rootFolder, Type.IOCIPHER);
 			informaCam.mediaManifest.save();
 			return true;
@@ -166,7 +166,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public IRegion addRegion() {
 		try {
-			return addRegion(0, 0, 0, 0);
+			return addRegion(null, 0, 0, 0, 0, null);
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
@@ -175,11 +175,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return null;
 	}
 
-	public IRegion addRegion(int top, int left, int width, int height) throws JSONException {
-		return addRegion(top, left, width, height, -1L, -1L);
+	public IRegion addRegion(Activity activity, int top, int left, int width, int height, IRegionDisplayListener listener) throws JSONException {
+		return addRegion(activity, top, left, width, height, -1L, -1L, listener);
 	}
 
-	public IRegion addRegion(int top, int left, int width, int height, long startTime, long endTime) throws JSONException {
+	public IRegion addRegion(Activity activity, int top, int left, int width, int height, long startTime, long endTime, IRegionDisplayListener listener) throws JSONException {
 		if(associatedRegions == null) {
 			Log.d(LOG, "initing associatedRegions");
 			associatedRegions = new ArrayList<IRegion>();
@@ -192,7 +192,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			region = videoRegion;
 		}
 
-		region.init(new IRegionBounds(top, left, width, height, startTime, endTime));
+		region.init(activity, new IRegionBounds(top, left, width, height, startTime, endTime), listener);
 
 		associatedRegions.add(region);
 		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
@@ -280,15 +280,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 
-	public boolean export(Handler h) {
-		return export(h, null, true);
+	public boolean export(Context context, Handler h) {
+		return export(context, h, null, true);
 	}
 
-	public boolean export(Handler h, IOrganization organization) {
-		return export(h, organization, false);
+	public boolean export(Context context, Handler h, IOrganization organization) {
+		return export(context, h, organization, false);
 	}
 
-	public boolean export(Handler h, IOrganization organization, boolean share) {
+	public boolean export(Context context, Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
 		
@@ -333,17 +333,17 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 20;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		notification.label = informaCam.a.getString(R.string.export);
+		notification.label = context.getString(R.string.export);
 
-		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? informaCam.a.getString(R.string.image) :informaCam.a.getString(R.string.video);
+		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
 		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
-			mimeType = informaCam.a.getString(R.string.log);
+			mimeType = context.getString(R.string.log);
 		}
 
-		notification.content = informaCam.a.getString(R.string.you_exported_this_x, mimeType);
+		notification.content = context.getString(R.string.you_exported_this_x, mimeType);
 		if(organization != null) {
 			intent.intendedDestination = organization.organizationName;
-			notification.content = informaCam.a.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
+			notification.content = context.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
 		}
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
@@ -389,7 +389,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, shareFile.getAbsolutePath(), Type.FILE_SYSTEM);
 				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, shareFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.FILE_SYSTEM);
+					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, shareFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.FILE_SYSTEM);
 				}
 
 				notification.type = Models.INotification.Type.SHARED_MEDIA;				
@@ -414,7 +414,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						informaCam.uploaderService.pendingConnections.save();						
 					}
 
-					VideoConstructor videoConstructor = new VideoConstructor(this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
+					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					if(organization != null) {
 						notification.taskComplete = false;
@@ -530,15 +530,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	@Override
 	public void onMetadataEmbeded(java.io.File version) {
-		Activity a = InformaCam.getInstance().a;
 
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
-
+/*
 		Intent intent = new Intent()
 			.setAction(Intent.ACTION_SEND)
 			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(version))
 			.setType("file/");
 
-		a.startActivity(Intent.createChooser(intent, a.getString(R.string.send)));
+		context.startActivity(Intent.createChooser(intent, context.getString(R.string.send)));
+		*/
 	}	
 }

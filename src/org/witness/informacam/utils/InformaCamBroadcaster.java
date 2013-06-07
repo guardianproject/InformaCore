@@ -35,23 +35,25 @@ public class InformaCamBroadcaster extends BroadcastReceiver {
 			}
 		}
 
-		try {
+		InformaCamStatusListener sListener = informaCam.getStatusListener();
+		
+		if (sListener != null)
+		{
 			if(intent.getAction().equals(Actions.INFORMACAM_START)) {
-				Log.d(LOG, "HEY INFORMACAM START on my process: " + informaCam.getProcess());
-				((InformaCamStatusListener) informaCam.a).onInformaCamStart(intent);
-
+				
+			//	Log.d(LOG, "HEY INFORMACAM START on my process: " + informaCam.getProcess());
+				sListener.onInformaCamStart(intent);
+	
 			} else if(intent.getAction().equals(Actions.INFORMACAM_STOP)) {
-				Log.d(LOG, "HEY INFORMACAM STOP on my process: " + informaCam.getProcess());
-				((InformaCamStatusListener) informaCam.a).onInformaCamStop(intent);
+			//	Log.d(LOG, "HEY INFORMACAM STOP on my process: " + informaCam.getProcess());
+				sListener.onInformaCamStop(intent);
 			} else if(intent.getAction().equals(Actions.INFORMA_START)) {
-				Log.d(LOG, "HEY INFORMA (SERVICE) START on my process: " + informaCam.getProcess());
-				((InformaCamStatusListener) informaCam.a).onInformaStart(intent);
+			//	Log.d(LOG, "HEY INFORMA (SERVICE) START on my process: " + informaCam.getProcess());
+				sListener.onInformaStart(intent);
 			} else if(intent.getAction().equals(Actions.INFORMA_STOP)) {
-				((InformaCamStatusListener) informaCam.a).onInformaStop(intent);
-				Log.d(LOG, "HEY INFORMA (SERVICE) STOP on my process: " + informaCam.getProcess());
+				sListener.onInformaStop(intent);
+			//	Log.d(LOG, "HEY INFORMA (SERVICE) STOP on my process: " + informaCam.getProcess());
 			}
-		} catch(ClassCastException e) {
-			Log.e(LOG, "there is no handler for this broadcast.  Is that OK?");
 		}
 	}
 

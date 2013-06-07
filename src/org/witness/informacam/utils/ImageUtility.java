@@ -7,11 +7,12 @@ import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -23,9 +24,9 @@ public class ImageUtility {
 		return b.getWidth() > b.getHeight() ? Codes.Media.ORIENTATION_LANDSCAPE : Codes.Media.ORIENTATION_PORTRAIT;
 	}
 	
-	public static Bitmap getVideoFrame(java.io.File source, int[] dims) {
+	public static Bitmap getVideoFrame(Context context, java.io.File source, int[] dims) {
 		try {
-			VideoConstructor videoConstructor = new VideoConstructor();
+			VideoConstructor videoConstructor = new VideoConstructor(context);
 			return videoConstructor.getAFrame(source, dims);
 		} catch (IOException e) {
 			Log.e(LOG, e.toString());

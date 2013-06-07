@@ -2,12 +2,13 @@ package org.witness.informacam.ui.screens;
 
 import java.util.List;
 
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.ui.WizardActivity;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.WizardListener;
-import org.witness.informacam.ui.WizardActivity;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -50,7 +51,11 @@ public class WizardStepThree extends Fragment implements OnClickListener, Inform
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		((InformaCam)getActivity().getApplication()).setEventListener(this);
+
 	}
+	
 	
 	@Override
 	public View onCreateView(LayoutInflater li, ViewGroup container, Bundle savedInstanceState) {

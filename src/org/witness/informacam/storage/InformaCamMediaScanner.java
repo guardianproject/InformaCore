@@ -17,16 +17,19 @@ import android.provider.MediaStore;
 public class InformaCamMediaScanner implements MediaScannerConnectionClient {	
 	private MediaScannerConnection msc;
 	private File f;
-	private Activity a;
+	private Context mContext;
+	
+	private OnMediaScannedListener mListener;
 	
 	public interface OnMediaScannedListener {
 		public void onMediaScanned(Uri uri);
 	}
 	
-	public InformaCamMediaScanner(Activity a, File f) {
+	public InformaCamMediaScanner(Context context, File f, OnMediaScannedListener listener) {
 		this.f = f;
-		this.a = a;
-		msc = new MediaScannerConnection(InformaCam.getInstance().a, this);
+		mListener = listener;
+		mContext = context;
+		msc = new MediaScannerConnection(context, this);
 		msc.connect();
 	}
 	
@@ -37,7 +40,7 @@ public class InformaCamMediaScanner implements MediaScannerConnectionClient {
 
 	@Override
 	public void onScanCompleted(String path, Uri uri) {
-		((OnMediaScannedListener) a).onMediaScanned(uri);
+		mListener.onMediaScanned(uri);
 	}
 	
 	public static Uri getUriFromFile(Context context, File file) {
