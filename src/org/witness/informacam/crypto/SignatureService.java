@@ -26,68 +26,28 @@ import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
+import org.witness.informacam.utils.Constants.Codes;
 
-import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
-import android.os.Binder;
-import android.os.IBinder;
-import android.util.Log;
 
-public class SignatureService extends Service {
-	private final IBinder binder = new LocalBinder();
-	private static SignatureService signatureService = null;
+public class SignatureService {
 	
 	private PGPSecretKey secretKey = null;
 	private PGPPrivateKey privateKey = null;
 	private PGPPublicKey publicKey = null;
 	private String authKey = null;
 	
-	InformaCam informaCam;
-	
-	private final static String LOG = App.Crypto.LOG;
-	
-	public class LocalBinder extends Binder {
-		public SignatureService getService() {
-			return SignatureService.this;
-		}
-	}
-	
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
-	
-	@Override
-	public void onCreate() {
-		Log.d(LOG, "started.");
-		informaCam = InformaCam.getInstance();
-
-		signatureService = this;
-		sendBroadcast(new Intent()
-			.setAction(Actions.ASSOCIATE_SERVICE)
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		sendBroadcast(new Intent()
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.SIGNATURE_SERVICE)
-			.setAction(Actions.DISASSOCIATE_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
+	public SignatureService (Context context)
+	{
+		
 	}
 	
 	
 	@SuppressWarnings({"deprecation" })
-	public void initKey() throws PGPException {
-		if(informaCam == null) {
-			informaCam = InformaCam.getInstance();
-		}
+	public void initKey(ISecretKey sk) throws PGPException {
 		
-		ISecretKey sk = (ISecretKey) informaCam.getModel(new ISecretKey());
 
 		authKey = sk.secretAuthToken;
 		secretKey = KeyUtility.extractSecretKey(sk.secretKey.getBytes());
@@ -180,8 +140,5 @@ public class SignatureService extends Service {
 		}
 	}
 	
-	public static SignatureService getInstance() {
-		return signatureService;
-	}
 
 }

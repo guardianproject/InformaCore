@@ -33,6 +33,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.utils.Constants.App.Crypto;
 
+import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 
@@ -100,7 +101,7 @@ public class EncryptionUtility {
 		}
 	}
 	
-	public static info.guardianproject.iocipher.File decrypt(info.guardianproject.iocipher.File file, info.guardianproject.iocipher.File newFile) {
+	public static info.guardianproject.iocipher.File decrypt(info.guardianproject.iocipher.File file, info.guardianproject.iocipher.File newFile, ISecretKey secretKey) {
 		try {
 			info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(file);
 			byte[] bytes = new byte[fis.available()];
@@ -108,7 +109,7 @@ public class EncryptionUtility {
 			fis.close();
 
 			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(newFile);
-			fos.write(decrypt(bytes));
+			fos.write(decrypt(bytes, secretKey));
 			fos.flush();
 			fos.close();
 
@@ -128,23 +129,20 @@ public class EncryptionUtility {
 
 	}
 	
-	public static byte[] decrypt(byte[] bytes) {
-		return decrypt(bytes, false);
+	public static byte[] decrypt(byte[] bytes, ISecretKey secretKey) {
+		return decrypt(bytes, false, secretKey);
 	}
 	
 	@SuppressWarnings({ "deprecation", "rawtypes" })
-	public static byte[] decrypt(byte[] bytes, boolean isBase64Encoded) {
+	public static byte[] decrypt(byte[] bytes, boolean isBase64Encoded, ISecretKey secretKey) {
 		if(isBase64Encoded) {
 			bytes = Base64.decode(bytes, Base64.DEFAULT);
 		}
 		
-		InformaCam informaCam = InformaCam.getInstance();
 		byte[] decryptedBytes = null;
 		PGPSecretKey sk = null;
 		PGPPrivateKey pk = null;
 		
-		ISecretKey secretKey = (ISecretKey) informaCam.getModel(new ISecretKey());
-
 		try {
 			
 			BouncyCastleProvider bc = new BouncyCastleProvider();
