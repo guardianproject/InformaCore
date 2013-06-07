@@ -16,18 +16,19 @@ import org.witness.informacam.models.connections.IConnection;
 import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.connections.IUpload;
+import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IIdentity;
 import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.App.Transport;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.HttpUtilityListener;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.App.Transport;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.InnerBroadcaster;
 
 import android.app.Service;
@@ -42,10 +43,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
-public class UploaderService extends Service implements HttpUtilityListener {
-	private final IBinder binder = new LocalBinder();
-	private static UploaderService uploaderService = null;
-
+public class UploaderService implements HttpUtilityListener {
+	
 	private final static String LOG = App.Transport.LOG; 
 
 	OrbotHelper oh;
@@ -53,27 +52,20 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	private boolean isRunning = false;
 	private int connectionType = -1;
 
-	InformaCam informaCam;
 	Timer queueMaster;
 
 	List<InnerBroadcaster> br = new ArrayList<InnerBroadcaster>();
 	Handler h = new Handler();
 
-	public class LocalBinder extends Binder {
-		public UploaderService getService() {
-			return UploaderService.this;
-		}
-	}
-
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
-
-	@Override
-	public void onCreate() {
-		Log.d(LOG, "started.");
-		oh = new OrbotHelper(this);
+	Context mContext;
+	InformaCam mInformaCam;
+	
+	public UploaderService (Context context, InformaCam informaCam) {
+	
+		mContext = context;
+		mInformaCam = informaCam;
+		
+		oh = new OrbotHelper(context);
 
 		br.add(new InnerBroadcaster(new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"), android.os.Process.myPid()) {
 
@@ -91,16 +83,10 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			}
 		});
 
-		uploaderService = this;
-		sendBroadcast(new Intent()
-			.setAction(Actions.ASSOCIATE_SERVICE)
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
+	public void shutdown (InformaCam informaCam)
+	{
 		try {
 			queueMaster.cancel();
 		} catch(NullPointerException e) {
@@ -113,15 +99,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			informaCam.saveState(pendingConnections);
 		}
 
-		sendBroadcast(new Intent()
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.UPLOADER_SERVICE)
-			.setAction(Actions.DISASSOCIATE_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
-	public static UploaderService getInstance() {
-		return uploaderService;
-	}
 
 	private void checkForConnections() {
 		queueMaster = new Timer();
@@ -141,38 +120,17 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		queueMaster.schedule(tt, 0, (long) ((1000 * 60) * 0.5));
 	}
 
-	private void checkForOrbotStartup() {
-		Log.d(LOG, "Orbot has not started yet so i am waiting for it...");
-		final Timer t = new Timer();
-		TimerTask tt = new TimerTask() {
-
-			public void stop() {
-				t.cancel();
-				t.purge();
-				onOrbotRunning();
-			}
-
-			@Override
-			public void run() {
-				if(oh.isOrbotRunning()) {
-					stop();
-				}
-			}
-
-		};
-		t.schedule(tt, 0, 500);
-	}
-
+	
 	private void registerConnectivityUpdates() {
 		for(BroadcastReceiver b : br) {
-			registerReceiver(b, ((InnerBroadcaster) b).intentFilter);
+			mContext.registerReceiver(b, ((InnerBroadcaster) b).intentFilter);
 		}
 	}
 
 	private void unregisterConnectivityUpdates() {
 		for(BroadcastReceiver b : br) {
 			try {
-				unregisterReceiver(b);
+				mContext.unregisterReceiver(b);
 			} catch(IllegalArgumentException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -181,7 +139,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	private int getConnectionStatus() {
-		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo ni = cm.getActiveNetworkInfo();
 		try {
 			Log.d(LOG, "active network: " + ni.getTypeName());
@@ -197,7 +155,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			h.post(new Runnable() {
 				@Override
 				public void run() {
-					oh.promptToInstall(informaCam.a);
+				//	oh.promptToInstall(this);
 
 				}
 			});
@@ -206,10 +164,20 @@ public class UploaderService extends Service implements HttpUtilityListener {
 		}
 
 		if(!oh.isOrbotRunning()) {
+			
+			 Intent intent = new Intent(OrbotHelper.URI_ORBOT);
+    		 intent.setAction(OrbotHelper.ACTION_START_TOR);
+    		 mContext.startActivity(intent);
+    		 
+    		 /*
 			h.post(new Runnable() {
 				@Override
 				public void run() {
-					oh.requestOrbotStart(informaCam.a);
+					
+					
+					
+	        		 
+					oh.requestOrbotStart(this);this.
 					new Thread(new Runnable() {
 						@Override
 						public void run() {
@@ -217,7 +185,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 						}
 					}).start();
 				}
-			});
+			});*/
 
 			return false;
 		}
@@ -232,7 +200,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			informaCam.saveState(pendingConnections);
 			 */
 			Log.d(LOG, "*** STARTING A NEW RUN ***");
-			pendingConnections = (IPendingConnections) informaCam.getModel(pendingConnections);
+			pendingConnections = (IPendingConnections) mInformaCam.getModel(pendingConnections);
 
 			if(pendingConnections.queue != null && pendingConnections.queue.size() > 0) {
 				if(!runOrbotCheck()) {
@@ -320,9 +288,9 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	private void initPendingConnections() {
-		informaCam = InformaCam.getInstance();
-		if(informaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null) {
-			pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
+		
+		if(mInformaCam.ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER) != null) {
+			pendingConnections = (IPendingConnections) mInformaCam.getModel(new IPendingConnections());
 		} else {
 			pendingConnections = new IPendingConnections();
 		}
@@ -342,7 +310,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				connection.isHeld = false;
 			}
 			
-			informaCam.saveState(pendingConnections);
+			mInformaCam.saveState(pendingConnections);
 		}
 
 		if(!runOrbotCheck()) {
@@ -370,7 +338,8 @@ public class UploaderService extends Service implements HttpUtilityListener {
 	}
 
 	private boolean routeResult(IConnection connection) {
-		IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) informaCam.getModel(new IInstalledOrganizations());
+
+		IInstalledOrganizations installedOrganizations = (IInstalledOrganizations) mInformaCam.getModel(new IInstalledOrganizations());
 		IOrganization organization = installedOrganizations.getByName(connection.destination.organizationName);
 
 		switch(connection.result.responseCode) {
@@ -405,7 +374,7 @@ public class UploaderService extends Service implements HttpUtilityListener {
 					} else if(connection.result.data.has(Models.IConnection.PARENT)) {
 						// TODO:  this is finished.  remove from queue... but persist parent data
 						connection.associatedNotification.taskComplete = true;
-						informaCam.updateNotification(connection.associatedNotification);
+						mInformaCam.updateNotification(connection.associatedNotification);
 						
 						return true;
 					}
@@ -420,10 +389,10 @@ public class UploaderService extends Service implements HttpUtilityListener {
 			try {
 				organization.identity = new IIdentity();
 				organization.identity.inflate(connection.result.data.getJSONObject(Models.IIdentity.SOURCE));
-				informaCam.saveState(installedOrganizations);
+				mInformaCam.saveState(installedOrganizations);
 
-				INotification notification = new INotification(informaCam.a.getString(R.string.key_sent), informaCam.a.getString(R.string.you_have_successfully_sent, organization.organizationName), Models.INotification.Type.KEY_SENT);
-				informaCam.addNotification(notification);
+				INotification notification = new INotification(mContext.getString(R.string.key_sent), mContext.getString(R.string.you_have_successfully_sent, organization.organizationName), Models.INotification.Type.KEY_SENT);
+				mInformaCam.addNotification(notification);
 				
 				return true;
 			} catch (JSONException e) {
@@ -436,10 +405,13 @@ public class UploaderService extends Service implements HttpUtilityListener {
 				String rawContent = connection.result.data.getString(Models.IResult.CONTENT);
 				switch(connection.knownCallback) {
 				case Models.IResult.ResponseCodes.INSTALL_ICTD:
-					IOrganization mergeOrganization = KeyUtility.installICTD(rawContent, organization);
+					
+					ISecretKey secretKey = (ISecretKey) mInformaCam.getModel(new ISecretKey());
+					 
+					IOrganization mergeOrganization = KeyUtility.installICTD(rawContent, organization, secretKey);
 					if(mergeOrganization != null) {
 						organization.inflate(mergeOrganization);
-						informaCam.saveState(installedOrganizations);
+						mInformaCam.saveState(installedOrganizations);
 					}
 
 					break;
