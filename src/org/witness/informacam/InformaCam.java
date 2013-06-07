@@ -13,6 +13,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.witness.informacam.crypto.AesUtility;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.models.credentials.IKeyStore;
@@ -28,26 +29,24 @@ import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.transport.UploaderService;
-import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.ListAdapterListener;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
-
-import dalvik.system.DexFile;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.app.Dialog;
 import android.app.NotificationManager;
-import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -57,23 +56,20 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import dalvik.system.DexFile;
 
-public class InformaCam extends Service {	
-	public final LocalBinder binder = new LocalBinder();
+public class InformaCam extends Application {	
+	
 	private final static String LOG = App.LOG;
 
 	private List<InnerBroadcaster> broadcasters = new Vector<InnerBroadcaster>();
@@ -92,8 +88,6 @@ public class InformaCam extends Service {
 	public InformaService informaService = null;
 	public BackgroundProcessor backgroundProcessor = null;
 
-	private static InformaCam informaCam;
-	public Activity a = null;
 	public Handler h = new Handler();
 
 	public List<String> models = new ArrayList<String>();
@@ -104,25 +98,31 @@ public class InformaCam extends Service {
 	
 	private int processId;
 
-	public class LocalBinder extends Binder {
-		public InformaCam getService() {
-			processId = android.os.Process.myPid();
-			
-			return InformaCam.this;
-		}
-	}
+	private static InformaCam mInstance = null;
+	
 
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.d(LOG, "ON START COMMAND RECEIVED");
-		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		return START_STICKY;
-	}
+	private ListAdapterListener mListAdapterListener = null;
+	private InformaCamStatusListener mStatusListener = null;
+	private InformaCamEventListener mEventListener = null;
+	
+	
 
+	//we really need to get rid of this
+	public static InformaCam getInstance ()
+	{
+		return mInstance;
+	}
+	
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		
+		mInstance = this;
+		
 		Log.d(LOG, "InformaCam service started via intent");
+
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		broadcasters.add(new InnerBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE), processId) {
 			@Override
@@ -136,15 +136,15 @@ public class InformaCam extends Service {
 					int serviceCode = intent.getIntExtra(Codes.Keys.SERVICE, 0);
 					
 					switch(serviceCode) {
-					case Codes.Routes.SIGNATURE_SERVICE:
-						signatureService = SignatureService.getInstance();
-						break;
-					case Codes.Routes.IO_SERVICE:
-						ioService = IOService.getInstance();
-						break;
-					case Codes.Routes.UPLOADER_SERVICE:
-						uploaderService = UploaderService.getInstance();
-						break;
+				//	case Codes.Routes.SIGNATURE_SERVICE:
+					//	signatureService = SignatureService.getInstance();
+						//break;
+					//case Codes.Routes.IO_SERVICE:
+					//	ioService = IOService.getInstance();
+					//	break;
+				//	case Codes.Routes.UPLOADER_SERVICE:
+				//		uploaderService = UploaderService.getInstance();
+				//		break;
 					case Codes.Routes.INFORMA_SERVICE:
 						informaService = InformaService.getInstance();
 						break;
@@ -153,29 +153,7 @@ public class InformaCam extends Service {
 						break;
 					}
 
-					if(signatureService == null) {
-						Log.d(LOG, "cannot init yet (signature) ... trying again");
-						return;
-					}
-
-					if(uploaderService == null) {
-						Log.d(LOG, "cannot init yet (uploader) ... trying again");
-						return;
-					}
-
-					if(ioService == null) {
-						Log.d(LOG, "cannot init yet (io) ... trying again");
-						return;
-					}
-
-					if(serviceCode != Codes.Routes.INFORMA_SERVICE && serviceCode != Codes.Routes.BACKGROUND_PROCESSOR) {
-						new Thread(new Runnable() {
-							@Override
-							public void run() {
-								startup();
-							}
-						}).start();
-					}
+				
 
 				} 
 			}
@@ -225,50 +203,37 @@ public class InformaCam extends Service {
 			registerReceiver(br, ((InnerBroadcaster) br).intentFilter);
 		}
 
-		ioServiceIntent = new Intent(this, IOService.class);
-		signatureServiceIntent = new Intent(this, SignatureService.class);
-		uploaderServiceIntent = new Intent(this, UploaderService.class);
+		//ioServiceIntent = new Intent(this, IOService.class);
+		//signatureServiceIntent = new Intent(this, SignatureService.class);
+		//uploaderServiceIntent = new Intent(this, UploaderService.class);
 		informaServiceIntent = new Intent(this, InformaService.class);
 		backgroundProcessorIntent = new Intent(this, BackgroundProcessor.class);
 
+		//startService(signatureServiceIntent);
+				//startService(uploaderServiceIntent);
+				//startService(ioServiceIntent);
+		
 		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
 		ed = sp.edit();
+
+		signatureService = new SignatureService(InformaCam.this);
+		uploaderService = new UploaderService((Context)InformaCam.this, InformaCam.this);
+		ioService = new IOService(InformaCam.this);
 		
-		informaCam = this;
+		new Thread ()
+		{
+			
+			public void run ()
+			{
 		
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				if(SignatureService.getInstance() != null) {
-					signatureService = SignatureService.getInstance();
-				} else {
-					startService(signatureServiceIntent);
-				}
-				
-				if(UploaderService.getInstance() != null) {
-					uploaderService = UploaderService.getInstance();
-				} else {
-					startService(uploaderServiceIntent);
-				}
-				
-				if(IOService.getInstance() != null) {
-					ioService = IOService.getInstance();
-				} else {
-					startService(ioServiceIntent);
-				}
-				
-				if(signatureService != null && uploaderService != null && ioService != null) {
-					startup();
-				}
+				startup();
 			}
-		}).start();
+		}.start();
+		
+		
 	}
 
-	@SuppressWarnings("deprecation")
-	public int[] getDimensions() {
-		Display display = a.getWindowManager().getDefaultDisplay();
-		return new int[] {display.getWidth(),display.getHeight()};
-	}
+	
 
 	public void startup() {
 		Log.d(LOG, "NOW we init!");
@@ -334,7 +299,8 @@ public class InformaCam extends Service {
 			break;
 		case RUN:
 			try {
-				signatureService.initKey();
+
+				signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
 			} catch (PGPException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
@@ -345,12 +311,12 @@ public class InformaCam extends Service {
 				icDump.mkdir();
 			}
 			
-			byte[] mediaManifestBytes = getInstance().ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+			byte[] mediaManifestBytes = ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 			
 			if(mediaManifestBytes != null) {
 				mediaManifest.inflate(mediaManifestBytes);
-				if(mediaManifest.media.size() > 0) {
-					for(IMedia m : mediaManifest.media) {
+				if(mediaManifest.getMediaList().size() > 0) {
+					for(IMedia m : mediaManifest.getMediaList()) {
 						m.isNew = false;
 					}
 				}
@@ -383,7 +349,7 @@ public class InformaCam extends Service {
 		
 		try {
 			String apkName = getPackageResourcePath();
-			java.io.File dexDump = ioService.getDir(IManifest.DEX, Context.MODE_PRIVATE);
+			java.io.File dexDump = getDir(IManifest.DEX, Context.MODE_PRIVATE);
 			if(!dexDump.exists()) {
 				dexDump.mkdir();
 			}
@@ -413,9 +379,12 @@ public class InformaCam extends Service {
 		saveStates();
 		
 		ioService.unmount();
-		stopService(ioServiceIntent);
-		stopService(signatureServiceIntent);
-		stopService(uploaderServiceIntent);
+		uploaderService.shutdown(this);
+		
+		//stopService(ioServiceIntent);
+		//stopService(signatureServiceIntent);
+		//stopService(uploaderServiceIntent);
+		
 		
 		if(informaService != null) {
 			stopService(informaServiceIntent);
@@ -430,10 +399,9 @@ public class InformaCam extends Service {
 		
 		sendBroadcast(intent);
 
-		stopSelf();
 	}
 
-	private void saveStates() {
+	public void saveStates() {
 		try {
 			saveState(user, new java.io.File(IManifest.USER));
 		} catch(NullPointerException e) {
@@ -468,55 +436,33 @@ public class InformaCam extends Service {
 
 	public void saveState(Model model) {
 		if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-			try {
-				saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+			
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+		
 		} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
-			try {
-				saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+			
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
+		
 			
 		} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
-			try {
-				saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+		
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
+		
 		} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
-			try {
-				saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+			
+			saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+			
 		} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
-			try {
+		
 				saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+		
 		} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
-			try {
 				saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+			
 		} else if(model.getClass().getName().equals(IDCIMDescriptor.class.getName())) {
-			try {
+			
 				saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
-			} catch(NullPointerException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+			
 		}
 	}
 
@@ -526,15 +472,15 @@ public class InformaCam extends Service {
 			if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 				bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-				bytes = getInstance().ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
+				bytes = ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
-				bytes = getInstance().ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
+				bytes = ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
-				bytes = getInstance().ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+				bytes = ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
-				bytes = getInstance().ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
+				bytes = ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
-				bytes = getInstance().ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
+				bytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
 			}
 
 			if(bytes != null) {
@@ -551,7 +497,7 @@ public class InformaCam extends Service {
 
 	}
 
-	public void promptForLogin(OnDismissListener odl) {
+	public void promptForLogin(final Activity a, OnDismissListener odl) {
 		AlertDialog.Builder ad = new AlertDialog.Builder(this);
 		final Dialog d = ad.create();
 		d.setOnCancelListener(new OnCancelListener() {
@@ -601,11 +547,11 @@ public class InformaCam extends Service {
 		ad.show();
 	}
 
-	public void promptForLogin() {
-		promptForLogin(null);
+	public void promptForLogin(Activity a) {
+		promptForLogin(a, null);
 	}
 
-	public void promptForLogin(final int resumeCode, final byte[] data, final info.guardianproject.iocipher.File file) {
+	public void promptForLogin(Activity a ,final int resumeCode, final byte[] data, final info.guardianproject.iocipher.File file) {
 		OnDismissListener odl = new OnDismissListener() {
 
 			@Override
@@ -617,7 +563,7 @@ public class InformaCam extends Service {
 				}
 			}
 		};
-		promptForLogin(odl);
+		promptForLogin(a, odl);
 	}
 
 	public void persistLogin(String password) {
@@ -678,27 +624,8 @@ public class InformaCam extends Service {
 		Message message = new Message();
 		message.setData(data);
 
-		((InformaCamEventListener) a).onUpdate(message);
-	}
-
-	public synchronized static InformaCam getInstance() {
-		return informaCam;
-	}
-
-	public static InformaCam getInstance(Activity a) {
-		getInstance().associateActivity(a);
-		Log.d(LOG, "associating to activity " + a.getClass().getName());
-		return getInstance();
-	}
-
-	public static InformaCam getInstance(FragmentActivity a) {
-		getInstance().associateActivity(a);
-		Log.d(LOG, "associating to activity " + a.getClass().getName());
-		return getInstance();
-	}
-
-	private void associateActivity(Activity a) {
-		this.a = a;
+		if (mEventListener != null)
+			mEventListener.onUpdate(message);
 	}
 
 	public void initUploads() {
@@ -709,15 +636,8 @@ public class InformaCam extends Service {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
 		saveState(notificationsManifest);
 		
-		try {
-			((ListAdapterListener) a).updateAdapter(Codes.Adapters.NOTIFICATIONS);
-		} catch(ClassCastException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-			e.printStackTrace();
-		} catch(NullPointerException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-			e.printStackTrace();
-		}
+		if (mListAdapterListener != null)
+			mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);
 		
 	}
 	
@@ -760,17 +680,38 @@ public class InformaCam extends Service {
 			callback.sendMessage(msg);
 		}
 		
-		try {
-			((ListAdapterListener) a).updateAdapter(Codes.Adapters.NOTIFICATIONS);
-		} catch(ClassCastException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-			e.printStackTrace();
-		} catch(NullPointerException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-			e.printStackTrace();
-		}
+		if (mListAdapterListener != null)
+			mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);
+		
 	}
 
+	public void setListAdapterListener (ListAdapterListener lal)
+	{
+		mListAdapterListener = lal;
+	}
+	
+	public void setStatusListener (InformaCamStatusListener sl)
+	{
+		mStatusListener = sl;
+	}
+	
+	public InformaCamStatusListener getStatusListener ()
+	{
+		return mStatusListener;
+	}
+	
+	public void setEventListener (InformaCamEventListener sl)
+	{
+		mEventListener = sl;
+	}
+	
+	public InformaCamEventListener getEventListener ()
+	{
+		return mEventListener;
+	}
+	
+	
+	
 	public IOrganization installICTD(Uri ictdURI, Handler callback) {
 		IOrganization organization = null;
 
@@ -780,10 +721,12 @@ public class InformaCam extends Service {
 			is.read(rc);
 			is.close();
 
-			organization = KeyUtility.installICTD(rc);
+			ISecretKey secretKey = (ISecretKey)getModel(new ISecretKey());
+			
+			organization = KeyUtility.installICTD(rc, secretKey);
 			saveState(installedOrganizations);
 			
-			INotification notification = new INotification(a.getString(R.string.key_installed), a.getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
+			INotification notification = new INotification(getString(R.string.key_installed), getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
 			addNotification(notification, callback);
 			
 		} catch (FileNotFoundException e) {
@@ -809,13 +752,14 @@ public class InformaCam extends Service {
 	}
 
 	@Override
-	public void onDestroy() {
-		Log.d(LOG, "INFORMA CAM SERVICE HAS BEEN DESTROYED");
-		super.onDestroy();
+	public void onTerminate() {
+		super.onTerminate();
+		
+		this.shutdown();
+		
 	}
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
+	
+
+	
 }
