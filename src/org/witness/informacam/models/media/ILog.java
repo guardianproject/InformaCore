@@ -5,31 +5,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
-import org.witness.informacam.models.j3m.IData;
-import org.witness.informacam.models.j3m.IGenealogy;
-import org.witness.informacam.models.j3m.IIntent;
-import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
-import org.witness.informacam.utils.TimeUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -50,11 +43,15 @@ public class ILog extends IMedia {
 	private Handler proxyHandler;
 	private Map<String, byte[]> j3mZip;
 
-	public ILog() {
+	private InformaCam informaCam;
+	
+	public ILog(InformaCam informaCam) {
 		super();
 		
 		dcimEntry = new IDCIMEntry();
 		dcimEntry.mediaType = MimeType.LOG;
+		
+		this.informaCam = informaCam;
 	}
 
 	public ILog(IMedia media) {
@@ -89,19 +86,9 @@ public class ILog extends IMedia {
 		}
 	}
 	
-	@Override
-	public boolean export(Handler h) {
-		return export(h, null, true);
-	}
-
-	@Override
-	public boolean export(Handler h, IOrganization organization) {
-		return export(h, organization, false);
-	}
-
 	@SuppressLint("HandlerLeak")
 	@Override
-	public boolean export(Handler h, final IOrganization organization, final boolean share) {
+	public boolean export(final Context context, Handler h, final IOrganization organization, final boolean share) {
 		Log.d(LOG, "exporting a log!");
 		proxyHandler = h;
 		j3mZip = new HashMap<String, byte[]>();
@@ -133,8 +120,6 @@ public class ILog extends IMedia {
 
 		int progress = 0;
 
-		final InformaCam informaCam = InformaCam.getInstance();
-		
 		INotification notification = new INotification();
 		// its icon will probably be some sort of stock thing
 		
@@ -148,12 +133,12 @@ public class ILog extends IMedia {
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		notification.label = informaCam.a.getString(R.string.export);
+		notification.label = context.getString(R.string.export);
 
-		notification.content = informaCam.a.getString(R.string.you_exported_this_x, "log");
+		notification.content = context.getString(R.string.you_exported_this_x, "log");
 		if(organization != null) {
 			intent.intendedDestination = organization.organizationName;
-			notification.content = informaCam.a.getString(R.string.you_exported_this_x_to_x, "log", organization.organizationName);
+			notification.content = context.getString(R.string.you_exported_this_x_to_x, "log", organization.organizationName);
 		}
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
@@ -194,7 +179,7 @@ public class ILog extends IMedia {
 					@Override
 					public void run() {
 						IMedia m = informaCam.mediaManifest.getById(s);
-						m.export(responseHandler, organization, false);
+						m.export(context, responseHandler, organization, false);
 					}
 				}).start();
 				

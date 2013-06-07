@@ -387,19 +387,19 @@ public class KeyUtility {
 		return null;
 	}
 
-	public static IOrganization installICTD(String rc) {
-		return installICTD(rc.getBytes());
+	public static IOrganization installICTD(String rc, ISecretKey secretKey) {
+		return installICTD(rc.getBytes(), secretKey);
 	}
 
-	public static IOrganization installICTD(String rc, IOrganization organization) {
-		return installICTD(rc.getBytes(), organization);
+	public static IOrganization installICTD(String rc, IOrganization organization, ISecretKey secretKey) {
+		return installICTD(rc.getBytes(), organization, secretKey);
 	}
 
-	public static IOrganization installICTD(byte[] rc) {
+	public static IOrganization installICTD(byte[] rc, ISecretKey secretKey) {
 		return installICTD(rc, null);
 	}
 
-	public static IOrganization installICTD(byte[] rc, IOrganization organization) {
+	public static IOrganization installICTD(byte[] rc, IOrganization organization, ISecretKey secretKey) {
 		InformaCam informaCam = InformaCam.getInstance();
 
 		if(organization == null) {
@@ -408,7 +408,7 @@ public class KeyUtility {
 		}
 
 		// decrypt
-		byte[] rawContent = EncryptionUtility.decrypt(rc);
+		byte[] rawContent = EncryptionUtility.decrypt(rc, secretKey);
 		if(rawContent == null) {
 			return null;
 		}

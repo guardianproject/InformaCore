@@ -7,6 +7,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.View;
@@ -15,7 +16,6 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout.LayoutParams;
 
 public class IRegionDisplay extends ImageView implements OnClickListener {
-	Activity a;
 	
 	Drawable d;
 	Drawable activeD, inactiveD;
@@ -27,21 +27,22 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	
 	private final static String LOG = App.LOG;
 	
-	public IRegionDisplay(Activity a, IRegion parent) {
-		super(a);
+	private IRegionDisplayListener mListener;
+	
+	public IRegionDisplay(Context context, IRegion parent, IRegionDisplayListener listener) {
+		super(context);
 		
-		this.a = a;
 		this.parent = parent;
 		bounds = parent.bounds;
-		Log.d(LOG, bounds.asJson().toString());
+		mListener = listener;
 		
 		lp = new LayoutParams(bounds.displayWidth, bounds.displayHeight);
 		lp.leftMargin = bounds.displayLeft;
 		lp.topMargin = bounds.displayTop;
 		setLayoutParams(lp);
 		
-		activeD = a.getResources().getDrawable(R.drawable.extras_region_display_active);
-		inactiveD = a.getResources().getDrawable(R.drawable.extras_region_display_inactive);
+		activeD = context.getResources().getDrawable(R.drawable.extras_region_display_active);
+		inactiveD = context.getResources().getDrawable(R.drawable.extras_region_display_inactive);
 		
 		setStatus(true);
 		setOnClickListener(this);
@@ -71,6 +72,8 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	@Override
 	public void onClick(View v) {
 		setStatus(true);
-		((IRegionDisplayListener) a).onSelected(this);
+	
+		if (mListener != null)
+			mListener.onSelected(this);
 	}
 }

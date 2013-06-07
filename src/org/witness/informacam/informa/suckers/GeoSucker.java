@@ -2,13 +2,12 @@ package org.witness.informacam.informa.suckers;
 
 import java.util.TimerTask;
 
-import org.json.JSONException;
 import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
-import org.witness.informacam.utils.Constants.Time;
 
+import android.app.Activity;
 import android.content.Context;
 import android.location.Criteria;
 import android.location.GpsStatus.NmeaListener;
@@ -27,11 +26,11 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 	private final static String LOG = Suckers.LOG;
 	
 	@SuppressWarnings("unchecked")
-	public GeoSucker() {
-		super();
+	public GeoSucker(Context context) {
+		super(context);
 		setSucker(this);
 		
-		lm = (LocationManager) a.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+		lm = (LocationManager) context.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
 		
 		if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
@@ -56,7 +55,8 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 		});
 		
 		criteria = new Criteria();
-		criteria.setAccuracy(Criteria.NO_REQUIREMENT);
+		criteria.setAccuracy(Criteria.ACCURACY_LOW);
+		criteria.setPowerRequirement(Criteria.POWER_LOW);
 		
 		setTask(new TimerTask() {
 
@@ -93,11 +93,11 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 	
 	public double[] updateLocation() {
 		try {
-			String bestProvider = lm.getBestProvider(criteria, false);
+			String bestProvider = lm.getBestProvider(criteria, true); //we only want providers that are on
 			Location l = lm.getLastKnownLocation(bestProvider);
 			
 			if (l != null) {
-				Log.d(LOG, "lat/lng: " + l.getLatitude() + ", " + l.getLongitude());
+				//Log.d(LOG, "lat/lng: " + l.getLatitude() + ", " + l.getLongitude());
 				return new double[] {l.getLatitude(),l.getLongitude()};
 			} else {
 				return null;
@@ -115,7 +115,7 @@ public class GeoSucker extends SensorLogger implements LocationListener {
 	public void stopUpdates() {
 		setIsRunning(false);
 		lm.removeUpdates(this);
-		Log.d(LOG, "shutting down GeoSucker...");
+		//Log.d(LOG, "shutting down GeoSucker...");
 	}
 
 	@Override

@@ -6,12 +6,8 @@ import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.models.j3m.IDCIMDescriptor;
-import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.App.Camera;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
@@ -26,7 +22,7 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
-public class CameraActivity extends Activity implements InformaCamStatusListener {
+public class CameraActivity extends Activity implements InformaCamStatusListener, InformaCamEventListener {
 	private final static String LOG = App.Camera.LOG;
 
 	private boolean doInit = true;
@@ -34,15 +30,20 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	private ComponentName cameraComponent = null;
 	private String cameraIntentFlag = Camera.Intents.CAMERA;
 
-	private InformaCam informaCam;
 	private boolean controlsInforma = true;
 
 	Bundle bundle;
 	Handler h = new Handler();
 
+	private InformaCam informaCam;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		informaCam = (InformaCam)getApplication();
+		informaCam.setStatusListener(this);
+		
 		h.post(new Runnable() {
 			@Override
 			public void run() {
@@ -62,7 +63,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		} catch(NullPointerException e) {}
 
 		try {
-			informaCam = InformaCam.getInstance(this);
+			
 			if(doInit) {
 				if(getIntent().hasExtra(Codes.Extras.CAMERA_TYPE)) {
 					int cameraType = getIntent().getIntExtra(Codes.Extras.CAMERA_TYPE, -1);
@@ -160,7 +161,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaCamStart(Intent intent) {
-		informaCam = InformaCam.getInstance(this);
+		
 		if(doInit) {
 			init();
 		}
@@ -168,7 +169,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaStart(Intent intent) {
-		informaCam.ioService.startDCIMObserver();
+		informaCam.ioService.startDCIMObserver(this);
 
 		cameraIntent = new Intent(cameraIntentFlag);
 		cameraIntent.setComponent(cameraComponent);
@@ -185,6 +186,12 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptorSize());
 		setResult(Activity.RESULT_OK, result);
 		finish();
+	}
+
+	@Override
+	public void onUpdate(Message message) {
+		
+		
 	}
 
 
