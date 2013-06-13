@@ -9,13 +9,12 @@ import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Accelerometer;
 
+import android.app.Activity;
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.content.Context;
-
-
 import android.util.Log;
 
 @SuppressWarnings("rawtypes")
@@ -28,11 +27,11 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 	private final static String LOG = Suckers.LOG;
 			
 	@SuppressWarnings("unchecked")
-	public AccelerometerSucker() {
-		super();
+	public AccelerometerSucker(Context context) {
+		super(context);
 		setSucker(this);
 		
-		sm = (SensorManager) a.getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
+		sm = (SensorManager)context.getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
 		availableSensors = sm.getSensorList(Sensor.TYPE_ALL);
 		
 		for(Sensor s : availableSensors) {

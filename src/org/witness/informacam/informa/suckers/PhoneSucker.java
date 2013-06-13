@@ -32,12 +32,13 @@ public class PhoneSucker extends SensorLogger {
 	private final static String LOG = Suckers.LOG;
 	
 	@SuppressWarnings("unchecked")
-	public PhoneSucker() {
+	public PhoneSucker(Context context) {
+		super (context);
 		setSucker(this);
 				
-		tm = (TelephonyManager) a.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+		tm = (TelephonyManager) context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
 		ba = BluetoothAdapter.getDefaultAdapter();
-		wm = (WifiManager) a.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+		wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		
 		if(ba != null)
 		{

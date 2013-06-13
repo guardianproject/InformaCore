@@ -5,6 +5,9 @@ import org.witness.informacam.models.Model;
 import org.witness.informacam.ui.IRegionDisplay;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
+import android.app.Activity;
+import android.content.Context;
+
 public class IRegion extends Model {
 	public String id = null;
 	public long timestamp = 0L;
@@ -15,22 +18,23 @@ public class IRegion extends Model {
 	public IRegionBounds bounds = null;
 	private IRegionDisplay regionDisplay = null;
 	
+	private IRegionDisplayListener mListener;
+	
 	public IRegion() {
 		super();
 	}
 
-	public void init(IRegionBounds bounds) {
-		init(bounds, true);
+	public void init(Activity context, IRegionBounds bounds, IRegionDisplayListener listener) {
+		init(context, bounds, true, listener);
 	}
 
-	public void init(IRegionBounds bounds, boolean isNew) {
-		InformaCam informaCam = InformaCam.getInstance();
+	public void init(Activity context, IRegionBounds bounds, boolean isNew, IRegionDisplayListener listener) {
 		
 		this.bounds = bounds;
-		regionDisplay = new IRegionDisplay(informaCam.a, this);
+		regionDisplay = new IRegionDisplay(context, this, listener);
 
 		if(isNew) {
-			this.bounds.calculate(((IRegionDisplayListener) informaCam.a).getSpecs());
+			this.bounds.calculate(listener.getSpecs(),context);
 			InformaCam.getInstance().informaService.addRegion(this);
 		}
 	}
@@ -39,10 +43,10 @@ public class IRegion extends Model {
 		return regionDisplay;
 	}
 
-	public void update() {
+	public void update(Activity a) {
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		bounds.calculate(((IRegionDisplayListener) informaCam.a).getSpecs());
+		bounds.calculate(mListener.getSpecs(), a);
 		informaCam.informaService.updateRegion(this);
 	}
 

@@ -20,7 +20,7 @@ import com.google.common.collect.Collections2;
 import android.util.Log;
 
 public class IMediaManifest extends Model {
-	public List<IMedia> media = new ArrayList<IMedia>();
+	private ArrayList<IMedia> listMedia = new ArrayList<IMedia>();
 
 	public IMediaManifest() {}
 	
@@ -28,9 +28,34 @@ public class IMediaManifest extends Model {
 		InformaCam.getInstance().saveState(((Model) this), new info.guardianproject.iocipher.File(IManifest.MEDIA));
 	}
 	
+	public List<IMedia> getMediaList ()
+	{
+		return listMedia;
+	}
+	
+	public IMedia getMediaItem (int id)
+	{
+		return listMedia.get(id);
+	}
+	
+	public int getMediaItemLocation (IMedia media)
+	{
+		return listMedia.indexOf(media);
+	}
+	
+	public boolean removeMediaItem (IMedia mediaToRemove)
+	{
+		return listMedia.remove(mediaToRemove);
+	}
+	
+	public boolean addMediaItem (IMedia mediaToAdd)
+	{
+		return listMedia.add(mediaToAdd);
+	}
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List getAllByType(final String mimeType) {
-		Collection<IMedia> media_ = Collections2.filter(media, new Predicate<IMedia>() {
+		Collection<IMedia> media_ = Collections2.filter(listMedia, new Predicate<IMedia>() {
 			@Override
 			public boolean apply(IMedia m) {
 				return m.dcimEntry.mediaType.equals(mimeType);
@@ -41,7 +66,7 @@ public class IMediaManifest extends Model {
 	}
 	
 	public IMedia getById(final String mediaId) {
-		Collection<IMedia> media_ = Collections2.filter(media, new Predicate<IMedia>() {
+		Collection<IMedia> media_ = Collections2.filter(listMedia, new Predicate<IMedia>() {
 			@Override
 			public boolean apply(IMedia m) {
 				return m._id.equals(mediaId);
@@ -61,7 +86,7 @@ public class IMediaManifest extends Model {
 	
 	public List<IMedia> getByDay(final long timestamp, final String mimeType, int limit) {
 		@SuppressWarnings("unchecked")
-		Collection<IMedia> media_ = Collections2.filter(mimeType == null ? media : getAllByType(mimeType), new Predicate<IMedia>() {
+		Collection<IMedia> media_ = Collections2.filter(mimeType == null ? listMedia : getAllByType(mimeType), new Predicate<IMedia>() {
 			@Override
 			public boolean apply(IMedia m) {
 				if(m.dcimEntry.mediaType.equals(MimeType.LOG)) {
@@ -80,11 +105,11 @@ public class IMediaManifest extends Model {
 	}
 	
 	public void sortBy(int order) {
-		if(media == null || media.size() == 0) {
+		if(listMedia == null || listMedia.size() == 0) {
 			return;
 		}
 		
-		for(IMedia m : media) {
+		for(IMedia m : listMedia) {
 			try {
 				m.put(Models.IMediaManifest.Sort.IS_SHOWING, true);
 			} catch (JSONException e) {
@@ -103,7 +128,7 @@ public class IMediaManifest extends Model {
 				}
 				
 			};
-			Collections.sort(media, DateDesc);
+			Collections.sort(listMedia, DateDesc);
 			break;
 		case Models.IMediaManifest.Sort.DATE_ASC:
 			Comparator<IMedia> DateAsc = new Comparator<IMedia>() {
@@ -114,10 +139,10 @@ public class IMediaManifest extends Model {
 				}
 				
 			};
-			Collections.sort(media, DateAsc);
+			Collections.sort(listMedia, DateAsc);
 			break;
 		case Models.IMediaManifest.Sort.TYPE_PHOTO:
-			for(IMedia m : media) {
+			for(IMedia m : listMedia) {
 				if(!m.dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					try {
 						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
@@ -129,7 +154,7 @@ public class IMediaManifest extends Model {
 			}
 			break;
 		case Models.IMediaManifest.Sort.TYPE_VIDEO:
-			for(IMedia m : media) {
+			for(IMedia m : listMedia) {
 				if(!m.dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					try {
 						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);

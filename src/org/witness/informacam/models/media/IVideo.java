@@ -54,26 +54,20 @@ public class IVideo extends IMedia {
 		final info.guardianproject.iocipher.File bList = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_list.jpg"));
 		final info.guardianproject.iocipher.File bPreview = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_preview.jpg"));
 
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				InformaCam informaCam = InformaCam.getInstance();
+		byte[] bytes = informaCam.ioService.getBytes(dcimEntry.previewFrame, Type.IOCIPHER);
+		Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+		bytes = null;
 
-				byte[] bytes = informaCam.ioService.getBytes(dcimEntry.previewFrame, Type.IOCIPHER);
-				Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-				bytes = null;
+		byte[] listViewBytes = ImageUtility.downsampleImageForListOrPreview(bitmap_);
+		informaCam.ioService.saveBlob(listViewBytes, bList);
+		informaCam.ioService.saveBlob(listViewBytes, bPreview);
 
-				byte[] listViewBytes = ImageUtility.downsampleImageForListOrPreview(bitmap_);
-				informaCam.ioService.saveBlob(listViewBytes, bList);
-				informaCam.ioService.saveBlob(listViewBytes, bPreview);
+		bitmapPreview = bPreview.getAbsolutePath();
+		bitmapList = bList.getAbsolutePath();
 
-				bitmapPreview = bPreview.getAbsolutePath();
-				bitmapList = bList.getAbsolutePath();
-
-				listViewBytes = null;
-				bitmap_.recycle();
-			}
-		}).start();
+		listViewBytes = null;
+		bitmap_.recycle();
+	
 
 	}
 }

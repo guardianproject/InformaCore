@@ -43,7 +43,6 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	private final static String LOG = App.LOG;
 	private String packageName;
 
-	InformaCam informaCam;
 
 	TabHost tabHost;
 	ViewPager viewPager;
@@ -60,9 +59,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		super.onCreate(savedInstanceState);
 		packageName = this.getPackageName();
 
-		Log.d(LOG, "hello " + packageName);
-
-		informaCam = InformaCam.getInstance(this);
+		((InformaCam)getApplication()).setEventListener(this);
 
 		setContentView(R.layout.activity_wizard);
 
@@ -195,6 +192,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	@Override
 	public void wizardCompleted() {
 		// save everything and finish
+		
+		InformaCam informaCam = (InformaCam)getApplication();
+		
 		informaCam.user.hasCompletedWizard = true;
 		informaCam.user.lastLogIn = System.currentTimeMillis();
 		informaCam.user.isLoggedIn = true;

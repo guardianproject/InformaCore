@@ -94,7 +94,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@Override
 	public void onCreate() {
 		Log.d(LOG, "started.");
-		informaCam = InformaCam.getInstance();
+		informaCam =  (InformaCam)getApplication();
 
 		for(BroadcastReceiver broadcaster : broadcasters) {
 			this.registerReceiver(broadcaster, ((InformaBroadcaster) broadcaster).intentFilter);
@@ -102,10 +102,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		initCache();
 
-		_geo = new GeoSucker();
-		_phone = new PhoneSucker();
-		_acc = new AccelerometerSucker();
-
+		_geo = new GeoSucker(this);
+		_geo.setSuckerCacheListener(this);
+		
+		_phone = new PhoneSucker(this);
+		_phone.setSuckerCacheListener(this);
+		
+		_acc = new AccelerometerSucker(this);
+		_acc.setSuckerCacheListener(this);
+		
 		informaService = InformaService.this;
 		sendBroadcast(new Intent()
 			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)
@@ -116,15 +121,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	public long getCurrentTime() {
-		try {
-			if(!mustUseSystemTime) {
-				return ((GeoSucker) _geo).getTime();
-			} else {
-				return System.currentTimeMillis();
-			}
-		} catch(NullPointerException e) {
+		
+		if(!mustUseSystemTime) {
+			return ((GeoSucker) _geo).getTime();
+		} else {
 			return System.currentTimeMillis();
 		}
+		
 	}
 
 	public void associateMedia(IMedia media) {
@@ -138,9 +141,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 				long currentTime = getCurrentTime();
 				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
 				
-				Log.d(LOG, "time: " + currentTime);
+				//Log.d(LOG, "time: " + currentTime);
 				if(currentLocation != null) {
-					Log.d(LOG, "location: " + currentLocation[0] + ", " + currentLocation[1]);
+				//	Log.d(LOG, "location: " + currentLocation[0] + ", " + currentLocation[1]);
 				}
 				
 				if(currentTime == 0 || currentLocation == null) {
@@ -173,9 +176,12 @@ public class InformaService extends Service implements SuckerCacheListener {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
-				sendBroadcast(new Intent()
-					.setAction(Actions.INFORMA_START)
-					.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
+				if (informaCam != null)
+				{
+					sendBroadcast(new Intent()
+						.setAction(Actions.INFORMA_START)
+						.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
+				}
 			}
 		});
 

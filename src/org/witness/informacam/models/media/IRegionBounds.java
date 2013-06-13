@@ -1,9 +1,9 @@
 package org.witness.informacam.models.media;
 
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 
-import android.util.Log;
+import android.app.Activity;
+import android.view.Display;
 
 public class IRegionBounds extends Model {
 	public int top = 0;
@@ -41,11 +41,27 @@ public class IRegionBounds extends Model {
 		}
 	}
 	
-	public void calculate(int[] specs) {
-		Log.d(LOG, "at this point, i recalculate the real width/height and coords");
+
+	public int[] getWindowDimensions(Activity a) {
+		if (a == null)
+		{
+			return new int[] { 0,0 };
+		}
+		else
+		{
+			Display display = a.getWindowManager().getDefaultDisplay();
+			return new int[] {display.getWidth(),display.getHeight()};
+		}
+	}
+
+	public void calculate(int[] specs, Activity a) {
+		calculate (specs,getWindowDimensions(a));
+	}
+	
+	public void calculate(int[] specs, int windowDimensions[]) {
+		//Log.d(LOG, "at this point, i recalculate the real width/height and coords");
 		// TODO: turn display metrics into real metrics;
 		
-		int windowDimensions[] = InformaCam.getInstance().getDimensions();
 		
 		//original width/height; location in window; view width/height
 		int originalDimensions[] = new int[] {specs[0], specs[1]};

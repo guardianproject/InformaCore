@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
@@ -13,13 +15,16 @@ import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
-import org.witness.informacam.utils.ImageUtility;
-import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.IManifest;
+import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
+import org.witness.informacam.utils.ImageUtility;
+import org.witness.informacam.utils.MediaHasher;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -29,6 +34,8 @@ import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Bundle;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
@@ -41,10 +48,27 @@ public class IDCIMDescriptor extends Model {
 	public List<IDCIMEntry> thumbnails = null;
 	public int numEntries = 0;
 
-	public IDCIMDescriptor() {
+	InformaCam informaCam = InformaCam.getInstance();
+	private Context mContext = null;
+	
+	private LinkedBlockingQueue<EntryJob> mQueue;
+	
+	private Thread threadJobProc = null;
+	
+	private InformaCamEventListener mListener;
+	
+	public IDCIMDescriptor(Context context, InformaCamEventListener listener) {
 		super();
+		
+		mContext = context;
+		mListener = listener;
+		mQueue = new LinkedBlockingQueue<EntryJob>();
+		
+		threadJobProc = new Thread (new JobProc());
+		threadJobProc.start();
 	}
 
+	
 	public void startSession() {
 		startTime = System.currentTimeMillis();
 		dcimEntries = new ArrayList<IMedia>();
@@ -57,73 +81,116 @@ public class IDCIMDescriptor extends Model {
 		Log.d(LOG, "saved a dcim descriptor:\n" + asJson().toString());		
 	}
 
-	public void addEntry(final Uri authority, final Context c, final boolean isThumbnail) {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				IDCIMEntry entry = new IDCIMEntry();
-				
-				try {
-					entry.put(Models.IDCIMEntry.AUTHORITY, authority.toString());
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
+	private class EntryJob 
+	{
+		Uri authority;
+		boolean isThumbnail;
+		
+	}
+	
+	public void addEntry(Uri authority, boolean isThumbnail) {
+		
+		EntryJob job = new EntryJob();
+		job.authority = authority;
+		job.isThumbnail = isThumbnail;
+
+		try {
+			mQueue.put(job);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	private class JobProc implements Runnable
+	{
+		public void run ()
+		{
+			
+			while (endTime == 0L)
+			{
+				EntryJob job = null;
+				try
+				{
+					while (endTime == 0L && (job = mQueue.take()) != null)
+					{
+						processEntryAsync (job);
+						
+					}
+				}
+				catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-
-				String sortBy = "date_added DESC";
-
-				if(isThumbnail) {
-					sortBy = null;
-					entry.mediaType = Models.IDCIMEntry.THUMBNAIL;
-				}
-
-				Cursor cursor = c.getContentResolver().query(authority, null, null, null, sortBy);
-				if(cursor != null && cursor.moveToFirst()) {
-					entry.fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
-
-					if(!isThumbnail) {
-						entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
-						entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
-						
-						if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
-							entry.mediaType = MimeType.VIDEO;
-						}
-						
-						numEntries++;
-					}
-
-					entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
-					cursor.close();
-				}
-
-
-				entry = analyze(entry, c);
-				if(entry != null) {
-					if(!isThumbnail) {
-						IMedia media = new IMedia();
-						media.dcimEntry = entry;
-						media._id = media.generateId(entry.originalHash);
-
-						if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-							IImage image = new IImage(media);
-							image.analyze();
-							dcimEntries.add(image);
-						} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
-							IVideo video = new IVideo(media);
-							video.analyze();
-							dcimEntries.add(video);
-						}
-
-						
-						Log.d(LOG, "DCIM DESCRIPTOR UPDATED BY SELF:\n" + asJson().toString());
-					} else {
-						thumbnails.add(entry);
-					}
-				}
+				
+				
 			}
-		}).start();
+			
+			persist();
+		}
+	}
+	
+	
+	private void processEntryAsync (EntryJob job)
+	{
+		IDCIMEntry entry = new IDCIMEntry();
+		
+		try {
+			entry.put(Models.IDCIMEntry.AUTHORITY, job.authority.toString());
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString(),e);
+			return;
+		}
 
+		String sortBy = "date_added DESC";
 
+		if(job.isThumbnail) {
+			sortBy = null;
+			entry.mediaType = Models.IDCIMEntry.THUMBNAIL;
+		}
+
+		Cursor cursor = mContext.getContentResolver().query(job.authority, null, null, null, sortBy);
+		if(cursor != null && cursor.moveToFirst()) {
+			entry.fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
+
+			if(!job.isThumbnail) {
+				entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
+				entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
+				
+				if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
+					entry.mediaType = MimeType.VIDEO;
+				}
+				
+				numEntries++;
+			}
+
+			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
+			cursor.close();
+		}
+
+		entry = analyze(entry, mContext);
+		if(entry != null) {
+			if(!job.isThumbnail) {
+				IMedia media = new IMedia();
+				media.dcimEntry = entry;
+				media._id = media.generateId(entry.originalHash);
+
+				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+					IImage image = new IImage(media);
+					image.analyze();
+					dcimEntries.add(image);
+				} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+					IVideo video = new IVideo(media);
+					video.analyze();
+					dcimEntries.add(video);
+				}
+
+				
+		//		Log.d(LOG, "DCIM DESCRIPTOR UPDATED BY SELF:\n" + asJson().toString());
+			} else {
+				thumbnails.add(entry);
+			}
+		}
 	}
 
 	private void commit(IDCIMEntry entry) {
@@ -332,4 +399,50 @@ public class IDCIMDescriptor extends Model {
 
 		return entry;
 	}
+	
+	public void persist ()
+	{
+		
+         for(IDCIMEntry entry : thumbnails) {
+           informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
+           informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
+         }
+
+         thumbnails = null;
+
+         informaCam.saveState(IDCIMDescriptor.this);
+
+         for(IMedia media : dcimEntries) {
+           for(IMedia m : informaCam.mediaManifest.getMediaList()) {
+             m.isNew = false;
+           }
+
+           informaCam.mediaManifest.addMediaItem((IMedia) media);
+           
+         }
+         
+         informaCam.mediaManifest.save();
+         
+
+         // save it
+         boolean blobSaved = informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+         
+         if(blobSaved) {
+           //Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
+
+           Bundle data = new Bundle();
+           data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
+           Message message = new Message();
+           message.setData(data);
+
+           if (mListener != null)
+        	   mListener.onUpdate(message);
+         }
+         
+         informaCam.saveStates();
+		       
+		
+	}
+	
+	
 }

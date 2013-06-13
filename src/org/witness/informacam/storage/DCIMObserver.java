@@ -5,20 +5,13 @@ import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
-import org.witness.informacam.models.j3m.IDCIMEntry;
-import org.witness.informacam.models.media.IMedia;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 
-import android.app.Activity;
+import android.content.Context;
 import android.database.ContentObserver;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -30,10 +23,12 @@ public class DCIMObserver {
 	InformaCam informaCam = InformaCam.getInstance();
 
 	Handler h;
-	Activity a;
-
-	public DCIMObserver(Activity a) {
-		this.a = a;
+	private Context mContext;
+	
+	public DCIMObserver(Context context, InformaCamEventListener listener) {
+		
+		mContext = context;
+		
 		h = new Handler();
 
 		observers = new Vector<ContentObserver>();
@@ -47,10 +42,10 @@ public class DCIMObserver {
 		observers.add(new Observer(h, MediaStore.Video.Thumbnails.INTERNAL_CONTENT_URI));
 
 		for(ContentObserver o : observers) {
-			a.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
+			mContext.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
 		}
 
-		dcimDescriptor = new IDCIMDescriptor();
+		dcimDescriptor = new IDCIMDescriptor(mContext, listener);
 		dcimDescriptor.startSession();
 
 		Log.d(LOG, "DCIM OBSERVER INITED");
@@ -59,6 +54,13 @@ public class DCIMObserver {
 	public void destroy() {
 		dcimDescriptor.stopSession();
 			
+			
+     for(ContentObserver o : observers) {
+    	 mContext.getContentResolver().unregisterContentObserver(o);
+     }
+
+     Log.d(LOG, "DCIM OBSERVER STOPPED");
+			 
 	}
 
 	class Observer extends ContentObserver {
@@ -93,7 +95,7 @@ public class DCIMObserver {
 				isThumbnail = true;
 			}
 
-			dcimDescriptor.addEntry(authority, a, isThumbnail);
+			dcimDescriptor.addEntry(authority, isThumbnail);
 		}
 
 		@Override
