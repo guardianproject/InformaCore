@@ -10,6 +10,7 @@ import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
+import org.witness.informacam.ui.screens.WizardStepZero;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
@@ -62,7 +63,15 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		((InformaCam)getApplication()).setEventListener(this);
 
 		setContentView(R.layout.activity_wizard);
-
+		
+		if(getIntent().hasExtra(Codes.Extras.SET_LOCALES)) {
+			Bundle locales = new Bundle();
+			locales.putStringArrayList(Codes.Extras.SET_LOCALES, getIntent().getStringArrayListExtra(Codes.Extras.SET_LOCALES));
+			locales.putString(Codes.Extras.LOCALE_PREF_KEY, getIntent().getStringExtra(Codes.Extras.LOCALE_PREF_KEY));
+			
+			fragments.add(Fragment.instantiate(this, WizardStepZero.class.getName(), locales));
+		}
+		
 		fragments.add(Fragment.instantiate(this, WizardStepOne.class.getName()));
 		fragments.add(Fragment.instantiate(this, WizardStepTwo.class.getName()));
 		fragments.add(Fragment.instantiate(this, WizardStepThree.class.getName()));
@@ -76,6 +85,8 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			}
 			subFragments.add(Fragment.instantiate(this, WizardSubFragmentFinish.class.getName()));
 		}
+		
+		
 
 		initLayout();
 	}
@@ -208,6 +219,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			for(IConnection connection : pendingConnections.queue) {
 				connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
 				connection.setParam(IUser.ALIAS, informaCam.user.alias);
+				connection.setParam(IUser.EMAIL, informaCam.user.email);
 				connection.setData(IUser.PUBLIC_CREDENTIALS);
 				connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
 				connection.isHeld = false;
@@ -222,7 +234,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 
 	@Override
 	public void onUpdate(Message message) {
-		((InformaCamEventListener) fragments.get(2)).onUpdate(message);
+		((InformaCamEventListener) fragments.get(3)).onUpdate(message);
 
 	}
 

@@ -111,6 +111,8 @@ public class Constants {
 			public static final String RESTRICT_TO_PROCESS = "restrict_to_process";
 			public static final String CAMERA_TYPE = "camera_type";
 			public static final String GPS_FAILURE = "gps_failure";
+			public static final String SET_LOCALES = "set_locales";
+			public static final String LOCALE_PREF_KEY = "locale_pref_key";
 		}
 
 		public static final class Messages {
@@ -308,6 +310,7 @@ public class Constants {
 			public final static String AUTH_TOKEN = "auth_token";
 			public final static String PASSWORD = "password";
 			public static final String ALIAS = "alias";
+			public static final String EMAIL = "email";
 			public static final String BASE_IMAGE = "baseImage";
 			public static final String CREDENTIALS = "credentials";
 			public static final String SECRET = "secret";
@@ -317,6 +320,7 @@ public class Constants {
 			public static final String PUBLIC_CREDENTIALS = "publicCredentials";
 			public static final String PUBLIC_KEY = "publicKey";
 			public static final String BELONGS_TO_USER = "belongs_to_user";
+			public static final String LANG_DEFAULT = "langDefault";
 		}
 
 		public class IMediaManifest {

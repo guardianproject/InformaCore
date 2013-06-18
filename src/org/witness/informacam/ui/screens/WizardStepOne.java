@@ -26,7 +26,7 @@ public class WizardStepOne extends Fragment {
 	View rootView;
 	Activity a;
 
-	EditText alias, password, passwordAgain;
+	EditText alias, email, password, passwordAgain;
 	LinearLayout passwordStatus;
 	TextView passwordStatusText;
 
@@ -142,6 +142,8 @@ public class WizardStepOne extends Fragment {
 		rootView = li.inflate(R.layout.fragment_wizard_step_one, null);
 		alias = (EditText) rootView.findViewById(R.id.user_name);
 		alias.addTextChangedListener(readAlias);
+		
+		email = (EditText) rootView.findViewById(R.id.user_email);
 
 		password = (EditText) rootView.findViewById(R.id.user_password);
 		password.addTextChangedListener(readPassword);
@@ -174,6 +176,13 @@ public class WizardStepOne extends Fragment {
 			if(i == 0) {
 				return;
 			}
+		}
+		
+		try {
+			informaCam.user.put(IUser.EMAIL, email.getText().toString());
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
 		}
 		
 		handler.postDelayed(new Runnable() {

@@ -16,6 +16,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/name" />
+    
+    <EditText style="@style/ic_edittext"
+        android:id="@+id/user_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/email" />
 
     <EditText style="@style/ic_edittext"
         android:id="@+id/user_password"

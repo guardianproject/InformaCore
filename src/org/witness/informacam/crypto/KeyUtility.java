@@ -263,10 +263,12 @@ public class KeyUtility {
 					new info.guardianproject.iocipher.File(IUser.SECRET))
 					) {
 				informaCam.user.alias = informaCam.user.getString(IUser.ALIAS);
+				informaCam.user.email = informaCam.user.getString(IUser.EMAIL);
 
 				informaCam.user.remove(IUser.AUTH_TOKEN);
 				informaCam.user.remove(IUser.PATH_TO_BASE_IMAGE);
 				informaCam.user.remove(IUser.ALIAS);
+				informaCam.user.remove(IUser.EMAIL);
 				informaCam.user.hasPrivateKey = true;
 
 				progress += 9;

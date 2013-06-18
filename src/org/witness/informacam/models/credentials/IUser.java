@@ -13,6 +13,7 @@ public class IUser extends Model {
 	public long lastLogOut = 0L;
 
 	public String alias = null;
+	public String email = null;
 	public String pgpKeyFingerprint = null;
 	
 	public boolean isInOfflineMode = false;
