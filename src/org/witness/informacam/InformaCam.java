@@ -1,13 +1,21 @@
 package org.witness.informacam;
 
+import info.guardianproject.cacheword.CacheWordActivityHandler;
+import info.guardianproject.cacheword.ICacheWordSubscriber;
+import info.guardianproject.cacheword.PassphraseSecrets;
+import info.guardianproject.cacheword.Wiper;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
+
+import javax.crypto.SecretKey;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.witness.informacam.crypto.AesUtility;
@@ -42,30 +50,17 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Application;
-import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 import dalvik.system.DexFile;
 
 public class InformaCam extends Application {	
@@ -92,21 +87,18 @@ public class InformaCam extends Application {
 
 	public List<String> models = new ArrayList<String>();
 
-	SharedPreferences.Editor ed;
-	private SharedPreferences sp;
 	NotificationManager notificationManager;
 	
 	private int processId;
 
 	private static InformaCam mInstance = null;
 	
-
 	private ListAdapterListener mListAdapterListener = null;
 	private InformaCamStatusListener mStatusListener = null;
 	private InformaCamEventListener mEventListener = null;
 	
+	private CredentialManager credentialManager = null;
 	
-
 	//we really need to get rid of this
 	public static InformaCam getInstance ()
 	{
@@ -136,15 +128,6 @@ public class InformaCam extends Application {
 					int serviceCode = intent.getIntExtra(Codes.Keys.SERVICE, 0);
 					
 					switch(serviceCode) {
-				//	case Codes.Routes.SIGNATURE_SERVICE:
-					//	signatureService = SignatureService.getInstance();
-						//break;
-					//case Codes.Routes.IO_SERVICE:
-					//	ioService = IOService.getInstance();
-					//	break;
-				//	case Codes.Routes.UPLOADER_SERVICE:
-				//		uploaderService = UploaderService.getInstance();
-				//		break;
 					case Codes.Routes.INFORMA_SERVICE:
 						informaService = InformaService.getInstance();
 						break;
@@ -152,9 +135,6 @@ public class InformaCam extends Application {
 						backgroundProcessor = BackgroundProcessor.getInstance();
 						break;
 					}
-
-				
-
 				} 
 			}
 		});
@@ -203,18 +183,8 @@ public class InformaCam extends Application {
 			registerReceiver(br, ((InnerBroadcaster) br).intentFilter);
 		}
 
-		//ioServiceIntent = new Intent(this, IOService.class);
-		//signatureServiceIntent = new Intent(this, SignatureService.class);
-		//uploaderServiceIntent = new Intent(this, UploaderService.class);
 		informaServiceIntent = new Intent(this, InformaService.class);
 		backgroundProcessorIntent = new Intent(this, BackgroundProcessor.class);
-
-		//startService(signatureServiceIntent);
-				//startService(uploaderServiceIntent);
-				//startService(ioServiceIntent);
-		
-		sp = getSharedPreferences(IManifest.PREF, MODE_PRIVATE);
-		ed = sp.edit();
 
 		signatureService = new SignatureService(InformaCam.this);
 		uploaderService = new UploaderService((Context)InformaCam.this, InformaCam.this);
@@ -232,8 +202,6 @@ public class InformaCam extends Application {
 		
 		
 	}
-
-	
 
 	public void startup() {
 		Log.d(LOG, "NOW we init!");
@@ -255,18 +223,14 @@ public class InformaCam extends Application {
 				fis.read(ubytes);
 				user.inflate(ubytes);
 				
-				if(user.isLoggedIn) {
-					// test to see if ioCipher is mounted
-					
-					if(ioService.isMounted() || attemptLogin()) {
-						Log.d(LOG, "USER IS LOGGED IN");
-						startCode = RUN;
-					} else {
-						startCode = LOGIN;
-					}
-
-				} else {
+				credentialManager = new CredentialManager(!this.ioService.isMounted());
+				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
+					startCode = RUN;
+				} else if(credentialManager.getStatus() == Codes.Status.LOCKED) {
 					startCode = LOGIN;
+				} else if(credentialManager.getStatus() == Codes.Status.UNINITIALIZED) {
+					// shouldn't happen here but just in case it does...
+					startCode = INIT;
 				}
 			}
 		} catch (FileNotFoundException e) {
@@ -299,7 +263,6 @@ public class InformaCam extends Application {
 			break;
 		case RUN:
 			try {
-
 				signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
 			} catch (PGPException e) {
 				Log.e(LOG, e.toString());
@@ -497,123 +460,18 @@ public class InformaCam extends Application {
 
 	}
 
-	public void promptForLogin(final Activity a, OnDismissListener odl) {
-		AlertDialog.Builder ad = new AlertDialog.Builder(this);
-		final Dialog d = ad.create();
-		d.setOnCancelListener(new OnCancelListener() {
-
-			@Override
-			public void onCancel(DialogInterface dialog) {
-				a.finish();
-			}
-		});
-
-		if(odl != null) {
-			d.setOnDismissListener(odl);
-		}
-
-		View view = LayoutInflater.from(this).inflate(R.layout.alert_login, null);
-		final EditText password = (EditText) view.findViewById(R.id.login_password);
-		final ProgressBar waiter = (ProgressBar) view.findViewById(R.id.login_waiter);
-
-		final Button commit = (Button) view.findViewById(R.id.login_commit);
-		commit.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				waiter.setVisibility(View.VISIBLE);
-				commit.setVisibility(View.GONE);
-
-				if(attemptLogin(password.getText().toString())) {
-					d.dismiss();
-				} else {
-					waiter.setVisibility(View.GONE);
-					commit.setVisibility(View.VISIBLE);
-				}
-			}
-		});
-
-		final Button cancel = (Button) view.findViewById(R.id.login_cancel);
-		cancel.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				d.cancel();
-			}
-
-		});
-
-		ad.setView(view);
-		ad.show();
-	}
-
-	public void promptForLogin(Activity a) {
-		promptForLogin(a, null);
-	}
-
-	public void promptForLogin(Activity a ,final int resumeCode, final byte[] data, final info.guardianproject.iocipher.File file) {
-		OnDismissListener odl = new OnDismissListener() {
-
-			@Override
-			public void onDismiss(DialogInterface dialog) {
-				switch(resumeCode) {
-				case Codes.Routes.RETRY_SAVE:
-					ioService.saveBlob(data, file);
-					break;
-				}
-			}
-		};
-		promptForLogin(a, odl);
-	}
-
-	public void persistLogin(String password) {
-		ed.putString(Models.IUser.PASSWORD, password).commit();
-		ed.putBoolean(Models.IUser.AUTH_TOKEN, true).commit();
-	}
 
 	public boolean attemptLogout() {
-		user.isLoggedIn = false;
-		user.lastLogOut = System.currentTimeMillis();
-
-		ed.remove(Models.IUser.PASSWORD).commit();
-		ed.remove(Models.IUser.AUTH_TOKEN).commit();
-
-		shutdown();
-
-		return true;
-	}
-
-	public boolean isAbsolutelyLoggedIn() {
-		try {
-			return (ioService.isMounted() && user.isLoggedIn);
-		} catch(NullPointerException e) {
-			return false;
+		if(credentialManager.logout()) {
+			shutdown();
+			return true;
 		}
-	}
-
-	public boolean attemptLogin() {
-		String password = sp.getString(Models.IUser.PASSWORD, null);
-		return password == null ? false : attemptLogin(password);
+		
+		return false;
 	}
 
 	public boolean attemptLogin(String password) {
-		ICredentials credentials = new ICredentials();
-		credentials.inflate(ioService.getBytes(Models.IUser.CREDENTIALS, Type.INTERNAL_STORAGE));
-
-		String authToken = AesUtility.DecryptWithPassword(password, credentials.iv.getBytes(), credentials.passwordBlock.getBytes());
-		if(authToken != null && ioService.initIOCipher(authToken)) {
-
-			user.inflate(ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
-
-			user.isLoggedIn = true;
-			user.lastLogIn = System.currentTimeMillis();
-			ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
-
-			persistLogin(password);
-			return true;
-		}
-
-		return false;
+		return credentialManager.login(password);
 	}
 	
 	public int getProcess() {
@@ -641,6 +499,7 @@ public class InformaCam extends Application {
 		
 	}
 	
+	
 	public void addNotification(INotification notification) {
 		addNotification(notification, false, null);
 	}
@@ -658,7 +517,7 @@ public class InformaCam extends Application {
 		saveState(notificationsManifest);
 		
 		if(showOnTop) {
-			/*	TODO:
+			/*
 			Notification n = new NotificationCompat.Builder(a)
 				.setContentTitle(notification.label)
 				.setContentText(notification.content)
@@ -710,8 +569,6 @@ public class InformaCam extends Application {
 		return mEventListener;
 	}
 	
-	
-	
 	public IOrganization installICTD(Uri ictdURI, Handler callback) {
 		IOrganization organization = null;
 
@@ -751,6 +608,7 @@ public class InformaCam extends Application {
 		stopService(informaServiceIntent);		
 	}
 
+	
 	@Override
 	public void onTerminate() {
 		super.onTerminate();
@@ -758,8 +616,165 @@ public class InformaCam extends Application {
 		this.shutdown();
 		
 	}
-
 	
+	public String initCacheWord(final String masterPassword, final String authToken) {
+		if(credentialManager == null) {
+			credentialManager = new CredentialManager(!ioService.isMounted()) {
+				@Override
+				public void onCacheWordUninitialized() {
+					super.onCacheWordUninitialized();
+					
+					setMasterPassword(masterPassword);
+				}
+				
+				@Override
+				public void onCacheWordOpened() {
+					// there is not credential block, so override this.
+				}
+				
+				@Override
+				public void onCacheWordLocked() {
+					// destroy this cacheword instance because we don't want one without the default onCacheWordOpened handler
+					credentialManager = null;
+					credentialManager = new CredentialManager(!ioService.isMounted());
+				}
+			};
+			
+			String credentials = new String(credentialManager.setAuthToken(authToken));
+			
+			credentialManager.logout();		// will trigger credentialManager to null itself out
+			return credentials;
+		}
+		
+		return null;
+	}
+	
+	public boolean hasCredentialManager() {
+		if(credentialManager != null) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public int getCredentialManagerStatus() {
+		return credentialManager.getStatus();
+	}
+	
+	public class CredentialManager implements ICacheWordSubscriber {
+		private CacheWordActivityHandler cacheWord;
+		private int status;
+		private boolean initIOCipher = true;
+		
+		public CredentialManager(boolean initIOCipher) {
+			this.status = Codes.Status.UNKNOWN;
+			this.initIOCipher = initIOCipher;
+			cacheWord = new CacheWordActivityHandler(InformaCam.this, this);
+		}
+		
+		public boolean login(String password) {
+			
+            PassphraseSecrets secrets;
+            try {
+                secrets = PassphraseSecrets.fetchSecrets(InformaCam.this, password.toCharArray());
+                cacheWord.setCachedSecrets(secrets);
+                
+                return true;
+            } catch (GeneralSecurityException e) {
+                Log.e(LOG, "invalid password or secrets has been tampered with");
+                e.printStackTrace();
+            }
+			
+			return false;
+		}
+		
+		public boolean logout() {
+			cacheWord.manuallyLock();
+			return true;
+		}
+		
+		public int getStatus() {
+			if(status != Codes.Status.UNKNOWN) {
+				return status;
+			} else {
+				if(!cacheWord.isLocked()) {
+					status = Codes.Status.UNLOCKED;
+				} else {
+					if(cacheWord.getCachedSecrets() == null) {
+						status = Codes.Status.UNINITIALIZED;
+					} else {
+						status = Codes.Status.LOCKED;
+					}
+				}
+				
+				return status;
+			}
+		}
+		
+		public void setMasterPassword(String password) {
+			cacheWord.setCachedSecrets(PassphraseSecrets.initializeSecrets(InformaCam.this, password.toCharArray()));
+		}
+		
+		public byte[] setAuthToken(String authToken) {
+			SecretKey key = ((PassphraseSecrets) cacheWord.getCachedSecrets()).getSecretKey();
+			return AesUtility.EncryptToKey(key, authToken).getBytes(Wiper.Utf8CharSet);
+		}
+		
+		public void onPause() {
+			cacheWord.onPause();
+		}
+		
+		public void onResume() {
+			cacheWord.onResume();
+		}
+		
+		@Override
+		public void onCacheWordUninitialized() {
+			Log.d(LOG, "onCacheWordUninitialized()");
+			this.status = Codes.Status.UNINITIALIZED; 
+		}
 
+		@Override
+		public void onCacheWordLocked() {
+			user.isLoggedIn = false;
+			user.lastLogOut = System.currentTimeMillis();
+			
+			ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
+			
+			Log.d(LOG, "onCacheWordLocked()");
+			this.status = Codes.Status.LOCKED;
+		}
+
+		@Override
+		public void onCacheWordOpened() {
+			Log.d(LOG, "onCacheWordOpened()");
+			boolean hasIOCipher = !initIOCipher;
+			
+			if(initIOCipher) {
+				ICredentials credentials = new ICredentials();
+				credentials.inflate(ioService.getBytes(Models.IUser.CREDENTIALS, Type.INTERNAL_STORAGE));
+				
+				SecretKey key = ((PassphraseSecrets) cacheWord.getCachedSecrets()).getSecretKey();
+				byte[] authTokenBytes = AesUtility.DecryptWithKey(key, credentials.iv.getBytes(), credentials.passwordBlock.getBytes());
+				String authToken = new String(authTokenBytes, Wiper.Utf8CharSet);
+				
+				if(authToken != null && ioService.initIOCipher(authToken)) {
+					hasIOCipher = true;
+				} else {
+					Log.e(LOG, "COULD NOT FULLY OPEN IOCIPHER AND GET CREDENTIALS AND STUFF");
+				}
+			}
+			
+			if(hasIOCipher) {
+				user.inflate(ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
+				
+				user.isLoggedIn = true;
+				user.lastLogIn = System.currentTimeMillis();
+				ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
+				
+				this.status = Codes.Status.UNLOCKED;
+			}
+		}
+	}
 	
 }

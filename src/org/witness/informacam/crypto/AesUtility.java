@@ -30,12 +30,12 @@ import android.util.Log;
 public class AesUtility {
 	public final static String LOG = Crypto.LOG;
 	
-	public static String DecryptWithPassword(String password, byte[] iv, byte[] message) {
-		return DecryptWithPassword(password, iv, message, true);
+	public static byte[] DecryptWithKey(SecretKey secret_key, byte[] iv, byte[] message) {
+		return DecryptWithKey(secret_key, iv, message, true);
 	}
 	
-	public static String DecryptWithPassword(String password, byte[] iv, byte[] message, boolean isBase64) {
-		String new_message = null;
+	public static byte[] DecryptWithKey(SecretKey secret_key, byte[] iv, byte[] message, boolean isBase64) {
+		byte[] new_message = null;
 		
 		if(isBase64) {
 			iv = Base64.decode(iv, Base64.DEFAULT);
@@ -43,15 +43,10 @@ public class AesUtility {
 		}
 		
 		try {
-			SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-			KeySpec spec = new PBEKeySpec(password.toCharArray(), Crypto.PASSWORD_SALT, 65536, 256);
-			SecretKey tmp = factory.generateSecret(spec);
-			SecretKey secret_key = new SecretKeySpec(tmp.getEncoded(), "AES");
-			
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			cipher.init(Cipher.DECRYPT_MODE, secret_key, new IvParameterSpec(iv));
 			
-			new_message = new String(cipher.doFinal(message));
+			new_message = cipher.doFinal(message);
 			
 		} catch (IllegalBlockSizeException e) {
 			Log.e(LOG, e.toString());
@@ -60,9 +55,6 @@ public class AesUtility {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (NoSuchPaddingException e) {
@@ -79,13 +71,8 @@ public class AesUtility {
 		return new_message;
 	}
 	
-	public static String EncryptWithPassword(String password, String message) {		
+	public static String EncryptToKey(SecretKey secret_key, String message) {		
 		try {
-			SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-			KeySpec spec = new PBEKeySpec(password.toCharArray(), Crypto.PASSWORD_SALT, 65536, 256);
-			SecretKey tmp = factory.generateSecret(spec);
-			SecretKey secret_key = new SecretKeySpec(tmp.getEncoded(), "AES");
-			
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			cipher.init(Cipher.ENCRYPT_MODE, secret_key);
 			
@@ -109,9 +96,6 @@ public class AesUtility {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (NoSuchPaddingException e) {

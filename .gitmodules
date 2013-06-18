@@ -12,3 +12,6 @@
 	path = external/IOCipher
 	url = git://github.com/guardianproject/IOCipher.git
 	ignore = dirty
+[submodule "external/CacheWord"]
+	path = external/CacheWord
+	url = git@github.com:guardianproject/cacheword.git

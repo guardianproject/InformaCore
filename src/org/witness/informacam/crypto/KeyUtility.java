@@ -123,6 +123,9 @@ public class KeyUtility {
 		String authToken, secretAuthToken, keyStorePassword;
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.update(data);
+		
+		// XXX: REMOVE THIS!
+		informaCam.user.isInOfflineMode = true;
 
 		try {
 			byte[] baseImageBytes = informaCam.ioService.getBytes(informaCam.user.getString(IUser.PATH_TO_BASE_IMAGE), Storage.Type.INTERNAL_STORAGE);
@@ -141,9 +144,7 @@ public class KeyUtility {
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 
-			informaCam.persistLogin(informaCam.user.getString(IUser.PASSWORD));
-
-			String authTokenBlobBytes = AesUtility.EncryptWithPassword(informaCam.user.getString(IUser.PASSWORD), authToken);
+			String authTokenBlobBytes = informaCam.initCacheWord(informaCam.user.getString(IUser.PASSWORD), authToken);
 			JSONObject authTokenBlob = (JSONObject) new JSONTokener(authTokenBlobBytes).nextValue();
 			authTokenBlob.put(ICredentials.PASSWORD_BLOCK, authTokenBlob.getString("value"));
 			authTokenBlob.remove("value");

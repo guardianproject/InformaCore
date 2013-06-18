@@ -87,6 +87,13 @@ public class Constants {
 		public final static class Tasks {
 			public final static int ANALYZE_MEDIA = 1;
 		}
+		
+		public final static class Status {
+			public final static int UNKNOWN = 0;
+			public final static int UNINITIALIZED = 1;
+			public final static int LOCKED = 2;
+			public final static int UNLOCKED = 3;
+		}
 
 		public final static class Keys {
 			public final static String SERVICE = "service";
