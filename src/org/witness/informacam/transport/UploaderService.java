@@ -194,6 +194,10 @@ public class UploaderService implements HttpUtilityListener {
 	}
 
 	private void run() {
+		if(mInformaCam.user.isInOfflineMode) {
+			return;
+		}
+		
 		if(!isRunning) {
 			/*
 			pendingConnections.queue.clear();

@@ -19,6 +19,7 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.witness.informacam.crypto.AesUtility;
+import org.witness.informacam.crypto.CredentialManager;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.InformaService;
@@ -223,7 +224,7 @@ public class InformaCam extends Application {
 				fis.read(ubytes);
 				user.inflate(ubytes);
 				
-				credentialManager = new CredentialManager(!this.ioService.isMounted());
+				credentialManager = new CredentialManager(this, !ioService.isMounted());
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;
 				} else if(credentialManager.getStatus() == Codes.Status.LOCKED) {
@@ -426,6 +427,9 @@ public class InformaCam extends Application {
 			
 				saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
 			
+		} else if(model.getClass().getName().equals(IUser.class.getName())) {
+			
+			ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
 		}
 	}
 
@@ -617,38 +621,6 @@ public class InformaCam extends Application {
 		
 	}
 	
-	public String initCacheWord(final String masterPassword, final String authToken) {
-		if(credentialManager == null) {
-			credentialManager = new CredentialManager(!ioService.isMounted()) {
-				@Override
-				public void onCacheWordUninitialized() {
-					super.onCacheWordUninitialized();
-					
-					setMasterPassword(masterPassword);
-				}
-				
-				@Override
-				public void onCacheWordOpened() {
-					// there is not credential block, so override this.
-				}
-				
-				@Override
-				public void onCacheWordLocked() {
-					// destroy this cacheword instance because we don't want one without the default onCacheWordOpened handler
-					credentialManager = null;
-					credentialManager = new CredentialManager(!ioService.isMounted());
-				}
-			};
-			
-			String credentials = new String(credentialManager.setAuthToken(authToken));
-			
-			credentialManager.logout();		// will trigger credentialManager to null itself out
-			return credentials;
-		}
-		
-		return null;
-	}
-	
 	public boolean hasCredentialManager() {
 		if(credentialManager != null) {
 			return true;
@@ -657,124 +629,13 @@ public class InformaCam extends Application {
 		return false;
 	}
 	
-	public int getCredentialManagerStatus() {
-		return credentialManager.getStatus();
+	public void setCredentialManager(CredentialManager credentialManager) {
+		this.credentialManager = credentialManager;
+		this.credentialManager.onResume();		
 	}
 	
-	public class CredentialManager implements ICacheWordSubscriber {
-		private CacheWordActivityHandler cacheWord;
-		private int status;
-		private boolean initIOCipher = true;
-		
-		public CredentialManager(boolean initIOCipher) {
-			this.status = Codes.Status.UNKNOWN;
-			this.initIOCipher = initIOCipher;
-			cacheWord = new CacheWordActivityHandler(InformaCam.this, this);
-		}
-		
-		public boolean login(String password) {
-			
-            PassphraseSecrets secrets;
-            try {
-                secrets = PassphraseSecrets.fetchSecrets(InformaCam.this, password.toCharArray());
-                cacheWord.setCachedSecrets(secrets);
-                
-                return true;
-            } catch (GeneralSecurityException e) {
-                Log.e(LOG, "invalid password or secrets has been tampered with");
-                e.printStackTrace();
-            }
-			
-			return false;
-		}
-		
-		public boolean logout() {
-			cacheWord.manuallyLock();
-			return true;
-		}
-		
-		public int getStatus() {
-			if(status != Codes.Status.UNKNOWN) {
-				return status;
-			} else {
-				if(!cacheWord.isLocked()) {
-					status = Codes.Status.UNLOCKED;
-				} else {
-					if(cacheWord.getCachedSecrets() == null) {
-						status = Codes.Status.UNINITIALIZED;
-					} else {
-						status = Codes.Status.LOCKED;
-					}
-				}
-				
-				return status;
-			}
-		}
-		
-		public void setMasterPassword(String password) {
-			cacheWord.setCachedSecrets(PassphraseSecrets.initializeSecrets(InformaCam.this, password.toCharArray()));
-		}
-		
-		public byte[] setAuthToken(String authToken) {
-			SecretKey key = ((PassphraseSecrets) cacheWord.getCachedSecrets()).getSecretKey();
-			return AesUtility.EncryptToKey(key, authToken).getBytes(Wiper.Utf8CharSet);
-		}
-		
-		public void onPause() {
-			cacheWord.onPause();
-		}
-		
-		public void onResume() {
-			cacheWord.onResume();
-		}
-		
-		@Override
-		public void onCacheWordUninitialized() {
-			Log.d(LOG, "onCacheWordUninitialized()");
-			this.status = Codes.Status.UNINITIALIZED; 
-		}
-
-		@Override
-		public void onCacheWordLocked() {
-			user.isLoggedIn = false;
-			user.lastLogOut = System.currentTimeMillis();
-			
-			ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
-			
-			Log.d(LOG, "onCacheWordLocked()");
-			this.status = Codes.Status.LOCKED;
-		}
-
-		@Override
-		public void onCacheWordOpened() {
-			Log.d(LOG, "onCacheWordOpened()");
-			boolean hasIOCipher = !initIOCipher;
-			
-			if(initIOCipher) {
-				ICredentials credentials = new ICredentials();
-				credentials.inflate(ioService.getBytes(Models.IUser.CREDENTIALS, Type.INTERNAL_STORAGE));
-				
-				SecretKey key = ((PassphraseSecrets) cacheWord.getCachedSecrets()).getSecretKey();
-				byte[] authTokenBytes = AesUtility.DecryptWithKey(key, credentials.iv.getBytes(), credentials.passwordBlock.getBytes());
-				String authToken = new String(authTokenBytes, Wiper.Utf8CharSet);
-				
-				if(authToken != null && ioService.initIOCipher(authToken)) {
-					hasIOCipher = true;
-				} else {
-					Log.e(LOG, "COULD NOT FULLY OPEN IOCIPHER AND GET CREDENTIALS AND STUFF");
-				}
-			}
-			
-			if(hasIOCipher) {
-				user.inflate(ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
-				
-				user.isLoggedIn = true;
-				user.lastLogIn = System.currentTimeMillis();
-				ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
-				
-				this.status = Codes.Status.UNLOCKED;
-			}
-		}
+	public int getCredentialManagerStatus() {
+		return credentialManager.getStatus();
 	}
 	
 }
