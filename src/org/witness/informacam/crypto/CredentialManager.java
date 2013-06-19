@@ -151,6 +151,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 		}
 		
 		if(hasIOCipher) {
+			informaCam.initData();
 			informaCam.user.inflate(informaCam.ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
 			
 			informaCam.user.isLoggedIn = true;

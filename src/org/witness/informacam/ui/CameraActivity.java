@@ -41,6 +41,8 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		setContentView(R.layout.activity_camera_waiter);
+		
 		informaCam = (InformaCam)getApplication();
 		informaCam.setStatusListener(this);
 		
@@ -183,14 +185,14 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onInformaStop(Intent intent) {
 		informaCam.ioService.stopDCIMObserver();
 		
-		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptorSize());
+		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor().toString());
 		setResult(Activity.RESULT_OK, result);
 		finish();
 	}
 
 	@Override
 	public void onUpdate(Message message) {
-		
+		Log.d(LOG, "I RECEIVED A MESSAGE (I SHOULDN'T THOUGH)");
 		
 	}
 

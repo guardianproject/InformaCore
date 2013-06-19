@@ -113,6 +113,7 @@ public class Model extends JSONObject {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {
 		fields = this.getClass().getFields();
+		//Log.d(LOG, "MODEL:\n" + values.toString());
 
 		for(Field f : fields) {
 			try {

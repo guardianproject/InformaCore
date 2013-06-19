@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Vector;
 
+import org.json.JSONArray;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -350,11 +351,11 @@ public class IOService {
 
 	public void startDCIMObserver(InformaCamEventListener listener) {
 	
-		dcimObserver = new DCIMObserver(mContext, listener);
+		dcimObserver = new DCIMObserver(mContext);
 	}
 	
-	public int getDCIMDescriptorSize() {
-		return dcimObserver.dcimDescriptor.numEntries;
+	public JSONArray getDCIMDescriptor() {
+		return dcimObserver.dcimDescriptor.getDCIMDescriptor();
 	}
 	
 	public void stopDCIMObserver() {

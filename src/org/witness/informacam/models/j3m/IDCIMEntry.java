@@ -1,8 +1,14 @@
 package org.witness.informacam.models.j3m;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+
+import android.util.Log;
 
 public class IDCIMEntry extends Model {
 	public String uri = null;
@@ -20,6 +26,8 @@ public class IDCIMEntry extends Model {
 	public long size = 0L;
 	public long timeCaptured = 0L;
 	public long id = 0L;
+	
+	public String jobId = null; 
 
 	public IDCIMEntry() {
 		super();
@@ -34,6 +42,20 @@ public class IDCIMEntry extends Model {
 		} while(bytesAvailable <= 0);
 		
 		return true;
+	}
+
+	public String setJobId() {
+		try {
+			jobId = MediaHasher.hash(new String(System.currentTimeMillis() + "DERPIE DERPIE DERP").getBytes(), "MD5");
+		} catch (NoSuchAlgorithmException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return jobId;
 	}
 
 }

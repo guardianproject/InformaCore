@@ -25,7 +25,7 @@ public class DCIMObserver {
 	Handler h;
 	private Context mContext;
 	
-	public DCIMObserver(Context context, InformaCamEventListener listener) {
+	public DCIMObserver(Context context) {
 		
 		mContext = context;
 		
@@ -45,7 +45,7 @@ public class DCIMObserver {
 			mContext.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
 		}
 
-		dcimDescriptor = new IDCIMDescriptor(mContext, listener);
+		dcimDescriptor = new IDCIMDescriptor(mContext);
 		dcimDescriptor.startSession();
 
 		Log.d(LOG, "DCIM OBSERVER INITED");

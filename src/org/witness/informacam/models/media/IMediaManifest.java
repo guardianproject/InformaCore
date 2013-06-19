@@ -20,12 +20,12 @@ import com.google.common.collect.Collections2;
 import android.util.Log;
 
 public class IMediaManifest extends Model {
-	private ArrayList<IMedia> listMedia = new ArrayList<IMedia>();
+	public List<IMedia> listMedia = new ArrayList<IMedia>();
 
 	public IMediaManifest() {}
 	
-	public void save() {
-		InformaCam.getInstance().saveState(((Model) this), new info.guardianproject.iocipher.File(IManifest.MEDIA));
+	public boolean save() {
+		return InformaCam.getInstance().saveState(this);
 	}
 	
 	public List<IMedia> getMediaList ()
@@ -50,7 +50,10 @@ public class IMediaManifest extends Model {
 	
 	public boolean addMediaItem (IMedia mediaToAdd)
 	{
-		return listMedia.add(mediaToAdd);
+		boolean res = listMedia.add(mediaToAdd);
+		Log.d(LOG, this.asJson().toString());
+		return res;
+		
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })

@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.models.Model;
@@ -46,7 +47,9 @@ public class IDCIMDescriptor extends Model {
 	public long endTime = 0L;
 	public List<IMedia> dcimEntries = null;
 	public List<IDCIMEntry> thumbnails = null;
+	
 	public int numEntries = 0;
+	private JSONArray shortDescription = new JSONArray();
 
 	InformaCam informaCam = InformaCam.getInstance();
 	private Context mContext = null;
@@ -54,14 +57,11 @@ public class IDCIMDescriptor extends Model {
 	private LinkedBlockingQueue<EntryJob> mQueue;
 	
 	private Thread threadJobProc = null;
-	
-	private InformaCamEventListener mListener;
-	
-	public IDCIMDescriptor(Context context, InformaCamEventListener listener) {
+		
+	public IDCIMDescriptor(Context context) {
 		super();
 		
 		mContext = context;
-		mListener = listener;
 		mQueue = new LinkedBlockingQueue<EntryJob>();
 		
 		threadJobProc = new Thread (new JobProc());
@@ -161,7 +161,17 @@ public class IDCIMDescriptor extends Model {
 					entry.mediaType = MimeType.VIDEO;
 				}
 				
-				numEntries++;
+				try {
+					JSONObject sd = new JSONObject();
+					sd.put(Models.IDCIMEntry.MEDIA_TYPE, entry.mediaType);
+					sd.put(Models.IDCIMEntry.INDEX, entry.setJobId());
+					shortDescription.put(sd);
+				} catch(JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+				
+				numEntries++;				
 			}
 
 			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
@@ -174,7 +184,7 @@ public class IDCIMDescriptor extends Model {
 				IMedia media = new IMedia();
 				media.dcimEntry = entry;
 				media._id = media.generateId(entry.originalHash);
-
+				
 				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 					IImage image = new IImage(media);
 					image.analyze();
@@ -229,7 +239,6 @@ public class IDCIMDescriptor extends Model {
 		newFileThumb = null;
 	}
 	
-	@SuppressLint("InlinedApi")
 	private IDCIMEntry analyze(IDCIMEntry entry, Context c) {
 		try {
 			Log.d(LOG, "analyzing: " + entry.asJson().toString());
@@ -412,36 +421,32 @@ public class IDCIMDescriptor extends Model {
 
          informaCam.saveState(IDCIMDescriptor.this);
 
-         for(IMedia media : dcimEntries) {
-           for(IMedia m : informaCam.mediaManifest.getMediaList()) {
-             m.isNew = false;
-           }
-
-           informaCam.mediaManifest.addMediaItem((IMedia) media);
-           
+         for(IMedia m : informaCam.mediaManifest.getMediaList()) {
+        	 m.isNew = false;
          }
          
-         informaCam.mediaManifest.save();
+         for(IMedia media : dcimEntries) {
+        	 ((IMedia) media).isNew = true;
+        	 informaCam.mediaManifest.addMediaItem((IMedia) media);
+         }
          
-
          // save it
-         boolean blobSaved = informaCam.ioService.saveBlob(informaCam.mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-         
-         if(blobSaved) {
-           //Log.d(LOG, "NOW THE MANIFEST READS: " + informaCam.mediaManifest.asJson().toString());
-
+         if(informaCam.mediaManifest.save()) {
            Bundle data = new Bundle();
            data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
            Message message = new Message();
            message.setData(data);
 
+           InformaCamEventListener mListener = informaCam.getEventListener();
            if (mListener != null)
         	   mListener.onUpdate(message);
-         }
-         
-         informaCam.saveStates();
-		       
+         }		       
 		
+	}
+
+
+	public JSONArray getDCIMDescriptor() {
+		return shortDescription;
 	}
 	
 	

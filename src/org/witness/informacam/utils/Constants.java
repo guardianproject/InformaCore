@@ -464,6 +464,8 @@ public class Constants {
 			public static final String HASH = "hash";
 			public static final String THUMBNAIL = "thumbnail";
 			public static final String AUTHORITY = "authority";
+			public static final String MEDIA_TYPE = "mediaType";
+			public static final String INDEX = "index";
 		}
 
 		public class IDCIMDescriptor {

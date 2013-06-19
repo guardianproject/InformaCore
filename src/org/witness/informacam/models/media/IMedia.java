@@ -76,7 +76,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	protected Handler responseHandler;
 	protected boolean debugMode = true;
-
+	
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
 	}
