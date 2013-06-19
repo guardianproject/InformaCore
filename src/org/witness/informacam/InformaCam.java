@@ -220,18 +220,16 @@ public class InformaCam extends Application {
 			if(fis.available() == 0) {
 				startCode = INIT;
 			} else {
+				setCredentialManager(new CredentialManager(this, !ioService.isMounted()));
+				
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
 				
-				credentialManager = new CredentialManager(this, !ioService.isMounted());
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;
 				} else if(credentialManager.getStatus() == Codes.Status.LOCKED) {
 					startCode = LOGIN;
-				} else if(credentialManager.getStatus() == Codes.Status.UNINITIALIZED) {
-					// shouldn't happen here but just in case it does...
-					startCode = INIT;
 				}
 			}
 		} catch (FileNotFoundException e) {
@@ -618,6 +616,7 @@ public class InformaCam extends Application {
 		super.onTerminate();
 		
 		this.shutdown();
+		credentialManager.logout();
 		
 	}
 	

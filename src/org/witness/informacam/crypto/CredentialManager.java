@@ -12,12 +12,15 @@ import javax.crypto.SecretKey;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.organizations.ICredentials;
 import org.witness.informacam.utils.Constants.App.Crypto;
+import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 
 public class CredentialManager implements ICacheWordSubscriber {
@@ -27,13 +30,19 @@ public class CredentialManager implements ICacheWordSubscriber {
 	private boolean initIOCipher = true;
 	private Context context;
 	
+	protected boolean firstUse = false;
 	InformaCam informaCam = InformaCam.getInstance();
 	private final static String LOG = Crypto.LOG;
 	
 	public CredentialManager(Context context, boolean initIOCipher) {
+		this(context, initIOCipher, false);
+	}
+	
+	public CredentialManager(Context context, boolean initIOCipher, boolean firstUse) {
 		this.status = Codes.Status.UNKNOWN;
 		this.initIOCipher = initIOCipher;
 		this.context = context;
+		this.firstUse = firstUse;
 		
 		cacheWord = new CacheWordActivityHandler(this.context, this);
 	}
@@ -87,6 +96,15 @@ public class CredentialManager implements ICacheWordSubscriber {
 		return AesUtility.EncryptToKey(key, authToken).getBytes(Wiper.Utf8CharSet);
 	}
 	
+	private void update(int code) {
+		Bundle data = new Bundle();
+		data.putInt(Codes.Extras.MESSAGE_CODE, code);
+		Intent intent = new Intent(Actions.INFORMACAM_START)
+			.putExtra(Codes.Keys.SERVICE, data)
+			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess());
+		informaCam.sendBroadcast(intent);
+	}
+	
 	public void onPause() {
 		cacheWord.onPause();
 	}
@@ -98,7 +116,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 	@Override
 	public void onCacheWordUninitialized() {
 		Log.d(LOG, "onCacheWordUninitialized()");
-		this.status = Codes.Status.UNINITIALIZED; 
+		this.status = Codes.Status.UNINITIALIZED;
 	}
 
 	@Override
@@ -140,6 +158,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 			informaCam.ioService.saveBlob(informaCam.user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
 			
 			this.status = Codes.Status.UNLOCKED;
+			update(Codes.Messages.Home.INIT);
 		}
 	}
 }

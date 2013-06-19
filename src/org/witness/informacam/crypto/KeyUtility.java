@@ -145,50 +145,48 @@ public class KeyUtility {
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 			
-			final CredentialManager credentialManager = new CredentialManager(informaCam, !informaCam.ioService.isMounted()) {
+			informaCam.setCredentialManager(new CredentialManager(informaCam, !informaCam.ioService.isMounted(), true) {
 				@Override
 				public void onCacheWordUninitialized() {
-					Log.d(LOG, "INIT: onCacheWordUninitialized()");
+					if(firstUse) {
 					
-					try {
-						setMasterPassword(informaCam.user.getString(IUser.PASSWORD));
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
+						Log.d(LOG, "INIT: onCacheWordUninitialized()");
+
+						try {
+							setMasterPassword(informaCam.user.getString(IUser.PASSWORD));
+						} catch (JSONException e) {
+							Log.e(LOG, e.toString());
+							e.printStackTrace();
+						}
+					} else {
+						super.onCacheWordUninitialized();
 					}
 				}
 				
 				@Override
 				public void onCacheWordOpened() {
 					// there is not credential block, so override this.
-					Log.d(LOG, "INIT: onCacheWordOpened()");
-					String authTokenBlobBytes = new String(setAuthToken(authToken));
-					
-					try {
-						JSONObject authTokenBlob = (JSONObject) new JSONTokener(authTokenBlobBytes).nextValue();
-						authTokenBlob.put(ICredentials.PASSWORD_BLOCK, authTokenBlob.getString("value"));
-						authTokenBlob.remove("value");
-						
-						if(informaCam.ioService.saveBlob(authTokenBlob.toString().getBytes(), new java.io.File(IUser.CREDENTIALS))) {
-							informaCam.user.hasCredentials = true;
-							cacheWord.manuallyLock();
+					if(firstUse) {
+						Log.d(LOG, "INIT: onCacheWordOpened()");
+						String authTokenBlobBytes = new String(setAuthToken(authToken));
+
+						try {
+							JSONObject authTokenBlob = (JSONObject) new JSONTokener(authTokenBlobBytes).nextValue();
+							authTokenBlob.put(ICredentials.PASSWORD_BLOCK, authTokenBlob.getString("value"));
+							authTokenBlob.remove("value");
+
+							if(informaCam.ioService.saveBlob(authTokenBlob.toString().getBytes(), new java.io.File(IUser.CREDENTIALS))) {
+								informaCam.user.hasCredentials = true;
+							}
+						} catch (JSONException e) {
+							Log.e(LOG, e.toString());
+							e.printStackTrace();
 						}
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
+					} else {
+						super.onCacheWordOpened();
 					}
-					
 				}
-				
-				@Override
-				public void onCacheWordLocked() {
-					Log.d(LOG, "INIT: onCacheWordLocked()");
-					
-					cacheWord.disconnect();					
-					informaCam.setCredentialManager(new CredentialManager(informaCam, !informaCam.ioService.isMounted()));
-				}
-			};
-			credentialManager.onResume();
+			});
 			
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
@@ -197,7 +195,7 @@ public class KeyUtility {
 			if(
 					informaCam.ioService.saveBlob(baseImageBytes, new info.guardianproject.iocipher.File(IUser.BASE_IMAGE)) &&
 					informaCam.ioService.delete(informaCam.user.getString(IUser.PATH_TO_BASE_IMAGE), Storage.Type.INTERNAL_STORAGE)
-					) {
+			) {
 				informaCam.user.remove(IUser.PATH_TO_BASE_IMAGE);
 
 				progress += 10;
