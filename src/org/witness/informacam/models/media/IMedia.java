@@ -164,9 +164,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public IRegion addRegion() {
+	public IRegion addRegion(Activity activity, IRegionDisplayListener listener) {
 		try {
-			return addRegion(null, 0, 0, 0, 0, null);
+			return addRegion(activity, 0, 0, 0, 0, listener);
 		} catch (JSONException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();

@@ -31,10 +31,14 @@ public class IRegion extends Model {
 	public void init(Activity context, IRegionBounds bounds, boolean isNew, IRegionDisplayListener listener) {
 		
 		this.bounds = bounds;
-		regionDisplay = new IRegionDisplay(context, this, listener);
+		mListener = listener;
+		
+		regionDisplay = new IRegionDisplay(context, this, mListener);
 
 		if(isNew) {
-			this.bounds.calculate(listener.getSpecs(),context);
+			if(mListener != null) {
+				this.bounds.calculate(mListener.getSpecs(),context);
+			}
 			InformaCam.getInstance().informaService.addRegion(this);
 		}
 	}
@@ -46,7 +50,10 @@ public class IRegion extends Model {
 	public void update(Activity a) {
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		bounds.calculate(mListener.getSpecs(), a);
+		if(mListener != null) {
+			bounds.calculate(mListener.getSpecs(), a);
+		}
+		
 		informaCam.informaService.updateRegion(this);
 	}
 
