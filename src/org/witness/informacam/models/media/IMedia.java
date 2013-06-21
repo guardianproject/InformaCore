@@ -530,15 +530,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	@Override
 	public void onMetadataEmbeded(java.io.File version) {
-
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
-/*
-		Intent intent = new Intent()
-			.setAction(Intent.ACTION_SEND)
-			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(version))
-			.setType("file/");
-
-		context.startActivity(Intent.createChooser(intent, context.getString(R.string.send)));
-		*/
 	}	
 }

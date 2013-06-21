@@ -257,13 +257,6 @@ public class InformaCam extends Application {
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Login.DO_LOGIN);
 			break;
 		case RUN:
-			try {
-				signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
-			} catch (PGPException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-			
 			java.io.File icDump = new java.io.File(Storage.EXTERNAL_DIR);
 			if(!icDump.exists()) {
 				icDump.mkdir();
@@ -280,6 +273,13 @@ public class InformaCam extends Application {
 	}
 	
 	public void initData() {
+		try {
+			signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
+		} catch (PGPException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
 		mediaManifest = (IMediaManifest) getModel(mediaManifest);
 		if(mediaManifest.getMediaList().size() > 0) {
 			for(IMedia m : mediaManifest.getMediaList()) {
@@ -509,19 +509,6 @@ public class InformaCam extends Application {
 		notificationsManifest.notifications.add(notification);
 		saveState(notificationsManifest);
 		
-		if(showOnTop) {
-			/*
-			Notification n = new NotificationCompat.Builder(a)
-				.setContentTitle(notification.label)
-				.setContentText(notification.content)
-				.setContentIntent(PendingIntent.getActivity(this, 0, null, 0))
-				.getNotification();
-			
-			n.flags |= Notification.FLAG_AUTO_CANCEL;
-			notificationManager.notify(0, n);
-			*/
-		}
-		
 		if(callback != null) {
 			Message msg = new Message();
 			Bundle msgData = new Bundle();
@@ -530,11 +517,8 @@ public class InformaCam extends Application {
 			msgData.putInt(Models.INotification.ID, notificationsManifest.notifications.indexOf(notification));
 			msg.setData(msgData);
 			callback.sendMessage(msg);
+			
 		}
-		
-		if (mListAdapterListener != null)
-			mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);
-		
 	}
 
 	public void setListAdapterListener (ListAdapterListener lal)
