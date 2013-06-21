@@ -126,7 +126,7 @@ public class KeyUtility {
 		informaCam.update(data);
 		
 		// XXX: REMOVE THIS!
-		informaCam.user.isInOfflineMode = true;
+		//informaCam.user.isInOfflineMode = true;
 
 		try {
 			byte[] baseImageBytes = informaCam.ioService.getBytes(informaCam.user.getString(IUser.PATH_TO_BASE_IMAGE), Storage.Type.INTERNAL_STORAGE);
@@ -433,7 +433,7 @@ public class KeyUtility {
 	}
 
 	public static IOrganization installICTD(byte[] rc, ISecretKey secretKey) {
-		return installICTD(rc, null);
+		return installICTD(rc, null, secretKey);
 	}
 
 	public static IOrganization installICTD(byte[] rc, IOrganization organization, ISecretKey secretKey) {
