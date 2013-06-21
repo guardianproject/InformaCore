@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="get_in">Gå in</string>
+  <string name="cancel">Avbryt</string>
+  <string name="send">Skicka\u2026</string>
+  <string name="export">Exportera</string>
+</resources>

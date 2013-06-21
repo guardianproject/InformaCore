@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="app_name">InformaCam</string>
+  <string name="welcome">Velkommen!</string>
+  <string name="name">Navn</string>
+  <string name="password">Passord</string>
+  <string name="password_again">Gjenta passord</string>
+  <string name="take_a_boring_photo">Ta et kjedelig foto</string>
+  <string name="we_are_generating_your">Vi genererer nøkkelen din. Dette vil ta noen minutter.</string>
+  <string name="in_the_meantime_adjust">I mellomtiden, juster innstillingene dine:</string>
+  <string name="trashed">slettede</string>
+  <string name="saved">lagret</string>
+  <string name="done">Ferdig!</string>
+  <string name="please_wait_while_your">Vennligst vent mens generering av nøkkelen din ferdigstilles.</string>
+  <string name="ok">OK</string>
+  <string name="clear">Slett</string>
+  <string name="sorry_your_password_doesnt">Beklager, passordet ditt samsvarer ikke.</string>
+  <string name="your_password_should_be">Passordet ditt bør være på mer enn 10 tegn.</string>
+  <string name="your_device_is_all">Enheten din er klar.</string>
+  <string name="continue_">Fortsett</string>
+  <string name="could_not_find_any_camera_activity">Kunne ikke finne noen kamera-apper installert på telefonen din.</string>
+  <string name="get_in">Gå inn</string>
+  <string name="cancel">Avbryt</string>
+  <string name="permissions_title">InformaCam tillatelser</string>
+  <string name="permissions_description">Tillater at appen leser sensordata fra enhetens tilgjengelige sensorer (akselerometer, lysmåler, kompass, etc.), statusen til nettverket ditt, wifi status og bluetooth status hvis tilgjengelig.</string>
+  <string name="key_installed">Nøkkel installert</string>
+  <string name="x_has_verified_you">%1$s har verifisert deg. Du kan nå sende og motta medier og meldinger fra dem.</string>
+  <string name="send">Send\u2026</string>
+  <string name="key_sent">Nøkkel sendt</string>
+  <string name="you_have_successfully_sent">Nøkkelen din ble sendt til %1$s. Når den verifiseres hos dem, så kan du begynne å sende og motta medier og meldinger.</string>
+  <string name="export">Eksporter</string>
+  <string name="you_exported_this_x">Du eksportere denne %1$s.</string>
+  <string name="you_exported_this_x_to_x">Du sendte denne %1$s til %2$s</string>
+  <string name="image">bilde</string>
+  <string name="video">video</string>
+  <string name="log">logg</string>
+  <string name="gps_not_available_your">GPS er ikke fullt tilgjengelig. Det er mulig dataene dine ikke blir så nøyaktige.</string>
+</resources>

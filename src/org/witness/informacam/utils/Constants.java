@@ -120,6 +120,7 @@ public class Constants {
 			public static final String GPS_FAILURE = "gps_failure";
 			public static final String SET_LOCALES = "set_locales";
 			public static final String LOCALE_PREF_KEY = "locale_pref_key";
+			public static final String CHANGE_LOCALE = "changeLocale";
 		}
 
 		public static final class Messages {

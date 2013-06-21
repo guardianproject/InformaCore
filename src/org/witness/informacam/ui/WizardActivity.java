@@ -23,6 +23,7 @@ import org.witness.informacam.utils.Constants.WizardListener;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Message;
 import android.support.v4.app.Fragment;
@@ -42,7 +43,6 @@ import android.widget.TextView;
 public class WizardActivity extends FragmentActivity implements WizardListener, InformaCamEventListener {
 	Intent init;
 	private final static String LOG = App.LOG;
-	private String packageName;
 
 
 	TabHost tabHost;
@@ -58,7 +58,6 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		packageName = this.getPackageName();
 
 		((InformaCam)getApplication()).setEventListener(this);
 
@@ -66,7 +65,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		
 		if(getIntent().hasExtra(Codes.Extras.SET_LOCALES)) {
 			Bundle locales = new Bundle();
-			locales.putStringArrayList(Codes.Extras.SET_LOCALES, getIntent().getStringArrayListExtra(Codes.Extras.SET_LOCALES));
+			locales.putSerializable(Codes.Extras.SET_LOCALES, getIntent().getSerializableExtra(Codes.Extras.SET_LOCALES));
 			locales.putString(Codes.Extras.LOCALE_PREF_KEY, getIntent().getStringExtra(Codes.Extras.LOCALE_PREF_KEY));
 			
 			fragments.add(Fragment.instantiate(this, WizardStepZero.class.getName(), locales));
@@ -136,6 +135,11 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 					});
 			tabHost.addTab(tabSpec);
 			i++;
+		}
+		
+		if(getIntent().hasExtra(Codes.Extras.CHANGE_LOCALE)) {
+			getIntent().removeExtra(Codes.Extras.CHANGE_LOCALE);
+			viewPager.setCurrentItem(1);
 		}
 
 
@@ -231,6 +235,12 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		setResult(Activity.RESULT_OK);
 		finish();
 	}
+	
+	@Override
+	public void onConfigurationChanged(Configuration configuration) {
+		setResult(Activity.RESULT_FIRST_USER, new Intent().putExtra(Codes.Extras.CHANGE_LOCALE, true));
+		finish();
+	}
 
 	@Override
 	public void onUpdate(Message message) {
@@ -241,6 +251,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	public void autoAdvance() {
 		Log.d(LOG, "advancing to " + (viewPager.getCurrentItem() + 1));
 		viewPager.setCurrentItem(viewPager.getCurrentItem() + 1);
+		
 	}
 
 	@Override
