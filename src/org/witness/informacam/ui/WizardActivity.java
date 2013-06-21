@@ -1,5 +1,6 @@
 package org.witness.informacam.ui;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -213,9 +214,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.hasCompletedWizard = true;
 		informaCam.user.lastLogIn = System.currentTimeMillis();
 		informaCam.user.isLoggedIn = true;
-
-		Log.d(LOG, "new user: " + informaCam.user.asJson());
-		informaCam.ioService.saveBlob(informaCam.user, new java.io.File(IManifest.USER));
+		
+		informaCam.saveState(informaCam.user);
+		informaCam.saveState(informaCam.languageMap);
 
 		if(!informaCam.user.isInOfflineMode) {
 			IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
@@ -232,6 +233,12 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 
 			}
 		}
+		
+		Iterator<String> it = getIntent().getExtras().keySet().iterator();
+		while(it.hasNext()) {
+			getIntent().removeExtra(it.next());
+		}
+		
 		setResult(Activity.RESULT_OK);
 		finish();
 	}

@@ -1,10 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">\n InformaCam</string>
-  <string name="ok">\n OK</string>
-  <string name="continue_">\n Continuer</string>
+  <string name="app_name">InformaCam</string>
+  <string name="welcome">Bienvenu!</string>
+  <string name="ok">OK</string>
+  <string name="continue_">Continuer</string>
   <string name="get_in">Entrer</string>
   <string name="cancel">Annuler</string>
   <string name="send">Envoyer\u2026</string>
   <string name="export">Exporter</string>
+  <string name="name">Nom</string>
+  <string name="done">C\'est Fini!</string>
 </resources>

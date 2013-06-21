@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.models.j3m.ILogPack;
-import org.witness.informacam.ui.IRegionDisplay;
+import org.witness.informacam.models.utils.IRegionDisplay;
 
 import android.net.Uri;
 import android.os.Environment;
@@ -535,6 +535,7 @@ public class Constants {
 		public static final String CACHES = "informaCaches";
 		public static final String NOTIFICATIONS = "notificationsManifest";
 		public static final String DEX = "dexDump";
+		public static final String LANG = "languageMap";
 	}
 
 	public final static class App {

@@ -2,7 +2,7 @@ package org.witness.informacam.models.media;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.ui.IRegionDisplay;
+import org.witness.informacam.models.utils.IRegionDisplay;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;

@@ -2,10 +2,12 @@ package org.witness.informacam.ui.screens;
 
 import java.util.Locale;
 
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.ui.WizardActivity;
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.LanguageMap;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -14,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -27,7 +30,7 @@ public class WizardStepZero extends Fragment implements OnClickListener {
 	Activity a;
 	
 	RadioGroup languageChoices;
-	LanguageMap languageMap;
+	ILanguageMap languageMap;
 	Button commit;
 	
 	int choice = 0;
@@ -46,7 +49,7 @@ public class WizardStepZero extends Fragment implements OnClickListener {
 		rootView = li.inflate(R.layout.fragment_wizard_step_zero, null);
 		
 		languageChoices = (RadioGroup) rootView.findViewById(R.id.wizard_language_choices);
-		languageMap = (LanguageMap) getArguments().getSerializable(Codes.Extras.SET_LOCALES);
+		languageMap = (ILanguageMap) getArguments().getSerializable(Codes.Extras.SET_LOCALES);
 		
 		for(String l : languageMap.getLabels()) {
 			RadioButton rb = new RadioButton(a);
@@ -68,6 +71,8 @@ public class WizardStepZero extends Fragment implements OnClickListener {
 
 			languageChoices.addView(rb);
 		}
+		
+		InformaCam.getInstance().languageMap = languageMap;
 		langKey = getArguments().getString(Codes.Extras.LOCALE_PREF_KEY);
 		
 		commit = (Button) rootView.findViewById(R.id.wizard_commit);

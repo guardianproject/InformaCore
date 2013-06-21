@@ -1,5 +1,7 @@
 package org.witness.informacam;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.notifications.INotificationsManifest;
 import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.BackgroundProcessor;
@@ -63,6 +66,7 @@ public class InformaCam extends Application {
 	public IMediaManifest mediaManifest = new IMediaManifest();
 	public IInstalledOrganizations installedOrganizations = new IInstalledOrganizations();
 	public INotificationsManifest notificationsManifest = new INotificationsManifest();
+	public ILanguageMap languageMap = new ILanguageMap();
 	
 	public IUser user;
 
@@ -89,6 +93,7 @@ public class InformaCam extends Application {
 	private InformaCamEventListener mEventListener = null;
 	
 	private CredentialManager credentialManager = null;
+	
 	
 	//we really need to get rid of this
 	public static InformaCam getInstance ()
@@ -275,29 +280,22 @@ public class InformaCam extends Application {
 	}
 	
 	public void initData() {
-		byte[] mediaManifestBytes = ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
-
-		if(mediaManifestBytes != null) {
-			mediaManifest.inflate(mediaManifestBytes);
-			if(mediaManifest.getMediaList().size() > 0) {
-				for(IMedia m : mediaManifest.getMediaList()) {
-					m.isNew = false;
-				}
+		mediaManifest = (IMediaManifest) getModel(mediaManifest);
+		if(mediaManifest.getMediaList().size() > 0) {
+			for(IMedia m : mediaManifest.getMediaList()) {
+				m.isNew = false;
 			}
 		}
 		
-		byte[] installedOrganizationsBytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
-		if(installedOrganizationsBytes != null) {
-			installedOrganizations.inflate(installedOrganizationsBytes);
-		}
+		installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);
 		
-		byte[] notificationsManifestBytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
-		if(notificationsManifestBytes != null) {
-			notificationsManifest.inflate(notificationsManifestBytes);
-			
+		notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
+		if(notificationsManifest.notifications.size() > 0) {
 			notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
 			saveState(notificationsManifest);
 		}
+		
+		languageMap = (ILanguageMap) getModel(languageMap);
 	}
 	
 	private void setModels() {
@@ -414,7 +412,9 @@ public class InformaCam extends Application {
 			
 		} else if(model.getClass().getName().equals(IUser.class.getName())) {
 			
-			return ioService.saveBlob(user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
+			return ioService.saveBlob(model, new java.io.File(IManifest.USER));
+		} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
+			return saveState(model, new info.guardianproject.iocipher.File(IManifest.LANG));
 		}
 		
 		return false;
@@ -435,6 +435,8 @@ public class InformaCam extends Application {
 				bytes = ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
 				bytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
+				bytes = ioService.getBytes(IManifest.LANG, Type.IOCIPHER);
 			}
 
 			if(bytes != null) {
@@ -625,5 +627,4 @@ public class InformaCam extends Application {
 	public int getCredentialManagerStatus() {
 		return credentialManager.getStatus();
 	}
-	
 }

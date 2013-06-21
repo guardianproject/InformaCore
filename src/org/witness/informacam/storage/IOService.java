@@ -122,17 +122,7 @@ public class IOService {
 
 		
 		if(vfs == null) {
-			//we shouldn't call UI code here
-			/*
-			 *
-			Log.d(LOG, "also, VFS IS NULL SO...");
-			
-			InformaCam informaCam = (InformaCam)mContext.getApplication();
-			
-			if(!informaCam.attemptLogin()) {
-				informaCam.promptForLogin(Codes.Routes.RETRY_SAVE, data, file);
-				return false;
-			}*/
+			// TODO: this should throw exception
 			return false;
 		}
 		

@@ -1,4 +1,4 @@
-package org.witness.informacam.ui;
+package org.witness.informacam.models.utils;
 
 import org.witness.informacam.R;
 import org.witness.informacam.models.media.IRegion;
