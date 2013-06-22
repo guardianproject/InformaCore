@@ -45,7 +45,7 @@ public class DCIMObserver {
 			mContext.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
 		}
 
-		dcimDescriptor = new IDCIMDescriptor(mContext);
+		dcimDescriptor = new IDCIMDescriptor();
 		dcimDescriptor.startSession();
 
 		Log.d(LOG, "DCIM OBSERVER INITED");

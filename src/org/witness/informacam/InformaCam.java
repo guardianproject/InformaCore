@@ -70,13 +70,12 @@ public class InformaCam extends Application {
 	
 	public IUser user;
 
-	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent, backgroundProcessorIntent;
+	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent;
 
 	public UploaderService uploaderService = null;
 	public IOService ioService = null;
 	public SignatureService signatureService = null;
 	public InformaService informaService = null;
-	public BackgroundProcessor backgroundProcessor = null;
 
 	public Handler h = new Handler();
 
@@ -128,9 +127,6 @@ public class InformaCam extends Application {
 					case Codes.Routes.INFORMA_SERVICE:
 						informaService = InformaService.getInstance();
 						break;
-					case Codes.Routes.BACKGROUND_PROCESSOR:
-						backgroundProcessor = BackgroundProcessor.getInstance();
-						break;
 					}
 				} 
 			}
@@ -181,7 +177,6 @@ public class InformaCam extends Application {
 		}
 
 		informaServiceIntent = new Intent(this, InformaService.class);
-		backgroundProcessorIntent = new Intent(this, BackgroundProcessor.class);
 
 		signatureService = new SignatureService(InformaCam.this);
 		uploaderService = new UploaderService((Context)InformaCam.this, InformaCam.this);
@@ -336,10 +331,6 @@ public class InformaCam extends Application {
 				
 		if(informaService != null) {
 			stopService(informaServiceIntent);
-		}
-		
-		if(backgroundProcessor != null) {
-			stopService(backgroundProcessorIntent);
 		}
 		
 		Intent intent = new Intent(Actions.INFORMACAM_STOP)

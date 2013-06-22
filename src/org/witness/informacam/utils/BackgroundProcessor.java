@@ -1,101 +1,55 @@
 package org.witness.informacam.utils;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import org.witness.informacam.utils.Constants.Actions;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.App.Background;
-import org.witness.informacam.utils.Constants.Codes;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.Binder;
-import android.os.IBinder;
 import android.util.Log;
 
-public class BackgroundProcessor extends Service {
+@SuppressWarnings("serial")
+public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> implements Runnable {
+	InformaCam informaCam = InformaCam.getInstance();
 	
+	BackgroundTask currentTask = null;
+	BackgroundTask onBatchComplete = null;
 	
-	public class BackgroundTask {
-		public int type;
-		public String pathToData;
-		
-		public BackgroundTask(int type, String pathToData) {
-			this.type = type;
-			this.pathToData = pathToData;
-		}
-	}
-	
-	private static BackgroundProcessor backgroundProcessor;
+	boolean shouldRun = true;
+	boolean batchFilled = false;
 	
 	private final static String LOG = Background.LOG;
-	private final IBinder binder = new LocalBinder();
-		
-	public class LocalBinder extends Binder {
-		public BackgroundProcessor getService() {
-			return BackgroundProcessor.this;
-		}
+	
+	public void addTask(BackgroundTask task) {
+		add(task);
 	}
 	
-	public Object doTask(final BackgroundTask task) {
-		ExecutorService ex = Executors.newFixedThreadPool(100);
-		Future<Object> result = ex.submit(new Callable<Object>() {
-			
+	public void setOnBatchComplete(BackgroundTask onBatchComplete) {
+		this.onBatchComplete = onBatchComplete;
+	}
+	
+	public void stop() {
+		add(onBatchComplete);
+		batchFilled = true;
+	}
 
-			@Override
-			public Object call() throws Exception {
-				if(task.type == Codes.Tasks.ANALYZE_MEDIA) {
-					
+	@Override
+	public void run() {
+		while(shouldRun) {
+			try {
+				while((currentTask = take()) != null) {
+					if(currentTask.onStart()) {
+						currentTask.onStop();
+					}
 				}
-				
-				return null;
+			} catch (InterruptedException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
 			}
-		});
-		
-		
-		try {
-			return result.get();
-		} catch (InterruptedException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			
+			if(batchFilled && size() == 0) {
+				shouldRun = false;
+			}
 		}
-		
-		return null;
-	}
-	
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
-	
-	@Override
-	public void onCreate() {
-		Log.d(LOG, "started.");
-		
-		backgroundProcessor = this;
-		sendBroadcast(new Intent()
-			.setAction(Actions.ASSOCIATE_SERVICE)
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.BACKGROUND_PROCESSOR)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		sendBroadcast(new Intent()
-			.putExtra(Codes.Keys.SERVICE, Codes.Routes.BACKGROUND_PROCESSOR)
-			.setAction(Actions.DISASSOCIATE_SERVICE)
-			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
-	}
-	
-	public static BackgroundProcessor getInstance() {
-		return backgroundProcessor;
 	}
 
 }

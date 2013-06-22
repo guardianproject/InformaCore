@@ -6,10 +6,10 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import org.json.JSONArray;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -79,6 +79,7 @@ public class IOService {
 		return saveBlob(data, file, false, null);
 	}
 
+	@SuppressWarnings("static-access")
 	public boolean saveBlob(byte[] data, java.io.File file, boolean delete, String uri) {
 		try {
 			java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
@@ -344,7 +345,7 @@ public class IOService {
 		dcimObserver = new DCIMObserver(mContext);
 	}
 	
-	public JSONArray getDCIMDescriptor() {
+	public ArrayList<String> getDCIMDescriptor() {
 		return dcimObserver.dcimDescriptor.getDCIMDescriptor();
 	}
 	

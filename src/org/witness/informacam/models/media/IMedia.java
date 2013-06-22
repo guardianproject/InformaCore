@@ -461,7 +461,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return details.toString();
 	}
 
-	public void analyze() {
+	public boolean analyze() {
 		isNew = true;
 
 		try {
@@ -471,7 +471,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			if(!rootFolder.exists()) {
 				rootFolder.mkdir();
 			}
+			
+			return true;
 		} catch (ExceptionInInitializerError e) {}
+		
+		return false;
 
 	}
 

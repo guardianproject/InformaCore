@@ -28,7 +28,7 @@ public class IImage extends IMedia {
 	}
 
 	@Override
-	public void analyze() {
+	public boolean analyze() {
 		super.analyze();
 
 		InformaCam informaCam = InformaCam.getInstance();
@@ -85,5 +85,7 @@ public class IImage extends IMedia {
 
 		listViewBytes = null;
 		bitmap_.recycle();
+		
+		return true;
 	}
 }
