@@ -10,10 +10,13 @@ external/android-ffmpeg-java
 external/OnionKit/libonionkit
 external/IOCipher
 external/ODKFormParser
+external/CacheWord/cachewordlib
 END
 
 for project in "${MAPFILE[@]}"; do
-    android update lib-project --path $project
+    android update lib-project --path $project -t android-17
 done
 
-android update project --path . --subprojects
+android update project --path . -t android-17 --subprojects
+
+cp libs/android-support-v4.jar external/CacheWord/cachewordlib/libs/android-support-v4.jar
