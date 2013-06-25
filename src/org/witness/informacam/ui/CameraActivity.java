@@ -171,7 +171,13 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaStart(Intent intent) {
-		informaCam.ioService.startDCIMObserver(this);
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				informaCam.ioService.startDCIMObserver(CameraActivity.this);
+			}
+		});
+		
 
 		cameraIntent = new Intent(cameraIntentFlag);
 		cameraIntent.setComponent(cameraComponent);
@@ -183,7 +189,13 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaStop(Intent intent) {
-		informaCam.ioService.stopDCIMObserver();
+		h.post(new Runnable() {
+			@Override
+			public void run() {
+				informaCam.ioService.stopDCIMObserver();
+			}
+		});
+		
 		
 		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor().asJson().toString());
 		setResult(Activity.RESULT_OK, result);

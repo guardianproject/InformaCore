@@ -24,6 +24,10 @@ public class INotificationsManifest extends Model {
 		super();
 	}
 	
+	public List<INotification> listNotifications() {
+		return notifications;
+	}
+	
 	public INotification getById(final String _id) {
 		Collection<INotification> notifications_ = Collections2.filter(notifications, new Predicate<INotification>() {
 			@Override

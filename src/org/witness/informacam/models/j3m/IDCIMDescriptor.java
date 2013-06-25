@@ -71,7 +71,7 @@ public class IDCIMDescriptor extends Model {
 	}
 
 	public void stopSession() {
-		Log.d(LOG, "saved a dcim descriptor:\n" + shortDescription.toString());
+		Log.d(LOG, "saved a dcim descriptor");
 		queue.stop();
 	}
 

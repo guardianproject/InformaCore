@@ -82,15 +82,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public boolean delete() {
-		InformaCam informaCam = InformaCam.getInstance();
-
-		if(informaCam.mediaManifest.removeMediaItem(this)) {
-			informaCam.ioService.delete(rootFolder, Type.IOCIPHER);
-			informaCam.mediaManifest.save();
-			return true;
-		}
-
-		return false;
+		return InformaCam.getInstance().mediaManifest.removeMediaItem(this);
 	}
 
 	public IRegion getRegionAtRect() {

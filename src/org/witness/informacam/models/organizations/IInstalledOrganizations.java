@@ -7,6 +7,10 @@ import org.witness.informacam.models.Model;
 public class IInstalledOrganizations extends Model {
 	public List<IOrganization> organizations;
 	
+	public List<IOrganization> listOrganizations() {
+		return organizations;
+	}
+	
 	public IOrganization getByName(String organizationName) {
 		for(IOrganization o : organizations) {
 			if(o.organizationName.equals(organizationName)) {

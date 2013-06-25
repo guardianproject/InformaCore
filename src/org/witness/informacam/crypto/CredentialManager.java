@@ -53,6 +53,7 @@ public class CredentialManager implements ICacheWordSubscriber {
             secrets = PassphraseSecrets.fetchSecrets(context, password.toCharArray());
             cacheWord.setCachedSecrets(secrets);
             
+            
             return true;
         } catch (GeneralSecurityException e) {
             Log.e(LOG, "invalid password or secrets has been tampered with");
@@ -133,6 +134,8 @@ public class CredentialManager implements ICacheWordSubscriber {
 	@Override
 	public void onCacheWordOpened() {
 		Log.d(LOG, "onCacheWordOpened()");
+		cacheWord.setTimeoutMinutes(-1);
+		
 		boolean hasIOCipher = !initIOCipher;
 		
 		if(initIOCipher) {
