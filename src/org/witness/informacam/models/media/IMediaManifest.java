@@ -45,13 +45,17 @@ public class IMediaManifest extends Model {
 	
 	public boolean removeMediaItem (IMedia mediaToRemove)
 	{
-		return listMedia.remove(mediaToRemove);
+		boolean res = listMedia.remove(mediaToRemove);
+		save();
+		
+		return res;
 	}
 	
 	public boolean addMediaItem (IMedia mediaToAdd)
 	{
 		boolean res = listMedia.add(mediaToAdd);
-		Log.d(LOG, this.asJson().toString());
+		save();
+		
 		return res;
 		
 	}

@@ -185,7 +185,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onInformaStop(Intent intent) {
 		informaCam.ioService.stopDCIMObserver();
 		
-		Intent result = new Intent().putStringArrayListExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor());
+		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor().asJson().toString());
 		setResult(Activity.RESULT_OK, result);
 		finish();
 	}

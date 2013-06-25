@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -172,6 +173,30 @@ public class IOService {
 		return saveBlob(model.asJson().toString().getBytes(), file);
 	}
 	
+	public boolean isAvailable(String pathToData, int source) {
+		Object file = null;
+		switch(source) {
+		case Storage.Type.IOCIPHER:
+			file = new info.guardianproject.iocipher.File(pathToData);
+			
+			if(((info.guardianproject.iocipher.File) file).length() > 0) {
+				return true;
+			}
+			
+			break;
+		case Storage.Type.FILE_SYSTEM:
+			file = new java.io.File(pathToData);
+			
+			if(((java.io.File) file).length() > 0) {
+				return true;
+			}
+			
+			break;
+		}
+		
+		return false;
+	}
+	
 	public byte[] getBytes(String pathToData, int source) {
 		byte[] bytes = new byte[0];
 
@@ -315,6 +340,27 @@ public class IOService {
 
 		return false;
 	}
+	
+	public boolean clear(String pathToDirectory, int source) {
+		List<String> files = new ArrayList<String>();
+		
+		switch(source) {
+		case Storage.Type.IOCIPHER:
+			for(info.guardianproject.iocipher.File file : ((info.guardianproject.iocipher.File) new info.guardianproject.iocipher.File(pathToDirectory)).listFiles()) {
+				files.add(file.getAbsolutePath());
+			}
+			
+			break;
+		}
+		
+		for(String file : files) {
+			delete(file, source);
+		}
+		
+		
+		
+		return false;
+	}
 
 	public boolean delete(String pathToFile, int source) {
 		switch(source) {
@@ -345,8 +391,8 @@ public class IOService {
 		dcimObserver = new DCIMObserver(mContext);
 	}
 	
-	public ArrayList<String> getDCIMDescriptor() {
-		return dcimObserver.dcimDescriptor.getDCIMDescriptor();
+	public IDCIMDescriptor getDCIMDescriptor() {
+		return dcimObserver.dcimDescriptor;
 	}
 	
 	public void stopDCIMObserver() {

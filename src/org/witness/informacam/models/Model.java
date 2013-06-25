@@ -55,7 +55,7 @@ public class Model extends JSONObject {
 				try {
 					Class<?> subClz = Class.forName(model);
 					if(subClz.getSuperclass().equals(clz)) {
-						Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
+						//Log.d(LOG, "adding " + model + " as possible subclass for " + clz.getName());
 						
 						List<String> fieldSet = new ArrayList<String>();
 						for(Field subField : subClz.getDeclaredFields()) {
@@ -101,7 +101,7 @@ public class Model extends JSONObject {
 				
 				//Log.d(LOG, "found " + keyToFind + " in " + keyFoundInClasses + " class(es)");
 				if(keyFoundInClasses == 1) {
-					Log.d(LOG, "downcast object to " + c.getName());
+					//Log.d(LOG, "downcast object to " + c.getName());
 					return c;
 				}
 			}
@@ -187,7 +187,7 @@ public class Model extends JSONObject {
 			}
 		}
 	}
-
+	
 	public static int[] parseJSONAsIntArray(String value) {
 		String[] intStrings = value.substring(1, value.length() - 1).split(",");
 		int[] ints = new int[intStrings.length];
@@ -232,7 +232,7 @@ public class Model extends JSONObject {
 
 		return floatArray;
 	}
-
+	
 	public JSONObject asJson() {
 		fields = this.getClass().getFields();
 		JSONObject json = new JSONObject();

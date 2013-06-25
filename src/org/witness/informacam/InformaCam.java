@@ -216,6 +216,7 @@ public class InformaCam extends Application {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
+				user.isInOfflineMode = true;
 				
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;

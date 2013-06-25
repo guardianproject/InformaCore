@@ -13,10 +13,7 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 	
 	BackgroundTask currentTask = null;
 	BackgroundTask onBatchComplete = null;
-	
-	boolean shouldRun = true;
-	boolean batchFilled = false;
-	
+		
 	private final static String LOG = Background.LOG;
 	
 	public void addTask(BackgroundTask task) {
@@ -28,15 +25,17 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 	}
 	
 	public void stop() {
-		add(onBatchComplete);
-		batchFilled = true;
+		if(onBatchComplete != null) {
+			add(onBatchComplete);
+		}
 	}
 
 	@Override
 	public void run() {
-		while(shouldRun) {
+		while(true) {
 			try {
 				while((currentTask = take()) != null) {
+					Log.d(LOG, "starting a new task. current queue size: " + size());
 					if(currentTask.onStart()) {
 						currentTask.onStop();
 					}
@@ -44,10 +43,6 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 			} catch (InterruptedException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
-			}
-			
-			if(batchFilled && size() == 0) {
-				shouldRun = false;
 			}
 		}
 	}

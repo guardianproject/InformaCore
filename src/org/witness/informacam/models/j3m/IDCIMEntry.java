@@ -21,20 +21,22 @@ public class IDCIMEntry extends Model {
 	public long timeCaptured = 0L;
 	public long id = 0L;
 	
-	public String jobId = null; 
-
 	public IDCIMEntry() {
 		super();
 	}
 	
+	public IDCIMEntry(Object dcimEntry) {
+		super();
+		inflate(((Model) dcimEntry).asJson());
+	}
+	
 	public boolean isAvailable() {
-		int bytesAvailable = 0;
-		do {
-			byte[] fileBytes = InformaCam.getInstance().ioService.getBytes(fileName, Type.FILE_SYSTEM);
-			bytesAvailable = fileBytes.length;
-			fileBytes = null;
-		} while(bytesAvailable <= 0);
+		boolean isAvailable = false;
 		
-		return true;
+		do {
+			isAvailable = InformaCam.getInstance().ioService.isAvailable(fileName, Type.FILE_SYSTEM);
+		} while(!isAvailable);
+		
+		return isAvailable;
 	}
 }

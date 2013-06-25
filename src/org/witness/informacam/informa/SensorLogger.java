@@ -18,6 +18,7 @@ import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 
 public class SensorLogger<T> {
 	public T _sucker;
@@ -112,8 +113,9 @@ public class SensorLogger<T> {
 						logPack.captureTypes = new ArrayList<Integer>();
 					}
 					logPack.captureTypes.add(CaptureEvent.SENSOR_PLAYBACK);
-					if (mSuckerCacheListener != null)
+					if (mSuckerCacheListener != null) {
 						mSuckerCacheListener.onUpdate(logPack);
+					}
 					
 					//((SuckerCacheListener) informaCam.informaService).onUpdate(logPack);
 				} catch(NullPointerException e) {}

@@ -39,10 +39,11 @@ import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
 
 @SuppressLint("DefaultLocale")
-public class IDCIMDescriptor {
+public class IDCIMDescriptor extends Model {
 	InformaCam informaCam = InformaCam.getInstance();
 	
-	private ArrayList<String> shortDescription = new ArrayList<String>();
+	public List<IDCIMEntry> shortDescription = new ArrayList<IDCIMEntry>();
+	
 	private BackgroundProcessor queue = null;
 	private long startTime = 0L;
 	
@@ -51,18 +52,14 @@ public class IDCIMDescriptor {
 	public IDCIMDescriptor() {
 		startTime = System.currentTimeMillis()/1000;
 	}
-
-	public void addEntry(Uri authority, boolean isThumbnail) {
-		new EntryJob(authority, isThumbnail, startTime);
-	}
 	
-	public ArrayList<String> getDCIMDescriptor() {
-		return shortDescription;
+	public void addEntry(Uri authority, boolean isThumbnail) {
+		new EntryJob(queue, authority, isThumbnail, startTime);
 	}
 
 	public void startSession() {
 		queue = new BackgroundProcessor();
-		queue.setOnBatchComplete(new BatchCompleteJob());
+		queue.setOnBatchComplete(new BatchCompleteJob(queue));
 
 		new Thread(queue).start();
 		Log.d(LOG, "starting dcim session");
@@ -74,8 +71,8 @@ public class IDCIMDescriptor {
 	}
 
 	public void stopSession() {
+		Log.d(LOG, "saved a dcim descriptor:\n" + shortDescription.toString());
 		queue.stop();
-		Log.d(LOG, "saved a dcim descriptor:\n" + shortDescription.toString());		
 	}
 
 	@SuppressWarnings("serial")
@@ -85,13 +82,13 @@ public class IDCIMDescriptor {
 		Uri authority;
 
 		IDCIMEntry entry = new IDCIMEntry();
-		InformaCam informaCam = InformaCam.getInstance();
 
-		public EntryJob(Uri authority, boolean isThumbnail, long startTime) {
+		public EntryJob(BackgroundProcessor queue, Uri authority, boolean isThumbnail, long startTime) {
 			super(queue);
 			
 			try {
 				entry.put(Models.IDCIMEntry.AUTHORITY, authority.toString());
+				
 				this.isThumbnail = isThumbnail;
 				this.startTime = startTime;
 				this.authority = authority;
@@ -105,8 +102,11 @@ public class IDCIMDescriptor {
 				
 				if(queryContentProvider(sortBy)) {
 					if(!isThumbnail) {
-						entry.jobId = MediaHasher.hash(new String(System.currentTimeMillis() + "PLACEHOLDER ID").getBytes(), "MD5");
-						shortDescription.add(entry.jobId);
+						
+						IDCIMEntry clone = new IDCIMEntry(entry);
+						if(!shortDescription.contains(clone)) {
+							shortDescription.add(clone);
+						}
 					}
 					
 					queue.put(this);
@@ -115,12 +115,6 @@ public class IDCIMDescriptor {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			} catch (InterruptedException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}  catch (NoSuchAlgorithmException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IOException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
 			}	
@@ -134,18 +128,36 @@ public class IDCIMDescriptor {
 					IMedia media = new IMedia();
 					media.dcimEntry = entry;
 					media._id = media.generateId(entry.originalHash);
+					
+					boolean isFinishedProcessing = false;
 
 					if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 						IImage image = new IImage(media);
 
 						if(image.analyze()) {
-							informaCam.mediaManifest.addMediaItem(image);
+							this.informaCam.mediaManifest.addMediaItem(image);
+							isFinishedProcessing = true;
 						}
 					} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 						IVideo video = new IVideo(media);
 
 						if(video.analyze()) {
-							informaCam.mediaManifest.addMediaItem(video);
+							this.informaCam.mediaManifest.addMediaItem(video);
+							isFinishedProcessing = true;
+						}
+					}
+					
+					if(isFinishedProcessing) {
+						Bundle data = new Bundle();
+						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);
+						data.putString(Codes.Extras.CONSOLIDATE_MEDIA, entry.originalHash);
+						
+						Message message = new Message();
+						message.setData(data);
+
+						InformaCamEventListener mListener = this.informaCam.getEventListener();
+						if (mListener != null) {
+							mListener.onUpdate(message);
 						}
 					}
 					
@@ -172,8 +184,8 @@ public class IDCIMDescriptor {
 						entry.mediaType = MimeType.VIDEO;
 					}
 					
-					Log.d(LOG, "JUST CHEKCING THE TIME:\ncurrent time: " + startTime + " against captured time: " + entry.timeCaptured);
-					if(entry.timeCaptured < startTime) {
+					if(entry.timeCaptured < this.startTime) {
+						Log.d(LOG, "this media occured now");
 						return false;
 					}
 					
@@ -198,8 +210,6 @@ public class IDCIMDescriptor {
 				entry.size = file.length();
 				entry.timeCaptured = file.lastModified();
 				
-				Log.d(LOG, "JUST CHEKCING THE TIME (AGAIN) :\ncurrent time: " + startTime + " against captured time: " + entry.timeCaptured);
-
 				if(!entry.isAvailable()) {
 					return null;
 				}
@@ -207,7 +217,7 @@ public class IDCIMDescriptor {
 				entry.originalHash = MediaHasher.hash(file, "SHA-1");
 
 				if(entry.uri == null) {
-					entry.uri = IOUtility.getUriFromFile(informaCam, Uri.parse(entry.getString(Models.IDCIMEntry.AUTHORITY)), file).toString();
+					entry.uri = IOUtility.getUriFromFile(this.informaCam, Uri.parse(entry.getString(Models.IDCIMEntry.AUTHORITY)), file).toString();
 				}
 			} catch (NoSuchAlgorithmException e) {
 				Log.e(LOG, e.toString());
@@ -231,9 +241,9 @@ public class IDCIMDescriptor {
 				boolean bruteForceThumbnailFromMedia = false;
 
 				Bitmap b = null;			
-				b = MediaStore.Images.Thumbnails.getThumbnail(informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
+				b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 				if(b == null) {
-					b = MediaStore.Images.Thumbnails.getThumbnail(informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
+					b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
 				}
 
 				if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
@@ -248,7 +258,7 @@ public class IDCIMDescriptor {
 				entry.exif = new IExif();
 
 				try {
-					entry.exif.location = Model.parseJSONAsFloatArray(((GeoSucker) InformaCam.getInstance().informaService._geo).forceReturn().getString(Geo.Keys.GPS_COORDS));
+					entry.exif.location = Model.parseJSONAsFloatArray(((GeoSucker) this.informaCam.informaService._geo).forceReturn().getString(Geo.Keys.GPS_COORDS));
 				} catch (JSONException e) {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
@@ -281,7 +291,7 @@ public class IDCIMDescriptor {
 					}
 
 					if(bruteForceThumbnailFromMedia) {
-						byte[] bytes = InformaCam.getInstance().ioService.getBytes(entry.fileName, Type.FILE_SYSTEM);
+						byte[] bytes = this.informaCam.ioService.getBytes(entry.fileName, Type.FILE_SYSTEM);
 						Bitmap b_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 						b = ImageUtility.createThumb(b_, new int[] {b_.getWidth(), b_.getHeight()});
 						entry.exif.width = b_.getWidth();
@@ -328,7 +338,7 @@ public class IDCIMDescriptor {
 						}
 
 						info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(reviewDump, "PREVIEW_" + entry.name);
-						InformaCam.getInstance().ioService.saveBlob(previewBytes, preview);
+						this.informaCam.ioService.saveBlob(previewBytes, preview);
 						previewBytes = null;
 
 						entry.previewFrame = preview.getAbsolutePath();
@@ -370,12 +380,13 @@ public class IDCIMDescriptor {
 			info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(reviewDump, entry.name);
 			info.guardianproject.iocipher.File newFileThumb = new info.guardianproject.iocipher.File(reviewDump, entry.thumbnailName);
 
-			informaCam.ioService.saveBlob(
-					informaCam.ioService.getBytes(entry.fileName, Type.FILE_SYSTEM), 
+			this.informaCam.ioService.saveBlob(
+					this.informaCam.ioService.getBytes(entry.fileName, Type.FILE_SYSTEM), 
 					newFile,
 					true,
 					entry.uri);
-			informaCam.ioService.saveBlob(
+			
+			this.informaCam.ioService.saveBlob(
 					entry.thumbnailFile, 
 					newFileThumb,
 					true,
@@ -394,36 +405,45 @@ public class IDCIMDescriptor {
 	private class BatchCompleteJob extends BackgroundTask {
 		List<IDCIMEntry> thumbnails = new ArrayList<IDCIMEntry>();
 
-		public BatchCompleteJob() {
+		public BatchCompleteJob(BackgroundProcessor queue) {
 			super(queue);
 		}
 		
 		@Override
 		protected boolean onStart() {
+			
 			persist();
 			
 			return super.onStart();
 		}
 
-		public void addThumbnail(IDCIMEntry thumbnail) {
-			thumbnails.add(thumbnail);
-		}
-
-		public void persist() {
-			for(IDCIMEntry entry : thumbnails) {
-				informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
-				informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
-			}
-
+		@Override
+		protected void onStop() {
+			super.onStop();
+			
 			Bundle data = new Bundle();
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.STOP);
 			Message message = new Message();
 			message.setData(data);
 
-			InformaCamEventListener mListener = informaCam.getEventListener();
+			InformaCamEventListener mListener = this.informaCam.getEventListener();
 			if (mListener != null) {
 				mListener.onUpdate(message);
 			}
+		}
+		
+		public void addThumbnail(IDCIMEntry thumbnail) {
+			thumbnails.add(thumbnail);
+		}
+
+		public void persist() {
+			Log.d(LOG, "CLEANING UP AFTER DCIM OBSERVER");
+			for(IDCIMEntry entry : thumbnails) {
+				this.informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
+				this.informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
+			}
+			
+			this.informaCam.ioService.clear(Storage.REVIEW_DUMP, Type.IOCIPHER);
 		}
 	}
 }
