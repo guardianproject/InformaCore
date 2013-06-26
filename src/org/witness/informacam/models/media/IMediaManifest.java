@@ -111,19 +111,13 @@ public class IMediaManifest extends Model {
 		return new ArrayList<IMedia>(media_);
 	}
 	
-	public void sortBy(int order) {
+	public List<IMedia> sortBy(int order) {
 		if(listMedia == null || listMedia.size() == 0) {
-			return;
+			Log.d(LOG, "NO IT IS NULL NOW");
+			return null;
 		}
 		
-		for(IMedia m : listMedia) {
-			try {
-				m.put(Models.IMediaManifest.Sort.IS_SHOWING, true);
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
+		List<IMedia> _listMedia = new ArrayList<IMedia>();
 		
 		switch(order) {
 		case Models.IMediaManifest.Sort.DATE_DESC:
@@ -136,7 +130,7 @@ public class IMediaManifest extends Model {
 				
 			};
 			Collections.sort(listMedia, DateDesc);
-			break;
+			return listMedia;
 		case Models.IMediaManifest.Sort.DATE_ASC:
 			Comparator<IMedia> DateAsc = new Comparator<IMedia>() {
 
@@ -147,35 +141,37 @@ public class IMediaManifest extends Model {
 				
 			};
 			Collections.sort(listMedia, DateAsc);
-			break;
+			return listMedia;
 		case Models.IMediaManifest.Sort.TYPE_PHOTO:
+			
 			for(IMedia m : listMedia) {
-				if(!m.dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-					try {
-						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
-					} catch(JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					}
+				if(m.dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+					_listMedia.add(m);
 				}
 			}
 			break;
 		case Models.IMediaManifest.Sort.TYPE_VIDEO:
 			for(IMedia m : listMedia) {
-				if(!m.dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-					try {
-						m.put(Models.IMediaManifest.Sort.IS_SHOWING, false);
-					} catch(JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					}
+				if(m.dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+					_listMedia.add(m);
 				}
 			}
 			break;
 		case Models.IMediaManifest.Sort.LOCATION:
 			// TODO
-			break;
+			return listMedia;
 		}
+		
+		return _listMedia;
+		
+	}
+
+	public void setAllAsOld() {
+		for(IMedia m : listMedia) {
+			m.isNew = false;
+		}
+		
+		save();
 		
 	}
 	

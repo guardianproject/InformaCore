@@ -1,11 +1,12 @@
 package org.witness.informacam.models.organizations;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.witness.informacam.models.Model;
 
 public class IInstalledOrganizations extends Model {
-	public List<IOrganization> organizations;
+	public List<IOrganization> organizations = new ArrayList<IOrganization>();
 	
 	public List<IOrganization> listOrganizations() {
 		return organizations;
