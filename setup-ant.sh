@@ -18,7 +18,3 @@ for project in "${MAPFILE[@]}"; do
 done
 
 android update project --path . -t android-17 --subprojects
-
-cp libs/android-support-v4.jar external/CacheWord/cachewordlib/libs/android-support-v4.jar
-rm external/CacheWord/cachewordlib/libs/guava-r09.jar
-cp libs/guava-11.0.2.jar external/CacheWord/cachewordlib/libs/
