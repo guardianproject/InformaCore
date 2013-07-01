@@ -6,8 +6,6 @@ import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.models.connections.IConnection;
-import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
@@ -15,10 +13,7 @@ import org.witness.informacam.ui.screens.WizardStepZero;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.WizardListener;
 
 import android.app.Activity;
@@ -219,6 +214,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.saveState(informaCam.languageMap);
 
 		if(!informaCam.user.isInOfflineMode) {
+			/*
 			IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
 			
 			for(IConnection connection : pendingConnections.queue) {
@@ -232,6 +228,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				connection.save();
 
 			}
+			*/
 		}
 		
 		Iterator<String> it = getIntent().getExtras().keySet().iterator();

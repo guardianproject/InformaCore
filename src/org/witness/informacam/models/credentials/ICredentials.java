@@ -1,4 +1,4 @@
-package org.witness.informacam.models.organizations;
+package org.witness.informacam.models.credentials;
 
 import org.witness.informacam.models.Model;
 

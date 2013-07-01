@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.credentials.IIdentity;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.organizations.IOrganization;
@@ -268,8 +269,19 @@ public class KeyUtility {
 			aos.flush();
 			aos.close();
 			baos.flush();
+			
+			informaCam.user.alias = informaCam.user.getString(IUser.ALIAS);
+			informaCam.user.email = informaCam.user.getString(IUser.EMAIL);
+			
+			IIdentity userIdentity = new IIdentity();
+			userIdentity.alias = informaCam.user.alias;
+			userIdentity.email = informaCam.user.email;
+			userIdentity.fingerprint = pgpKeyFingerprint;
+			
+			Log.d(LOG, "NEW USER CREDENTIALS TO PACK:\n" + userIdentity.asJson().toString());
 
 			Map<String, byte[]> publicCredentials = new HashMap<String, byte[]>();
+			publicCredentials.put(IUser.CREDENTIALS, userIdentity.asJson().toString().getBytes());
 			publicCredentials.put(IUser.BASE_IMAGE, baseImageBytes);
 			publicCredentials.put(IUser.PUBLIC_KEY, baos.toByteArray());
 			baos.close();
@@ -297,9 +309,6 @@ public class KeyUtility {
 					secretKeyPackage.asJson().toString().getBytes(), 
 					new info.guardianproject.iocipher.File(IUser.SECRET))
 					) {
-				informaCam.user.alias = informaCam.user.getString(IUser.ALIAS);
-				informaCam.user.email = informaCam.user.getString(IUser.EMAIL);
-
 				informaCam.user.remove(IUser.AUTH_TOKEN);
 				informaCam.user.remove(IUser.PATH_TO_BASE_IMAGE);
 				informaCam.user.remove(IUser.ALIAS);
@@ -422,161 +431,5 @@ public class KeyUtility {
 		}
 		
 		return null;
-	}
-
-	public static IOrganization installICTD(String rc, ISecretKey secretKey) {
-		return installICTD(rc.getBytes(), secretKey);
-	}
-
-	public static IOrganization installICTD(String rc, IOrganization organization, ISecretKey secretKey) {
-		return installICTD(rc.getBytes(), organization, secretKey);
-	}
-
-	public static IOrganization installICTD(byte[] rc, ISecretKey secretKey) {
-		return installICTD(rc, null, secretKey);
-	}
-
-	public static IOrganization installICTD(byte[] rc, IOrganization organization, ISecretKey secretKey) {
-		InformaCam informaCam = InformaCam.getInstance();
-
-		if(organization == null) {
-			organization = new IOrganization();
-			organization.transportCredentials = new ITransportCredentials();
-		}
-
-		// decrypt
-		byte[] rawContent = EncryptionUtility.decrypt(rc, secretKey);
-		if(rawContent == null) {
-			return null;
-		}
-
-		List<info.guardianproject.iocipher.File> packageFiles = new ArrayList<info.guardianproject.iocipher.File>();
-		try {
-			for(String filePath : IOUtility.unzipFile(rawContent, MediaHasher.hash(rc, "SHA-1"), Type.IOCIPHER)) {
-				packageFiles.add(new info.guardianproject.iocipher.File(filePath));
-			}
-		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-			return null;
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-			return null;
-		}
-		rawContent = null;
-
-		if(packageFiles.size() > 0) {
-			String ext = null;
-			for(info.guardianproject.iocipher.File file : packageFiles) {
-				try {
-					ext = file.getName().substring(file.getName().lastIndexOf("."));
-				} catch(StringIndexOutOfBoundsException e) {
-					continue;
-				}
-
-				if(ext.equals(".txt")) {
-					try {
-
-						BufferedReader br = new BufferedReader(new InputStreamReader(new info.guardianproject.iocipher.FileInputStream(file)));
-						char[] buf = new char[1024];
-						int numRead = 0;
-
-						String line;
-
-						while((numRead = br.read(buf)) != -1) {
-							line = String.valueOf(buf, 0, numRead);
-
-							String[] lines = line.split(";");
-							for(String l : lines) {
-								Log.d(App.LOG, l);
-								String key = l.split("=")[0];
-								String value = l.split("=")[1];
-
-								if(key.equals(Models.IOrganization.REQUEST_URL)) {
-									String urlBase = null;
-									if(value.indexOf("http://") != -1) {
-										urlBase = value.substring(value.indexOf("http://") + 7);
-									}
-
-									if(value.indexOf("https://") != -1) {
-										urlBase = value.substring(value.indexOf("https://") + 8);
-									}
-
-									if(urlBase != null) {
-										String[] urlAndPort = urlBase.split(":");
-										if(urlAndPort.length > 1) {
-											organization.requestUrl = "https://" + urlAndPort[0] + "/";
-											if(urlAndPort[1].contains("/")) {
-												urlAndPort[1] = urlAndPort[1].replace("/", "");
-											}
-
-											organization.requestPort = Integer.parseInt(urlAndPort[1]);
-										}
-									} else {
-										urlBase = value + ((value.charAt(value.length() - 1) == '/') ? "" : "/");
-										organization.requestUrl = urlBase;
-									}
-
-									Log.d(LOG, "urlBase: " + urlBase + "\nrequestUrl: " + organization.requestUrl);
-
-
-								} if(key.equals(Models.ITransportCredentials.PASSWORD)) {
-									organization.transportCredentials.certificatePassword = value;
-								}
-							}
-
-							buf = new char[1024];
-						}
-
-						br.close();
-					}  catch(IOException e) {
-						Log.e(Storage.LOG, e.toString());
-						e.printStackTrace();
-					}
-				} else if(ext.equals(".p12")) {
-					organization.transportCredentials.certificatePath = file.getAbsolutePath();
-					Log.d(LOG, "transport credentials: " + organization.transportCredentials.certificatePath);
-				} else if(ext.equals(".asc")) {
-					// check to see if asc matches org fingerprint
-					try {
-						byte[] keyBlock = informaCam.ioService.getBytes(file.getAbsolutePath(), Type.IOCIPHER);
-
-						String fingerprint = new String(Hex.encode(KeyUtility.extractPublicKeyFromBytes(Base64.encode(keyBlock, Base64.DEFAULT)).getFingerprint()));
-
-						// try to match this up with an existing org
-						boolean found = false;
-						for(IOrganization org :informaCam.installedOrganizations.organizations) {
-							if(fingerprint.equals(org.organizationFingerprint)) {
-								organization.publicKeyPath = file.getAbsolutePath();
-								org.inflate(organization.asJson());
-
-								organization = org;
-								found = true;
-								Log.d(LOG, "importing key with fingerprint: " + fingerprint + "\nwhich should match " + org.organizationFingerprint);
-								break;
-							}
-						}
-
-						if(!found) {
-							Log.e(LOG, "this fingerprint does not match the organization fingerprint.");
-							return null;
-						}
-
-					} catch (IOException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					} catch (PGPException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					}
-
-
-				}
-			}
-		}
-
-
-		return organization;
 	}
 }

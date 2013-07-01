@@ -17,7 +17,6 @@ import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.credentials.IUser;
@@ -30,7 +29,6 @@ import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.storage.IOService;
-import org.witness.informacam.transport.UploaderService;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
@@ -72,7 +70,6 @@ public class InformaCam extends Application {
 
 	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent;
 
-	public UploaderService uploaderService = null;
 	public IOService ioService = null;
 	public SignatureService signatureService = null;
 	public InformaService informaService = null;
@@ -179,7 +176,6 @@ public class InformaCam extends Application {
 		informaServiceIntent = new Intent(this, InformaService.class);
 
 		signatureService = new SignatureService(InformaCam.this);
-		uploaderService = new UploaderService((Context)InformaCam.this, InformaCam.this);
 		ioService = new IOService(InformaCam.this);
 		
 		new Thread ()
@@ -328,7 +324,6 @@ public class InformaCam extends Application {
 		saveStates();
 		
 		ioService.unmount();
-		uploaderService.shutdown(this);
 				
 		if(informaService != null) {
 			stopService(informaServiceIntent);
@@ -356,13 +351,6 @@ public class InformaCam extends Application {
 			e.printStackTrace();
 		}
 		
-		try {
-			saveState(uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
-		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-		
 	}
 
 	public boolean saveState(Model model, java.io.File cache) {
@@ -374,11 +362,7 @@ public class InformaCam extends Application {
 	}
 
 	public boolean saveState(Model model) {		
-		if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-			
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
-		
-		} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
+		if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 			
 			return saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
 		
@@ -417,8 +401,6 @@ public class InformaCam extends Application {
 		try {
 			if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 				bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-				bytes = ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 				bytes = ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
@@ -471,10 +453,6 @@ public class InformaCam extends Application {
 			mEventListener.onUpdate(message);
 	}
 
-	public void initUploads() {
-		uploaderService.init();
-	}
-	
 	public void updateNotification(INotification notification) {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
 		saveState(notificationsManifest);
@@ -547,9 +525,9 @@ public class InformaCam extends Application {
 			is.read(rc);
 			is.close();
 
-			ISecretKey secretKey = (ISecretKey)getModel(new ISecretKey());
+			/*TODO::: THIS!*/
+
 			
-			organization = KeyUtility.installICTD(rc, secretKey);
 			saveState(installedOrganizations);
 			
 			INotification notification = new INotification(getString(R.string.key_installed), getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			

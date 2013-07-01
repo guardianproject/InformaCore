@@ -9,9 +9,8 @@ import java.util.List;
 import org.ffmpeg.android.BinaryInstaller;
 import org.ffmpeg.android.ShellUtils;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.connections.IConnection;
-import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Ffmpeg;
@@ -38,7 +37,7 @@ public class VideoConstructor {
 	int destination;
 
 	IMedia media;
-	IConnection connection;
+	ITransportStub submission;
 
 	private final static String LOG = Ffmpeg.LOG;
 
@@ -63,15 +62,15 @@ public class VideoConstructor {
 	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) {
 		this(context, media, pathToVideo, pathToJ3M, pathToNewVideo, destination, null);
 	}
-
-	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, IConnection connection) {
+	
+	
+	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, ITransportStub submission) {
 		this.pathToVideo = pathToVideo;
 		this.pathToJ3M = pathToJ3M;
 		this.media = media;
 		this.pathToNewVideo = pathToNewVideo;
 		this.destination = destination;
-		this.connection = connection;
-
+		this.submission = submission;
 
 		fileBinDir = context.getDir("bin",0);
 
@@ -252,14 +251,7 @@ public class VideoConstructor {
 			info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
 			
-			if(connection != null) {
-				ISubmission submission = new ISubmission();	// downcast the connection to submission
-				submission.inflate(connection.asJson());
-			
-				submission.Set(newVideo);
-				submission.save();
-			}
-			
+			// TODO: IF CONNECTION/SUBMISSION
 			media.onMetadataEmbeded(newVideo);			
 		} else if(destination == Type.FILE_SYSTEM) {
 			java.io.File newVideo = new java.io.File(pathToNewVideo);

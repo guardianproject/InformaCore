@@ -4,9 +4,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.connections.IConnection;
-import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -27,8 +26,9 @@ public class ImageConstructor {
 
 	String pathToNewImage;
 	int destination;
+	
 	IMedia media;
-	IConnection connection;
+	ITransportStub submission;
 	
 	private final static String LOG = Informa.LOG;
 
@@ -45,8 +45,8 @@ public class ImageConstructor {
 	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination) {
 		this(media, pathToImage, pathToJ3M, pathToNewImage, destination, null);
 	}
-
-	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination, IConnection connection) {
+	
+	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination, ITransportStub submission) {
 		informaCam = InformaCam.getInstance();
 
 		this.pathToImage = pathToImage;
@@ -54,7 +54,7 @@ public class ImageConstructor {
 		this.pathToNewImage = pathToNewImage;
 		this.destination = destination;
 		this.media = media;
-		this.connection = connection;
+		this.submission = submission;
 
 		byte[] metadata = informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER);
 
@@ -95,14 +95,7 @@ public class ImageConstructor {
 			info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
 			
-			if(connection != null) {
-				ISubmission submission = new ISubmission(connection);	// downcast the connection to submission
-			
-				submission.Set(newImage);
-				submission.save();
-			}
-			
-			Log.d(LOG, "OK FINISHED UP for media id: " + media._id);
+			// TODO: IF CONNECTION/SUBMISSION
 			media.onMetadataEmbeded(newImage);
 			
 		} else if(destination == Type.FILE_SYSTEM) {

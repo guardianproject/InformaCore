@@ -10,7 +10,7 @@ import java.security.GeneralSecurityException;
 import javax.crypto.SecretKey;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.organizations.ICredentials;
+import org.witness.informacam.models.credentials.ICredentials;
 import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.Codes;
