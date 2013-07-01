@@ -348,7 +348,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
 			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
 			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
+			
+			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
+			
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
+			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 			

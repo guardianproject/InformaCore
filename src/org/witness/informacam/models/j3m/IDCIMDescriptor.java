@@ -257,15 +257,28 @@ public class IDCIMDescriptor extends Model {
 
 				entry.exif = new IExif();
 
-				try {
-					entry.exif.location = Model.parseJSONAsFloatArray(((GeoSucker) this.informaCam.informaService._geo).forceReturn().getString(Geo.Keys.GPS_COORDS));
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				} catch(NullPointerException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-					entry.exif.location = new float[] {0f,0f};
+				if (informaCam.informaService != null && informaCam.informaService._geo != null)
+				{
+					ILogPack logpack = ((GeoSucker) this.informaCam.informaService._geo).forceReturn();
+					
+					if (logpack != null)
+					{
+						try {
+							entry.exif.location = Model.parseJSONAsFloatArray(logpack.getString(Geo.Keys.GPS_COORDS));
+						} catch (JSONException e) {
+							Log.e(LOG, e.getMessage(),e);
+							
+						} catch(NullPointerException e) {
+							Log.e(LOG, e.getMessage(), e);
+							
+							entry.exif.location = new float[] {0f,0f};
+						}
+					}
+					else
+					{
+
+						entry.exif.location = new float[] {0f,0f};
+					}
 				}
 
 				Log.d(LOG, "MEDIA TYPE: " + entry.mediaType);
