@@ -14,12 +14,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
+import org.witness.informacam.informa.suckers.GeoFusedSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
-import org.witness.informacam.models.j3m.ISuckerCache;
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.models.j3m.ISuckerCache;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.utils.Constants.Actions;
@@ -27,13 +27,8 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
-import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
@@ -46,7 +41,10 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
@@ -57,7 +55,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private long startTime = 0L;
 	private long realStartTime = 0L;
 
-	private int GPS_WAITING = 0;
+	//private int GPS_WAITING = 0;
 
 	public SensorLogger<GeoSucker> _geo;
 	public SensorLogger<PhoneSucker> _phone;
@@ -102,7 +100,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		initCache();
 
-		_geo = new GeoSucker(this);
+		_geo = new GeoFusedSucker(this);
 		_geo.setSuckerCacheListener(this);
 		
 		_phone = new PhoneSucker(this);
@@ -141,6 +139,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 				long currentTime = getCurrentTime();
 				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
 				
+				/*
 				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
 
@@ -150,17 +149,17 @@ public class InformaService extends Service implements SuckerCacheListener {
 					} else {
 						Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
 						
-						/*
-						stopIntent.putExtra(Codes.Extras.GPS_FAILURE, true);
-						stopSelf();
-						*/
+				
+				//		stopIntent.putExtra(Codes.Extras.GPS_FAILURE, true);
+					//	stopSelf();
+						
 						if(currentTime == 0) {
 							mustUseSystemTime = true;
 							currentTime = System.currentTimeMillis();
 						}
 					}
 					
-				}
+				}*/
 
 				realStartTime = currentTime;
 				onUpdate(((GeoSucker) _geo).forceReturn());

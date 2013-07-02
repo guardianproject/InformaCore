@@ -60,11 +60,11 @@ public class VideoConstructor {
 		}
 	}
 	
-	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) {
+	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) throws IOException {
 		this(context, media, pathToVideo, pathToJ3M, pathToNewVideo, destination, null);
 	}
 
-	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, IConnection connection) {
+	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, IConnection connection) throws IOException {
 		this.pathToVideo = pathToVideo;
 		this.pathToJ3M = pathToJ3M;
 		this.media = media;
@@ -248,6 +248,8 @@ public class VideoConstructor {
 		
 		InformaCam informaCam = InformaCam.getInstance();
 		
+		boolean success = false;
+		
 		if(destination == Type.IOCIPHER) {
 			info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
@@ -260,17 +262,30 @@ public class VideoConstructor {
 				submission.save();
 			}
 			
-			media.onMetadataEmbeded(newVideo);			
+			media.onMetadataEmbeded(newVideo);	
+			
+			success = true;
+			
 		} else if(destination == Type.FILE_SYSTEM) {
 			java.io.File newVideo = new java.io.File(pathToNewVideo);
-			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
-			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
+			
+			try
+			{
+				success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
+				((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
+			}
+			catch (IOException ioe)
+			{
+				Log.e(LOG,"error saving video blob",ioe);
+			}
 		}
 
-		// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-		version.delete();
-		clone.delete();
-		metadata.delete();
-		
+		if (success)
+		{
+			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
+			version.delete();
+			clone.delete();
+			metadata.delete();
+		}
 	}
 }

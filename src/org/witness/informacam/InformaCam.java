@@ -225,13 +225,11 @@ public class InformaCam extends Application {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-			e.printStackTrace();
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString(),e);
 			startCode = INIT;
 
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
 			startCode = INIT;
 		}
 
@@ -249,8 +247,16 @@ public class InformaCam extends Application {
 		case LOGIN:
 			// we log in!
 			user.isLoggedIn = false;
-			ioService.saveBlob(user, new java.io.File(IManifest.USER));
-			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Login.DO_LOGIN);
+			try
+			{
+				ioService.saveBlob(user, new java.io.File(IManifest.USER));
+				data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Login.DO_LOGIN);
+			}
+			catch (IOException ioe)
+			{
+				Log.e(LOG, ioe.toString(),ioe);
+				startCode = INIT;	
+			}
 			break;
 		case RUN:
 			java.io.File icDump = new java.io.File(Storage.EXTERNAL_DIR);
@@ -272,8 +278,7 @@ public class InformaCam extends Application {
 		try {
 			signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
 		} catch (PGPException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
 		}
 		
 		mediaManifest = (IMediaManifest) getModel(mediaManifest);
@@ -288,7 +293,10 @@ public class InformaCam extends Application {
 		notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
 		if(notificationsManifest.notifications.size() > 0) {
 			notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
+		
 			saveState(notificationsManifest);
+			
+			
 		}
 		
 		languageMap = (ILanguageMap) getModel(languageMap);
@@ -326,7 +334,7 @@ public class InformaCam extends Application {
 		}
 
 		saveStates();
-		
+			
 		ioService.unmount();
 		uploaderService.shutdown(this);
 				
@@ -338,75 +346,76 @@ public class InformaCam extends Application {
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId);
 		
 		sendBroadcast(intent);
+		
 
 	}
 
 	public void saveStates() {
 		try {
 			saveState(user, new java.io.File(IManifest.USER));
-		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
 		
-		try {
 			saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-		
-		try {
 			saveState(uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
+		
 		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
+		}
+		catch(IOException e) {
+			Log.e(LOG, e.toString(),e);
 		}
 		
 	}
 
-	public boolean saveState(Model model, java.io.File cache) {
+	public boolean saveState(Model model, java.io.File cache) throws IOException {
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
 
-	public boolean saveState(Model model, info.guardianproject.iocipher.File cache) {
+	public boolean saveState(Model model, info.guardianproject.iocipher.File cache) throws IOException {
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
 
 	public boolean saveState(Model model) {		
-		if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-			
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 		
-		} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
+		try
+		{
+			if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
+				
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 			
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
-		
+			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
+				
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
 			
-		} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
-		
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
-		
-		} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
+				
+			} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 			
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
 			
-		} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
-		
-			return saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
-		
-		} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
+				
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+				
+			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
 			
-		} else if(model.getClass().getName().equals(IDCIMDescriptor.class.getName())) {
+				return saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
 			
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
-			
-		} else if(model.getClass().getName().equals(IUser.class.getName())) {
-			
-			return ioService.saveBlob(model, new java.io.File(IManifest.USER));
-		} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
-			return saveState(model, new info.guardianproject.iocipher.File(IManifest.LANG));
+			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+				
+			} else if(model.getClass().getName().equals(IDCIMDescriptor.class.getName())) {
+				
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
+				
+			} else if(model.getClass().getName().equals(IUser.class.getName())) {
+				
+				return ioService.saveBlob(model, new java.io.File(IManifest.USER));
+			} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.LANG));
+			}
+		}
+		catch (IOException ioe)
+		{
+			Log.e(LOG,"saveState(): error writing mode to iocipher",ioe);
 		}
 		
 		return false;
@@ -477,6 +486,7 @@ public class InformaCam extends Application {
 	
 	public void updateNotification(INotification notification) {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
+		
 		saveState(notificationsManifest);
 		
 		if (mListAdapterListener != null)
@@ -499,6 +509,7 @@ public class InformaCam extends Application {
 		}
 		
 		notificationsManifest.notifications.add(notification);
+		
 		saveState(notificationsManifest);
 		
 		if(callback != null) {

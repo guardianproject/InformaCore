@@ -179,8 +179,10 @@ public class KeyUtility {
 								informaCam.user.hasCredentials = true;
 							}
 						} catch (JSONException e) {
-							Log.e(LOG, e.toString());
-							e.printStackTrace();
+							Log.e(LOG, e.toString(),e);
+						}
+						catch (IOException e) {
+							Log.e(LOG, e.toString(),e);
 						}
 					} else {
 						super.onCacheWordOpened();
