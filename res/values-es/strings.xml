@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <string name="app_name">InformaCam</string>
+  <string name="welcome">¡Bienvenidos!</string>
+  <string name="name">Nombre</string>
+  <string name="password">Contraseña</string>
+  <string name="password_again">Contraseña otra vez</string>
+  <string name="take_a_boring_photo">Haga una fotografía</string>
+  <string name="we_are_generating_your">La clave se está generando. Esto tomará unos minutos.</string>
+  <string name="in_the_meantime_adjust">Mientras, ajuste sus preferencias:</string>
+  <string name="trashed">borrada</string>
+  <string name="saved">almacenada</string>
+  <string name="done">Terminado.</string>
+  <string name="please_wait_while_your">Espere mientras su clave se genera.</string>
+  <string name="ok">OK</string>
+  <string name="clear">Borrar</string>
+  <string name="sorry_your_password_doesnt">Lo siento, su contraseña no coincide.</string>
+  <string name="your_password_should_be">Por favor escoja una contraseña de 10 o más caracteres.</string>
+  <string name="your_device_is_all">La configuración está lista.</string>
+  <string name="continue_">Continuar</string>
+  <string name="could_not_find_any_camera_activity">No se han encontrado aplicaciones de cámara instaladas en su teléfono móvil.</string>
+  <string name="get_in">Entrar En</string>
+  <string name="cancel">Cancelar</string>
+  <string name="permissions_title">Permisos de InformaCam </string>
+  <string name="permissions_description">Permite a la aplicación leer datos de los sensores disponibles (acelerómetro, intensidad de la luz, brújula, etc.) y obtener el estado de la redes móviles, inalalámbricas y bluetooth.</string>
+  <string name="key_installed">Clave instalada</string>
+  <string name="x_has_verified_you">%1$s le ha verificado.  Ahora puede intercambiar material multimedia con  éste.</string>
+  <string name="send">Enviar\u2026</string>
+  <string name="key_sent">Clave enviada</string>
+  <string name="you_have_successfully_sent">Le ha enviado su clave a %1$s con éxito. Una vez que sea verificada en el destino, puede empezar a intercambiar material multimedia y mensajes con éste.</string>
+  <string name="export">Exportar</string>
+  <string name="you_exported_this_x">Ha exportado %1$s.</string>
+  <string name="you_exported_this_x_to_x">Ha enviado %1$s a %2$s</string>
+  <string name="image">imagen</string>
+  <string name="video">vídeo</string>
+  <string name="log">log</string>
+  <string name="gps_not_available_your">El GPS no está totalmente disponible. Sus datos pueden no ser lo suficientemente precisos.</string>
+  <string name="email">Correo electrónico</string>
+</resources>

@@ -1,3 +1,17 @@
-[submodule "external/ActionBarSherlock"]
-	path = external/ActionBarSherlock
-	url = https://github.com/JakeWharton/ActionBarSherlock
+[submodule "external/android-ffmpeg-java"]
+	path = external/android-ffmpeg-java
+	url = https://github.com/guardianproject/android-ffmpeg-java
+[submodule "external/ODKFormParser"]
+	path = external/ODKFormParser
+	url = https://github.com/guardianproject/ODKFormParser.git
+[submodule "external/OnionKit"]
+	path = external/OnionKit
+	url = https://github.com/guardianproject/OnionKit.git
+	ignore = dirty
+[submodule "external/IOCipher"]
+	path = external/IOCipher
+	url = https://github.com/guardianproject/IOCipher.git
+	ignore = dirty
+[submodule "external/CacheWord"]
+	path = external/CacheWord
+	url = https://github.com/guardianproject/cacheword.git
