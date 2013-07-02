@@ -1,6 +1,8 @@
 package org.witness.informacam.models.j3m;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -122,48 +124,58 @@ public class IDCIMDescriptor extends Model {
 
 		@Override
 		protected boolean onStart() {
-			entry = analyze();
-			if(entry != null) {
-				if(!isThumbnail) {
-					IMedia media = new IMedia();
-					media.dcimEntry = entry;
-					media._id = media.generateId(entry.originalHash);
-					
-					boolean isFinishedProcessing = false;
-
-					if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-						IImage image = new IImage(media);
-
-						if(image.analyze()) {
-							this.informaCam.mediaManifest.addMediaItem(image);
-							isFinishedProcessing = true;
-						}
-					} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
-						IVideo video = new IVideo(media);
-
-						if(video.analyze()) {
-							this.informaCam.mediaManifest.addMediaItem(video);
-							isFinishedProcessing = true;
-						}
-					}
-					
-					if(isFinishedProcessing) {
-						Bundle data = new Bundle();
-						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);
-						data.putString(Codes.Extras.CONSOLIDATE_MEDIA, entry.originalHash);
+			
+			try
+			{
+				entry = analyze();
+			
+				if(entry != null) {
+					if(!isThumbnail) {
+						IMedia media = new IMedia();
+						media.dcimEntry = entry;
+						media._id = media.generateId(entry.originalHash);
 						
-						Message message = new Message();
-						message.setData(data);
-
-						InformaCamEventListener mListener = this.informaCam.getEventListener();
-						if (mListener != null) {
-							mListener.onUpdate(message);
+						boolean isFinishedProcessing = false;
+	
+						if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+							IImage image = new IImage(media);
+	
+							if(image.analyze()) {
+								this.informaCam.mediaManifest.addMediaItem(image);
+								isFinishedProcessing = true;
+							}
+						} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+							IVideo video = new IVideo(media);
+	
+							if(video.analyze()) {
+								this.informaCam.mediaManifest.addMediaItem(video);
+								isFinishedProcessing = true;
+							}
 						}
+						
+						if(isFinishedProcessing) {
+							Bundle data = new Bundle();
+							data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);
+							data.putString(Codes.Extras.CONSOLIDATE_MEDIA, entry.originalHash);
+							
+							Message message = new Message();
+							message.setData(data);
+	
+							InformaCamEventListener mListener = this.informaCam.getEventListener();
+							if (mListener != null) {
+								mListener.onUpdate(message);
+							}
+						}
+						
+					} else {
+						((BatchCompleteJob) getOnBatchCompleteTask()).addThumbnail(entry);
 					}
-					
-				} else {
-					((BatchCompleteJob) getOnBatchCompleteTask()).addThumbnail(entry);
 				}
+			
+			}
+			catch (Exception e)
+			{
+				Log.e(LOG,"unable to analyze() new media entry",e);
 			}
 			
 
@@ -200,72 +212,71 @@ public class IDCIMDescriptor extends Model {
 			return false;
 		}
 
-		private IDCIMEntry analyze() {
-			try {
-				Log.d(LOG, "analyzing: " + entry.asJson().toString());
+		private IDCIMEntry analyze() throws IOException, NoSuchAlgorithmException, JSONException {
+			
+			Log.d(LOG, "analyzing: " + entry.asJson().toString());
 
-				java.io.File file = new java.io.File(entry.fileName);
+			java.io.File file = new java.io.File(entry.fileName);
 
-				entry.name = file.getName();
-				entry.size = file.length();
-				entry.timeCaptured = file.lastModified();
-				
-				if(!entry.isAvailable()) {
-					return null;
-				}
-
-				entry.originalHash = MediaHasher.hash(file, "SHA-1");
-
-				if(entry.uri == null) {
-					entry.uri = IOUtility.getUriFromFile(this.informaCam, Uri.parse(entry.getString(Models.IDCIMEntry.AUTHORITY)), file).toString();
-				}
-			} catch (NoSuchAlgorithmException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return null;
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return null;
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-				return null;
-			} catch (NullPointerException e) {
-				Log.e(LOG, e.toString());
+			entry.name = file.getName();
+			entry.size = file.length();
+			entry.timeCaptured = file.lastModified();
+			
+			if(!entry.isAvailable()) {
 				return null;
 			}
+
+			entry.originalHash = MediaHasher.hash(file, "SHA-1");
+
+			if(entry.uri == null) {
+				entry.uri = IOUtility.getUriFromFile(this.informaCam, Uri.parse(entry.getString(Models.IDCIMEntry.AUTHORITY)), file).toString();
+			}
+		
 
 			if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 				boolean getThumbnailFromMediaMetadata = false;
 				boolean bruteForceThumbnailFromMedia = false;
 
-				Bitmap b = null;			
-				b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
-				if(b == null) {
-					b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
-				}
-
+				Bitmap b = null;
+				
 				if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 					getThumbnailFromMediaMetadata = true;
 					Log.d(LOG, "definitely getting THUMBNAIL from METADATA RESOURCE");
+								
+					b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
+					if(b == null) {
+						b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
+					}
 				}
 
-				if(b == null && entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 					bruteForceThumbnailFromMedia = true;
 				}
 
 				entry.exif = new IExif();
 
-				try {
-					entry.exif.location = Model.parseJSONAsFloatArray(((GeoSucker) this.informaCam.informaService._geo).forceReturn().getString(Geo.Keys.GPS_COORDS));
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-				} catch(NullPointerException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
-					entry.exif.location = new float[] {0f,0f};
+				if (informaCam.informaService != null && informaCam.informaService._geo != null)
+				{
+					ILogPack logpack = ((GeoSucker) this.informaCam.informaService._geo).forceReturn();
+					
+					if (logpack != null)
+					{
+						try {
+							entry.exif.location = Model.parseJSONAsFloatArray(logpack.getString(Geo.Keys.GPS_COORDS));
+						} catch (JSONException e) {
+							Log.e(LOG, e.getMessage(),e);
+							
+						} catch(NullPointerException e) {
+							Log.e(LOG, e.getMessage(), e);
+							
+							entry.exif.location = new float[] {0f,0f};
+						}
+					}
+					else
+					{
+
+						entry.exif.location = new float[] {0f,0f};
+					}
 				}
 
 				Log.d(LOG, "MEDIA TYPE: " + entry.mediaType);
@@ -286,17 +297,24 @@ public class IDCIMDescriptor extends Model {
 						entry.exif.width = ei.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
 						entry.exif.height = ei.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
 					} catch (IOException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
+						Log.e(LOG, e.toString(),e);
 					}
 
 					if(bruteForceThumbnailFromMedia) {
-						byte[] bytes = this.informaCam.ioService.getBytes(entry.fileName, Type.FILE_SYSTEM);
-						Bitmap b_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-						b = ImageUtility.createThumb(b_, new int[] {b_.getWidth(), b_.getHeight()});
-						entry.exif.width = b_.getWidth();
-						entry.exif.height = b_.getHeight();
-						b_.recycle();
+						
+						//byte[] bytes = this.informaCam.ioService.getBytes(entry.fileName, Type.FILE_SYSTEM);
+						//Bitmap b_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+						
+						InputStream is = informaCam.ioService.getStream(entry.fileName, Type.FILE_SYSTEM);
+						
+						BitmapFactory.Options opts = new BitmapFactory.Options();
+						opts.inSampleSize = 8;
+						
+						b = BitmapFactory.decodeStream(is, null, opts);
+					//	b = ImageUtility.createThumb(b_, new int[] {b_.getWidth(), b_.getHeight()});
+					//	entry.exif.width = b.getWidth();
+					//	entry.exif.height = b.getHeight();
+					//	b_.recycle();
 
 
 					}
@@ -338,16 +356,19 @@ public class IDCIMDescriptor extends Model {
 						}
 
 						info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(reviewDump, "PREVIEW_" + entry.name);
+						
+						
 						this.informaCam.ioService.saveBlob(previewBytes, preview);
 						previewBytes = null;
 
 						entry.previewFrame = preview.getAbsolutePath();
-
+						
 						if(b == null) {
 							b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
 						}
 
 						b_.recycle();
+						
 					}
 				}
 
@@ -359,6 +380,7 @@ public class IDCIMDescriptor extends Model {
 					entry.thumbnailName = entry.name.replace(tPath, "_thumb.jpg");
 				}
 
+				//TODO this is bad, and should be an async task
 				commit();
 			}
 
@@ -379,25 +401,33 @@ public class IDCIMDescriptor extends Model {
 
 			info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(reviewDump, entry.name);
 			info.guardianproject.iocipher.File newFileThumb = new info.guardianproject.iocipher.File(reviewDump, entry.thumbnailName);
-
-			this.informaCam.ioService.saveBlob(
-					this.informaCam.ioService.getBytes(entry.fileName, Type.FILE_SYSTEM), 
-					newFile,
-					true,
-					entry.uri);
 			
-			this.informaCam.ioService.saveBlob(
-					entry.thumbnailFile, 
-					newFileThumb,
-					true,
-					null);
+			
+			try
+			{
+				//save the thumbnail first, don't delete, and there is no source URI
+				informaCam.ioService.saveBlob(
+						entry.thumbnailFile, 
+						newFileThumb);
 
-			entry.fileName = newFile.getAbsolutePath();
-			entry.thumbnailFileName = newFileThumb.getAbsolutePath();
-			entry.thumbnailFile = null;
-
-			newFile = null;
-			newFileThumb = null;
+				entry.thumbnailFileName = newFileThumb.getAbsolutePath();
+				entry.thumbnailFile = null;
+	
+				//now save the big one - delete the original file
+				informaCam.ioService.saveBlob(
+						new FileInputStream(entry.fileName), 
+						newFile,
+						entry.uri);
+				
+				entry.fileName = newFile.getAbsolutePath();
+				
+				
+	
+			}
+			catch (IOException e)
+			{
+				Log.e(LOG,"Something is wrong with IOCipher storage - could not save new blobs",e);
+			}
 		}
 	}
 

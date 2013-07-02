@@ -1,5 +1,6 @@
 package org.witness.informacam.models.media;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,7 +60,7 @@ public class ILog extends IMedia {
 		inflate(media.asJson());
 	}
 
-	public void sealLog(boolean share, IOrganization organization) {
+	public void sealLog(boolean share, IOrganization organization) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		// zip up everything, encrypt if required
@@ -111,8 +112,16 @@ public class ILog extends IMedia {
 					mediaHandled++;
 					
 					if(mediaHandled == ILog.this.attachedMedia.size()) {
-						Log.d(LOG, "Handled all the media!");
-						sealLog(share, organization);
+						
+						try
+						{
+							Log.d(LOG, "Handled all the media!");
+							sealLog(share, organization);
+						}
+						catch (IOException ioe)
+						{
+							Log.e(LOG, "unable to sealLog()",ioe);
+						}
 					}
 				}
 			}
@@ -164,8 +173,7 @@ public class ILog extends IMedia {
 			informaCam.addNotification(notification);
 
 		} catch(JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
 		}
 		
 		if(attachedMedia != null && attachedMedia.size() > 0) {
@@ -188,7 +196,16 @@ public class ILog extends IMedia {
 				
 			}
 		} else {
-			sealLog(share, organization);
+			
+			try
+			{
+				sealLog(share, organization);
+			}
+			catch (IOException ioe)
+			{
+				Log.e(LOG,"error sealLeg() on export",ioe);
+				return false;
+			}
 		}
 
 		return true;

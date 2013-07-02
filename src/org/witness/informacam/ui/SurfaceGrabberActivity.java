@@ -116,17 +116,24 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 	@Override
 	public void onPictureTaken(byte[] data, Camera camera) {
-		String pathToData = System.currentTimeMillis() + "_baseImage";
-		if(informaCam.ioService.saveBlob(data, new File(pathToData))) {
-			try {
-				informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, pathToData);
-				informaCam.user.hasBaseImage = true;
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+		
+		try
+		{
+			String pathToData = System.currentTimeMillis() + "_baseImage";
+			if(informaCam.ioService.saveBlob(data, new File(pathToData))) {
+				try {
+					informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, pathToData);
+					informaCam.user.hasBaseImage = true;
+				} catch (JSONException e) {
+					Log.e(LOG, e.toString(),e);
+				}
+				setResult(Activity.RESULT_OK);
+				finish();
 			}
-			setResult(Activity.RESULT_OK);
-			finish();
+		}
+		catch (IOException ioe)
+		{
+			Log.e(LOG,"error saving picture to iocipher",ioe);
 		}
 	}
 
