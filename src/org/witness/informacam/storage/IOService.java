@@ -53,7 +53,7 @@ public class IOService {
 	
 	}
 
-	public boolean saveBlob(byte[] data, java.io.File file, boolean isPublic) {
+	public boolean saveBlob(byte[] data, java.io.File file, boolean isPublic)  throws IOException {
 		if(!isPublic) {
 			return saveBlob(data, file);
 		} else {
@@ -77,53 +77,62 @@ public class IOService {
 		}
 	}
 	
-	public boolean saveBlob(byte[] data, java.io.File file) {
-		return saveBlob(data, file, false, null);
+	public boolean saveBlob(byte[] data, java.io.File file)  throws IOException {
+		return saveBlob(data, file, null);
 	}
 
 	@SuppressWarnings("static-access")
-	public boolean saveBlob(byte[] data, java.io.File file, boolean delete, String uri) {
-		try {
-			java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
-			ByteArrayInputStream bais = new ByteArrayInputStream(data);
-			data = null;
-			
-			byte[] buf = new byte[1024];
-			int b;
-			while((b = bais.read(buf)) > 0) {
-				fos.write(buf, 0, b);
-			}
-			fos.flush();
-			fos.close();
-			
-			if(delete) {
-				file.delete();
-			}
-			
-			if(uri != null) {
-				mContext.getContentResolver().delete(Uri.parse(uri), null, null);
-			}
-			
-			return true;
-
-		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+	public boolean saveBlob(byte[] data, java.io.File file, String uriToDelete) throws IOException {
+	
+		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
+		ByteArrayInputStream bais = new ByteArrayInputStream(data);
+		
+		byte[] buf = new byte[1024];
+		int b;
+		while((b = bais.read(buf)) > 0) {
+			fos.write(buf, 0, b);
 		}
+		fos.flush();
+		fos.close();
+		
+		/*
+		if(delete) { //this make ZERO sense to write to a file and then to delete the file
+			file.delete();
+		}
+		*/
+		
+		if(uriToDelete != null) {
+			mContext.getContentResolver().delete(Uri.parse(uriToDelete), null, null);
+		}
+		
+		return true;
 
-		return false;
 	}
 	
 	public boolean saveBlob(byte[] data, info.guardianproject.iocipher.File file) {
-		return saveBlob(data, file, false, null);
+		
+		try
+		{
+			return saveBlob(data, file, null);
+		}
+		catch (IOException ioe)
+		{
+			Log.e(LOG,"iocipher saveState() error",ioe);
+			
+			return false;
+		}
+		
 	}
 
-	public boolean saveBlob(byte[] data, info.guardianproject.iocipher.File file, boolean delete, String uri) {
+	public boolean saveBlob(byte[] data, info.guardianproject.iocipher.File file, String uri) throws IOException {
 
+		ByteArrayInputStream bais = new ByteArrayInputStream(data);
+		return saveBlob (bais, file, uri);
 		
+	}
+	
+	public boolean saveBlob(InputStream is, info.guardianproject.iocipher.File file, String uri) throws IOException {
+
 		if(vfs == null) {
 			// TODO: this should throw exception
 			return false;
@@ -131,46 +140,32 @@ public class IOService {
 		
 		Log.d(LOG, "touch " + file.getAbsolutePath());
 		
-		try {
-			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
-			
-			ByteArrayInputStream bais = new ByteArrayInputStream(data);
-			data = null;
-			
-			byte[] buf = new byte[1024];
-			int b;
-			while((b = bais.read(buf)) > 0) {
-				fos.write(buf, 0, b);
-			}			
-			fos.flush();
-			fos.close();
-			
-			if(delete) {
-				file.delete();
-			}
-			
-			if(uri != null) {
-				mContext.getContentResolver().delete(Uri.parse(uri), null, null);
-			}
-			
-			return true;
-
-		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+	
+		info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
+		
+		
+		byte[] buf = new byte[1024];
+		int b;
+		while((b = is.read(buf)) > 0) {
+			fos.write(buf, 0, b);
+		}			
+		fos.flush();
+		fos.close();
+		
+		if(uri != null) {
+			mContext.getContentResolver().delete(Uri.parse(uri), null, null);
 		}
+		
+		return true;
 
-		return false;
+		
 	}
 
-	public boolean saveBlob(Model model, java.io.File file) {
+	public boolean saveBlob(Model model, java.io.File file)  throws IOException {
 		return saveBlob(model.asJson().toString().getBytes(), file);
 	}
 
-	public boolean saveBlob(Model model, info.guardianproject.iocipher.File file) {
+	public boolean saveBlob(Model model, info.guardianproject.iocipher.File file) throws IOException {
 		return saveBlob(model.asJson().toString().getBytes(), file);
 	}
 	
@@ -285,6 +280,84 @@ public class IOService {
 
 		Log.d(LOG, "(" + pathToData + ") bytes here: " + bytes.length);
 		return bytes;
+	}
+	
+	public InputStream getStream(String pathToData, int source) {
+
+		InputStream is = null;
+		
+		switch(source) {
+		case Storage.Type.INTERNAL_STORAGE:
+			java.io.FileInputStream fis;
+			
+			try {
+				fis = mContext.openFileInput(pathToData);
+				is = fis;
+			} catch (FileNotFoundException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+
+			break;
+		case Storage.Type.IOCIPHER:
+			
+			if(vfs == null) {
+				return null;
+				/*
+				Log.d(LOG, "also, VFS IS NULL SO...");
+				
+				InformaCam informaCam = (InformaCam)getApplication();
+				
+				if(!informaCam.attemptLogin()) {
+					informaCam.promptForLogin();
+					return null;
+				}*/
+			}
+			
+			info.guardianproject.iocipher.FileInputStream iFis;
+			info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToData);
+			
+			try {
+				is = new info.guardianproject.iocipher.FileInputStream(file);
+				 
+			} catch (FileNotFoundException e) {
+				Log.d(LOG, "no, no bytes (" + pathToData + ")");
+				return null;
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (Exception e) {
+				Log.e(LOG, e.toString());
+			}
+
+			break;
+		case Storage.Type.APPLICATION_ASSET:
+			try {
+				is = mContext.getAssets().open(pathToData, Context.MODE_PRIVATE);
+				
+			} catch (IOException e) {
+				Log.e(LOG, e.toString(),e);
+			}
+			break;
+		case Storage.Type.CONTENT_RESOLVER:
+			break;
+		case Storage.Type.FILE_SYSTEM:
+			try {
+				java.io.File file_ = new java.io.File(pathToData);
+				java.io.FileInputStream fis_ = new java.io.FileInputStream(file_);
+				is = fis_;
+			} catch (FileNotFoundException e) {
+				Log.e(LOG, e.toString(),e);
+			} catch (IOException e) {
+				Log.e(LOG, e.toString(),e);
+			}
+			break;
+		}
+
+		return is;
 	}
 	
 	public java.io.File getPublicCredentials() {

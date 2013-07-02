@@ -42,11 +42,11 @@ public class ImageConstructor {
 			String j3mString, 
 			int j3mStringLength);
 	
-	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination) {
+	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination) throws IOException {
 		this(media, pathToImage, pathToJ3M, pathToNewImage, destination, null);
 	}
 
-	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination, IConnection connection) {
+	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination, IConnection connection) throws IOException {
 		informaCam = InformaCam.getInstance();
 
 		this.pathToImage = pathToImage;
@@ -91,6 +91,9 @@ public class ImageConstructor {
 	public void finish() {
 		// move back to iocipher
 		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destination + ")");
+		
+		boolean success = false;
+		
 		if(destination == Type.IOCIPHER) {
 			info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
@@ -105,15 +108,27 @@ public class ImageConstructor {
 			Log.d(LOG, "OK FINISHED UP for media id: " + media._id);
 			media.onMetadataEmbeded(newImage);
 			
+			success = true;
+			
 		} else if(destination == Type.FILE_SYSTEM) {
 			java.io.File newImage = new java.io.File(pathToNewImage);
-			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
-			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
+			
+			try
+			{
+				success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
+				((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
+			}
+			catch (IOException ioe)
+			{
+				Log.e(LOG,"error finishing up constructor",ioe);
+			}
 		}
 		
-		// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-		clone.delete();
-		version.delete();
-		
+		if (success)
+		{
+			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
+			clone.delete();
+			version.delete();
+		}
 	}
 }

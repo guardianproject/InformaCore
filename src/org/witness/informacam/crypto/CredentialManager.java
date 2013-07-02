@@ -5,6 +5,7 @@ import info.guardianproject.cacheword.ICacheWordSubscriber;
 import info.guardianproject.cacheword.PassphraseSecrets;
 import info.guardianproject.cacheword.Wiper;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import javax.crypto.SecretKey;
@@ -129,6 +130,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 		
 		informaCam.saveState(informaCam.user);
 		this.status = Codes.Status.LOCKED;
+		
 	}
 
 	@Override
@@ -159,10 +161,18 @@ public class CredentialManager implements ICacheWordSubscriber {
 			
 			informaCam.user.isLoggedIn = true;
 			informaCam.user.lastLogIn = System.currentTimeMillis();
-			informaCam.ioService.saveBlob(informaCam.user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
 			
-			this.status = Codes.Status.UNLOCKED;
-			update(Codes.Messages.Home.INIT);
+			try
+			{
+				informaCam.ioService.saveBlob(informaCam.user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));
+				
+				this.status = Codes.Status.UNLOCKED;
+				update(Codes.Messages.Home.INIT);
+			}
+			catch (IOException ioe)
+			{
+				Log.e(LOG,"iocipher saveState() error",ioe);
+			}
 		}
 	}
 }

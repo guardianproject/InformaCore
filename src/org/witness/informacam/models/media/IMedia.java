@@ -51,6 +51,7 @@ import android.util.Base64;
 import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
+	
 	public String rootFolder = null;
 	public String _id = null;
 	public String _rev = null;
@@ -77,10 +78,25 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	protected Handler responseHandler;
 	protected boolean debugMode = false;
 	
+	private Bitmap mThumbnail = null;
+	
 	public Bitmap getBitmap(String pathToFile) {
 		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
 	}
 
+	public Bitmap testImage ()
+	{
+		return getThumbnail ();
+	}
+
+	public Bitmap getThumbnail ()
+	{
+		if (mThumbnail == null && bitmapThumb != null)
+			mThumbnail = getBitmap(bitmapThumb);
+		
+		return mThumbnail;
+	}
+	
 	public boolean delete() {
 		return InformaCam.getInstance().mediaManifest.removeMediaItem(this);
 	}
@@ -431,11 +447,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
+			return false;
 		} catch (ConcurrentModificationException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
+			return false;
+		}
+		catch (IOException e) {
+			Log.e(LOG, e.toString(),e);
+			return false;
 		}
 
 		return true;

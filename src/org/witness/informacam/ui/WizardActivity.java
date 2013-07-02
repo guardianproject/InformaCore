@@ -1,5 +1,6 @@
 package org.witness.informacam.ui;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
@@ -14,10 +15,9 @@ import org.witness.informacam.ui.screens.WizardStepTwo;
 import org.witness.informacam.ui.screens.WizardStepZero;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.IManifest;
-import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.WizardListener;
 
@@ -215,8 +215,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.lastLogIn = System.currentTimeMillis();
 		informaCam.user.isLoggedIn = true;
 		
-		informaCam.saveState(informaCam.user);
-		informaCam.saveState(informaCam.languageMap);
+		
+		boolean success = informaCam.saveState(informaCam.user);
+		success = informaCam.saveState(informaCam.languageMap);
 
 		if(!informaCam.user.isInOfflineMode) {
 			IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
@@ -241,6 +242,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		
 		setResult(Activity.RESULT_OK);
 		finish();
+	
 	}
 	
 	@Override

@@ -38,6 +38,9 @@ public class IImage extends IMedia {
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inPurgeable = true;
 		opts.inInputShareable = false;
+
+		if (bytes == null)
+			return false;
 		
 		final Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
 		height = bitmap_.getHeight();

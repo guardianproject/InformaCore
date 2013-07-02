@@ -124,14 +124,22 @@ public class FormUtility {
 			return false;
 
 		if(!hasFormDef) {
-			if(informaCam.ioService.saveBlob(xml, xmlFile)) {
-				form.title = form_wrapper.form_def.getTitle();
-				form.namespace = form_wrapper.form_def.getName();
-				installedForms.installedForms.add(form);
-
-				Log.d(LOG, "new form: " + form.asJson().toString());
-				informaCam.saveState(installedForms, new info.guardianproject.iocipher.File(IManifest.FORMS));
-				return true;
+			
+			try
+			{
+				if(informaCam.ioService.saveBlob(xml, xmlFile)) {
+					form.title = form_wrapper.form_def.getTitle();
+					form.namespace = form_wrapper.form_def.getName();
+					installedForms.installedForms.add(form);
+	
+					Log.d(LOG, "new form: " + form.asJson().toString());
+					informaCam.saveState(installedForms, new info.guardianproject.iocipher.File(IManifest.FORMS));
+					return true;
+				}
+			}
+			catch (IOException ioe)
+			{
+				Log.e(LOG,"iocipher saveState() error",ioe);
 			}
 		}
 

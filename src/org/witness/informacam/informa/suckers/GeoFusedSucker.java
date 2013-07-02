@@ -25,9 +25,6 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	
 	private final static String LOG = Suckers.LOG;
 	
-	private final static long MIN_TIME = 3000;
-	private final static long MIN_DISTANCE = 1;
-	
 	private LocationClient mLocationClient;
 	private LocationRequest mLocationRequest;
 	private Location mLastLocation = null;
