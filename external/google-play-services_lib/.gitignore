@@ -4,3 +4,5 @@ bin/*
 gen/*
 local.properties
 build.xml
+.settings/*
+.settings

@@ -98,7 +98,7 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 
 	@Override
 	public void onLocationChanged(Location location) {
-		
 		mLastLocation = location;
-	}	
+		
+	}
 }
