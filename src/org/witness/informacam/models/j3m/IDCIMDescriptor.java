@@ -381,13 +381,7 @@ public class IDCIMDescriptor extends Model {
 				}
 
 				//TODO this is bad, and should be an async task
-				new Thread ()
-				{
-					public void run ()
-					{
-						commit ();
-					}
-				}.start();
+				commit();
 			}
 
 			return entry;
