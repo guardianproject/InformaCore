@@ -5,7 +5,6 @@ gen/*
 .classpath
 local.properties
 build.xml
-project.properties
 # ndk-build products
 libs/armeabi/libJpegRedaction.so
 .settings/*
