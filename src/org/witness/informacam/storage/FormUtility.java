@@ -48,7 +48,7 @@ public class FormUtility {
 			if(a.getAssets().list(formRoot).length > 0) {
 				for(String xmlPath : a.getAssets().list(formRoot)) {
 					InputStream xml = new ByteArrayInputStream(informaCam.ioService.getBytes(formRoot + "/" + xmlPath, Type.APPLICATION_ASSET));
-					if(!importAndParse(a, xml)) {
+					if(importAndParse(xml) == null) {
 						return false;
 					}
 				}
@@ -63,7 +63,7 @@ public class FormUtility {
 		return false;
 	}
 
-	public static boolean importAndParse(Activity a, InputStream xml_stream) {
+	public static IForm importAndParse(InputStream xml_stream) {
 		InformaCam informaCam = InformaCam.getInstance();
 
 		info.guardianproject.iocipher.File formRoot = new info.guardianproject.iocipher.File(Storage.FORM_ROOT);
@@ -112,16 +112,17 @@ public class FormUtility {
 		} catch (NoSuchAlgorithmException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return false;
+			return null;
 		} catch (IOException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return false;
+			return null;
 		}
 
 		FormWrapper form_wrapper = new FormWrapper(new ByteArrayInputStream(xml), true);
-		if(form_wrapper.form_def == null)
-			return false;
+		if(form_wrapper.form_def == null) {
+			return null;
+		}
 
 		if(!hasFormDef) {
 			
@@ -134,7 +135,7 @@ public class FormUtility {
 	
 					Log.d(LOG, "new form: " + form.asJson().toString());
 					informaCam.saveState(installedForms, new info.guardianproject.iocipher.File(IManifest.FORMS));
-					return true;
+					return form;
 				}
 			}
 			catch (IOException ioe)
@@ -143,16 +144,16 @@ public class FormUtility {
 			}
 		}
 
-		return false;
+		return null;
 	}
 
-	public static boolean importAndParse(Activity a, java.io.File xml) {
+	public static IForm importAndParse(Activity a, java.io.File xml) {
 		try {
-			return importAndParse(a, new java.io.FileInputStream(xml));
+			return importAndParse(new java.io.FileInputStream(xml));
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-			return false;
+			return null;
 		}
 	}
 }

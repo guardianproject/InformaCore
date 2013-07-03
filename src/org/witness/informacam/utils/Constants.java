@@ -503,23 +503,12 @@ public class Constants {
 		}
 
 		public class IOrganization {
-
-			public static final String ADDRESS = "address";
-			public static final String CITY = "city";
-			public static final String STATE = "state";
-			public static final String ZIP = "zip";
-			public static final String PHONE = "phone";
-			public static final String FAX = "fax";
 			public static final String ORGANIZATION_DETAILS = "organizationDetails";
-			public static final String NEW_REQUEST = "newRequest";
-			public static final String METHOD = "method";
-			public static final String PORT = "port";
-			public static final String REQUEST_URL = "requestUrl";
-			
-		}
-
-		public class ITransportCredentials {
-			public static final String PASSWORD = "password";
+			public static final String ORGANIZATION_NAME = "organizationName";
+			public static final String ORGANIZATION_FINGERPRINT = "organizationFingerprint";
+			public static final String PUBLIC_KEY = "publicKey";
+			public static final String FORMS = "forms";
+			public static final String REPOSITORIES = "repositories";
 		}
 	}
 

@@ -18,8 +18,6 @@ import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.connections.IConnection;
-import org.witness.informacam.models.connections.ISubmission;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.j3m.IGenealogy;
@@ -30,6 +28,7 @@ import org.witness.informacam.models.notifications.IMail;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.IRegionDisplay;
+import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -411,19 +410,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 				
 				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
-				IConnection submission = null; 
+				ITransportStub submission = null; 
 
 				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					if(organization != null) {
 						notification.taskComplete = false;
 						informaCam.addNotification(notification);
 						
-						submission = new ISubmission(organization, exportFile.getAbsolutePath().replace(".mp4", ".mkv"));
-						submission.isHeld = true;
-						submission.associatedNotification = notification;
-						
-						informaCam.uploaderService.pendingConnections.add(submission);
-						informaCam.uploaderService.pendingConnections.save();						
+						submission = new ITransportStub(exportFile.getAbsolutePath().replace(".mp4", ".mkv"), organization, notification);
 					}
 
 					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
@@ -432,12 +426,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						notification.taskComplete = false;
 						informaCam.addNotification(notification);
 						
-						submission = new ISubmission(organization, exportFile.getAbsolutePath());
-						submission.isHeld = true;
-						submission.associatedNotification = notification;
-						
-						informaCam.uploaderService.pendingConnections.add(submission);
-						informaCam.uploaderService.pendingConnections.save();
+						submission = new ITransportStub(exportFile.getAbsolutePath(), organization, notification);
 					}
 
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);

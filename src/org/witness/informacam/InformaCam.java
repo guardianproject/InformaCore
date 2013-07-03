@@ -2,6 +2,8 @@ package org.witness.informacam;
 
 import info.guardianproject.iocipher.File;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -12,15 +14,19 @@ import java.util.List;
 import java.util.Vector;
 
 import org.bouncycastle.openpgp.PGPException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.crypto.CredentialManager;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.credentials.IUser;
+import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IMediaManifest;
@@ -29,8 +35,9 @@ import org.witness.informacam.models.notifications.INotificationsManifest;
 import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.ILanguageMap;
+import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
-import org.witness.informacam.transport.UploaderService;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
@@ -72,7 +79,6 @@ public class InformaCam extends Application {
 
 	Intent ioServiceIntent, signatureServiceIntent, uploaderServiceIntent, informaServiceIntent;
 
-	public UploaderService uploaderService = null;
 	public IOService ioService = null;
 	public SignatureService signatureService = null;
 	public InformaService informaService = null;
@@ -179,7 +185,6 @@ public class InformaCam extends Application {
 		informaServiceIntent = new Intent(this, InformaService.class);
 
 		signatureService = new SignatureService(InformaCam.this);
-		uploaderService = new UploaderService((Context)InformaCam.this, InformaCam.this);
 		ioService = new IOService(InformaCam.this);
 		
 		new Thread ()
@@ -336,7 +341,6 @@ public class InformaCam extends Application {
 		saveStates();
 			
 		ioService.unmount();
-		uploaderService.shutdown(this);
 				
 		if(informaService != null) {
 			stopService(informaServiceIntent);
@@ -355,7 +359,6 @@ public class InformaCam extends Application {
 			saveState(user, new java.io.File(IManifest.USER));
 		
 			saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-			saveState(uploaderService.pendingConnections, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
 		
 		} catch(NullPointerException e) {
 			Log.e(LOG, e.toString(),e);
@@ -378,11 +381,7 @@ public class InformaCam extends Application {
 		
 		try
 		{
-			if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-				
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.PENDING_CONNECTIONS));
-			
-			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
+			if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 				
 				return saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
 			
@@ -426,8 +425,6 @@ public class InformaCam extends Application {
 		try {
 			if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 				bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(IPendingConnections.class.getName())) {
-				bytes = ioService.getBytes(IManifest.PENDING_CONNECTIONS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 				bytes = ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
@@ -480,10 +477,6 @@ public class InformaCam extends Application {
 			mEventListener.onUpdate(message);
 	}
 
-	public void initUploads() {
-		uploaderService.init();
-	}
-	
 	public void updateNotification(INotification notification) {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
 		
@@ -549,8 +542,61 @@ public class InformaCam extends Application {
 		return mEventListener;
 	}
 	
-	public IOrganization installICTD(Uri ictdURI, Handler callback) {
+	public IOrganization installICTD(JSONObject ictd, Handler callback) {
 		IOrganization organization = null;
+		
+		JSONArray forms = null;
+		
+		try {
+			forms = (JSONArray) ictd.get(Models.IOrganization.FORMS);
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		if(forms != null) {
+			for(int f=0; f<forms.length(); f++) {
+				try {
+					ByteArrayOutputStream baos = IOUtility.unGZipBytes(forms.getString(f).getBytes());
+					IForm form = FormUtility.importAndParse(new ByteArrayInputStream(baos.toByteArray()));
+					if(form != null) {
+						forms.put(f, form);
+					}
+				} catch (JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		byte[] publicKey = null;
+		try {
+			publicKey = ((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes();
+			info.guardianproject.iocipher.File publicKeyFile = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT, ictd.getString(Models.IOrganization.ORGANIZATION_FINGERPRINT) + ".asc");
+			if(InformaCam.getInstance().ioService.saveBlob(publicKey, publicKeyFile)) {
+				ictd.put(Models.IOrganization.PUBLIC_KEY, publicKeyFile.getAbsolutePath());
+			}
+			
+			organization = new IOrganization(ictd);
+			Log.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());
+		} catch(JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+			return null;
+		}
+		
+		
+		if(organization != null) {
+			saveState(installedOrganizations);
+		
+			INotification notification = new INotification(getString(R.string.key_installed), getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
+			addNotification(notification, callback);
+		}
+		
+		return organization;
+	}
+	
+	public IOrganization installICTD(Uri ictdURI, Handler callback) {
 
 		try {
 			InputStream is = getContentResolver().openInputStream(ictdURI);
@@ -558,13 +604,7 @@ public class InformaCam extends Application {
 			is.read(rc);
 			is.close();
 
-			ISecretKey secretKey = (ISecretKey)getModel(new ISecretKey());
-			
-			organization = KeyUtility.installICTD(rc, secretKey);
-			saveState(installedOrganizations);
-			
-			INotification notification = new INotification(getString(R.string.key_installed), getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
-			addNotification(notification, callback);
+			return installICTD((JSONObject) new JSONTokener(new String(rc)).nextValue(), callback); 
 			
 		} catch (FileNotFoundException e) {
 			Log.e(LOG, e.toString());
@@ -575,9 +615,12 @@ public class InformaCam extends Application {
 		} catch (SecurityException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
 		}
 
-		return organization;
+		return null;
 	}
 
 	public void startInforma() {

@@ -1,24 +1,19 @@
 package org.witness.informacam.ui;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.models.connections.IConnection;
-import org.witness.informacam.models.connections.IPendingConnections;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
 import org.witness.informacam.ui.screens.WizardStepZero;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
-import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.WizardListener;
 
 import android.app.Activity;
@@ -216,25 +211,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.isLoggedIn = true;
 		
 		
-		boolean success = informaCam.saveState(informaCam.user);
-		success = informaCam.saveState(informaCam.languageMap);
+		informaCam.saveState(informaCam.user);
+		informaCam.saveState(informaCam.languageMap);
 
-		if(!informaCam.user.isInOfflineMode) {
-			IPendingConnections pendingConnections = (IPendingConnections) informaCam.getModel(new IPendingConnections());
-			
-			for(IConnection connection : pendingConnections.queue) {
-				connection.setParam(IUser.PGP_KEY_FINGERPRINT, informaCam.user.pgpKeyFingerprint);
-				connection.setParam(IUser.ALIAS, informaCam.user.alias);
-				connection.setParam(IUser.EMAIL, informaCam.user.email);
-				connection.setData(IUser.PUBLIC_CREDENTIALS);
-				connection.data.byteRange = new int[] {0, informaCam.ioService.getBytes(IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER).length};
-				connection.isHeld = false;
-
-				connection.save();
-
-			}
-		}
-		
 		Iterator<String> it = getIntent().getExtras().keySet().iterator();
 		while(it.hasNext()) {
 			getIntent().removeExtra(it.next());

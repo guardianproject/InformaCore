@@ -1,16 +1,21 @@
 package org.witness.informacam.storage;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -322,5 +327,55 @@ public class IOUtility {
 		}
 
 		return paths;
+	}
+	
+	public static boolean unGZipAndSave(byte[] bytes, String pathToFile, int source) {
+		ByteArrayOutputStream baos = unGZipBytes(bytes);
+		
+		if(baos != null) {
+			switch(source) {
+			case Type.IOCIPHER:
+				info.guardianproject.iocipher.File ifile = new info.guardianproject.iocipher.File(pathToFile);
+				return InformaCam.getInstance().ioService.saveBlob(baos.toByteArray(), ifile);
+			case Type.FILE_SYSTEM:
+				java.io.File jfile = new java.io.File(pathToFile);
+				try {
+					return InformaCam.getInstance().ioService.saveBlob(baos.toByteArray(), jfile, true);
+				} catch (IOException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+			
+		}
+		return false;
+	}
+
+	public static ByteArrayOutputStream unGZipBytes(byte[] bytes) {
+		try {
+			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+			GZIPInputStream gis = new GZIPInputStream(bais);
+			BufferedReader br = new BufferedReader(new InputStreamReader(gis, "ISO-8859-1"));
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			int c;
+			while((c = br.read()) != -1) {
+				baos.write(c);
+			}
+			
+			br.close();
+			gis.close();
+			bais.close();
+			
+			baos.close();
+			return baos;
+			
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
+		
 	}
 }
