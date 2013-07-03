@@ -1,7 +1,5 @@
 package org.witness.informacam.storage;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -42,7 +40,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.BitmapFactory.Options;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.MediaColumns;

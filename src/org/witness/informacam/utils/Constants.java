@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.utils.IRegionDisplay;
+import org.witness.informacam.models.utils.ITransportStub;
 
 import android.net.Uri;
 import android.os.Environment;
@@ -48,6 +49,7 @@ public class Constants {
 	public interface MetadataEmbededListener {
 		public void onMetadataEmbeded(info.guardianproject.iocipher.File version);
 		public void onMetadataEmbeded(java.io.File version);
+		public void onMetadataEmbeded(ITransportStub transportStub);
 	}
 	
 	public interface VideoConstructorListener {
@@ -490,11 +492,21 @@ public class Constants {
 			}
 		}
 
-		public class ITransportData {
-			public final static String UPLOAD = "upload";
-			public static final String FILE = "file";
-			public static final String _ID = "_id";
-			public static final String _REV = "_rev";
+		public class ITransportStub {
+			public static final String ASSOCIATED_NOTIFICATION = "associatedNotification";
+			public static final String ORGANIZATION = "organization";
+			public static final String ASSET_PATH = "assetPath";
+			public static final String TAG = "transport_stub";
+			
+			public class RepositorySources {
+				public final static String GOOGLE_DRIVE = "google_drive";
+				public final static String GLOBALEAKS = "globaleaks";
+			}
+			
+			public class ResultCodes {
+				public final static int FAIL = 403;
+				public final static int OK = 200;
+			}
 		}
 
 		public class IIdentity {

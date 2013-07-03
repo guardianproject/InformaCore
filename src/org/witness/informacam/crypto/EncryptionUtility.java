@@ -29,11 +29,9 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPUtil;
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.utils.Constants.App.Crypto;
 
-import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 

@@ -1,12 +1,9 @@
 package org.witness.informacam.crypto;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -16,11 +13,9 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.bcpg.*;
@@ -34,17 +29,14 @@ import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
-import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Models.ICredentials;
-import org.witness.informacam.utils.MediaHasher;
 
 import android.os.Bundle;
 import android.util.Base64;
@@ -243,7 +235,7 @@ public class KeyUtility {
 					keyPair.getPublic(),
 					keyPair.getPrivate(),
 					new Date(),
-					"InformaCam OpenPGP Key",
+					"InformaCam OpenPGP Key: " + informaCam.user.getString(IUser.ALIAS),
 					SymmetricKeyAlgorithmTags.AES_256,
 					secretAuthToken.toCharArray(),
 					hashedGen.generate(),

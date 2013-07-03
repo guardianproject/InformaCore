@@ -2,9 +2,6 @@ package org.witness.informacam.storage;
 
 import java.io.File;
 
-import org.witness.informacam.InformaCam;
-
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;

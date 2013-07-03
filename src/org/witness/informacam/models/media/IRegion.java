@@ -6,7 +6,6 @@ import org.witness.informacam.models.utils.IRegionDisplay;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
-import android.content.Context;
 
 public class IRegion extends Model {
 	public String id = null;

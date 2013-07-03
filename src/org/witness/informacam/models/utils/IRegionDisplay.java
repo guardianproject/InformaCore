@@ -6,7 +6,6 @@ import org.witness.informacam.models.media.IRegionBounds;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.util.Log;

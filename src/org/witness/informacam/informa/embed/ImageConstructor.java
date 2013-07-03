@@ -98,10 +98,11 @@ public class ImageConstructor {
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
 			
 			if(connection != null) {
-				// TODO: SEND OFF?
+				((MetadataEmbededListener) media).onMetadataEmbeded(connection);
+			} else {
+				((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
 			}
 			
-			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
 			
 			success = true;
 			

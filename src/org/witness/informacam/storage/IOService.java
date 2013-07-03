@@ -296,9 +296,6 @@ public class IOService {
 			} catch (FileNotFoundException e) {
 				Log.e(LOG, e.toString());
 				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
 			}
 
 			break;
@@ -317,7 +314,6 @@ public class IOService {
 				}*/
 			}
 			
-			info.guardianproject.iocipher.FileInputStream iFis;
 			info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToData);
 			
 			try {
@@ -326,9 +322,6 @@ public class IOService {
 			} catch (FileNotFoundException e) {
 				Log.d(LOG, "no, no bytes (" + pathToData + ")");
 				return null;
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
 			} catch (Exception e) {
 				Log.e(LOG, e.toString());
 			}
@@ -347,11 +340,8 @@ public class IOService {
 		case Storage.Type.FILE_SYSTEM:
 			try {
 				java.io.File file_ = new java.io.File(pathToData);
-				java.io.FileInputStream fis_ = new java.io.FileInputStream(file_);
-				is = fis_;
+				is = new java.io.FileInputStream(file_);
 			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString(),e);
-			} catch (IOException e) {
 				Log.e(LOG, e.toString(),e);
 			}
 			break;

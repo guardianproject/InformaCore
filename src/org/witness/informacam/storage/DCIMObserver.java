@@ -6,7 +6,6 @@ import java.util.Vector;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.utils.Constants.App.Storage;
-import org.witness.informacam.utils.Constants.InformaCamEventListener;
 
 import android.content.Context;
 import android.database.ContentObserver;

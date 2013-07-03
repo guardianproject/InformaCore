@@ -1,9 +1,14 @@
 package org.witness.informacam.ui;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.ui.screens.WizardStepOne;
@@ -15,6 +20,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.WizardListener;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Activity;
 import android.content.Context;
@@ -89,6 +95,15 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	@Override
 	public void onResume() {
 		super.onResume();
+		
+		try {
+			for(String s : InformaCam.getInstance().getAssets().list("includedOrganizations")) {
+				Log.d(LOG, "NEW ASSET: " + s);
+			}
+		} catch(IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
 	}
 
 	public void initLayout() {
@@ -213,6 +228,25 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		
 		informaCam.saveState(informaCam.user);
 		informaCam.saveState(informaCam.languageMap);
+		
+		try {
+			for(String s : informaCam.getAssets().list("includedOrganizations")) {
+				Log.d(LOG, "NEW ASSET: " + s);
+				
+				InputStream ictdIS = informaCam.ioService.getStream(s, Type.APPLICATION_ASSET);
+				
+				byte[] ictdBytes = new byte[ictdIS.available()];
+				ictdIS.read(ictdBytes);
+				
+				informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
+			}
+		} catch(IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
 
 		Iterator<String> it = getIntent().getExtras().keySet().iterator();
 		while(it.hasNext()) {
@@ -237,7 +271,6 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	}
 
 	public void autoAdvance() {
-		Log.d(LOG, "advancing to " + (viewPager.getCurrentItem() + 1));
 		viewPager.setCurrentItem(viewPager.getCurrentItem() + 1);
 		
 	}

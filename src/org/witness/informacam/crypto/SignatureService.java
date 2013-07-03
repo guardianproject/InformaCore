@@ -21,16 +21,11 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.j3m.ILogPack;
-import org.witness.informacam.utils.Constants.Actions;
-import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
-import org.witness.informacam.utils.Constants.Codes;
 
 import android.content.Context;
-import android.content.Intent;
 
 public class SignatureService {
 	

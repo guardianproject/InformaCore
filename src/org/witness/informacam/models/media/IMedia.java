@@ -27,9 +27,11 @@ import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.IMail;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.IRegionDisplay;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.transport.DriveTransport;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
@@ -42,6 +44,7 @@ import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -295,6 +298,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return export(context, h, organization, false);
 	}
 
+	@SuppressWarnings("unused")
 	public boolean export(Context context, Handler h, IOrganization organization, boolean share) {
 		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
@@ -377,13 +381,16 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			if(!debugMode) {
 				// zip *FIRST
-				byte[] j3mZip = IOUtility.zipBytes(j3mBytes, j3mFile.getName(), Type.IOCIPHER);
+				j3mBytes = IOUtility.zipBytes(j3mBytes, j3mFile.getName(), Type.IOCIPHER);
 
-				// base64
-				j3mBytes = Base64.encode(j3mZip, Base64.DEFAULT);
+				// maybe encrypt
 				if(organization != null) {
 					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
 				}
+				
+				// base64
+				j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+				
 			}
 
 			informaCam.ioService.saveBlob(j3mBytes, j3mFile);
@@ -418,6 +425,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						informaCam.addNotification(notification);
 						
 						submission = new ITransportStub(exportFile.getAbsolutePath().replace(".mp4", ".mkv"), organization, notification);
+						submission.mimeType = Models.IMedia.MimeType.VIDEO;
+						submission.assetName = exportFile.getName();
 					}
 
 					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
@@ -427,6 +436,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						informaCam.addNotification(notification);
 						
 						submission = new ITransportStub(exportFile.getAbsolutePath(), organization, notification);
+						submission.mimeType = Models.IMedia.MimeType.IMAGE;
+						submission.assetName = exportFile.getName();
 					}
 
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
@@ -529,6 +540,31 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			responseHandler.sendMessage(msg);
 		} else {
 			h.sendMessage(msg);
+		}
+	}
+	
+	@Override
+	public void onMetadataEmbeded(ITransportStub transportStub) {
+		sendMessage(Models.IMedia.VERSION, transportStub.assetPath);
+		
+		InformaCam informaCam = InformaCam.getInstance();
+		List<Intent> intents = new ArrayList<Intent>();
+		
+		for(IRepository repository : transportStub.organization.repositories) {
+			
+			Intent intent = null;
+			if(repository.source.equals(Models.ITransportStub.RepositorySources.GOOGLE_DRIVE)) {
+				intent = new Intent(informaCam, DriveTransport.class);
+			}
+			
+			if(intent != null) {
+				intent.putExtra(Models.ITransportStub.TAG, transportStub);
+				intents.add(intent);
+			}
+		}
+		
+		if(!intents.isEmpty()) {
+			informaCam.startActivities(intents.toArray(new Intent[intents.size()]));
 		}
 	}
 

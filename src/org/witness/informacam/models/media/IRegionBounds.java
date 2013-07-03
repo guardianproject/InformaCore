@@ -42,6 +42,7 @@ public class IRegionBounds extends Model {
 	}
 	
 
+	@SuppressWarnings("deprecation")
 	public int[] getWindowDimensions(Activity a) {
 		if (a == null)
 		{

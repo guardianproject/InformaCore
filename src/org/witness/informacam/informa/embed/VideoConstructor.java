@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 
 import org.ffmpeg.android.BinaryInstaller;
 import org.ffmpeg.android.ShellUtils;
@@ -16,7 +15,6 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Ffmpeg;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -220,28 +218,6 @@ public class VideoConstructor {
 		return BitmapFactory.decodeFile(tmp.getAbsolutePath());
 	}
 	
-	public java.io.File concat(final List<java.io.File> files, final java.io.File concatenatedFile, final Activity a) {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				
-			}
-		}).start();
-		for(java.io.File file : files) {
-			// convert to mpg
-			
-			// replace this one
-		}
-		
-		for(java.io.File file : files) {
-			// build string
-		}
-		
-		// run ffmpeg command to convert back to original file type
-		
-		return concatenatedFile;
-	}
-
 	public void finish() {
 		// move back to iocipher
 		
@@ -254,10 +230,12 @@ public class VideoConstructor {
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
 			
 			if(connection != null) {
-				// TODO: SEND OFF?
+				((MetadataEmbededListener) media).onMetadataEmbeded(connection);
+			} else {
+				((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
 			}
 			
-			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);	
+				
 			
 			success = true;
 			

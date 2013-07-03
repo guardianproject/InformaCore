@@ -2,16 +2,9 @@ package org.witness.informacam.models.utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.models.Model;
-
-import android.view.View;
 
 @SuppressWarnings("serial")
 public class ILanguageMap extends Model implements Serializable {

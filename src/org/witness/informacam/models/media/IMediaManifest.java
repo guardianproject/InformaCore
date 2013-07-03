@@ -6,11 +6,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.TimeUtility;
-import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
