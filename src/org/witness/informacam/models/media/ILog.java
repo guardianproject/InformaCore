@@ -77,7 +77,7 @@ public class ILog extends IMedia {
 
 			if(organization != null) {
 				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.FILE_SYSTEM);
-				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
 				informaCam.ioService.saveBlob(j3mBytes, log, true);
 			}
 
@@ -87,7 +87,7 @@ public class ILog extends IMedia {
 
 			if(organization != null) {
 				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
-				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
 				informaCam.ioService.saveBlob(j3mBytes, log);
 				
 				ITransportStub submission = new ITransportStub(log.getAbsolutePath(), organization);

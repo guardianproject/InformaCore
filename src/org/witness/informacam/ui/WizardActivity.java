@@ -233,7 +233,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			for(String s : informaCam.getAssets().list("includedOrganizations")) {
 				Log.d(LOG, "NEW ASSET: " + s);
 				
-				InputStream ictdIS = informaCam.ioService.getStream(s, Type.APPLICATION_ASSET);
+				InputStream ictdIS = informaCam.ioService.getStream("includedOrganizations/" + s, Type.APPLICATION_ASSET);
 				
 				byte[] ictdBytes = new byte[ictdIS.available()];
 				ictdIS.read(ictdBytes);

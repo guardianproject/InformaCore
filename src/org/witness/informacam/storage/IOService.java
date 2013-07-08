@@ -95,12 +95,6 @@ public class IOService {
 		fos.flush();
 		fos.close();
 		
-		/*
-		if(delete) { //this make ZERO sense to write to a file and then to delete the file
-			file.delete();
-		}
-		*/
-		
 		if(uriToDelete != null) {
 			mContext.getContentResolver().delete(Uri.parse(uriToDelete), null, null);
 		}

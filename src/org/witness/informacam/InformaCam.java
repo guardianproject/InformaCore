@@ -1,7 +1,5 @@
 package org.witness.informacam;
 
-import info.guardianproject.iocipher.File;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -19,7 +17,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.crypto.CredentialManager;
-import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
@@ -38,7 +35,6 @@ import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -560,7 +556,7 @@ public class InformaCam extends Application {
 					ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(forms.getString(f).getBytes(), Base64.DEFAULT));
 					IForm form = FormUtility.importAndParse(new ByteArrayInputStream(baos.toByteArray()));
 					if(form != null) {
-						forms.put(f, form);
+						forms.put(f, form.asJson());
 					}
 					baos.close();
 				} catch (JSONException e) {
@@ -577,6 +573,7 @@ public class InformaCam extends Application {
 		try {
 			ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes(), Base64.DEFAULT));
 			info.guardianproject.iocipher.File publicKeyFile = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT, ictd.getString(Models.IOrganization.ORGANIZATION_FINGERPRINT) + ".asc");
+			Log.d(LOG, new String(baos.toByteArray()));
 			if(InformaCam.getInstance().ioService.saveBlob(baos.toByteArray(), publicKeyFile)) {
 				ictd.put(Models.IOrganization.PUBLIC_KEY, publicKeyFile.getAbsolutePath());
 			}

@@ -386,7 +386,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 				// maybe encrypt
 				if(organization != null) {
-					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
+					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
 				}
 				
 				// base64
