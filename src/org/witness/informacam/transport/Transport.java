@@ -1,5 +1,6 @@
 package org.witness.informacam.transport;
 
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.utils.Constants.Models;
 
@@ -26,6 +27,12 @@ public class Transport extends Activity {
 	
 	protected void finishSuccessfully() {
 		transportStub.resultCode = Models.ITransportStub.ResultCodes.OK;
+		
+		if(transportStub.associatedNotification != null) {
+			transportStub.associatedNotification.taskComplete = true;
+			InformaCam.getInstance().updateNotification(transportStub.associatedNotification);
+		}
+		
 		finish();
 	}
 }

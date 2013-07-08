@@ -56,7 +56,7 @@ public class MediaHasher
 	}
 	
 	public static String getBitmapHash(Bitmap bitmap) throws NoSuchAlgorithmException, IOException {
-		MessageDigest digester = MessageDigest.getInstance("SHA-1");
+		MessageDigest digester = MessageDigest.getInstance("MD5");
 		
 		for(int h=0; h<bitmap.getHeight(); h++) {
 			int[] row = new int[bitmap.getWidth()];
@@ -85,7 +85,7 @@ public class MediaHasher
 		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
 		
 		bitmap.copyPixelsToBuffer(buf);
-		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		hash = MediaHasher.hash(buf.array(), "MD5");
 		buf.clear();
 		buf = null;
 		return hash;
@@ -99,7 +99,7 @@ public class MediaHasher
 		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
 		
 		bitmap.copyPixelsToBuffer(buf);
-		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		hash = MediaHasher.hash(buf.array(), "MD5");
 		buf.clear();
 		buf = null;
 		return hash;
@@ -113,7 +113,7 @@ public class MediaHasher
 		buf = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
 		
 		bitmap.copyPixelsToBuffer(buf);
-		hash = MediaHasher.hash(buf.array(), "SHA-1");
+		hash = MediaHasher.hash(buf.array(), "MD5");
 		buf.clear();
 		buf = null;
 		return hash;

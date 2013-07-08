@@ -69,4 +69,8 @@ public class INotificationsManifest extends Model {
 			break;
 		}
 	}
+
+	public void save() {
+		InformaCam.getInstance().saveState(this);
+	}
 }

@@ -19,10 +19,16 @@ public class ITransportStub extends Model implements Serializable {
 	public int resultCode = Models.ITransportStub.ResultCodes.FAIL;
 	
 	public ITransportStub() {
-		super();
+		this(null, null, null);
+	}
+	
+	public ITransportStub(String assetPath, IOrganization organization) {
+		this(assetPath, organization, null);
 	}
 	
 	public ITransportStub(String assetPath, IOrganization organization, INotification associatedNotification) {
+		super();
+		
 		this.assetPath = assetPath;
 		this.organization = organization;
 		this.associatedNotification = associatedNotification;

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 import org.ffmpeg.android.BinaryInstaller;
 import org.ffmpeg.android.ShellUtils;
@@ -62,29 +63,14 @@ public class VideoConstructor {
 	}
 
 	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination, ITransportStub connection) throws IOException {
+		this(context);
+		
 		this.pathToVideo = pathToVideo;
 		this.pathToJ3M = pathToJ3M;
 		this.media = media;
 		this.pathToNewVideo = pathToNewVideo;
 		this.destination = destination;
 		this.connection = connection;
-
-
-		fileBinDir = context.getDir("bin",0);
-
-
-		if (!new java.io.File(fileBinDir,libraryAssets[0]).exists()) {
-			BinaryInstaller bi = new BinaryInstaller(context,fileBinDir);
-			try {
-				bi.installFromRaw();
-			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
 
 		InformaCam informaCam = InformaCam.getInstance();
 		
@@ -144,6 +130,70 @@ public class VideoConstructor {
 		}
 	}
 
+	public ArrayList<String> hashVideo(String pathToVideo) {
+		/**
+		 * Hashes the video frames 
+		 * using FFMpeg's RGB hashing function and
+		 * hashes audio stream
+		 */
+		try {
+			String ffmpegBin = new java.io.File(fileBinDir,"ffmpeg").getAbsolutePath();
+			Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
+			
+			InformaCam informaCam = InformaCam.getInstance();
+			java.io.File tmpVid = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "tmp.mp4");
+			
+			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo, Type.IOCIPHER), tmpVid, true);
+			
+			ArrayList<String[]> ffmpegCommand = new ArrayList<String[]>();
+			ffmpegCommand.add(new String[] {
+					ffmpegBin, "-i", tmpVid.getAbsolutePath(),
+					"-f", "rawvideo", "-pix_fmt", 
+					"rgb24", "-f", "md5", "-"
+			});
+			
+			ffmpegCommand.add(new String[] {
+					ffmpegBin, "-i", tmpVid.getAbsolutePath(),
+					"-acodec", "copy", "-f", "md5", "-"
+			});
+			
+			final ArrayList<String> hashes = new ArrayList<String>();
+			for(String[] cmd : ffmpegCommand) {
+				StringBuffer sb = new StringBuffer();
+				for(String f: cmd) {
+					sb.append(f + " ");
+				}
+			
+				Log.d(LOG, "command to ffmpeg: " + sb.toString());
+				
+				
+				execProcess(cmd, new ShellUtils.ShellCallback () {
+
+					@Override
+					public void shellOut(String shellLine) {
+						Log.d(LOG, shellLine);
+						if(shellLine.contains("MD5=")) {
+							hashes.add(shellLine.split("=")[1]);
+						}
+					}
+
+					@Override
+					public void processComplete(int exitValue) {
+
+					}
+				});
+			}
+			
+			tmpVid.delete();
+			return hashes;
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
 	private static void execProcess(String[] cmds, ShellUtils.ShellCallback sc) {
 		ProcessBuilder pb = new ProcessBuilder(cmds);
 		pb.redirectErrorStream(true);

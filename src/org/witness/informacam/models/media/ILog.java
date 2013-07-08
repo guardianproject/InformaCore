@@ -15,7 +15,11 @@ import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.organizations.IRepository;
+import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.transport.DriveTransport;
+import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
@@ -24,6 +28,7 @@ import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -63,6 +68,7 @@ public class ILog extends IMedia {
 	public void sealLog(boolean share, IOrganization organization) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
+		
 		// zip up everything, encrypt if required
 		String logName = ("log_" + System.currentTimeMillis() + ".zip");
 		if(share) {
@@ -83,6 +89,12 @@ public class ILog extends IMedia {
 				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
 				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKeyPath, Type.IOCIPHER), Base64.DEFAULT));
 				informaCam.ioService.saveBlob(j3mBytes, log);
+				
+				ITransportStub submission = new ITransportStub(log.getAbsolutePath(), organization);
+				submission.mimeType = MimeType.LOG;
+				submission.assetName = log.getName();
+				
+				TransportUtility.initTransport(submission);
 			}
 		}
 	}

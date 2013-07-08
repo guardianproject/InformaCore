@@ -41,6 +41,7 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.TransportUtility;
 
 import android.app.Activity;
 import android.content.Context;
@@ -426,7 +427,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						
 						submission = new ITransportStub(exportFile.getAbsolutePath().replace(".mp4", ".mkv"), organization, notification);
 						submission.mimeType = Models.IMedia.MimeType.VIDEO;
-						submission.assetName = exportFile.getName();
+						submission.assetName = exportFile.getName().replace(".mp4", ".mkv");
 					}
 
 					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
@@ -546,26 +547,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	@Override
 	public void onMetadataEmbeded(ITransportStub transportStub) {
 		sendMessage(Models.IMedia.VERSION, transportStub.assetPath);
-		
-		InformaCam informaCam = InformaCam.getInstance();
-		List<Intent> intents = new ArrayList<Intent>();
-		
-		for(IRepository repository : transportStub.organization.repositories) {
-			
-			Intent intent = null;
-			if(repository.source.equals(Models.ITransportStub.RepositorySources.GOOGLE_DRIVE)) {
-				intent = new Intent(informaCam, DriveTransport.class);
-			}
-			
-			if(intent != null) {
-				intent.putExtra(Models.ITransportStub.TAG, transportStub);
-				intents.add(intent);
-			}
-		}
-		
-		if(!intents.isEmpty()) {
-			informaCam.startActivities(intents.toArray(new Intent[intents.size()]));
-		}
+		TransportUtility.initTransport(transportStub);
 	}
 
 	@Override

@@ -1,6 +1,10 @@
 package org.witness.informacam.models.media;
 
+import java.util.ArrayList;
+
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.embed.VideoConstructor;
+import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -35,21 +39,26 @@ public class IVideo extends IMedia {
 		height = dcimEntry.exif.height;
 		width = dcimEntry.exif.width;
 		
-		// 1. copy over video
+		// 1. hash
+		VideoConstructor vc = new VideoConstructor(informaCam);
+		genealogy = new IGenealogy();
+		genealogy.hashes = vc.hashVideo(dcimEntry.fileName);
+		
+		// 2. copy over video
 		info.guardianproject.iocipher.File videoFile = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
 		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER), videoFile);
 		informaCam.ioService.delete(dcimEntry.fileName, Type.IOCIPHER);
 		dcimEntry.fileName = videoFile.getAbsolutePath();
 		video = videoFile.getAbsolutePath();
 
-		// 2. thumb
+		// 3. thumb
 		info.guardianproject.iocipher.File bThumb = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.thumbnailName);
 		informaCam.ioService.saveBlob(Base64.decode(informaCam.ioService.getBytes(dcimEntry.thumbnailFileName, Type.IOCIPHER), Base64.DEFAULT), bThumb);
 		bitmapThumb = bThumb.getAbsolutePath();
 		dcimEntry.thumbnailFile = null;
 		dcimEntry.thumbnailFileName = null;
 
-		// 3. list and preview
+		// 4. list and preview
 		String nameRoot = dcimEntry.name.substring(0, dcimEntry.name.lastIndexOf("."));
 		final info.guardianproject.iocipher.File bList = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_list.jpg"));
 		final info.guardianproject.iocipher.File bPreview = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_preview.jpg"));

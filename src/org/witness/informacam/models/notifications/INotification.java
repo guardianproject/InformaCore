@@ -78,4 +78,11 @@ public class INotification extends Model {
 		
 		this._id = String.valueOf(timestamp);
 	}
+
+	public void save() {
+		InformaCam informaCam = InformaCam.getInstance();
+		informaCam.notificationsManifest.getById(this._id).inflate(asJson());
+		informaCam.notificationsManifest.save();
+		
+	}
 }

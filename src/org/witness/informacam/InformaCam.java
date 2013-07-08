@@ -61,6 +61,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Base64;
 import android.util.Log;
 import dalvik.system.DexFile;
 
@@ -544,7 +545,6 @@ public class InformaCam extends Application {
 	
 	public IOrganization installICTD(JSONObject ictd, Handler callback) {
 		IOrganization organization = null;
-		
 		JSONArray forms = null;
 		
 		try {
@@ -557,25 +557,30 @@ public class InformaCam extends Application {
 		if(forms != null) {
 			for(int f=0; f<forms.length(); f++) {
 				try {
-					ByteArrayOutputStream baos = IOUtility.unGZipBytes(forms.getString(f).getBytes());
+					ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(forms.getString(f).getBytes(), Base64.DEFAULT));
 					IForm form = FormUtility.importAndParse(new ByteArrayInputStream(baos.toByteArray()));
 					if(form != null) {
 						forms.put(f, form);
 					}
+					baos.close();
 				} catch (JSONException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				} catch (IOException e) {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
 			}
 		}
 		
-		byte[] publicKey = null;
+		
 		try {
-			publicKey = ((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes();
+			ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes(), Base64.DEFAULT));
 			info.guardianproject.iocipher.File publicKeyFile = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT, ictd.getString(Models.IOrganization.ORGANIZATION_FINGERPRINT) + ".asc");
-			if(InformaCam.getInstance().ioService.saveBlob(publicKey, publicKeyFile)) {
+			if(InformaCam.getInstance().ioService.saveBlob(baos.toByteArray(), publicKeyFile)) {
 				ictd.put(Models.IOrganization.PUBLIC_KEY, publicKeyFile.getAbsolutePath());
 			}
+			baos.close();
 			
 			organization = new IOrganization(ictd);
 			Log.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());
@@ -583,6 +588,9 @@ public class InformaCam extends Application {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 			return null;
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
 		}
 		
 		
