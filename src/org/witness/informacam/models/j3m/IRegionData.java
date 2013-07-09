@@ -3,7 +3,6 @@ package org.witness.informacam.models.j3m;
 import java.io.FileNotFoundException;
 
 import org.json.JSONObject;
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.media.IRegion;

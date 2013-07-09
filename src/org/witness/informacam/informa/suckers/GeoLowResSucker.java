@@ -2,12 +2,10 @@ package org.witness.informacam.informa.suckers;
 
 import java.util.TimerTask;
 
-import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
 
-import android.app.Activity;
 import android.content.Context;
 import android.location.Criteria;
 import android.location.GpsStatus.NmeaListener;
@@ -17,7 +15,6 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
-@SuppressWarnings("rawtypes")
 public class GeoLowResSucker extends GeoSucker implements LocationListener {
 	LocationManager lm;
 	Criteria criteria;

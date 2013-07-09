@@ -6,14 +6,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.witness.informacam.utils.Constants.Time;
 import org.witness.informacam.utils.Constants.Time.DateFormats;
 
 import android.annotation.SuppressLint;
 import android.util.Log;
 
+@SuppressLint("SimpleDateFormat")
 public class TimeUtility {
-	private final static String LOG = Time.LOG;
 	
 	public final static long timestampToMillis(String ts, String dateFormat) throws ParseException {
 		//2012:06:12 10:42:04

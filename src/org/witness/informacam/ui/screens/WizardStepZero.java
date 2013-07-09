@@ -6,7 +6,6 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.ui.WizardActivity;
-import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 
 import android.app.Activity;
@@ -16,7 +15,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;

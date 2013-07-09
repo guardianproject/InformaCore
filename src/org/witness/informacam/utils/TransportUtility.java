@@ -25,7 +25,8 @@ public class TransportUtility {
 			}
 			
 			if(intent != null) {
-				intent.putExtra(Models.ITransportStub.TAG, transportStub);
+				intent.putExtra(Models.ITransportStub.TAG, transportStub.asJson().toString());
+				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
 				intents.add(intent);
 			}
 		}

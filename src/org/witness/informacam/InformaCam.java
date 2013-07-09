@@ -218,7 +218,6 @@ public class InformaCam extends Application {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
-				user.isInOfflineMode = true;
 				
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;
@@ -657,6 +656,10 @@ public class InformaCam extends Application {
 	public void setCredentialManager(CredentialManager credentialManager) {
 		this.credentialManager = credentialManager;
 		this.credentialManager.onResume();		
+	}
+	
+	public java.io.File getPublicCredentials() {
+		return ioService.getPublicCredentials();
 	}
 	
 	public int getCredentialManagerStatus() {

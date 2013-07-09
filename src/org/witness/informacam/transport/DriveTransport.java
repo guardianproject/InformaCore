@@ -66,6 +66,7 @@ public class DriveTransport extends Transport {
 					Log.e(LOG, "REGULAR IO Exception");
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
+					finish();
 				}
 			}
 		}).start();
@@ -74,6 +75,9 @@ public class DriveTransport extends Transport {
 	
 	@Override
 	protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		
+		Log.d(LOG, "HELLO RESULT: requestCode " + requestCode + " resultCode " + resultCode);
 		switch(requestCode) {
 		case REQUEST_ACCOUNT_PICKER:
 			if(resultCode == Activity.RESULT_OK && data != null && data.getExtras() != null) {
@@ -82,12 +86,14 @@ public class DriveTransport extends Transport {
 					credentials.setSelectedAccountName(account_name);
 					service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credentials).build();
 					Log.d(LOG, "SERVICE INITIATED!");
+					send();
 				}
 			}
 			break;
 		case REQUEST_AUTHORIZATION:
 			if(resultCode == Activity.RESULT_OK) {
 				Log.d(LOG, "REQUEST AUTH OK");
+				//send();
 			} else {
 				Log.d(LOG, "BAD AUTH. REQUESTING AUTH...");
 				init();

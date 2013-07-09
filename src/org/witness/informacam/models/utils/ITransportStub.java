@@ -2,6 +2,7 @@ package org.witness.informacam.models.utils;
 
 import java.io.Serializable;
 
+import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
@@ -34,6 +35,11 @@ public class ITransportStub extends Model implements Serializable {
 		this.associatedNotification = associatedNotification;
 	}
 	
+	public ITransportStub(JSONObject transportStub) {
+		super();
+		inflate(transportStub);
+	}
+
 	public String getAssetRootOfRepository(String source) {
 		for(IRepository repository : organization.repositories) {
 			if(repository.source.equals(source)) {

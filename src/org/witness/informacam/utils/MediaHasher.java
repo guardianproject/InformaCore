@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Formatter;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

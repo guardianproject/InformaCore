@@ -261,11 +261,16 @@ public class KeyUtility {
 			aos.flush();
 			aos.close();
 			baos.flush();
-
+			
 			Map<String, byte[]> publicCredentials = new HashMap<String, byte[]>();
 			publicCredentials.put(IUser.BASE_IMAGE, baseImageBytes);
-			publicCredentials.put(IUser.PUBLIC_KEY, baos.toByteArray());
+			publicCredentials.put(IUser.PUBLIC_KEY, baos.toByteArray());			
 			baos.close();
+			
+			JSONObject credentials = new JSONObject();
+			credentials.put(IUser.ALIAS, informaCam.user.getString(IUser.ALIAS));
+			credentials.put(IUser.EMAIL, informaCam.user.getString(IUser.EMAIL));
+			publicCredentials.put(IUser.CREDENTIALS, credentials.toString().getBytes());
 
 			IOUtility.zipFiles(publicCredentials, IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER);
 

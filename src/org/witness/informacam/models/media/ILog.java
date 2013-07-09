@@ -15,10 +15,8 @@ import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
-import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.transport.DriveTransport;
 import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -28,7 +26,6 @@ import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;

@@ -14,7 +14,7 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import android.util.Log;
 
 public class INotification extends Model {
-	public long timestamp = System.currentTimeMillis();
+	public long timestamp = 0L;
 	public String label = null;
 	public String content = null;
 	public String from = null;
@@ -26,12 +26,14 @@ public class INotification extends Model {
 	
 	public INotification() {
 		super();
+		this.timestamp = System.currentTimeMillis();
 	}
 	
 	public INotification(String label, String content, int type) {
 		this.label = label;
 		this.content = content;
 		this.type = type;
+		this.timestamp = System.currentTimeMillis();
 		
 		generateId();
 	}

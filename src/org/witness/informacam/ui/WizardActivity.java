@@ -11,6 +11,8 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
@@ -19,8 +21,10 @@ import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.WizardListener;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.TransportUtility;
 
 import android.app.Activity;
 import android.content.Context;
@@ -231,14 +235,16 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		
 		try {
 			for(String s : informaCam.getAssets().list("includedOrganizations")) {
-				Log.d(LOG, "NEW ASSET: " + s);
 				
 				InputStream ictdIS = informaCam.ioService.getStream("includedOrganizations/" + s, Type.APPLICATION_ASSET);
 				
 				byte[] ictdBytes = new byte[ictdIS.available()];
 				ictdIS.read(ictdBytes);
 				
-				informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
+				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
+				if(organization != null && !informaCam.user.isInOfflineMode) {
+					TransportUtility.initTransport(new ITransportStub(IUser.PUBLIC_CREDENTIALS, organization));
+				}
 			}
 		} catch(IOException e) {
 			Log.e(LOG, e.toString());

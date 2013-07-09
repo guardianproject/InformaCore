@@ -1,7 +1,5 @@
 package org.witness.informacam.models.media;
 
-import java.util.ArrayList;
-
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;

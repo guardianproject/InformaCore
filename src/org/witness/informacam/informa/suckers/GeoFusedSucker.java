@@ -17,7 +17,6 @@ import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 
-@SuppressWarnings("rawtypes")
 public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
 	
 	Criteria criteria;
