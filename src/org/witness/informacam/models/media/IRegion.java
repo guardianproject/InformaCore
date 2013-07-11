@@ -1,7 +1,11 @@
 package org.witness.informacam.models.media;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.utils.IRegionDisplay;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
@@ -11,8 +15,7 @@ public class IRegion extends Model {
 	public String id = null;
 	public long timestamp = 0L;
 
-	public String formNamespace = null;
-	public String formPath = null;
+	public List<IForm> associatedForms = new ArrayList<IForm>();
 
 	public IRegionBounds bounds = null;
 	private IRegionDisplay regionDisplay = null;
@@ -40,6 +43,20 @@ public class IRegion extends Model {
 			}
 			InformaCam.getInstance().informaService.addRegion(this);
 		}
+	}
+	
+	public IForm getFormByNamespace(String namespace) {
+		return getFormsByNamespace(namespace).get(0);
+	}
+	
+	public List<IForm> getFormsByNamespace(String namespace) {
+		List<IForm> forms = new ArrayList<IForm>();
+		for(IForm form : this.associatedForms) {
+			if(form.namespace.equals(namespace)) {
+				forms.add(form);
+			}
+		}
+		return forms;
 	}
 
 	public IRegionDisplay getRegionDisplay() {

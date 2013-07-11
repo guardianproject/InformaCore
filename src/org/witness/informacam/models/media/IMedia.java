@@ -18,6 +18,7 @@ import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.j3m.IGenealogy;
@@ -34,6 +35,7 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
@@ -48,7 +50,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
-import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
 	
@@ -149,10 +150,26 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
-				if(region.formNamespace != null) {
-					if(omitableNamespaces != null && !omitableNamespaces.contains(region.formNamespace)) {
-						regionsWithForms.add(region);
+				boolean regionHasForms = false;
+				
+				if(region.associatedForms.isEmpty()) {
+					return regionsWithForms;
+				}
+				
+				if(omitableNamespaces == null) {
+					regionHasForms = true;
+				} else {
+
+					for(IForm form : region.associatedForms) {
+						if(!omitableNamespaces.contains(form.namespace)) {
+							regionHasForms = true;
+							break;
+						}
 					}
+				}
+				
+				if(regionHasForms) {
+					regionsWithForms.add(region);
 				}
 			}
 		}
@@ -176,8 +193,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		try {
 			return addRegion(activity, 0, 0, 0, 0, listener);
 		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 
 		return null;
@@ -189,7 +205,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public IRegion addRegion(Activity activity, int top, int left, int width, int height, long startTime, long endTime, IRegionDisplayListener listener) throws JSONException {
 		if(associatedRegions == null) {
-			Log.d(LOG, "initing associatedRegions");
+			Logger.d(LOG, "initing associatedRegions");
 			associatedRegions = new ArrayList<IRegion>();
 		}
 
@@ -203,7 +219,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		region.init(activity, new IRegionBounds(top, left, width, height, startTime, endTime), listener);
 
 		associatedRegions.add(region);
-		Log.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
+		Logger.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
 
 		return region;
 	}
@@ -267,7 +283,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 									data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
 									break;
 								case CaptureEvent.REGION_GENERATED:
-									Log.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
+									Logger.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
 									break;
 								}
 							}
@@ -281,8 +297,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					progress += progressInterval;
 					sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+					Logger.e(LOG, e);
 				}				
 			}
 		}
@@ -298,7 +313,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	@SuppressWarnings("unused")
 	public boolean export(Context context, Handler h, IOrganization organization, boolean share) {
-		Log.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
 		
 		responseHandler = h;
@@ -321,16 +336,16 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 		if(associatedRegions != null && associatedRegions.size() > 0) {
-			for(IRegion r : associatedRegions) {
-				if(r.formPath != null) {
+			for(IRegion region : associatedRegions) {
+				for(IForm form : region.associatedForms) {
 					if(data.regionData == null) {
 						data.regionData = new ArrayList<IRegionData>();
 					}
-
+					
 					// TODO: get locations from cache
-					byte[] formBytes = informaCam.ioService.getBytes(r.formPath, Type.IOCIPHER);
+					byte[] formBytes = informaCam.ioService.getBytes(form.answerPath, Type.IOCIPHER);
 					if(formBytes != null && formBytes.length > 0) {
-						data.regionData.add(new IRegionData(r, IOUtility.xmlToJson(new ByteArrayInputStream(formBytes))));
+						data.regionData.add(new IRegionData(region, form.namespace, IOUtility.xmlToJson(new ByteArrayInputStream(formBytes))));
 					}
 				}
 			}
@@ -371,7 +386,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
+			Logger.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 			
 			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
 
@@ -445,14 +460,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 		} catch (JSONException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 			return false;
 		} catch (ConcurrentModificationException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 			return false;
 		}
 		catch (IOException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 			return false;
 		}
 
@@ -467,7 +482,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				details.append(this.alias);
 			}
 			details.append(this._id);
-			Log.d(LOG, this.asJson().toString());
+			Logger.d(LOG, this.asJson().toString());
 
 			break;
 		}
@@ -497,11 +512,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		try {
 			return MediaHasher.hash(KeyUtility.generatePassword(seed.getBytes()).getBytes(), "MD5");
 		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 
 		return seed;

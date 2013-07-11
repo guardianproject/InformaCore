@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.Constants.Logger;
 
 import android.app.Activity;
 import android.util.Log;
@@ -20,6 +21,7 @@ public class IForm extends Model {
 	public String title = null;
 	public String namespace = null;
 	public String path = null;
+	public String answerPath = null;
 
 	FormWrapper fw = null;
 	Activity a = null;
@@ -39,6 +41,7 @@ public class IForm extends Model {
 		
 		this.a = a;
 		String[] answers = null;
+		
 		try {
 			fw = new FormWrapper(new info.guardianproject.iocipher.FileInputStream(path), oldAnswers);
 			answers = new String[fw.questions.size()];
@@ -137,6 +140,7 @@ public class IForm extends Model {
 	}
 
 	public QD getQuestionDefByTitleId(String questionId) {
+		Logger.d(LOG, "looking for question id " + questionId + " among " + fw.questions.size() + " forms");
 		for(QD qd : fw.questions) {
 			Log.d(LOG, "QUESTION DEF ID: " + qd.id);
 			if(qd.id.equals(questionId)) {

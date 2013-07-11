@@ -14,6 +14,7 @@ import android.os.Environment;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
 
 public class Constants {
 	
@@ -58,6 +59,19 @@ public class Constants {
 	
 	public interface ListAdapterListener {
 		public void updateAdapter(int which);
+	}
+	
+	public final static class Logger {
+		public Logger() {}
+		
+		public static void e(String LOG, Exception e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		public static void d(String LOG, String msg) {
+			Log.d(LOG, msg);
+		}
 	}
 
 	public final static class Actions {

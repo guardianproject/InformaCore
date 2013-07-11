@@ -43,6 +43,7 @@ import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.ListAdapterListener;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
@@ -290,6 +291,7 @@ public class InformaCam extends Application {
 		}
 		
 		installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);
+		Logger.d(LOG, installedOrganizations.asJson().toString());
 		
 		notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
 		if(notificationsManifest.notifications.size() > 0) {
@@ -591,6 +593,7 @@ public class InformaCam extends Application {
 		
 		
 		if(organization != null) {
+			installedOrganizations.organizations.add(organization);
 			saveState(installedOrganizations);
 		
 			INotification notification = new INotification(getString(R.string.key_installed), getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			

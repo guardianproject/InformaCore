@@ -241,6 +241,8 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				byte[] ictdBytes = new byte[ictdIS.available()];
 				ictdIS.read(ictdBytes);
 				
+				informaCam.user.isInOfflineMode = true;
+				
 				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
 				if(organization != null && !informaCam.user.isInOfflineMode) {
 					TransportUtility.initTransport(new ITransportStub(IUser.PUBLIC_CREDENTIALS, organization));

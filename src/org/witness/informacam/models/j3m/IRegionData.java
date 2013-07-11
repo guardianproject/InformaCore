@@ -22,10 +22,10 @@ public class IRegionData extends Model {
 		super();
 	}
 	
-	public IRegionData(IRegion region, JSONObject metadata) {
+	public IRegionData(IRegion region, String namespace, JSONObject metadata) {
 		super();
 		
-		this.namespace = region.formNamespace;
+		this.namespace = namespace;
 		this.metadata = metadata;
 		this.regionBounds = region.bounds;
 		this.timestamp = region.timestamp;

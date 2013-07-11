@@ -12,7 +12,7 @@ import org.witness.informacam.utils.Constants.Models;
 import android.content.Intent;
 
 public class TransportUtility {
-	
+	// TODO: just 1 activity.
 	public static void initTransport(ITransportStub transportStub) {
 		InformaCam informaCam = InformaCam.getInstance();
 		List<Intent> intents = new ArrayList<Intent>();

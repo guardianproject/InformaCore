@@ -8,12 +8,12 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
-import android.util.Log;
 
 public class IImage extends IMedia {
 	public String bitmap;
@@ -55,11 +55,9 @@ public class IImage extends IMedia {
 		try {
 			genealogy.hashes.add(MediaHasher.getBitmapHash(bitmap_));
 		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 
 

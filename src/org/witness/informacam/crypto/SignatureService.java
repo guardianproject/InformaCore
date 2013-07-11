@@ -23,6 +23,8 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.utils.Constants.Logger;
+import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
 
 import android.content.Context;
@@ -33,6 +35,8 @@ public class SignatureService {
 	private PGPPrivateKey privateKey = null;
 	private PGPPublicKey publicKey = null;
 	private String authKey = null;
+	
+	private static String LOG = Crypto.LOG;
 	
 	public SignatureService (Context context)
 	{
@@ -49,9 +53,7 @@ public class SignatureService {
 		privateKey = secretKey.extractPrivateKey(authKey.toCharArray(), new BouncyCastleProvider());
 		publicKey = secretKey.getPublicKey();
 		
-		sk = null;
-		
-		
+		sk = null;		
 	}
 	
 	public boolean isVerified(final ILogPack data) {
@@ -129,8 +131,10 @@ public class SignatureService {
 		try {
 			return future.get();
 		} catch (InterruptedException e) {
+			Logger.e(LOG, e);
 			return null;
 		} catch (ExecutionException e) {
+			Logger.e(LOG, e);
 			return null;
 		}
 	}
