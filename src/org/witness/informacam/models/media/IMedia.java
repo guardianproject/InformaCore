@@ -101,6 +101,34 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return InformaCam.getInstance().mediaManifest.removeMediaItem(this);
 	}
 	
+	public IForm attachForm(Activity a, IForm form) {
+		IRegion region = addRegion(a, null);
+		
+		form = new IForm(form, a);		
+		
+		return region.addForm(form);
+	}
+	
+	public List<IForm> getForms(Activity a) {
+		IRegion region = getTopLevelRegion();
+		List<IForm> forms = new ArrayList<IForm>();
+		for(IForm form : region.associatedForms) {
+			byte[] answerBytes = InformaCam.getInstance().ioService.getBytes(form.answerPath, Type.IOCIPHER);
+			forms.add(new IForm(form, a, answerBytes));
+		}
+		
+		return forms;
+	}
+	
+	public IForm getForm(Activity a) {
+		IRegion region = getTopLevelRegion();
+		
+		IForm form = region.associatedForms.get(0);
+		byte[] answerBytes = InformaCam.getInstance().ioService.getBytes(form.answerPath, Type.IOCIPHER);
+		
+		return new IForm(form, a, answerBytes);
+	}
+	
 	public IRegion getTopLevelRegion() {
 		return getRegionAtRect();
 	}

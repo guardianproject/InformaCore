@@ -67,23 +67,6 @@ public class ILog extends IMedia {
 		inflate(media.asJson());
 	}
 	
-	public IForm attachForm(Activity a, IForm form) {
-		IRegion region = addRegion(a, null);
-		
-		form = new IForm(form, a);		
-		
-		return region.addForm(form);
-	}
-	
-	public IForm getForm(Activity a) {
-		IRegion region = getTopLevelRegion();
-		
-		IForm form = region.associatedForms.get(0);
-		byte[] answerBytes = InformaCam.getInstance().ioService.getBytes(form.answerPath, Type.IOCIPHER);
-		
-		return new IForm(form, a, answerBytes);
-	}
-	
 	public void sealLog(boolean share, IOrganization organization) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
