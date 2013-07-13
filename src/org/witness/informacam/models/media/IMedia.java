@@ -1,6 +1,5 @@
 package org.witness.informacam.models.media;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -77,7 +76,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public CharSequence detailsAsText = null;
 
 	protected Handler responseHandler;
-	protected boolean debugMode = false;
+	protected boolean debugMode = true;
 	
 	private Bitmap mThumbnail = null;
 	
@@ -100,6 +99,22 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	public boolean delete() {
 		return InformaCam.getInstance().mediaManifest.removeMediaItem(this);
+	}
+	
+	public IRegion getTopLevelRegion() {
+		return getRegionAtRect();
+	}
+	
+	public List<IRegion> getInnerLevelRegions() {
+		List<IRegion> innerLevelFormRegions = new ArrayList<IRegion>();
+		
+		for(IRegion region : associatedRegions) {
+			if(region.isInnerLevelRegion()) {
+				innerLevelFormRegions.add(region);
+			}
+		}
+		
+		return innerLevelFormRegions;
 	}
 
 	public IRegion getRegionAtRect() {
@@ -125,7 +140,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					videoRegion = (IVideoRegion) region;
 					bounds = videoRegion.getBoundsAtTime(timestamp);
 					region = videoRegion;
-				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+				} else {
 					bounds = region.bounds;
 				}
 
@@ -144,17 +159,44 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return null;
 	}
+	
+	public List<IRegion> getRegionsByNamespace(String namespace) {
+		List<IRegion> regionsWithForms = new ArrayList<IRegion>();
+		
+		if(associatedRegions != null && associatedRegions.size() >0) {
+			for(IRegion region : associatedRegions) {
+				if(region.associatedForms.isEmpty()) {
+					continue;
+				}
+				
+				boolean regionHasForms = false;
+				
+				for(IForm form : region.associatedForms) {
+					if(form.namespace.equals(namespace)) {
+						regionHasForms = true;
+						break;
+					}
+				}
+				
+				if(regionHasForms) {
+					regionsWithForms.add(region);
+				}
+			}
+		}
+		
+		return regionsWithForms;
+	}
 
 	public List<IRegion> getRegionsWithForms(List<String> omitableNamespaces) {
 		List<IRegion> regionsWithForms = new ArrayList<IRegion>();
 
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
-				boolean regionHasForms = false;
-				
 				if(region.associatedForms.isEmpty()) {
-					return regionsWithForms;
+					continue;
 				}
+				
+				boolean regionHasForms = false;
 				
 				if(omitableNamespaces == null) {
 					regionHasForms = true;
@@ -217,15 +259,34 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		region.init(activity, new IRegionBounds(top, left, width, height, startTime, endTime), listener);
-
+		
 		associatedRegions.add(region);
+		if(region.isInnerLevelRegion()) {
+			assignInnerLevelRegionIndexes();
+		}
+		
 		Logger.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
 
 		return region;
 	}
-
+	
+	public void assignInnerLevelRegionIndexes() {
+		int r = 0;
+		for(IRegion region : associatedRegions) {
+			if(region.isInnerLevelRegion()) {
+				region.index = r;
+				r++;
+			}
+		}
+	}
+	
 	public void removeRegion(IRegion region) {
+		boolean wasInnerLevelRegion = region.isInnerLevelRegion();
+		
 		region.delete(this);
+		if(wasInnerLevelRegion) {
+			assignInnerLevelRegionIndexes();
+		}
 	}
 
 	protected void mungeGenealogyAndIntent() {
@@ -243,6 +304,25 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 		intent.alias = informaCam.user.alias;
 		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
+	}
+	
+	protected void mungeData() {
+		if(data == null) {
+			data = new IData();
+		}
+		
+		if(associatedRegions != null && associatedRegions.size() > 0) {
+			for(IRegion region : associatedRegions) {
+				for(IForm form : region.associatedForms) {
+					if(data.userAppendedData == null) {
+						data.userAppendedData = new ArrayList<IRegionData>();
+					}
+					
+					// TODO: get locations from cache
+					data.userAppendedData.add(new IRegionData(new IRegion(region), null));
+				}
+			}
+		}
 	}
 	
 	protected void mungeSensorLogs() {
@@ -335,21 +415,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		if(associatedRegions != null && associatedRegions.size() > 0) {
-			for(IRegion region : associatedRegions) {
-				for(IForm form : region.associatedForms) {
-					if(data.regionData == null) {
-						data.regionData = new ArrayList<IRegionData>();
-					}
-					
-					// TODO: get locations from cache
-					byte[] formBytes = informaCam.ioService.getBytes(form.answerPath, Type.IOCIPHER);
-					if(formBytes != null && formBytes.length > 0) {
-						data.regionData.add(new IRegionData(region, form.namespace, IOUtility.xmlToJson(new ByteArrayInputStream(formBytes))));
-					}
-				}
-			}
-		}
+		mungeData();
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -492,6 +558,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public boolean analyze() {
 		isNew = true;
+		
+		if(genealogy == null) {
+			genealogy = new IGenealogy();
+		}
 
 		try {
 			info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(dcimEntry.originalHash);
@@ -554,19 +624,29 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 	
+	protected void reset() {
+		data.userAppendedData = null;
+		data.sensorCapture = null;
+		
+		save();
+	}
+	
 	@Override
 	public void onMetadataEmbeded(ITransportStub transportStub) {
+		reset();
 		sendMessage(Models.IMedia.VERSION, transportStub.assetPath);
 		TransportUtility.initTransport(transportStub);
 	}
 
 	@Override
 	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
+		reset();
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
 	}
 
 	@Override
 	public void onMetadataEmbeded(java.io.File version) {
+		reset();
 		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
 	}	
 }

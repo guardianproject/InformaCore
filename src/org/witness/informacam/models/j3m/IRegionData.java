@@ -1,48 +1,88 @@
 package org.witness.informacam.models.j3m;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.models.media.IRegionBounds;
 import org.witness.informacam.storage.IOUtility;
-
-import android.util.Log;
+import org.witness.informacam.utils.Constants.Logger;
+import org.witness.informacam.utils.Constants.Models;
 
 public class IRegionData extends Model {
-	public String namespace;
-	public JSONObject metadata;
-	public IRegionBounds regionBounds;
-	public ILocation location;
-	public long timestamp;
+	public List<IForm> associatedForms = new ArrayList<IForm>();
+	public IRegionBounds regionBounds = null;
+	public ILocation location = null;
+	public long timestamp = 0L;
+	public String id = null;
+	public String index = null;
 	
 	public IRegionData() {
 		super();
 	}
 	
-	public IRegionData(IRegion region, String namespace, JSONObject metadata) {
-		super();
-		
-		this.namespace = namespace;
-		this.metadata = metadata;
-		this.regionBounds = region.bounds;
-		this.timestamp = region.timestamp;
-	}
-
-	public IRegionData(IForm form, String formPath) {
+	@Override
+	public void inflate(JSONObject values) {
 		try {
-			info.guardianproject.iocipher.FileInputStream is = new info.guardianproject.iocipher.FileInputStream(formPath);
-			
-			this.namespace = form.namespace;
-			this.metadata = IOUtility.xmlToJson(is);
-			
-		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			if(values.has(Models.IRegion.INDEX)) {
+				values = values.put(Models.IRegion.INDEX, Integer.toString(values.getInt(Models.IRegion.INDEX)));
+			}
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
 		}
 		
+		super.inflate(values);
+	}
+	
+	@Override
+	public JSONObject asJson() {
+		JSONObject obj = super.asJson();
+		Logger.d(LOG, obj.toString());
 		
+		try {
+			obj = obj.put(Models.IRegion.INDEX, Integer.parseInt(index));
+		} catch (NumberFormatException e) {
+			Logger.e(LOG, e);
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return obj;
+	}
+	
+	public IRegionData(IRegion region, ILocation location) {
+		super();
+		
+		timestamp = region.timestamp;
+		id = region.id;
+		associatedForms = region.associatedForms;
+		
+		this.location = location;
+		
+		if(region.isInnerLevelRegion()) {
+			this.regionBounds = region.bounds;
+			
+			// The reason why it's cast to a string is because if public field is null, it will be omitted.
+			// you can't set an int to null, though, so...
+			if(region.index > -1) {
+				this.index = Integer.toString(region.index);
+			}
+		}		
+		
+		for(IForm form : associatedForms) {
+			try {
+				info.guardianproject.iocipher.FileInputStream is = new info.guardianproject.iocipher.FileInputStream(form.answerPath);
+				form.answerData = IOUtility.xmlToJson(is);
+				form.answerPath = null;
+				form.title = null;
+			} catch (FileNotFoundException e) {
+				Logger.e(LOG, e);
+			}
+		}
 	}
 }

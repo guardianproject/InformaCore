@@ -9,7 +9,13 @@ public class ISensorCapture extends Model {
 	public int captureType = CaptureEvent.SENSOR_PLAYBACK;
 	public JSONObject sensorPlayback = null;
 	
+	public ISensorCapture() {
+		super();
+	}
+	
 	public ISensorCapture(long timestamp, JSONObject sensorPlayback) {
+		super();
+		
 		this.timestamp = timestamp;
 		this.sensorPlayback = sensorPlayback;
 	}

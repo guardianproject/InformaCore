@@ -4,13 +4,17 @@ import info.guardianproject.odkparser.FormWrapper;
 import info.guardianproject.odkparser.utils.QD;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Vector;
 
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Logger;
+import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
 import android.util.Log;
@@ -22,6 +26,8 @@ public class IForm extends Model {
 	public String namespace = null;
 	public String path = null;
 	public String answerPath = null;
+	public JSONObject answerData = null;
+	public String id = null; 
 
 	FormWrapper fw = null;
 	Activity a = null;
@@ -38,6 +44,7 @@ public class IForm extends Model {
 		super();
 		
 		this.inflate(model.asJson());
+		Logger.d(LOG, "THIS FORM: " + asJson().toString());
 		
 		this.a = a;
 		String[] answers = null;
@@ -70,14 +77,13 @@ public class IForm extends Model {
 		}
 	}
 
-	public boolean associate(View answerHolder, String questionId) {
+	public IForm associate(View answerHolder, String questionId) {
 		QD questionDef = fw.questions.get(fw.questions.indexOf(getQuestionDefByTitleId(questionId)));
 		if(questionDef != null) {
 			questionDef.pin(answerHolder);
-			return true;
 		}
 
-		return false;
+		return this;
 	}
 
 	public List<View> buildUI(int[] inputLayout, int[] selectOneLayout, int[] selectMultiLayout, int[] audioCaptureLayout) {
@@ -116,18 +122,33 @@ public class IForm extends Model {
 		return views;
 	}
 
-	public void answer(String questionId) {
+	public IForm answer(String questionId) {
 		QD questionDef = fw.questions.get(fw.questions.indexOf(getQuestionDefByTitleId(questionId)));
 		if(questionDef != null) {
 			questionDef.answer();
 		}
+		
+		return this;
+	}
+	
+	public static String appendId() {
+		try {
+			byte[] idBytes = new String(System.currentTimeMillis() + new String(Constants.App.Crypto.FORM_SALT)).getBytes();			
+			return MediaHasher.hash(idBytes, "MD5");
+		} catch (NoSuchAlgorithmException e) {
+			Logger.e(LOG, e);
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
 	}
 
 	public OutputStream save(OutputStream os) {
 		for(QD questionDef : fw.questions) {
 			questionDef.commit(fw);
 		}
-
+		
 		return fw.processFormAsXML(os);
 	}
 	

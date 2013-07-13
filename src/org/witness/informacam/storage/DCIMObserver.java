@@ -24,7 +24,7 @@ public class DCIMObserver {
 	Handler h;
 	private Context mContext;
 	
-	public DCIMObserver(Context context) {
+	public DCIMObserver(Context context, String parentId) {
 		
 		mContext = context;
 		
@@ -44,7 +44,7 @@ public class DCIMObserver {
 			mContext.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
 		}
 
-		dcimDescriptor = new IDCIMDescriptor();
+		dcimDescriptor = new IDCIMDescriptor(parentId);
 		dcimDescriptor.startSession();
 
 		Log.d(LOG, "DCIM OBSERVER INITED");

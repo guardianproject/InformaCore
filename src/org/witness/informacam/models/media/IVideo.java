@@ -39,7 +39,10 @@ public class IVideo extends IMedia {
 		
 		// 1. hash
 		VideoConstructor vc = new VideoConstructor(informaCam);
-		genealogy = new IGenealogy();
+		if(genealogy == null) {
+			genealogy = new IGenealogy();
+		}
+		
 		genealogy.hashes = vc.hashVideo(dcimEntry.fileName);
 		
 		// 2. copy over video

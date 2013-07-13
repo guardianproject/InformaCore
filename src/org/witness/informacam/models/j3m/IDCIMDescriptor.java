@@ -3,6 +3,7 @@ package org.witness.informacam.models.j3m;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.media.IImage;
+import org.witness.informacam.models.media.ILog;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;
 import org.witness.informacam.storage.IOUtility;
@@ -21,6 +23,7 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
@@ -38,25 +41,28 @@ import android.os.Bundle;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.provider.MediaStore.MediaColumns;
-import android.util.Log;
 
 @SuppressLint("DefaultLocale")
-public class IDCIMDescriptor extends Model {
-	InformaCam informaCam = InformaCam.getInstance();
-	
+public class IDCIMDescriptor extends Model {	
 	public List<IDCIMEntry> shortDescription = new ArrayList<IDCIMEntry>();
 	
 	private BackgroundProcessor queue = null;
 	private long startTime = 0L;
+	private String parentId = null;
 	
 	private final static String LOG = Storage.LOG;
 
-	public IDCIMDescriptor() {
+	public IDCIMDescriptor(String parentId) {
 		startTime = System.currentTimeMillis()/1000;
+		this.parentId = parentId;
+	}
+	
+	public IDCIMSerializable asDescriptor() {
+		return new IDCIMSerializable(shortDescription);
 	}
 	
 	public void addEntry(Uri authority, boolean isThumbnail) {
-		new EntryJob(queue, authority, isThumbnail, startTime);
+		new EntryJob(queue, authority, isThumbnail, startTime, InformaCam.getInstance().informaService.getCacheFile());
 	}
 
 	public void startSession() {
@@ -64,16 +70,11 @@ public class IDCIMDescriptor extends Model {
 		queue.setOnBatchComplete(new BatchCompleteJob(queue));
 
 		new Thread(queue).start();
-		Log.d(LOG, "starting dcim session");
-		
-		/*
-		informaCam.mediaManifest.listMedia.clear();
-		informaCam.mediaManifest.save();
-		*/
+		Logger.d(LOG, "starting dcim session");
 	}
 
 	public void stopSession() {
-		Log.d(LOG, "saved a dcim descriptor");
+		Logger.d(LOG, "saved a dcim descriptor");
 		queue.stop();
 	}
 
@@ -81,11 +82,17 @@ public class IDCIMDescriptor extends Model {
 	private class EntryJob extends BackgroundTask {
 		boolean isThumbnail;
 		long startTime;
+		long informaTime;
+		
 		Uri authority;
+		String cacheFile = null;
+		String parentId = null;
+		
+		
 
 		IDCIMEntry entry = new IDCIMEntry();
 
-		public EntryJob(BackgroundProcessor queue, Uri authority, boolean isThumbnail, long startTime) {
+		public EntryJob(BackgroundProcessor queue, Uri authority, boolean isThumbnail, long startTime, String cacheFile) {
 			super(queue);
 			
 			try {
@@ -94,6 +101,7 @@ public class IDCIMDescriptor extends Model {
 				this.isThumbnail = isThumbnail;
 				this.startTime = startTime;
 				this.authority = authority;
+				this.parentId = IDCIMDescriptor.this.parentId;
 				
 				String sortBy = "date_added DESC";
 
@@ -106,19 +114,22 @@ public class IDCIMDescriptor extends Model {
 					if(!isThumbnail) {
 						
 						IDCIMEntry clone = new IDCIMEntry(entry);
+						
+						startTime = System.currentTimeMillis();
+						informaTime = this.informaCam.informaService.getCurrentTime();
+						
 						if(!shortDescription.contains(clone)) {
 							shortDescription.add(clone);
 						}
 					}
 					
+					this.cacheFile = cacheFile;
 					queue.put(this);
 				}
 			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Logger.e(LOG, e);
 			} catch (InterruptedException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Logger.e(LOG, e);
 			}	
 		}
 
@@ -134,6 +145,21 @@ public class IDCIMDescriptor extends Model {
 						IMedia media = new IMedia();
 						media.dcimEntry = entry;
 						media._id = media.generateId(entry.originalHash);
+						
+						media.associatedCaches = new ArrayList<String>();
+						media.associatedCaches.add(cacheFile);
+						
+						media.genealogy = new IGenealogy();
+						
+						long timeOffset = media.dcimEntry.timeCaptured + (this.startTime - informaTime);
+						Logger.d(LOG, "HEY TIME IS OFFSET:" + timeOffset);
+						
+						media.genealogy.dateCreated = timeOffset;
+						
+						if(this.parentId != null) {
+							((ILog) this.informaCam.mediaManifest.getById(this.parentId)).attachedMedia.add(media._id);
+							this.informaCam.mediaManifest.save();
+						}
 						
 						boolean isFinishedProcessing = false;
 	
@@ -164,6 +190,8 @@ public class IDCIMDescriptor extends Model {
 							InformaCamEventListener mListener = this.informaCam.getEventListener();
 							if (mListener != null) {
 								mListener.onUpdate(message);
+							} else {
+								Logger.d(LOG, "I GUESS THE MLISTENER IS NULL");
 							}
 						}
 						
@@ -175,7 +203,7 @@ public class IDCIMDescriptor extends Model {
 			}
 			catch (Exception e)
 			{
-				Log.e(LOG,"unable to analyze() new media entry",e);
+				Logger.e(LOG, e);
 			}
 			
 
@@ -190,17 +218,18 @@ public class IDCIMDescriptor extends Model {
 
 				if(!isThumbnail) {
 					entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
+					if(entry.timeCaptured < this.startTime) {
+						Logger.d(LOG, "this media occured too early to count");
+						cursor.close();
+						
+						return false;
+					}
+					
 					entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
 
 					if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
 						entry.mediaType = MimeType.VIDEO;
 					}
-					
-					if(entry.timeCaptured < this.startTime) {
-						Log.d(LOG, "this media occured now");
-						return false;
-					}
-					
 				}
 
 				entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
@@ -214,7 +243,7 @@ public class IDCIMDescriptor extends Model {
 
 		private IDCIMEntry analyze() throws IOException, NoSuchAlgorithmException, JSONException {
 			
-			Log.d(LOG, "analyzing: " + entry.asJson().toString());
+			Logger.d(LOG, "analyzing: " + entry.asJson().toString());
 
 			java.io.File file = new java.io.File(entry.fileName);
 
@@ -241,7 +270,7 @@ public class IDCIMDescriptor extends Model {
 				
 				if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 					getThumbnailFromMediaMetadata = true;
-					Log.d(LOG, "definitely getting THUMBNAIL from METADATA RESOURCE");
+					Logger.d(LOG, "definitely getting THUMBNAIL from METADATA RESOURCE");
 								
 					b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 					if(b == null) {
@@ -264,11 +293,10 @@ public class IDCIMDescriptor extends Model {
 						try {
 							entry.exif.location = Model.parseJSONAsFloatArray(logpack.getString(Geo.Keys.GPS_COORDS));
 						} catch (JSONException e) {
-							Log.e(LOG, e.getMessage(),e);
+							Logger.e(LOG, e);
 							
 						} catch(NullPointerException e) {
-							Log.e(LOG, e.getMessage(), e);
-							
+							Logger.e(LOG, e);
 							entry.exif.location = new float[] {0f,0f};
 						}
 					}
@@ -279,7 +307,7 @@ public class IDCIMDescriptor extends Model {
 					}
 				}
 
-				Log.d(LOG, "MEDIA TYPE: " + entry.mediaType);
+				Logger.d(LOG, "MEDIA TYPE: " + entry.mediaType);
 				if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 					try {
 						ExifInterface ei = new ExifInterface(entry.fileName);
@@ -297,7 +325,7 @@ public class IDCIMDescriptor extends Model {
 						entry.exif.width = ei.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
 						entry.exif.height = ei.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
 					} catch (IOException e) {
-						Log.e(LOG, e.toString(),e);
+						Logger.e(LOG, e);
 					}
 
 					if(bruteForceThumbnailFromMedia) {
@@ -319,7 +347,7 @@ public class IDCIMDescriptor extends Model {
 
 					}
 				} else {
-					Log.d(LOG, "VIDEO entry: " + entry.asJson().toString());
+					Logger.d(LOG, "VIDEO entry: " + entry.asJson().toString());
 
 					MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 					mmr.setDataSource(entry.fileName);
@@ -333,14 +361,14 @@ public class IDCIMDescriptor extends Model {
 						// returned null
 						entry.exif.orientation = ExifInterface.ORIENTATION_NORMAL;
 					}
-					Log.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
+					Logger.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
 
 					if(getThumbnailFromMediaMetadata) {
 						Bitmap b_ = mmr.getFrameAtTime();
 						if(b_ == null) {
-							Log.d(LOG, "I COULD NOT GET A BITMAP AT ANY FRAME");
+							Logger.d(LOG, "I COULD NOT GET A BITMAP AT ANY FRAME");
 						} else {
-							Log.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
+							Logger.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
 						}
 
 						byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
@@ -351,8 +379,7 @@ public class IDCIMDescriptor extends Model {
 								reviewDump.mkdir();
 							}
 						} catch(ExceptionInInitializerError e) {
-							Log.e(LOG, e.toString());
-							e.printStackTrace();
+							Logger.e(LOG, e);
 						}
 
 						info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(reviewDump, "PREVIEW_" + entry.name);
@@ -395,8 +422,7 @@ public class IDCIMDescriptor extends Model {
 					reviewDump.mkdir();
 				}
 			} catch(ExceptionInInitializerError e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Logger.e(LOG, e);
 			}
 
 			info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(reviewDump, entry.name);
@@ -426,7 +452,7 @@ public class IDCIMDescriptor extends Model {
 			}
 			catch (IOException e)
 			{
-				Log.e(LOG,"Something is wrong with IOCipher storage - could not save new blobs",e);
+				Logger.e(LOG, e);
 			}
 		}
 	}
@@ -467,13 +493,23 @@ public class IDCIMDescriptor extends Model {
 		}
 
 		public void persist() {
-			Log.d(LOG, "CLEANING UP AFTER DCIM OBSERVER");
+			Logger.d(LOG, "CLEANING UP AFTER DCIM OBSERVER");
 			for(IDCIMEntry entry : thumbnails) {
 				this.informaCam.ioService.delete(entry.fileName, Type.FILE_SYSTEM);
 				this.informaCam.ioService.delete(entry.uri, Type.CONTENT_RESOLVER);
 			}
 			
 			this.informaCam.ioService.clear(Storage.REVIEW_DUMP, Type.IOCIPHER);
+		}
+	}
+	
+	@SuppressWarnings("serial")
+	public static class IDCIMSerializable extends Model implements Serializable {
+		public List<IDCIMEntry> shortDescription;
+		
+		public IDCIMSerializable(List<IDCIMEntry> shortDescription) {
+			super();
+			this.shortDescription = shortDescription;
 		}
 	}
 }

@@ -64,8 +64,15 @@ public class Constants {
 	public final static class Logger {
 		public Logger() {}
 		
+		public static void e(String LOG, ExceptionInInitializerError e) {
+			Log.e(LOG, e.toString());
+			Log.e(LOG, e.getMessage());
+			e.printStackTrace();
+		}
+		
 		public static void e(String LOG, Exception e) {
 			Log.e(LOG, e.toString());
+			Log.e(LOG, e.getMessage());
 			e.printStackTrace();
 		}
 		
@@ -138,6 +145,7 @@ public class Constants {
 			public static final String LOCALE_PREF_KEY = "locale_pref_key";
 			public static final String CHANGE_LOCALE = "changeLocale";
 			public static final String CONSOLIDATE_MEDIA = "consolidateMedia";
+			public static final String MEDIA_PARENT = "mediaParent";
 		}
 
 		public static final class Messages {
@@ -318,6 +326,8 @@ public class Constants {
 			public static final String DISPLAY_WIDTH = "displayWidth";
 			public static final String DISPLAY_HEIGHT = "displayHeight";
 			public static final String BOUNDS = "bounds";
+			public static final String INDEX = "index";
+			public static final String ID = "id";
 			
 			public class Bounds {
 				public final static String TOP = "top";
@@ -644,6 +654,10 @@ public class Constants {
 			public final static String LOG = "******************** InformaCam : Crypto ********************";
 			public final static byte[] PASSWORD_SALT = {(byte) 0xA4, (byte) 0x0B, (byte) 0xC8,
 				(byte) 0x34, (byte) 0xD6, (byte) 0x95, (byte) 0xF3, (byte) 0x13};
+			public final static byte[] REGION_SALT = {(byte) 0xC4, (byte) 0xE2, (byte) 0xA4, 
+				(byte) 0xF2, (byte) 0xEA, (byte) 0xA0, (byte) 0xBE, (byte) 0xF7};
+			public final static byte[] FORM_SALT = {(byte) 0x70, (byte) 0xB4, (byte) 0xEE,
+				(byte) 0x9B, (byte) 0xD3, (byte) 0x80, (byte) 0xEC, (byte) 0x74};
 
 			public final static class Signatures {
 				public final static class Keys {

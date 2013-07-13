@@ -1,10 +1,13 @@
 package org.witness.informacam.models.j3m;
 
+import java.io.Serializable;
+
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
-public class IDCIMEntry extends Model {
+@SuppressWarnings("serial")
+public class IDCIMEntry extends Model implements Serializable {
 	public String uri = null;
 	public String fileName = null;
 	public String name = null;

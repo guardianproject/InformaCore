@@ -52,7 +52,7 @@ public class GeoLowResSucker extends GeoSucker implements LocationListener {
 
 			@Override
 			public void onNmeaReceived(long timestamp, String nmea) {
-				//Log.d(Time.LOG, "but nmea says: timestamp: " + timestamp + "\n(" + nmea + ")");
+				//Log.d(LOG, "but nmea says: timestamp: " + timestamp + "\n(" + nmea + ")");
 				currentNmeaTime = timestamp;
 			}
 			

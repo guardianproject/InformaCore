@@ -21,7 +21,5 @@ public class BackgroundTask implements Serializable {
 		return true;
 	}
 	
-	protected void onStop() {
-		
-	}
+	protected void onStop() {}
 }

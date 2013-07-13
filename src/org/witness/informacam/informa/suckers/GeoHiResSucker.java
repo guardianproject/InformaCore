@@ -116,7 +116,9 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	}
 
 	@Override
-	public void onLocationChanged(Location location) {}
+	public void onLocationChanged(Location location) {
+		currentNmeaTime = location.getTime();
+	}
 
 	@Override
 	public void onProviderDisabled(String provider) {}

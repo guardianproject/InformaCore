@@ -229,9 +229,12 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.lastLogIn = System.currentTimeMillis();
 		informaCam.user.isLoggedIn = true;
 		
+		//XXX
+		informaCam.user.isInOfflineMode = true;
 		
 		informaCam.saveState(informaCam.user);
 		informaCam.saveState(informaCam.languageMap);
+		informaCam.initData();
 		
 		try {
 			for(String s : informaCam.getAssets().list("includedOrganizations")) {
@@ -240,8 +243,6 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				
 				byte[] ictdBytes = new byte[ictdIS.available()];
 				ictdIS.read(ictdBytes);
-				
-				informaCam.user.isInOfflineMode = true;
 				
 				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
 				if(organization != null && !informaCam.user.isInOfflineMode) {

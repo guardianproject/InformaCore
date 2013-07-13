@@ -31,6 +31,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.xml.sax.SAXException;
@@ -157,6 +158,8 @@ public class IOUtility {
 
 	public static boolean zipFiles(Map<String, byte[]> elements, String fileName, int destination) {
 		ZipOutputStream zos = null;
+		Logger.d(LOG, "ZIPPING TO: " + fileName);
+		
 		try {
 			switch(destination) {
 			case Type.IOCIPHER:

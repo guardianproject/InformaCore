@@ -1,5 +1,7 @@
 package org.witness.informacam.informa;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -14,18 +16,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
-import org.witness.informacam.informa.suckers.GeoFusedSucker;
+import org.witness.informacam.informa.suckers.GeoLowResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
+import org.witness.informacam.models.j3m.ILocation;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.j3m.ISuckerCache;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
+import org.witness.informacam.utils.Constants.Suckers;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
@@ -41,6 +48,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -55,12 +63,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private long startTime = 0L;
 	private long realStartTime = 0L;
 
-	//private int GPS_WAITING = 0;
+	private int GPS_WAITING = 0;
 
 	public SensorLogger<GeoSucker> _geo;
 	public SensorLogger<PhoneSucker> _phone;
 	public SensorLogger<AccelerometerSucker> _acc;
 
+	private info.guardianproject.iocipher.File cacheFile;
 	private LoadingCache<Long, ILogPack> cache;
 	InformaCam informaCam;
 
@@ -100,7 +109,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		initCache();
 
-		_geo = new GeoFusedSucker(this);
+		_geo = new GeoLowResSucker(this);
 		_geo.setSuckerCacheListener(this);
 		
 		_phone = new PhoneSucker(this);
@@ -116,6 +125,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 
 		init();
+	}
+	
+	public ILocation getCurrentLocation() {
+		return new ILocation(((GeoSucker) _geo).updateLocation());
 	}
 
 	public long getCurrentTime() {
@@ -139,7 +152,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 				long currentTime = getCurrentTime();
 				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
 				
-				/*
 				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
 
@@ -159,10 +171,23 @@ public class InformaService extends Service implements SuckerCacheListener {
 						}
 					}
 					
-				}*/
+				}
 
 				realStartTime = currentTime;
 				onUpdate(((GeoSucker) _geo).forceReturn());
+				
+				info.guardianproject.iocipher.File cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
+				if(!cacheRoot.exists()) {
+					cacheRoot.mkdir();
+				}
+
+				try {
+					cacheFile = new info.guardianproject.iocipher.File(cacheRoot, MediaHasher.hash(new String(startTime + "_" + System.currentTimeMillis()).getBytes(), "MD5"));
+				} catch (NoSuchAlgorithmException e) {
+					Logger.e(LOG, e);
+				} catch (IOException e) {
+					Logger.e(LOG, e);
+				}
 				
 				try {
 					onUpdate(((PhoneSucker) _phone).forceReturn());
@@ -170,6 +195,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 					Log.e(LOG, e.toString());
 					e.printStackTrace();
 				}
+				
 				if (informaCam != null)
 				{
 					sendBroadcast(new Intent()
@@ -208,15 +234,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	private void saveCache() {
-		info.guardianproject.iocipher.File cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
-		if(!cacheRoot.exists()) {
-			cacheRoot.mkdir();
-		}
-
-		info.guardianproject.iocipher.File cacheFile = new info.guardianproject.iocipher.File(cacheRoot, startTime + "_" + System.currentTimeMillis());
-
 		ISuckerCache suckerCache = new ISuckerCache();
 		JSONArray cacheArray = new JSONArray();
+
 		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
 		while(cIt.hasNext()) {
 			JSONObject cacheMap = new JSONObject();
@@ -225,10 +245,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 				cacheMap.put(String.valueOf(c.getKey()), c.getValue());
 				cacheArray.put(cacheMap);
 			} catch(JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Logger.e(LOG, e);
 			}
 		}
+
 		suckerCache.timeOffset = realStartTime;
 		suckerCache.cache = cacheArray;
 
@@ -239,14 +259,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 			if(media.associatedCaches == null) {
 				media.associatedCaches = new ArrayList<String>();
 			}
-			
+
 			if(!media.associatedCaches.contains(cacheFile.getAbsolutePath())) { 
 				media.associatedCaches.add(cacheFile.getAbsolutePath());
 			}
-			
-			Log.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
+
+			Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
 			media.save();
 		}
+		
 	}
 
 	@Override
@@ -466,6 +487,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private void pushToSucker(SensorLogger<?> sucker, ILogPack ILogPack) throws JSONException {
 		if(sucker.getClass().equals(PhoneSucker.class))
 			_phone.sendToBuffer(ILogPack);
+	}
+	
+	public String getCacheFile() {
+		return cacheFile.getAbsolutePath();
 	}
 
 	@SuppressWarnings("unchecked")

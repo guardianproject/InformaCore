@@ -50,7 +50,7 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	}
 	
 	public long getTime() {
-		return currentNmeaTime;
+		return mLastLocation.getTime();
 	}
 	
 	public double[] updateLocation() {
@@ -84,7 +84,6 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 		mLocationRequest.setInterval(Geo.LOG_RATE);
 
 		mLocationClient.requestLocationUpdates(mLocationRequest, this);
-
 		
 	}
 
@@ -98,6 +97,6 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	@Override
 	public void onLocationChanged(Location location) {
 		mLastLocation = location;
-		
+		Log.d(LOG, "LOCATION CHANGED!");
 	}
 }

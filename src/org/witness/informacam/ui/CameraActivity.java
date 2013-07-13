@@ -10,6 +10,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Camera;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 
 import android.app.Activity;
@@ -31,6 +32,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	private String cameraIntentFlag = Camera.Intents.CAMERA;
 
 	private boolean controlsInforma = true;
+	private String parentId = null;
 
 	Bundle bundle;
 	Handler h = new Handler();
@@ -52,6 +54,11 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				setContentView(R.layout.activity_camera_waiter);
 			}
 		});
+		
+		if(getIntent().hasExtra(Codes.Extras.MEDIA_PARENT)) {
+			parentId = getIntent().getStringExtra(Codes.Extras.MEDIA_PARENT);
+			Logger.d(LOG, "TO PARENT " + parentId);
+		}
 
 		try {
 			Iterator<String> i = savedInstanceState.keySet().iterator();
@@ -174,7 +181,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		h.post(new Runnable() {
 			@Override
 			public void run() {
-				informaCam.ioService.startDCIMObserver(CameraActivity.this);
+				informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId);
 			}
 		});
 		
@@ -197,7 +204,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		});
 		
 		
-		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor().asJson().toString());
+		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor().asDescriptor());
 		setResult(Activity.RESULT_OK, result);
 		finish();
 	}

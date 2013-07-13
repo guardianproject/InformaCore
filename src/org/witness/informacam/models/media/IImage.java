@@ -50,7 +50,10 @@ public class IImage extends IMedia {
 		informaCam.ioService.saveBlob(bytes, b);
 		
 		// hash
-		genealogy = new IGenealogy();
+		if(genealogy == null) {
+			genealogy = new IGenealogy();
+		}
+		
 		genealogy.hashes = new ArrayList<String>();
 		try {
 			genealogy.hashes.add(MediaHasher.getBitmapHash(bitmap_));

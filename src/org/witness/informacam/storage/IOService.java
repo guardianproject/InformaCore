@@ -443,10 +443,14 @@ public class IOService {
 	public void unmount() {
 		vfs.unmount();
 	}
-
+	
 	public void startDCIMObserver(InformaCamEventListener listener) {
+		startDCIMObserver(listener, null);
+	}
+
+	public void startDCIMObserver(InformaCamEventListener listener, String parentId) {
 		InformaCam.getInstance().mediaManifest.setAllAsOld();
-		dcimObserver = new DCIMObserver(mContext);
+		dcimObserver = new DCIMObserver(mContext, parentId);
 	}
 	
 	public IDCIMDescriptor getDCIMDescriptor() {

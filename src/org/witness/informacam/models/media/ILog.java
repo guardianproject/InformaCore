@@ -17,6 +17,7 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -25,6 +26,7 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -40,34 +42,55 @@ public class ILog extends IMedia {
 	public long endTime = 0L;
 
 	public List<String> attachedMedia = new ArrayList<String>();
-	public IForm attachedForm = null;
-	public String formPath = null;
-
+	
 	private Handler proxyHandler;
 	private Map<String, byte[]> j3mZip;
-
-	private InformaCam informaCam;
 	
-	public ILog(InformaCam informaCam) {
+	public ILog() {
 		super();
+		
+		_id = generateId("log_" + System.currentTimeMillis());		
 		
 		dcimEntry = new IDCIMEntry();
 		dcimEntry.mediaType = MimeType.LOG;
 		
-		this.informaCam = informaCam;
+		info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(_id);
+		if(!rootFolder.exists()) {
+			rootFolder.mkdir();
+		}
+
+		this.rootFolder = rootFolder.getAbsolutePath();
 	}
 
 	public ILog(IMedia media) {
 		super();
 		inflate(media.asJson());
 	}
-
+	
+	public IForm attachForm(Activity a, IForm form) {
+		IRegion region = addRegion(a, null);
+		
+		form = new IForm(form, a);		
+		
+		return region.addForm(form);
+	}
+	
+	public IForm getForm(Activity a) {
+		IRegion region = getTopLevelRegion();
+		
+		IForm form = region.associatedForms.get(0);
+		byte[] answerBytes = InformaCam.getInstance().ioService.getBytes(form.answerPath, Type.IOCIPHER);
+		
+		return new IForm(form, a, answerBytes);
+	}
+	
 	public void sealLog(boolean share, IOrganization organization) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		
 		// zip up everything, encrypt if required
 		String logName = ("log_" + System.currentTimeMillis() + ".zip");
+		
 		if(share) {
 			java.io.File log = new java.io.File(Storage.EXTERNAL_DIR, logName);
 			IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.FILE_SYSTEM);
@@ -94,11 +117,15 @@ public class ILog extends IMedia {
 				TransportUtility.initTransport(submission);
 			}
 		}
+		
+		reset();
 	}
 	
 	@SuppressLint("HandlerLeak")
 	@Override
 	public boolean export(final Context context, Handler h, final IOrganization organization, final boolean share) {
+		InformaCam informaCam = InformaCam.getInstance();
+		
 		Log.d(LOG, "exporting a log!");
 		proxyHandler = h;
 		j3mZip = new HashMap<String, byte[]>();
@@ -142,6 +169,8 @@ public class ILog extends IMedia {
 		// its icon will probably be some sort of stock thing
 		
 		// append its data sensory data, form data, etc.
+		mungeData();
+		
 		mungeSensorLogs(proxyHandler);
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
@@ -186,7 +215,7 @@ public class ILog extends IMedia {
 		}
 		
 		if(attachedMedia != null && attachedMedia.size() > 0) {
-			data.attachments = attachedMedia;
+			data.attachments = getAttachedMediaIds();
 			
 			int progressIncrement = (int) (50/(attachedMedia.size() * 2));
 
@@ -195,7 +224,14 @@ public class ILog extends IMedia {
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
-						IMedia m = informaCam.mediaManifest.getById(s);
+						IMedia m = InformaCam.getInstance().mediaManifest.getById(s);
+						
+						if(m.associatedCaches == null) {
+							m.associatedCaches = new ArrayList<String>();
+						}
+						
+						m.associatedCaches.addAll(associatedCaches);
+						
 						m.export(context, responseHandler, organization, false);
 					}
 				}).start();
@@ -218,6 +254,10 @@ public class ILog extends IMedia {
 		}
 
 		return true;
+	}
+	
+	private List<String> getAttachedMediaIds() {
+		return attachedMedia;
 	}
 
 	@Override
