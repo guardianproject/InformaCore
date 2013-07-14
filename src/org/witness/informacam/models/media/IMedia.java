@@ -348,6 +348,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					
 					// TODO: get locations from cache
 					data.userAppendedData.add(new IRegionData(new IRegion(region), null));
+					break;
 				}
 			}
 		}
