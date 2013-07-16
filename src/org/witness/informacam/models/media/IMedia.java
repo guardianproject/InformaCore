@@ -76,7 +76,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public CharSequence detailsAsText = null;
 
 	protected Handler responseHandler;
-	protected boolean debugMode = true;
+	protected boolean debugMode = false;
 	
 	private Bitmap mThumbnail = null;
 	

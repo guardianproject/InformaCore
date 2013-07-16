@@ -13,6 +13,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.ITransportStub;
+import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
@@ -253,6 +254,16 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		} catch (JSONException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		try {
+			for(String s : informaCam.getAssets().list("includedForms")) {
+				InputStream formXML = informaCam.ioService.getStream("includedForms/" + s, Type.APPLICATION_ASSET);
+				FormUtility.importAndParse(formXML);
+			}
+		} catch(IOException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}

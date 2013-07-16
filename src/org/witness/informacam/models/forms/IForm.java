@@ -32,6 +32,14 @@ public class IForm extends Model {
 	FormWrapper fw = null;
 	Activity a = null;
 	
+	public static IForm Activate(IForm model, Activity activity, byte[] oldAnswers) {
+		return new IForm(model, activity, oldAnswers);
+	}
+	
+	public static IForm Activate(IForm model, Activity activity) {
+		return new IForm(model, activity);
+	}
+	
 	public IForm() {
 		super();
 	}
