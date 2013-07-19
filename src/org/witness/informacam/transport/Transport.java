@@ -1,11 +1,8 @@
 package org.witness.informacam.transport;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -26,6 +23,7 @@ import org.witness.informacam.models.utils.ITransportStub.ITransportData;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import ch.boye.httpclientandroidlib.NameValuePair;
 import ch.boye.httpclientandroidlib.client.utils.URLEncodedUtils;
@@ -66,9 +64,12 @@ public class Transport extends IntentService {
 			informaCam.updateNotification(transportStub.associatedNotification);
 		}
 		
+		stopSelf();
+		
 	}
 	
 	protected Object doPost(ITransportData fileData, String urlString) {
+		/*
 		String hyphens = "--";
 		String end = "\r\n";
 		String boundary = (hyphens + hyphens + System.currentTimeMillis() + hyphens + hyphens);
@@ -89,8 +90,7 @@ public class Transport extends IntentService {
 				.append(disposition)
 				.append(end)
 				.append(type)
-				.append(end)
-				.append(end);
+				.append(end + end);
 			
 			http.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 			
@@ -135,12 +135,39 @@ public class Transport extends IntentService {
 		}
 		
 		return null;
+		*/
+		HttpURLConnection http = buildConnection(urlString);
+		try {
+			http.setRequestMethod("POST");
+			http.setRequestProperty("Content-Type", fileData.mimeType);
+			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
+			http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
+			
+			
+			InputStream is = new BufferedInputStream(http.getInputStream());
+			http.connect();
+			
+			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+			
+			if(http.getResponseCode() > -1) {
+				return(parseResponse(is));
+			}
+			
+		} catch (ProtocolException e) {
+			Logger.e(LOG, e);
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
 	}
 	
 	protected Object doPost(Model postData, String urlString) {
 		HttpURLConnection http = buildConnection(urlString);
 		try {
 			http.setRequestMethod("POST");
+			http.setRequestProperty("Content-Type", MimeType.JSON);
 			http.getOutputStream().write(postData.asJson().toString().getBytes());
 			
 			InputStream is = new BufferedInputStream(http.getInputStream());
@@ -166,6 +193,7 @@ public class Transport extends IntentService {
 		HttpURLConnection http = buildConnection(urlString);
 		try {
 			http.setRequestMethod("PUT");
+			http.setRequestProperty("Content-Type", MimeType.JSON);
 			http.getOutputStream().write(putData.asJson().toString().getBytes());
 			
 			InputStream is = new BufferedInputStream(http.getInputStream());
@@ -185,6 +213,10 @@ public class Transport extends IntentService {
 		}
 		
 		return null;
+	}
+	
+	protected Object doGet(String urlString) {
+		return doGet(null, urlString);
 	}
 	
 	@SuppressWarnings("unchecked")

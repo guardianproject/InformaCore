@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.utils.ITransportStub;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -120,11 +121,17 @@ public class ImageConstructor {
 			}
 		}
 		
-		if (success)
-		{
+		if (success) {
 			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-			clone.delete();
-			version.delete();
+			Logger.d(LOG, "IMAGE CONSTRUCTOR SHOULD BE BACKGROUNDED");
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					clone.delete();
+					version.delete();
+				}
+			}).start();
+			
 		}
 	}
 }

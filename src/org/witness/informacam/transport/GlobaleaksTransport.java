@@ -1,11 +1,15 @@
 package org.witness.informacam.transport;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
@@ -20,133 +24,72 @@ public class GlobaleaksTransport extends Transport {
 	@Override
 	protected void init() {
 		super.init();
+
+		repository.asset_root = "http://gldev.guardianproject.info:8082";
+		
 		
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
 		
-		transportStub.asset.key = "files[]";	// (?)
+		transportStub.asset.key = "files";	// (?)
 		
 		Logger.d(LOG, submission.asJson().toString());
 		
 		// init submission
-		if(doPost(submission, repository.asset_root + "/submission") != null) {
-			// upload file
-			if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
-				// update submission
-				doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
+		try {
+			submission.inflate((JSONObject) doPost(submission, repository.asset_root + "/submission"));
+			
+			if(submission.submission_gus != null) {
+				if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
+					submission.finalize = true;
+					
+					JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
+					if(receivers != null && receivers.length() > 0) {
+						submission.receivers = new ArrayList<String>();
+						
+						for(int r=0; r<receivers.length(); r++) {
+							try {
+								JSONObject receiver = receivers.getJSONObject(r);
+								submission.receivers.add(receiver.getString(GLSubmission.RECEIVER_GUS));
+							} catch (JSONException e) {
+								Logger.e(LOG, e);
+							}
+						}
+					}
+					
+					doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
+					finishSuccessfully();
+				}
+				
 			}
+			
+		} catch(NullPointerException e) {
+			Logger.e(LOG, e);
 		}
-		
-		
-		/*
-		 * 1) post to
-	url/submission
-	with:
-	
-	{
-			"context_gus":"0a59eb17-f80a-46bd-884e-0bd407948ddb",
-			"wb_fields":{},
-			"files":[],
-			"finalize":false,
-			"receivers":[]
-	}
-	
-	returns:
-	
-	{
-			"wb_fields": {}, 
-			"pertinence": "0", 
-			"receivers": [], 
-			"expiration_date": "2013-07-30T13:33:40.815188", 
-			"access_limit": 50, "receipt": "", 
-			"context_gus": "0a59eb17-f80a-46bd-884e-0bd407948ddb", 
-			"creation_date": "2013-07-15T13:33:40.815232", 
-			"escalation_threshold": "0", 
-			"download_limit": 3, 
-			"submission_gus": "44324b37-385c-44cd-b902-c09dd3636e63", 
-			"mark": "submission", 
-			"id": "44324b37-385c-44cd-b902-c09dd3636e63", 
-			"files": []
-	}
-	
-2) post to
-	url/submission/submission_gus/file
-	with:
-
-	(just post the data)
-	
-	returns:
-	
-	[
-		{
-			"name": "1373890950660_20130715_081215.jpg", 
-			"creation_date": "2013-07-15T13:35:01.012312", 
-			"elapsed_time": 0.07422018051147461, 
-			"content_type": "image/jpeg", 
-			"mark": "not processed", 
-			"id": "3f3bad61-6fa9-4db9-bedc-730ddbb9acf7", 
-			"size": 3324831
-		}
-	]
-	
-3) put to
-	url/submission/context_gus
-	with:
-	
-	{
-		"wb_fields":{
-			"Full description":"",
-			"Files description":"",
-			"Short title":""
-		},
-		"pertinence":"0",
-		"receivers":[
-			"fd0248fe-1c2b-4936-b8ab-ee6e6162396b",
-			"c350c638-ee21-4189-8b70-dc28d27a8518",
-			"de9d98a3-3b9b-469c-ae78-931d518a20b1",
-			"961db853-319d-417a-ba8b-c844141ffcfa"
-		],
-		"expiration_date":"2013-07-30T13:33:40.815188",
-		"access_limit":50,
-		"receipt":"",
-		"context_gus":"0a59eb17-f80a-46bd-884e-0bd407948ddb",
-		"creation_date":"2013-07-15T13:33:40.815232",
-		"escalation_threshold":"0",
-		"download_limit":3,
-		"submission_gus":"44324b37-385c-44cd-b902-c09dd3636e63",
-		"mark":"submission",
-		"id":"44324b37-385c-44cd-b902-c09dd3636e63",
-		"files":[],
-		"finalize":true
-	}
-	
-	receive:
-	
-	{
-		"error_message": "Submission do not validate the input fields [Missing field 'Short title': Required]", 
-		"error_code": 22, 
-		"arguments": [
-			"admin",
-			300,
-			"admin",
-			300, 
-			"admin", 
-			300, 
-			"admin", 
-			300, 
-			"admin", 
-			300, 
-			"Missing field 'Short title': Required"
-		]
-	}
-		 */
 	}
 	
 	@Override
 	public Object parseResponse(InputStream response) {
 		super.parseResponse(response);
+		try {
+			response.close();
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
 		
-		Logger.d(LOG, "PARSING RESULT AS I DO");
+		if(transportStub.lastResult.charAt(0) == '[') {
+			try {
+				return (JSONArray) new JSONTokener(transportStub.lastResult).nextValue();
+			} catch (JSONException e) {
+				Logger.e(LOG, e);
+			}
+		} else {
+			try {
+				return (JSONObject) new JSONTokener(transportStub.lastResult).nextValue();
+			} catch (JSONException e) {
+				Logger.e(LOG, e);
+			}
+		}
 		
 		return null;
 	}
@@ -162,6 +105,61 @@ public class GlobaleaksTransport extends Transport {
 		public String pertinence = null;
 		public String expiration_date = null;
 		public String creation_date = null;
+		public String receipt = null;
+		public String escalation_threshold = null;
+		public String mark = null;
+		public String id = null;
+		
+		public String download_limit = null;
+		public String access_limit = null;
+		
+		private final static String DOWNLOAD_LIMIT = "download_limit";
+		private final static String ACCESS_LIMIT = "access_limit";
+		private final static String RECEIVER_GUS = "receiver_gus";
+		
+		@Override
+		public void inflate(JSONObject values) {
+			try {
+				if(values.has(DOWNLOAD_LIMIT)) {
+					values = values.put(DOWNLOAD_LIMIT, Integer.toString(values.getInt(DOWNLOAD_LIMIT)));
+				}
+			} catch (JSONException e) {
+				Logger.e(LOG, e);
+			}
+			
+			try {
+				if(values.has(ACCESS_LIMIT)) {
+					values = values.put(ACCESS_LIMIT, Integer.toString(values.getInt(ACCESS_LIMIT)));
+				}
+			} catch (JSONException e) {
+				Logger.e(LOG, e);
+			}
+			
+			Logger.d(LOG, values.toString());
+			super.inflate(values);
+		}
+		
+		@Override
+		public JSONObject asJson() {
+			JSONObject obj = super.asJson();
+			
+			try {
+				obj = obj.put(DOWNLOAD_LIMIT, Integer.parseInt(DOWNLOAD_LIMIT));
+			} catch (NumberFormatException e) {}
+			catch (JSONException e) {
+				Logger.e(LOG, e);
+			}
+			
+			try {
+				obj = obj.put(ACCESS_LIMIT, Integer.parseInt(ACCESS_LIMIT));
+			} catch (NumberFormatException e) {}
+			catch (JSONException e) {
+				Logger.e(LOG, e);
+			}
+			
+			return obj;
+		}
+		
 		
 		public GLSubmission() {
 			super();

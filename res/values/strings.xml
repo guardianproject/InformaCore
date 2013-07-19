@@ -30,6 +30,7 @@
     <string name="you_have_successfully_sent">You have successfully sent your key to %1$s.  Once verified on their end, you can start sending and receiving media and messages.</string>
     <string name="export">Export</string>
     <string name="you_exported_this_x">You exported this %1$s.</string>
+    <string name="you_have_resent_your_credentials_to_x">You have resent your credentials to %1$s.</string>
     <string name="you_exported_this_x_to_x">You sent this %1$s to %2$s</string>
     <string name="image">image</string>
     <string name="video">video</string>

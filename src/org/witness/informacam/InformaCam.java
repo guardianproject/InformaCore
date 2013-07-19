@@ -35,6 +35,7 @@ import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.ILanguageMap;
+import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.storage.IOUtility;
@@ -42,6 +43,7 @@ import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
@@ -50,6 +52,7 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
+import org.witness.informacam.utils.TransportUtility;
 
 import android.app.AlarmManager;
 import android.app.Application;
@@ -652,6 +655,23 @@ public class InformaCam extends Application {
 		this.shutdown();
 		credentialManager.logout();
 		
+	}
+	
+	public void exportCredentials() {
+		java.io.File credentials = getPublicCredentials();
+		Intent intent = new Intent()
+			.setAction(Intent.ACTION_SEND)
+			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(credentials))
+			.setType("file/");
+
+		startActivity(Intent.createChooser(intent, getString(R.string.send)));
+
+	}
+	
+	public void resendCredentials(IOrganization organization) {
+		ITransportStub transportStub = new ITransportStub(organization);
+		transportStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
+		TransportUtility.initTransport(transportStub);
 	}
 	
 	public boolean hasCredentialManager() {
