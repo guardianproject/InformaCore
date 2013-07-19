@@ -6,6 +6,7 @@ import info.guardianproject.odkparser.utils.QD;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Vector;
@@ -21,7 +22,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 
-public class IForm extends Model {
+@SuppressWarnings("serial")
+public class IForm extends Model implements Serializable {
 	public String title = null;
 	public String namespace = null;
 	public String path = null;

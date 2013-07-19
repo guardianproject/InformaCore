@@ -415,6 +415,8 @@ public class Constants {
 				public final static String VIDEO = "video/mp4";
 				public final static String VIDEO_3GPP = "video/3gpp";
 				public static final String LOG = "informacam/log";
+				public static final String ZIP = "application/zip";
+				public static final String ICTD = "application/ictd";
 			}
 
 			public class j3m {
@@ -443,10 +445,7 @@ public class Constants {
 		}
 
 		public class IConnection {
-			public class Methods {
-				public final static String GET = "get";
-				public static final String POST = "post";
-			}
+			
 
 			public static final String DATA = "data";
 			public static final String PARAMS = "params";
@@ -520,9 +519,20 @@ public class Constants {
 		}
 
 		public class ITransportStub {
+			public static final int MAX_TRIES = 10;
+			
+			public static final String ID = "id";
+			public static final String ID_HASH = "8913k5zfpo16asb08ep821wery";
+			
 			public static final String ASSOCIATED_NOTIFICATION = "associatedNotification";
 			public static final String ORGANIZATION = "organization";
 			public static final String ASSET_PATH = "assetPath";
+			
+			public class Methods {
+				public final static int GET = 1;
+				public static final int POST = 2;
+			}
+			
 			public static final String TAG = "transport_stub";
 			
 			public class RepositorySources {
@@ -533,6 +543,10 @@ public class Constants {
 			public class ResultCodes {
 				public final static int FAIL = 403;
 				public final static int OK = 200;
+			}
+			
+			public class Globaleaks {
+				public final static String TAG = RepositorySources.GLOBALEAKS;
 			}
 		}
 

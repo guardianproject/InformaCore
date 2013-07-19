@@ -1,6 +1,7 @@
 package org.witness.informacam.models.notifications;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 
@@ -13,7 +14,7 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.util.Log;
 
-public class INotification extends Model {
+public class INotification extends Model implements Serializable {
 	public long timestamp = 0L;
 	public String label = null;
 	public String content = null;

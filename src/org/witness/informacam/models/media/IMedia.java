@@ -532,9 +532,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						notification.taskComplete = false;
 						informaCam.addNotification(notification);
 						
-						submission = new ITransportStub(exportFile.getAbsolutePath().replace(".mp4", ".mkv"), organization, notification);
-						submission.mimeType = Models.IMedia.MimeType.VIDEO;
-						submission.assetName = exportFile.getName().replace(".mp4", ".mkv");
+						submission = new ITransportStub(organization, notification);
+						submission.setAsset(exportFile.getName().replace(".mp4", ".mkv"), exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Models.IMedia.MimeType.VIDEO);
 					}
 
 					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
@@ -543,9 +542,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						notification.taskComplete = false;
 						informaCam.addNotification(notification);
 						
-						submission = new ITransportStub(exportFile.getAbsolutePath(), organization, notification);
-						submission.mimeType = Models.IMedia.MimeType.IMAGE;
-						submission.assetName = exportFile.getName();
+						submission = new ITransportStub(organization, notification);
+						submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), Models.IMedia.MimeType.IMAGE);
 					}
 
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
@@ -663,7 +661,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	@Override
 	public void onMetadataEmbeded(ITransportStub transportStub) {
 		reset();
-		sendMessage(Models.IMedia.VERSION, transportStub.assetPath);
+		sendMessage(Models.IMedia.VERSION, transportStub.asset.assetPath);
 		TransportUtility.initTransport(transportStub);
 	}
 

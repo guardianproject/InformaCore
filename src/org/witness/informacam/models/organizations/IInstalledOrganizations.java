@@ -3,6 +3,7 @@ package org.witness.informacam.models.organizations;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 
 public class IInstalledOrganizations extends Model {
@@ -20,6 +21,10 @@ public class IInstalledOrganizations extends Model {
 		}
 		
 		return null;
+	}
+
+	public void save() {
+		InformaCam.getInstance().saveState(this);
 	}
 	
 }

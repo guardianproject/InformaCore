@@ -1,5 +1,6 @@
 package org.witness.informacam.models.organizations;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,7 +8,7 @@ import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 
-public class IOrganization extends Model {
+public class IOrganization extends Model implements Serializable {
 	public String organizationName = null;
 	public String organizationDetails = null;
 	public String publicKey = null;

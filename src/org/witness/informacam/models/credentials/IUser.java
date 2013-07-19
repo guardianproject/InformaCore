@@ -1,8 +1,12 @@
 package org.witness.informacam.models.credentials;
 
+import java.io.Serializable;
+
+import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 
-public class IUser extends Model {
+@SuppressWarnings("serial")
+public class IUser extends Model implements Serializable {
 	public boolean hasBaseImage = false;
 	public boolean hasPrivateKey = false;
 	public boolean hasCompletedWizard = false;
@@ -20,5 +24,10 @@ public class IUser extends Model {
 	
 	public IUser() {
 		super();
+	}
+	
+	public IUser(JSONObject user) {
+		super();
+		inflate(user);
 	}
 }

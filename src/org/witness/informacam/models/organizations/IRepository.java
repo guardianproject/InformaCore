@@ -1,9 +1,12 @@
 package org.witness.informacam.models.organizations;
 
+import java.io.Serializable;
+
 import org.witness.informacam.models.Model;
 
-public class IRepository extends Model {
+@SuppressWarnings("serial")
+public class IRepository extends Model implements Serializable {
 	public String source = null;
 	public String asset_root = null;
-	public String context_gus = null;
+	public String asset_id = null;
 }

@@ -1,45 +1,80 @@
 package org.witness.informacam.models.utils;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.organizations.IRepository;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.MediaHasher;
+
+import ch.boye.httpclientandroidlib.NameValuePair;
+import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 @SuppressWarnings("serial")
 public class ITransportStub extends Model implements Serializable {
+	public String id = null;
+	public int numTries = 0;
+	public boolean isHeld = false;
+	public int method = Models.ITransportStub.Methods.POST;
+	public String lastResult = null;
+	
 	public INotification associatedNotification = null;
 	public IOrganization organization = null;
-	public String assetPath = null;
-	public String assetName = null;
-	public String mimeType = null;
-	
+	public ITransportData asset = null;
+		
 	public int resultCode = Models.ITransportStub.ResultCodes.FAIL;
 	
 	public ITransportStub() {
-		this(null, null, null);
+		this(null, null);
 	}
 	
-	public ITransportStub(String assetPath, IOrganization organization) {
-		this(assetPath, organization, null);
+	public ITransportStub(IOrganization organization) {
+		this(organization, null);
 	}
 	
-	public ITransportStub(String assetPath, IOrganization organization, INotification associatedNotification) {
+	public ITransportStub(IOrganization organization, INotification associatedNotification) {
 		super();
 		
-		this.assetPath = assetPath;
 		this.organization = organization;
 		this.associatedNotification = associatedNotification;
+		
+		try {
+			this.id = MediaHasher.hash(new String(System.currentTimeMillis() + Models.ITransportStub.ID_HASH).getBytes(), "MD5");
+		} catch (NoSuchAlgorithmException e) {
+			Logger.e(LOG, e);
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
 	}
 	
 	public ITransportStub(JSONObject transportStub) {
 		super();
 		inflate(transportStub);
 	}
-
+	
+	public ITransportStub(ITransportStub transportStub) {
+		super();
+		inflate(transportStub.asJson());
+	}
+	
+	public void setAsset(String assetName, String assetPath, String mimeType) {
+		if(asset == null) {
+			asset = new ITransportData();
+		}
+		
+		asset.assetName = assetName;
+		asset.assetPath = assetPath;
+		asset.mimeType = mimeType;
+	}
+	
 	public String getAssetRootOfRepository(String source) {
 		for(IRepository repository : organization.repositories) {
 			if(repository.source.equals(source)) {
@@ -48,5 +83,26 @@ public class ITransportStub extends Model implements Serializable {
 		}
 		
 		return null;
+	}
+	
+	public IRepository getRepository(String source) {
+		for(IRepository repository : organization.repositories) {
+			if(repository.source.equals(source)) {
+				return repository;
+			}
+		}
+		
+		return null;
+	}
+		
+	public class ITransportData extends Model implements Serializable {
+		public String assetPath = null;
+		public String assetName = null;
+		public String mimeType = null;
+		public String key = null;
+		
+		public ITransportData() {
+			super();
+		}
 	}
 }

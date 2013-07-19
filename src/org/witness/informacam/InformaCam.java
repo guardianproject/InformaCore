@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
@@ -18,6 +19,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.crypto.CredentialManager;
 import org.witness.informacam.crypto.SignatureService;
+import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.credentials.IKeyStore;
@@ -31,6 +33,7 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.notifications.INotificationsManifest;
 import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
@@ -48,8 +51,10 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
 
+import android.app.AlarmManager;
 import android.app.Application;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -96,6 +101,7 @@ public class InformaCam extends Application {
 	private InformaCamEventListener mEventListener = null;
 	
 	private CredentialManager credentialManager = null;
+	private PendingIntent cronPI = null;
 	
 	
 	//we really need to get rid of this
@@ -266,6 +272,7 @@ public class InformaCam extends Application {
 				icDump.mkdir();
 			}
 			
+			user.isInOfflineMode = false;
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Home.INIT);
 			break;
 		}
@@ -291,7 +298,6 @@ public class InformaCam extends Application {
 		}
 		
 		installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);
-		Logger.d(LOG, installedOrganizations.asJson().toString());
 		
 		notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
 		if(notificationsManifest.notifications.size() > 0) {
@@ -667,5 +673,20 @@ public class InformaCam extends Application {
 	
 	public int getCredentialManagerStatus() {
 		return credentialManager.getStatus();
+	}
+	
+	public void startCron() {
+		Intent startCron = new Intent(this, Cron.class);
+		cronPI = PendingIntent.getService(this, 0, startCron, 0);
+		
+		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.SECOND, 30);
+		alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 30 * 1000, cronPI);
+	}
+	
+	public void stopCron() {
+		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		alarmManager.cancel(cronPI);
 	}
 }

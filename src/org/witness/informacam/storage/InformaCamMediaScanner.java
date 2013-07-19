@@ -14,7 +14,7 @@ import android.provider.MediaStore;
 public class InformaCamMediaScanner implements MediaScannerConnectionClient {	
 	private MediaScannerConnection msc;
 	private File f;
-	private Context mContext;
+	private Context context;
 	
 	private OnMediaScannedListener mListener;
 	
@@ -24,9 +24,10 @@ public class InformaCamMediaScanner implements MediaScannerConnectionClient {
 	
 	public InformaCamMediaScanner(Context context, File f, OnMediaScannedListener listener) {
 		this.f = f;
+		this.context = context;
+		
 		mListener = listener;
-		mContext = context;
-		msc = new MediaScannerConnection(context, this);
+		msc = new MediaScannerConnection(this.context, this);
 		msc.connect();
 	}
 	

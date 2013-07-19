@@ -23,6 +23,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models.IUser;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.WizardListener;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.TransportUtility;
@@ -247,7 +248,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				
 				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
 				if(organization != null && !informaCam.user.isInOfflineMode) {
-					TransportUtility.initTransport(new ITransportStub(IUser.PUBLIC_CREDENTIALS, organization));
+					ITransportStub transportStub = new ITransportStub(organization);
+					transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
+					TransportUtility.initTransport(transportStub);
 				}
 			}
 		} catch(IOException e) {

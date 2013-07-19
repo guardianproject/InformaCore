@@ -93,9 +93,9 @@ public class ILog extends IMedia {
 				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
 				informaCam.ioService.saveBlob(j3mBytes, log);
 				
-				ITransportStub submission = new ITransportStub(log.getAbsolutePath(), organization);
-				submission.mimeType = MimeType.LOG;
-				submission.assetName = log.getName();
+				ITransportStub submission = new ITransportStub(organization);
+				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG);
+				
 				
 				TransportUtility.initTransport(submission);
 			}
