@@ -286,7 +286,7 @@ public class Transport extends IntentService {
 			URL url = new URL(urlString == null ? repository.asset_root : urlString);
 			
 			Logger.d(LOG,  "URL PROTOCOL: " + url.getProtocol());
-			if(url.getProtocol().equals("SSL")) {	
+			if(url.getProtocol().equals("https")) {	
 				// TODO: add memorizing trust manager
 			}
 			

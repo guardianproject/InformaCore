@@ -487,11 +487,14 @@ public class InformaCam extends Application {
 	public void updateNotification(INotification notification) {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
 		
-		saveState(notificationsManifest);
-		
-		if (mListAdapterListener != null)
-			mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);
-		
+		if(saveState(notificationsManifest) && mListAdapterListener != null) {	
+			h.post(new Runnable() {
+				@Override
+				public void run() {
+					mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);
+				}
+			});
+		}
 	}
 	
 	

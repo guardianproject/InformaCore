@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -123,6 +124,23 @@ public class IOUtility {
 		}
 	}
 
+	public static byte[] gzipBytes(byte[] bytes) {		
+		
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			GZIPOutputStream gos = new GZIPOutputStream(baos);
+			gos.write(bytes);
+			gos.flush();
+			gos.close();
+			
+			return baos.toByteArray();
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
+	}
+	
 	public static byte[] zipBytes(byte[] bytes, String fileName, int source) {
 		try {
 			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);

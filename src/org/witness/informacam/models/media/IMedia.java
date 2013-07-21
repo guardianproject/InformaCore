@@ -488,8 +488,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			byte[] j3mBytes = j3mObject.toString().getBytes();
 			
 			if(!debugMode) {
-				// zip *FIRST
-				j3mBytes = IOUtility.zipBytes(j3mBytes, j3mFile.getName(), Type.IOCIPHER);
+				// gzip *FIRST
+				j3mBytes = IOUtility.gzipBytes(j3mBytes);
 
 				// maybe encrypt
 				if(organization != null) {
@@ -498,7 +498,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 				// base64
 				j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
-				
 			}
 
 			informaCam.ioService.saveBlob(j3mBytes, j3mFile);

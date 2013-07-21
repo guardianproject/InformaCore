@@ -23,10 +23,7 @@ public class GlobaleaksTransport extends Transport {
 	
 	@Override
 	protected void init() {
-		super.init();
-
-		repository.asset_root = "http://gldev.guardianproject.info:8082";
-		
+		super.init();		
 		
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
