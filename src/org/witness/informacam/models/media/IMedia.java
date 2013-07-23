@@ -334,6 +334,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
 	}
 	
+	@SuppressWarnings("unused")
 	protected void mungeData() {
 		if(data == null) {
 			data = new IData();
@@ -341,7 +342,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
-				//for(IForm form : region.associatedForms) {
+				for(IForm form : region.associatedForms) {
 					if(data.userAppendedData == null) {
 						data.userAppendedData = new ArrayList<IRegionData>();
 					}
@@ -350,7 +351,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					data.userAppendedData.add(new IRegionData(new IRegion(region), null));
 					break;
 				}
-			//}
+			}
 		}
 	}
 	

@@ -33,7 +33,6 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.notifications.INotificationsManifest;
 import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
-import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.FormUtility;
@@ -67,7 +66,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
-import android.util.Log;
 import dalvik.system.DexFile;
 
 public class InformaCam extends Application {	
@@ -121,7 +119,7 @@ public class InformaCam extends Application {
 		mInstance = this;
 		processId = android.os.Process.myPid();
 		
-		Log.d(LOG, "InformaCam service started via intent");
+		Logger.d(LOG, "InformaCam service started via intent");
 
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -208,7 +206,7 @@ public class InformaCam extends Application {
 	}
 
 	public void startup() {
-		Log.d(LOG, "NOW we init!");
+		Logger.d(LOG, "NOW we init!");
 		user = new IUser();
 		
 		setModels();
@@ -236,11 +234,11 @@ public class InformaCam extends Application {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString(),e);
+			Logger.d(LOG, "CONSIDERED HANDLED:\n" + e.toString());
 			startCode = INIT;
 
 		} catch (IOException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 			startCode = INIT;
 		}
 
@@ -265,7 +263,7 @@ public class InformaCam extends Application {
 			}
 			catch (IOException ioe)
 			{
-				Log.e(LOG, ioe.toString(),ioe);
+				Logger.e(LOG, ioe);
 				startCode = INIT;	
 			}
 			break;
@@ -275,7 +273,6 @@ public class InformaCam extends Application {
 				icDump.mkdir();
 			}
 			
-			user.isInOfflineMode = false;
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Home.INIT);
 			break;
 		}
@@ -290,7 +287,7 @@ public class InformaCam extends Application {
 		try {
 			signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
 		} catch (PGPException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 		}
 		
 		mediaManifest = (IMediaManifest) getModel(mediaManifest);
@@ -330,8 +327,7 @@ public class InformaCam extends Application {
 				}
 			}
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 	}
 	
@@ -340,8 +336,7 @@ public class InformaCam extends Application {
 			try {
 				unregisterReceiver(br);
 			} catch(IllegalArgumentException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Logger.e(LOG, e);
 			}
 		}
 
@@ -368,10 +363,10 @@ public class InformaCam extends Application {
 			saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
 		
 		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 		}
 		catch(IOException e) {
-			Log.e(LOG, e.toString(),e);
+			Logger.e(LOG, e);
 		}
 		
 	}
@@ -421,7 +416,7 @@ public class InformaCam extends Application {
 		}
 		catch (IOException ioe)
 		{
-			Log.e(LOG,"saveState(): error writing mode to iocipher",ioe);
+			Logger.e(LOG, ioe);
 		}
 		
 		return false;
@@ -449,9 +444,7 @@ public class InformaCam extends Application {
 			}
 
 		} catch(NullPointerException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-			Log.d(LOG, "bytes is null");
+			Logger.e(LOG, e);
 		}
 
 		return model;
@@ -559,8 +552,7 @@ public class InformaCam extends Application {
 		try {
 			forms = (JSONArray) ictd.get(Models.IOrganization.FORMS);
 		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 		
 		if(forms != null) {
@@ -573,11 +565,9 @@ public class InformaCam extends Application {
 					}
 					baos.close();
 				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+					Logger.e(LOG, e);
 				} catch (IOException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+					Logger.e(LOG, e);
 				}
 			}
 		}
@@ -586,21 +576,19 @@ public class InformaCam extends Application {
 		try {
 			ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes(), Base64.DEFAULT));
 			info.guardianproject.iocipher.File publicKeyFile = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT, ictd.getString(Models.IOrganization.ORGANIZATION_FINGERPRINT) + ".asc");
-			Log.d(LOG, new String(baos.toByteArray()));
+			Logger.d(LOG, new String(baos.toByteArray()));
 			if(InformaCam.getInstance().ioService.saveBlob(baos.toByteArray(), publicKeyFile)) {
 				ictd.put(Models.IOrganization.PUBLIC_KEY, publicKeyFile.getAbsolutePath());
 			}
 			baos.close();
 			
 			organization = new IOrganization(ictd);
-			Log.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());
+			Logger.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());
 		} catch(JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 			return null;
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 		
 		
@@ -608,7 +596,7 @@ public class InformaCam extends Application {
 			installedOrganizations.organizations.add(organization);
 			saveState(installedOrganizations);
 		
-			INotification notification = new INotification(getString(R.string.key_installed), getString(R.string.x_has_verified_you, organization.organizationName), Models.INotification.Type.NEW_KEY);			
+			INotification notification = new INotification(getString(R.string.key_sent), getString(R.string.you_have_successfully_installed, organization.organizationName), Models.INotification.Type.NEW_KEY);			
 			addNotification(notification, callback);
 		}
 		
@@ -626,17 +614,13 @@ public class InformaCam extends Application {
 			return installICTD((JSONObject) new JSONTokener(new String(rc)).nextValue(), callback); 
 			
 		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		} catch (SecurityException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 
 		return null;

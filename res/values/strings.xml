@@ -27,7 +27,9 @@
     <string name="x_has_verified_you">%1$s has verified you.  You may now send and receive media and messages from them.</string>
     <string name="send">Send\u2026</string>
     <string name="key_sent">Key Sent</string>
+    <string name="you_have_successfully_installed">You have successfully installed %1$s\'s ICTD file.</string>
     <string name="you_have_successfully_sent">You have successfully sent your key to %1$s.  Once verified on their end, you can start sending and receiving media and messages.</string>
+    <string name="you_have_sent_your_credentials_to_x">You have sent your credentials to %1$s.</string>
     <string name="export">Export</string>
     <string name="you_exported_this_x">You exported this %1$s.</string>
     <string name="you_have_resent_your_credentials_to_x">You have resent your credentials to %1$s.</string>

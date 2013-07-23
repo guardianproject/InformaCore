@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.FormUtility;
@@ -22,6 +23,7 @@ import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.WizardListener;
@@ -231,9 +233,6 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		informaCam.user.lastLogIn = System.currentTimeMillis();
 		informaCam.user.isLoggedIn = true;
 		
-		//XXX
-		informaCam.user.isInOfflineMode = true;
-		
 		informaCam.saveState(informaCam.user);
 		informaCam.saveState(informaCam.languageMap);
 		informaCam.initData();
@@ -248,7 +247,10 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				
 				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
 				if(organization != null && !informaCam.user.isInOfflineMode) {
-					ITransportStub transportStub = new ITransportStub(organization);
+					INotification notification = new INotification(getResources().getString(R.string.key_sent), getResources().getString(R.string.you_have_sent_your_credentials_to_x, organization.organizationName), Models.INotification.Type.NEW_KEY);
+					informaCam.addNotification(notification);
+					
+					ITransportStub transportStub = new ITransportStub(organization, notification);
 					transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
 					TransportUtility.initTransport(transportStub);
 				}
