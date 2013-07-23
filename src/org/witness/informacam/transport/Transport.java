@@ -143,7 +143,6 @@ public class Transport extends IntentService {
 			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
 			http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
 			
-			
 			InputStream is = new BufferedInputStream(http.getInputStream());
 			http.connect();
 			
@@ -311,7 +310,7 @@ public class Transport extends IntentService {
 		Log.d(LOG, "TRANSPORT:\n" + transportStub.asJson().toString()); 
 		
 		if(transportStub == null) {
-		
+			stopSelf();
 		} else {
 			init();
 		}

@@ -11,13 +11,11 @@ import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
-import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -26,7 +24,6 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -91,7 +88,7 @@ public class ILog extends IMedia {
 			if(organization != null) {
 				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
 				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
-				informaCam.ioService.saveBlob(j3mBytes, log);
+				informaCam.ioService.saveBlob(Base64.encode(j3mBytes, Base64.DEFAULT), log);
 				
 				ITransportStub submission = new ITransportStub(organization);
 				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG);

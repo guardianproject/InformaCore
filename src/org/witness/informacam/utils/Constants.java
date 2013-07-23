@@ -75,7 +75,10 @@ public class Constants {
 		
 		public static void e(String LOG, Exception e) {
 			Log.e(LOG, e.toString());
-			Log.e(LOG, e.getMessage());
+			try {
+				Log.e(LOG, e.getMessage());
+			} catch(NullPointerException npe) {}
+			
 			e.printStackTrace();
 		}
 		

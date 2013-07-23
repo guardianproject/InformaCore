@@ -36,6 +36,7 @@ import android.util.Base64;
 import android.util.Log;
 
 public class EncryptionUtility {
+	@SuppressWarnings("unused")
 	private final static String LOG = Crypto.LOG;
 	
 	@SuppressWarnings("deprecation")
@@ -84,9 +85,8 @@ public class EncryptionUtility {
 			
 			is.close();
 			
-			byte[] encrypted = Base64.encode(baos.toByteArray(), Base64.DEFAULT);
-			Log.d(LOG, new String(encrypted));
-			return encrypted;
+			return baos.toByteArray();
+			
 		} catch (NoSuchProviderException e) {
 			e.printStackTrace();
 			return null;

@@ -341,7 +341,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
-				for(IForm form : region.associatedForms) {
+				//for(IForm form : region.associatedForms) {
 					if(data.userAppendedData == null) {
 						data.userAppendedData = new ArrayList<IRegionData>();
 					}
@@ -350,7 +350,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					data.userAppendedData.add(new IRegionData(new IRegion(region), null));
 					break;
 				}
-			}
+			//}
 		}
 	}
 	
@@ -481,7 +481,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-			Logger.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 			
 			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
 

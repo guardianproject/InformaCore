@@ -249,7 +249,7 @@ public class IDCIMDescriptor extends Model {
 
 			entry.name = file.getName();
 			entry.size = file.length();
-			entry.timeCaptured = file.lastModified();
+			entry.timeCaptured = file.lastModified();	// Questionable...?
 			
 			if(!entry.isAvailable()) {
 				return null;
@@ -260,7 +260,6 @@ public class IDCIMDescriptor extends Model {
 			if(entry.uri == null) {
 				entry.uri = IOUtility.getUriFromFile(this.informaCam, Uri.parse(entry.getString(Models.IDCIMEntry.AUTHORITY)), file).toString();
 			}
-		
 
 			if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 				boolean getThumbnailFromMediaMetadata = false;
