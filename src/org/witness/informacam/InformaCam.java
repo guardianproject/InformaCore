@@ -12,7 +12,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
-import org.bouncycastle.openpgp.PGPException;
+import org.spongycastle.openpgp.PGPException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

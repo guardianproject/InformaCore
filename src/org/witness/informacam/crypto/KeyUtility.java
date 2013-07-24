@@ -18,11 +18,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.bouncycastle.bcpg.*;
-import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.*;
-import org.bouncycastle.util.encoders.Hex;
+import org.spongycastle.bcpg.*;
+import org.spongycastle.bcpg.sig.KeyFlags;
+import org.spongycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.openpgp.*;
+import org.spongycastle.util.encoders.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
