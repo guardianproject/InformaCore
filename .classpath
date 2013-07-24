@@ -30,5 +30,6 @@
 	<classpathentry exported="true" kind="lib" path="libs/android-support-v4.jar"/>
 	<classpathentry exported="true" kind="lib" path="/OnionKit/libs/httpclientandroidlib-1.1.2.jar"/>
 	<classpathentry kind="lib" path="/ODKParser/libs/kxml2-2.3.0.jar"/>
+	<classpathentry kind="lib" path="libs/protobuf-j2me-1.0-RC1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
