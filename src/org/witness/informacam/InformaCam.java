@@ -644,15 +644,14 @@ public class InformaCam extends Application {
 		
 	}
 	
-	public void exportCredentials() {
+	public Intent exportCredentials() {
 		java.io.File credentials = getPublicCredentials();
 		Intent intent = new Intent()
 			.setAction(Intent.ACTION_SEND)
 			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(credentials))
-			.setType("file/");
+			.setType("*/*");
 
-		startActivity(Intent.createChooser(intent, getString(R.string.send)));
-
+		return Intent.createChooser(intent, getString(R.string.send));
 	}
 	
 	public void resendCredentials(IOrganization organization) {
