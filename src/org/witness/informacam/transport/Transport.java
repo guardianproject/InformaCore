@@ -189,19 +189,23 @@ public class Transport extends IntentService {
 	}
 	
 	protected Object doPut(Model putData, String urlString) {
+		
+		android.os.Debug.waitForDebugger();
+		
 		HttpURLConnection http = buildConnection(urlString);
 		try {
 			http.setRequestMethod("PUT");
 			http.setRequestProperty("Content-Type", MimeType.JSON);
 			http.getOutputStream().write(putData.asJson().toString().getBytes());
 			
-			InputStream is = new BufferedInputStream(http.getInputStream());
 			http.connect();
 			
 			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
 			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 			
 			if(http.getResponseCode() > -1) {
+				InputStream is = new BufferedInputStream(http.getInputStream());
+				
 				return(parseResponse(is));
 			}
 			
