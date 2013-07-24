@@ -41,21 +41,27 @@ public class GlobaleaksTransport extends Transport {
 					submission.finalize = true;
 					
 					JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
-					if(receivers != null && receivers.length() > 0) {
-						submission.receivers = new ArrayList<String>();
-						
-						for(int r=0; r<receivers.length(); r++) {
-							try {
-								JSONObject receiver = receivers.getJSONObject(r);
-								submission.receivers.add(receiver.getString(GLSubmission.RECEIVER_GUS));
-							} catch (JSONException e) {
-								Logger.e(LOG, e);
+					if(receivers != null) {
+						if(receivers.length() > 0) {
+							submission.receivers = new ArrayList<String>();
+
+							for(int r=0; r<receivers.length(); r++) {
+								try {
+									JSONObject receiver = receivers.getJSONObject(r);
+									submission.receivers.add(receiver.getString(GLSubmission.RECEIVER_GUS));
+								} catch (JSONException e) {
+									Logger.e(LOG, e);
+								}
 							}
 						}
+					} else {
+						resend();
 					}
 					
 					doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
 					finishSuccessfully();
+				} else {
+					resend();
 				}
 				
 			}
@@ -88,6 +94,7 @@ public class GlobaleaksTransport extends Transport {
 			}
 		}
 		
+		Logger.d(LOG, "THIS POST DID NOT WORK");
 		return null;
 	}
 	

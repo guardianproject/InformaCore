@@ -3,8 +3,6 @@ package org.witness.informacam.models.utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
@@ -14,9 +12,6 @@ import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.MediaHasher;
-
-import ch.boye.httpclientandroidlib.NameValuePair;
-import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 @SuppressWarnings("serial")
 public class ITransportStub extends Model implements Serializable {

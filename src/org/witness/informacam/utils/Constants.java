@@ -152,10 +152,14 @@ public class Constants {
 			public static final String CHANGE_LOCALE = "changeLocale";
 			public static final String CONSOLIDATE_MEDIA = "consolidateMedia";
 			public static final String MEDIA_PARENT = "mediaParent";
+			public static final String GENERAL_FAILURE = "generalFailure";
 		}
 
 		public static final class Messages {
-
+			public static final class Transport {
+				public static final int GENERAL_FAILURE = 404;
+			}
+			
 			public static final class Wizard {
 				public final static int INIT = 300;
 			}

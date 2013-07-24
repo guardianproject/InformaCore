@@ -339,7 +339,7 @@ public class InformaCam extends Application {
 			}
 		}
 
-		saveStates();
+		//saveStates();
 			
 		ioService.unmount();
 				

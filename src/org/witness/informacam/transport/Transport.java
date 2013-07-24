@@ -16,10 +16,12 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.models.utils.ITransportStub.ITransportData;
+import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -31,6 +33,8 @@ import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 
 public class Transport extends IntentService {
@@ -54,6 +58,7 @@ public class Transport extends IntentService {
 	
 	protected void init() {
 		repository = transportStub.getRepository(repoName);
+		transportStub.numTries++;
 	}
 	
 	protected void send() {}
@@ -68,6 +73,26 @@ public class Transport extends IntentService {
 		
 		stopSelf();
 		
+	}
+	
+	protected void resend() {
+		if(transportStub.numTries <= Models.ITransportStub.MAX_TRIES) {
+			Logger.d(LOG, "POST FAILED.  Trying again.");
+			init();
+		} else {
+			if(informaCam.getEventListener() != null) {
+				Message message = new Message();
+				Bundle data = new Bundle();
+				data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Transport.GENERAL_FAILURE);
+				data.putString(Codes.Extras.GENERAL_FAILURE, informaCam.getString(R.string.informacam_could_not_send));
+				message.setData(data);
+
+
+				informaCam.getEventListener().onUpdate(message);
+			}
+			
+			stopSelf();
+		}
 	}
 	
 	protected Object doPost(ITransportData fileData, String urlString) {
@@ -332,7 +357,6 @@ public class Transport extends IntentService {
 			Logger.e(LOG, e);
 		}
 		
-		transportStub.numTries++;
 		return http;
 	}
 	
