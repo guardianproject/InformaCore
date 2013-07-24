@@ -167,7 +167,8 @@ public class KeyUtility {
 							authTokenBlob.remove("value");
 
 							if(informaCam.ioService.saveBlob(authTokenBlob.toString().getBytes(), new java.io.File(IUser.CREDENTIALS))) {
-								informaCam.user.hasCredentials = true;
+								informaCam.user.setHasCredentials(true);
+								
 							}
 						} catch (JSONException e) {
 							Log.e(LOG, e.toString(),e);

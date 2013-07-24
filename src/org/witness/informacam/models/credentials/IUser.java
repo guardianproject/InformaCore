@@ -3,6 +3,7 @@ package org.witness.informacam.models.credentials;
 import java.io.Serializable;
 
 import org.json.JSONObject;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 
 @SuppressWarnings("serial")
@@ -29,5 +30,34 @@ public class IUser extends Model implements Serializable {
 	public IUser(JSONObject user) {
 		super();
 		inflate(user);
+	}
+	
+	public void setIsLoggedIn(boolean isLoggedIn) {
+		this.isLoggedIn = isLoggedIn;
+		save();
+	}
+	
+	public void setHasBaseImage(boolean hasBaseImage) {
+		this.hasBaseImage = hasBaseImage;
+		save();
+	}
+	
+	public void setHasCompletedWizard(boolean hasCompletedWizard) {
+		this.hasCompletedWizard = hasCompletedWizard;
+		save();
+	}
+	
+	public void setHasPrivateKey(boolean hasPrivateKey) {
+		this.hasPrivateKey = hasPrivateKey;
+		save();
+	}
+	
+	public void setHasCredentials(boolean hasCredentials) {
+		this.hasCredentials = hasCredentials;
+		save();
+	}
+	
+	public boolean save() {
+		return InformaCam.getInstance().saveState(this);
 	}
 }

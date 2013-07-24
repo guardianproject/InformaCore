@@ -226,6 +226,7 @@ public class InformaCam extends Application {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
+				Logger.d(LOG, user.asJson().toString());
 				
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;
@@ -242,9 +243,7 @@ public class InformaCam extends Application {
 			startCode = INIT;
 		}
 
-		if(!user.hasCompletedWizard) {
-			startCode = INIT;
-		}
+		
 
 		Bundle data = new Bundle();
 
