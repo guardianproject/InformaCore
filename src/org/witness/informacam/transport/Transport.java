@@ -42,6 +42,8 @@ public class Transport extends IntentService {
 	
 	protected final static String LOG = "************************** TRANSPORT **************************";
 	
+	private final static String URL_USE_TOR_STRING = ".onion"; //if you see this in the url string, use the local Tor proxy
+	
 	public Transport(String name) {
 		super(name);
 		
@@ -136,7 +138,14 @@ public class Transport extends IntentService {
 		
 		return null;
 		*/
-		HttpURLConnection http = buildConnection(urlString);
+		
+		boolean useTorProxy = false;
+		
+		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
+			useTorProxy = true;
+		
+		HttpURLConnection http = buildConnection(urlString, useTorProxy);
+		
 		try {
 			http.setRequestMethod("POST");
 			http.setRequestProperty("Content-Type", fileData.mimeType);
@@ -163,7 +172,14 @@ public class Transport extends IntentService {
 	}
 	
 	protected Object doPost(Model postData, String urlString) {
-		HttpURLConnection http = buildConnection(urlString);
+		
+		boolean useTorProxy = false;
+		
+		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
+			useTorProxy = true;
+		
+		HttpURLConnection http = buildConnection(urlString, useTorProxy);
+			
 		try {
 			http.setRequestMethod("POST");
 			http.setRequestProperty("Content-Type", MimeType.JSON);
@@ -189,10 +205,14 @@ public class Transport extends IntentService {
 	}
 	
 	protected Object doPut(Model putData, String urlString) {
+	
+		boolean useTorProxy = false;
 		
-		android.os.Debug.waitForDebugger();
+		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
+			useTorProxy = true;
 		
-		HttpURLConnection http = buildConnection(urlString);
+		HttpURLConnection http = buildConnection(urlString, useTorProxy);
+		
 		try {
 			http.setRequestMethod("PUT");
 			http.setRequestProperty("Content-Type", MimeType.JSON);
@@ -239,8 +259,13 @@ public class Transport extends IntentService {
 			urlString += ("?" + URLEncodedUtils.format(nameValuePair, "utf_8"));
 		}
 		
+		boolean useTorProxy = false;
 		
-		HttpURLConnection http = buildConnection(urlString);
+		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
+			useTorProxy = true;
+		
+		HttpURLConnection http = buildConnection(urlString, useTorProxy);
+		
 		try {
 			http.setRequestMethod("GET");
 			http.setDoOutput(false);
@@ -281,7 +306,7 @@ public class Transport extends IntentService {
 		return null;
 	}
 	
-	private HttpURLConnection buildConnection(String urlString) {
+	private HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
 		HttpURLConnection http = null;
 		Logger.d(LOG, "LETS CONNECT TO " + (urlString == null ? repository.asset_root : urlString));
 		
@@ -293,9 +318,14 @@ public class Transport extends IntentService {
 				// TODO: add memorizing trust manager
 			}
 			
-			Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
-			http = (HttpURLConnection) url.openConnection(proxy);
-			http.setUseCaches(true);
+			if (useTorProxy)
+			{
+				Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
+				http = (HttpURLConnection) url.openConnection(proxy);
+			}
+			
+			http.setUseCaches(false);
+			
 		} catch (MalformedURLException e) {
 			Logger.e(LOG, e);
 		} catch (IOException e) {

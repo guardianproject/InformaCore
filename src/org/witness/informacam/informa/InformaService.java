@@ -26,16 +26,16 @@ import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.j3m.ISuckerCache;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
-import org.witness.informacam.utils.Constants.Suckers;
-import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
+import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
+import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;

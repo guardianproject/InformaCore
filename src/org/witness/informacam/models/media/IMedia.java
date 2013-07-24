@@ -1,5 +1,7 @@
 package org.witness.informacam.models.media;
 
+import info.guardianproject.onionkit.ui.OrbotHelper;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.IMail;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.utils.IRegionDisplay;
 import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
@@ -49,6 +52,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
+import android.widget.Toast;
 
 public class IMedia extends Model implements MetadataEmbededListener {
 	
@@ -532,20 +536,34 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						informaCam.addNotification(notification);
 						
 						submission = new ITransportStub(organization, notification);
+						
 						submission.setAsset(exportFile.getName().replace(".mp4", ".mkv"), exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Models.IMedia.MimeType.VIDEO);
 					}
 
-					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
+					boolean isTransportReady = checkTransportRequirements(submission, context,h);
+					
+					if (isTransportReady)
+					{
+						VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
+					}
+					
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					if(organization != null) {
 						notification.taskComplete = false;
 						informaCam.addNotification(notification);
 						
 						submission = new ITransportStub(organization, notification);
+						
 						submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), Models.IMedia.MimeType.IMAGE);
 					}
 
-					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
+
+					boolean isTransportReady = checkTransportRequirements(submission, context, h);
+					
+					if (isTransportReady)
+					{
+						ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
+					}
 				}
 			}
 			progress += 10;
@@ -566,6 +584,46 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
+	public boolean checkTransportRequirements (ITransportStub transport, Context context, Handler handler)
+	{
+		
+		for (IRepository repo : transport.organization.repositories)
+		{
+			
+			if (repo.asset_root != null && repo.asset_root.toLowerCase().contains(".onion"))
+			{
+				//make sure Orbot is up and running
+				
+				OrbotHelper oh = new OrbotHelper(context);
+				
+				
+				Activity activity = (Activity)context;
+				
+				if (!oh.isOrbotInstalled())
+				{
+					
+					handler.sendEmptyMessage(81181); //prompt handler to show Orbot install dialog
+					
+					return false;
+				}
+				else if (!oh.isOrbotRunning())
+				{
+					handler.sendEmptyMessage(81182); //prompt handler to show Orbot start dialog
+					return false;
+				}
+				else
+					return true;
+				
+				
+				
+			}
+			
+		}
+		
+	
+		return true;
+	}
+	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
 		switch(depth) {
