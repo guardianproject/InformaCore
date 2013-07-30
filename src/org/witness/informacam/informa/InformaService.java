@@ -76,7 +76,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 	Handler h = new Handler();
 	String associatedMedia = null;
 	
-	public boolean mustUseSystemTime = false;
 	Intent stopIntent = new Intent().setAction(Actions.INFORMA_STOP);
 
 	private InformaBroadcaster[] broadcasters = {
@@ -132,13 +131,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	public long getCurrentTime() {
-		
-		if(!mustUseSystemTime) {
-			return ((GeoSucker) _geo).getTime();
-		} else {
-			return System.currentTimeMillis();
-		}
-		
+		return System.currentTimeMillis() + (realStartTime == 0 ? 0 : (startTime - realStartTime));
 	}
 
 	public void associateMedia(IMedia media) {
@@ -149,9 +142,14 @@ public class InformaService extends Service implements SuckerCacheListener {
 		h.post(new Runnable() {
 			@Override
 			public void run() {
-				long currentTime = getCurrentTime();
-				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
+				startTime = System.currentTimeMillis();
+				long currentTime = ((GeoSucker) _geo).getTime();				
 				
+				if(currentTime != 0) {
+					realStartTime = currentTime;					
+				}
+								
+				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
 				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
 
@@ -160,20 +158,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 						return;
 					} else {
 						Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
-						
-				
-				//		stopIntent.putExtra(Codes.Extras.GPS_FAILURE, true);
-					//	stopSelf();
-						
-						if(currentTime == 0) {
-							mustUseSystemTime = true;
-							currentTime = System.currentTimeMillis();
-						}
 					}
 					
 				}
 
-				realStartTime = currentTime;
+				
 				onUpdate(((GeoSucker) _geo).forceReturn());
 				
 				info.guardianproject.iocipher.File cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
@@ -512,7 +501,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	@Override
 	public long onUpdate(ILogPack ILogPack) {
-		long timestamp = ((GeoSucker) _geo).getTime();
+		//long timestamp = ((GeoSucker) _geo).getTime();
+		// XXX: calculating time based off of inital time offset instead of querying sucker directly
+		long timestamp = getCurrentTime();
 		onUpdate(timestamp, ILogPack);
 		
 		return timestamp;
