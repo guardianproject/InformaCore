@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.intake.DCIMObserver;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
-import org.witness.informacam.storage.intake.DCIMObserver;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;

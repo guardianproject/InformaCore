@@ -1,4 +1,4 @@
-package org.witness.informacam.storage.intake;
+package org.witness.informacam.intake;
 
 import java.util.List;
 import java.util.Vector;

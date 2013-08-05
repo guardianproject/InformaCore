@@ -45,6 +45,7 @@ import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.TransportUtility;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -52,7 +53,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
-import android.widget.Toast;
 
 public class IMedia extends Model implements MetadataEmbededListener {
 	
@@ -584,6 +584,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
+	@SuppressLint("DefaultLocale")
 	public boolean checkTransportRequirements (ITransportStub transport, Context context, Handler handler)
 	{
 		
@@ -595,9 +596,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				//make sure Orbot is up and running
 				
 				OrbotHelper oh = new OrbotHelper(context);
-				
-				
-				Activity activity = (Activity)context;
 				
 				if (!oh.isOrbotInstalled())
 				{

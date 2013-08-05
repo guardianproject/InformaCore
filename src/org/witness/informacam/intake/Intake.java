@@ -1,4 +1,4 @@
-package org.witness.informacam.storage.intake;
+package org.witness.informacam.intake;
 
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;

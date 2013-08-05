@@ -1,4 +1,4 @@
-package org.witness.informacam.storage.intake;
+package org.witness.informacam.intake;
 
 import java.io.FileInputStream;
 import java.io.IOException;

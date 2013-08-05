@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.intake.Intake;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.storage.intake.Intake;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Logger;
