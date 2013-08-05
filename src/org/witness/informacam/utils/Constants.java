@@ -59,6 +59,7 @@ public class Constants {
 	
 	public interface ListAdapterListener {
 		public void updateAdapter(int which);
+		public void setPending(int numPending, int numCompleted);
 	}
 	
 	public final static class Logger {
@@ -155,6 +156,8 @@ public class Constants {
 			public static final String GENERAL_FAILURE = "generalFailure";
 			public static final String INFORMA_CACHE = "informaCacheFile";
 			public static final String TIME_OFFSET = "informaTimeOffset";
+			public static final String NUM_PROCESSING = "numProcessing";
+			public static final String NUM_COMPLETED = "numCompleted";
 		}
 
 		public static final class Messages {
@@ -180,10 +183,11 @@ public class Constants {
 				public final static int START = 305;
 				public final static int STOP = 306;
 				public final static int ADD = 307;
+				public final static int PENDING = 308;
 			}
 
 			public static final class Home {
-				public final static int INIT = 308;
+				public final static int INIT = 309;
 			}
 
 		}

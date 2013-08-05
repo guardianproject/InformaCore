@@ -10,6 +10,9 @@ import android.util.Log;
 public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> implements Runnable {	
 	BackgroundTask currentTask = null;
 	BackgroundTask onBatchComplete = null;
+	
+	public int numProcessing = 0;
+	public int numCompleted = 0;
 		
 	private final static String LOG = Background.LOG;
 	

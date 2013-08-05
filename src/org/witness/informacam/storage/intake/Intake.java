@@ -38,6 +38,7 @@ public class Intake extends IntentService {
 		
 		for(IDCIMEntry entry : dcimDescriptor.dcimList) {
 			queue.add(new EntryJob(queue, entry, parentId, cacheFile, timeOffset));
+			queue.numProcessing++;
 		}
 		
 		queue.stop();

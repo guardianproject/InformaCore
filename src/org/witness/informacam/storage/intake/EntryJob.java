@@ -44,48 +44,48 @@ public class EntryJob extends BackgroundTask {
 	private static final long serialVersionUID = 3689090560752901928L;
 
 	boolean isThumbnail;
-	
+
 	String parentId = null;
 	String informaCache = null;
 	long timeOffset = 0L;
 	IDCIMEntry entry;
-	
+
 	protected final static String LOG = "************************** EntryJob **************************";
-	
+
 	public EntryJob(BackgroundProcessor backgroundProcessor, IDCIMEntry entry, String parentId, String informaCache, long timeOffset) {
 		super(backgroundProcessor);
-		
+
 		this.entry = entry;
 		this.parentId = parentId;
 		this.informaCache = informaCache;
 		this.timeOffset = timeOffset;
 	}
-	
+
 	@Override
 	protected boolean onStart() {
-		
+
 		try
 		{
 			analyze();
-		
+
 			if(entry != null) {
 				if(!isThumbnail) {
 					IMedia media = new IMedia();
 					media.dcimEntry = entry;
 					media._id = media.generateId(entry.originalHash);
-					
+
 					media.associatedCaches = new ArrayList<String>();
 					media.associatedCaches.add(informaCache);
-					
+
 					media.genealogy = new IGenealogy();
-					
+
 					media.genealogy.dateCreated = media.dcimEntry.timeCaptured + timeOffset;
-					
+
 					if(this.parentId != null) {
 						((ILog) informaCam.mediaManifest.getById(this.parentId)).attachedMedia.add(media._id);
 						informaCam.mediaManifest.save();
 					}
-					
+
 					boolean isFinishedProcessing = false;
 
 					if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
@@ -103,12 +103,16 @@ public class EntryJob extends BackgroundTask {
 							isFinishedProcessing = true;
 						}
 					}
-					
+
 					if(isFinishedProcessing) {
+						backgroundProcessor.numCompleted++;
+						
 						Bundle data = new Bundle();
 						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);
 						data.putString(Codes.Extras.CONSOLIDATE_MEDIA, entry.originalHash);
-						
+						data.putInt(Codes.Extras.NUM_PROCESSING, backgroundProcessor.numProcessing);
+						data.putInt(Codes.Extras.NUM_COMPLETED, backgroundProcessor.numCompleted);
+
 						Message message = new Message();
 						message.setData(data);
 
@@ -119,36 +123,36 @@ public class EntryJob extends BackgroundTask {
 							Logger.d(LOG, "I GUESS THE MLISTENER IS NULL");
 						}
 					}
-					
+
 				} else {
 					((BatchCompleteJob) getOnBatchCompleteTask()).addThumbnail(entry);
 				}
 			}
-		
+
 		}
 		catch (Exception e)
 		{
 			Logger.e(LOG, e);
 		}
-		
+
 
 		return super.onStart();
 	}
-	
+
 	private void parseExif() {
 		entry.exif = new IExif();
 
 		if (informaCam.informaService != null && informaCam.informaService._geo != null)
 		{
 			ILogPack logpack = ((GeoSucker) informaCam.informaService._geo).forceReturn();
-			
+
 			if (logpack != null)
 			{
 				try {
 					entry.exif.location = Model.parseJSONAsFloatArray(logpack.getString(Geo.Keys.GPS_COORDS));
 				} catch (JSONException e) {
 					Logger.e(LOG, e);
-					
+
 				} catch(NullPointerException e) {
 					Logger.e(LOG, e);
 					entry.exif.location = new float[] {0f,0f};
@@ -160,7 +164,7 @@ public class EntryJob extends BackgroundTask {
 				entry.exif.location = new float[] {0f,0f};
 			}
 		}
-		
+
 		if(entry.mediaType.equals(MimeType.IMAGE)) {
 			try {
 				ExifInterface ei = new ExifInterface(entry.fileName);
@@ -193,24 +197,24 @@ public class EntryJob extends BackgroundTask {
 				Logger.e(LOG, e);
 				entry.exif.orientation = ExifInterface.ORIENTATION_NORMAL;
 			}
-			
+
 			Logger.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
 			mmr.release();
 		}
 	}
-	
+
 	private void parseThumbnails() {
 		Bitmap b = null;
-		
+
 		if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 			b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 			if(b == null) {
 				b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
 			}
-			
+
 			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 			mmr.setDataSource(entry.fileName);
-			
+
 			Bitmap b_ = mmr.getFrameAtTime();
 			if(b_ == null) {
 				Logger.d(LOG, "I COULD NOT GET A BITMAP AT ANY FRAME");
@@ -219,7 +223,7 @@ public class EntryJob extends BackgroundTask {
 			}
 
 			byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
-			
+
 			info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
 			try {
 				if(!reviewDump.exists()) {
@@ -230,30 +234,30 @@ public class EntryJob extends BackgroundTask {
 			}
 
 			info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(reviewDump, "PREVIEW_" + entry.name);
-						
+
 			informaCam.ioService.saveBlob(previewBytes, preview);
 			previewBytes = null;
 
 			entry.previewFrame = preview.getAbsolutePath();
-			
+
 			if(b == null) {
 				b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
 			}
-			
+
 			b_.recycle();
 			mmr.release();
 		}
 
 		if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 			InputStream is = informaCam.ioService.getStream(entry.fileName, Type.FILE_SYSTEM);
-			
+
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inSampleSize = 8;
-			
+
 			b = BitmapFactory.decodeStream(is, null, opts);
-			
+
 		}
-		
+
 		if(b != null) {
 			entry.thumbnailFile = IOUtility.getBytesFromBitmap(b, true);
 			b.recycle();
@@ -271,7 +275,7 @@ public class EntryJob extends BackgroundTask {
 			entry = null;
 			return;
 		}
-		
+
 		entry.name = file.getName();
 		entry.size = file.length();
 		entry.timeCaptured = file.lastModified();	// Questionable...?
@@ -283,14 +287,14 @@ public class EntryJob extends BackgroundTask {
 		}
 
 		Logger.d(LOG, "analyzing: " + entry.asJson().toString());
-		
+
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 			parseExif();
 			parseThumbnails();
 			commit();
 		}		
 	}	
-	
+
 	private void commit() {
 		// delete/encrypt/replace all the data
 		info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
@@ -304,8 +308,8 @@ public class EntryJob extends BackgroundTask {
 
 		info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(reviewDump, entry.name);
 		info.guardianproject.iocipher.File newFileThumb = new info.guardianproject.iocipher.File(reviewDump, entry.thumbnailName);
-		
-		
+
+
 		try
 		{
 			//save the thumbnail first, don't delete, and there is no source URI
@@ -321,11 +325,8 @@ public class EntryJob extends BackgroundTask {
 					new FileInputStream(entry.fileName), 
 					newFile,
 					entry.uri);
-			
-			entry.fileName = newFile.getAbsolutePath();
-			
-			
 
+			entry.fileName = newFile.getAbsolutePath();
 		}
 		catch (IOException e)
 		{
