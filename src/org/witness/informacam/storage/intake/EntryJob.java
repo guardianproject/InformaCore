@@ -1,7 +1,6 @@
 package org.witness.informacam.storage.intake;
 
-import info.guardianproject.iocipher.FileInputStream;
-
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -196,6 +195,7 @@ public class EntryJob extends BackgroundTask {
 			}
 			
 			Logger.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
+			mmr.release();
 		}
 	}
 	
@@ -241,6 +241,7 @@ public class EntryJob extends BackgroundTask {
 			}
 			
 			b_.recycle();
+			mmr.release();
 		}
 
 		if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
@@ -284,8 +285,8 @@ public class EntryJob extends BackgroundTask {
 		Logger.d(LOG, "analyzing: " + entry.asJson().toString());
 		
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
-			parseThumbnails();
 			parseExif();
+			parseThumbnails();
 			commit();
 		}		
 	}	
@@ -317,7 +318,7 @@ public class EntryJob extends BackgroundTask {
 
 			//now save the big one - delete the original file
 			informaCam.ioService.saveBlob(
-					new java.io.FileInputStream(entry.fileName), 
+					new FileInputStream(entry.fileName), 
 					newFile,
 					entry.uri);
 			

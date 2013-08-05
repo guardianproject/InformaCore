@@ -146,6 +146,14 @@ public class VideoConstructor {
 			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo, Type.IOCIPHER), tmpVid, true);
 			
 			ArrayList<String[]> ffmpegCommand = new ArrayList<String[]>();
+			
+			// just check available formats...
+			ffmpegCommand.add(new String[] {
+					ffmpegBin, "-formats"	
+			});
+			
+			// Does not work:
+			/*
 			ffmpegCommand.add(new String[] {
 					ffmpegBin, "-i", tmpVid.getAbsolutePath(),
 					"-f", "rawvideo", "-pix_fmt", 
@@ -156,6 +164,25 @@ public class VideoConstructor {
 					ffmpegBin, "-i", tmpVid.getAbsolutePath(),
 					"-acodec", "copy", "-f", "md5", "-"
 			});
+			*/
+			
+			// TRY:
+			
+			/*
+			ffmpegCommand.add(new String[] {
+					ffmpegBin ,"-i", tmpVid.getAbsolutePath(),
+					"-f", "framemd5", "-"
+			});
+			
+			// OR:
+			ffmpegCommand.add(new String[] {
+					ffmpegBin, "-vsync", "0",
+					"-i", tmpVid.getAbsolutePath(),
+					"-v", "2", "-an", "-vcodec",
+					"rawvideo", "-f", "md5", "-"	
+			});
+			*/
+			
 			
 			final ArrayList<String> hashes = new ArrayList<String>();
 			for(String[] cmd : ffmpegCommand) {
@@ -172,9 +199,11 @@ public class VideoConstructor {
 					@Override
 					public void shellOut(String shellLine) {
 						Log.d(LOG, shellLine);
+						/*
 						if(shellLine.contains("MD5=")) {
 							hashes.add(shellLine.split("=")[1]);
 						}
+						*/
 					}
 
 					@Override
