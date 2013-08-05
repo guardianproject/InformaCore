@@ -153,6 +153,8 @@ public class Constants {
 			public static final String CONSOLIDATE_MEDIA = "consolidateMedia";
 			public static final String MEDIA_PARENT = "mediaParent";
 			public static final String GENERAL_FAILURE = "generalFailure";
+			public static final String INFORMA_CACHE = "informaCacheFile";
+			public static final String TIME_OFFSET = "informaTimeOffset";
 		}
 
 		public static final class Messages {
@@ -658,6 +660,10 @@ public class Constants {
 				public static final int CONTENT_RESOLVER = 203;
 				public static final int FILE_SYSTEM = 204;
 
+			}
+			
+			public final static class Intake {
+				public final static String TAG = "dcimIntake";
 			}
 			
 			public final static class ICTD {

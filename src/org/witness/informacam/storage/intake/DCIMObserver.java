@@ -1,4 +1,4 @@
-package org.witness.informacam.storage;
+package org.witness.informacam.storage.intake;
 
 import java.util.List;
 import java.util.Vector;
@@ -17,17 +17,17 @@ import android.util.Log;
 public class DCIMObserver {
 	private final static String LOG = Storage.LOG;
 
-	IDCIMDescriptor dcimDescriptor;
+	public IDCIMDescriptor dcimDescriptor;
 	List<ContentObserver> observers;
 	InformaCam informaCam = InformaCam.getInstance();
 
 	Handler h;
 	private Context mContext;
-	
+
 	public DCIMObserver(Context context, String parentId) {
-		
+
 		mContext = context;
-		
+
 		h = new Handler();
 
 		observers = new Vector<ContentObserver>();
@@ -52,14 +52,14 @@ public class DCIMObserver {
 
 	public void destroy() {
 		dcimDescriptor.stopSession();
-			
-			
-     for(ContentObserver o : observers) {
-    	 mContext.getContentResolver().unregisterContentObserver(o);
-     }
 
-     Log.d(LOG, "DCIM OBSERVER STOPPED");
-			 
+
+		for(ContentObserver o : observers) {
+			mContext.getContentResolver().unregisterContentObserver(o);
+		}
+
+		Log.d(LOG, "DCIM OBSERVER STOPPED");
+
 	}
 
 	class Observer extends ContentObserver {
@@ -82,7 +82,7 @@ public class DCIMObserver {
 			if(uri != null) {
 				Log.d(LOG, "ON CHANGE CALLED (with URI!)");
 			}
-			
+
 			boolean isThumbnail = false;
 
 			if(

@@ -133,11 +133,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public long getCurrentTime() {
 		return System.currentTimeMillis() + (realStartTime == 0 ? 0 : (startTime - realStartTime));
 	}
+	
+	public long getTimeOffset() {
+		return realStartTime == 0 ? 0 : (startTime - realStartTime);
+	}
 
 	public void associateMedia(IMedia media) {
 		this.associatedMedia = media._id;
 	}
-
+	
 	private void init() {
 		h.post(new Runnable() {
 			@Override

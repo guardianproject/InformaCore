@@ -11,6 +11,7 @@ public class IDCIMEntry extends Model implements Serializable {
 	public String uri = null;
 	public String fileName = null;
 	public String name = null;
+	public String authority = null;
 	public String originalHash = null;
 	public String bitmapHash = null;
 	public String mediaType = null;
