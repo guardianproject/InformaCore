@@ -6,6 +6,7 @@ import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
+import org.witness.informacam.utils.Constants.Models;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -38,7 +39,9 @@ public class Intake extends IntentService {
 		
 		for(IDCIMEntry entry : dcimDescriptor.dcimList) {
 			queue.add(new EntryJob(queue, entry, parentId, cacheFile, timeOffset));
-			queue.numProcessing++;
+			if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
+				queue.numProcessing++;
+			}
 		}
 		
 		queue.stop();
