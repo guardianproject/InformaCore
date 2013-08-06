@@ -533,7 +533,7 @@ public class Constants {
 		}
 
 		public class ITransportStub {
-			public static final int MAX_TRIES = 10;
+			public static final int MAX_TRIES = 6;	//10;
 			
 			public static final String ID = "id";
 			public static final String ID_HASH = "8913k5zfpo16asb08ep821wery";
