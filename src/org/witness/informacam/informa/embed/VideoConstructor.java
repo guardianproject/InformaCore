@@ -10,7 +10,7 @@ import org.ffmpeg.android.BinaryInstaller;
 import org.ffmpeg.android.ShellUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IMedia;
-import org.witness.informacam.models.utils.ITransportStub;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Ffmpeg;

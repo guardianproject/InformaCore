@@ -2,7 +2,7 @@ package org.witness.informacam.utils;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.organizations.IRepository;
-import org.witness.informacam.models.utils.ITransportStub;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.transport.GlobaleaksTransport;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;

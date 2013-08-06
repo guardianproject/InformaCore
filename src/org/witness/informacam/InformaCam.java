@@ -33,8 +33,9 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.notifications.INotificationsManifest;
 import org.witness.informacam.models.organizations.IInstalledOrganizations;
 import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.models.transport.ITransportManifest;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.models.utils.ILanguageMap;
-import org.witness.informacam.models.utils.ITransportStub;
 import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.storage.IOUtility;
@@ -78,6 +79,7 @@ public class InformaCam extends Application {
 	public IInstalledOrganizations installedOrganizations = new IInstalledOrganizations();
 	public INotificationsManifest notificationsManifest = new INotificationsManifest();
 	public ILanguageMap languageMap = new ILanguageMap();
+	public ITransportManifest transportManifest = new ITransportManifest();
 	
 	public IUser user;
 
@@ -358,7 +360,6 @@ public class InformaCam extends Application {
 	public void saveStates() {
 		try {
 			saveState(user, new java.io.File(IManifest.USER));
-		
 			saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
 		
 		} catch(NullPointerException e) {
@@ -386,7 +387,6 @@ public class InformaCam extends Application {
 				
 				return saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
 			
-				
 			} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 			
 				return saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
@@ -400,6 +400,7 @@ public class InformaCam extends Application {
 				return saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
 			
 			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
+				
 				return saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
 				
 			} else if(model.getClass().getName().equals(IDCIMDescriptor.class.getName())) {
@@ -409,8 +410,15 @@ public class InformaCam extends Application {
 			} else if(model.getClass().getName().equals(IUser.class.getName())) {
 				
 				return ioService.saveBlob(model, new java.io.File(IManifest.USER));
+			
 			} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
+			
 				return saveState(model, new info.guardianproject.iocipher.File(IManifest.LANG));
+			
+			} else if(model.getClass().getName().equals(ITransportManifest.class.getName())) {
+				
+				return saveState(model, new info.guardianproject.iocipher.File(IManifest.TRANSPORT));
+			
 			}
 		}
 		catch (IOException ioe)
@@ -436,6 +444,8 @@ public class InformaCam extends Application {
 				bytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
 				bytes = ioService.getBytes(IManifest.LANG, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(ITransportManifest.class.getName())) {
+				bytes = ioService.getBytes(IManifest.TRANSPORT, Type.IOCIPHER);
 			}
 
 			if(bytes != null) {

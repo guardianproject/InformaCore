@@ -10,6 +10,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.ListAdapterListener;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import com.google.common.base.Predicate;
@@ -36,7 +37,12 @@ public class INotificationsManifest extends Model {
 			}
 		});
 		
-		return notifications_.iterator().next();
+		try {
+			return notifications_.iterator().next();
+		} catch(NullPointerException e) {
+			Logger.e(LOG, e);
+			return null;
+		}
 	}
 	
 	public void sortBy(int order) {

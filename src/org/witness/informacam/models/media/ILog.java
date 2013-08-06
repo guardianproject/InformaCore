@@ -14,7 +14,7 @@ import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
-import org.witness.informacam.models.utils.ITransportStub;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;

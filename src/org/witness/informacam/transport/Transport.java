@@ -19,8 +19,8 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IRepository;
-import org.witness.informacam.models.utils.ITransportStub;
-import org.witness.informacam.models.utils.ITransportStub.ITransportData;
+import org.witness.informacam.models.transport.ITransportStub;
+import org.witness.informacam.models.transport.ITransportStub.ITransportData;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
@@ -89,6 +89,13 @@ public class Transport extends IntentService {
 
 
 				informaCam.getEventListener().onUpdate(message);
+			}
+			
+			if(transportStub.associatedNotification != null) {
+				transportStub.associatedNotification.canRetry = true;
+				transportStub.associatedNotification.save();
+				
+				informaCam.transportManifest.add(transportStub);
 			}
 			
 			stopSelf();

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.models.utils.IRegionDisplay;
-import org.witness.informacam.models.utils.ITransportStub;
 
 import android.net.Uri;
 import android.os.Environment;
@@ -584,7 +584,6 @@ public class Constants {
 		public static final String PREF = "informacam_preferences";		
 		public final static String DCIM = "dcimDescriptor";
 		public final static String MEDIA = "mediaManifest";
-		public static final String PENDING_CONNECTIONS = "pendingConnections";
 		public static final String FORMS = "installedForms";
 		public static final String ORGS = "installedOrganizations";
 		public static final String KEY_STORE_MANIFEST = "keystoreManifest";
@@ -593,6 +592,7 @@ public class Constants {
 		public static final String NOTIFICATIONS = "notificationsManifest";
 		public static final String DEX = "dexDump";
 		public static final String LANG = "languageMap";
+		public static final String TRANSPORT = "transportManifest";
 	}
 
 	public final static class App {

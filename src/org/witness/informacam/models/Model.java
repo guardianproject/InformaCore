@@ -109,6 +109,10 @@ public class Model extends JSONObject {
 		
 		return recast;
 	}
+	
+	public void inflate(Model model) {
+		inflate(model.asJson());
+	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) {

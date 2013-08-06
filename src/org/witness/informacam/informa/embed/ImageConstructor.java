@@ -5,7 +5,7 @@ import java.io.IOException;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IMedia;
-import org.witness.informacam.models.utils.ITransportStub;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.App.Informa;

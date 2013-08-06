@@ -9,7 +9,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.util.Log;
@@ -24,6 +26,7 @@ public class INotification extends Model implements Serializable {
 	public int type = 0;
 	public String _id = null;
 	public boolean taskComplete = true;
+	public boolean canRetry = false;
 	
 	public INotification() {
 		super();
@@ -81,10 +84,25 @@ public class INotification extends Model implements Serializable {
 		
 		this._id = String.valueOf(timestamp);
 	}
+	
+	public void retry() {
+		if(!canRetry) {
+			return;
+		}
+		
+		ITransportStub transportStub = InformaCam.getInstance().transportManifest.getByNotification(_id);
+		if(transportStub != null) {
+			canRetry = false;
+			transportStub.associatedNotification.inflate(this);
+			save();
+			TransportUtility.initTransport(transportStub);
+		}
+		
+	}
 
 	public void save() {
 		InformaCam informaCam = InformaCam.getInstance();
-		informaCam.notificationsManifest.getById(this._id).inflate(asJson());
+		informaCam.notificationsManifest.getById(this._id).inflate(this);
 		informaCam.notificationsManifest.save();
 		
 	}
