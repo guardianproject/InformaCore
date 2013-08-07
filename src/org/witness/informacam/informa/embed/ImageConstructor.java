@@ -114,23 +114,17 @@ public class ImageConstructor {
 			
 						
 		} else if(destination == Type.FILE_SYSTEM) {
-			final java.io.File newImage = new java.io.File(pathToNewImage);
+			java.io.File newImage = new java.io.File(pathToNewImage);
 			
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
-						if(success) {
-							clone.delete();
-							version.delete();
-						}
-					} catch (IOException e) {
-						Logger.e(LOG, e);
-					}
-					
+			try {
+				boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
+				if(success) {
+					clone.delete();
+					version.delete();
 				}
-			}).start();
+			} catch (IOException e) {
+				Logger.e(LOG, e);
+			}
 			
 			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
 		}

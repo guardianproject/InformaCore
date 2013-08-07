@@ -127,7 +127,7 @@ public class VideoConstructor {
 
 			finish();
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 	}
 
@@ -325,23 +325,18 @@ public class VideoConstructor {
 			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);	
 			
 		} else if(destination == Type.FILE_SYSTEM) {
-			final java.io.File newVideo = new java.io.File(pathToNewVideo);
+			java.io.File newVideo = new java.io.File(pathToNewVideo);
 			
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
-						if(success) {
-							version.delete();
-							clone.delete();
-							metadata.delete();
-						}
-					} catch(IOException e) {
-						Logger.e(LOG, e);
-					}
+			try {
+				boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
+				if(success) {
+					version.delete();
+					clone.delete();
+					metadata.delete();
 				}
-			}).start();
+			} catch(IOException e) {
+				Logger.e(LOG, e);
+			}
 			
 			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
 		}

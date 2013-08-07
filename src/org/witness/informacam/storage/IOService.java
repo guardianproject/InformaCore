@@ -133,7 +133,7 @@ public class IOService {
 			return false;
 		}
 		
-		Log.d(LOG, "touch " + file.getAbsolutePath());
+		Log.d(LOG, "touch (IOCipher) " + file.getAbsolutePath());
 		
 	
 		info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
