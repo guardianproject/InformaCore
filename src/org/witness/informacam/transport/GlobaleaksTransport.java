@@ -104,8 +104,9 @@ public class GlobaleaksTransport extends Transport {
 		return null;
 	}
 
-	@SuppressWarnings("serial")
 	public class GLSubmission extends Model implements Serializable {
+		private static final long serialVersionUID = -2831519338966909927L;
+		
 		public String context_gus = null;
 		public String submission_gus = null;
 		public boolean finalize = false;
@@ -126,7 +127,16 @@ public class GlobaleaksTransport extends Transport {
 		private final static String DOWNLOAD_LIMIT = "download_limit";
 		private final static String ACCESS_LIMIT = "access_limit";
 		private final static String RECEIVER_GUS = "receiver_gus";
-
+		
+		public GLSubmission() {
+			super();
+		}
+		
+		public GLSubmission(GLSubmission submission) {
+			super();
+			inflate(submission);
+		}
+		
 		@Override
 		public void inflate(JSONObject values) {
 			try {
@@ -168,11 +178,6 @@ public class GlobaleaksTransport extends Transport {
 			}
 
 			return obj;
-		}
-
-
-		public GLSubmission() {
-			super();
 		}
 	}
 

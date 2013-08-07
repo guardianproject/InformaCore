@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
+import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoLowResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
@@ -108,7 +109,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		initCache();
 
-		_geo = new GeoLowResSucker(this);
+		_geo = new GeoHiResSucker(this);
 		_geo.setSuckerCacheListener(this);
 		
 		_phone = new PhoneSucker(this);

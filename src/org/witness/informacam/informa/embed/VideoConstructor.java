@@ -14,6 +14,7 @@ import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Ffmpeg;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 
 import android.content.Context;
@@ -300,44 +301,49 @@ public class VideoConstructor {
 	public void finish() {
 		// move back to iocipher
 		
-		InformaCam informaCam = InformaCam.getInstance();
-		
-		boolean success = false;
-		
-		if(destination == Type.IOCIPHER) {
-			info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
-			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
-			
-			if(connection != null) {
-				((MetadataEmbededListener) media).onMetadataEmbeded(connection);
-			} else {
-				((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
-			}
-			
+		final InformaCam informaCam = InformaCam.getInstance();
 				
+		if(destination == Type.IOCIPHER) {
+			final info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
 			
-			success = true;
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
+					if(success) {
+						if(connection != null) {
+							((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
+						}
+						
+						version.delete();
+						clone.delete();
+						metadata.delete();
+					}
+				}
+			}).start();
+			
+			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);	
 			
 		} else if(destination == Type.FILE_SYSTEM) {
-			java.io.File newVideo = new java.io.File(pathToNewVideo);
+			final java.io.File newVideo = new java.io.File(pathToNewVideo);
 			
-			try
-			{
-				success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
-				((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
-			}
-			catch (IOException ioe)
-			{
-				Log.e(LOG,"error saving video blob",ioe);
-			}
-		}
-
-		if (success)
-		{
-			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-			version.delete();
-			clone.delete();
-			metadata.delete();
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
+						if(success) {
+							version.delete();
+							clone.delete();
+							metadata.delete();
+						}
+					} catch(IOException e) {
+						Logger.e(LOG, e);
+					}
+				}
+			}).start();
+			
+			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);
 		}
 	}
 }

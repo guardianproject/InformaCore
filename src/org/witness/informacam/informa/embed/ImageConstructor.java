@@ -91,47 +91,48 @@ public class ImageConstructor {
 	public void finish() {
 		// move back to iocipher
 		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destination + ")");
-		
-		boolean success = false;
-		
+				
 		if(destination == Type.IOCIPHER) {
-			info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
-			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
+			final info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
 			
-			if(connection != null) {
-				((MetadataEmbededListener) media).onMetadataEmbeded(connection);
-			} else {
-				((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
-			}
-			
-			
-			success = true;
-			
-		} else if(destination == Type.FILE_SYSTEM) {
-			java.io.File newImage = new java.io.File(pathToNewImage);
-			
-			try
-			{
-				success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
-				((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
-			}
-			catch (IOException ioe)
-			{
-				Log.e(LOG,"error finishing up constructor",ioe);
-			}
-		}
-		
-		if (success) {
-			// TODO: do cleanup, but these should be super-obliterated rather than just deleted.
-			Logger.d(LOG, "IMAGE CONSTRUCTOR SHOULD BE BACKGROUNDED");
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					clone.delete();
-					version.delete();
+					boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
+					if(success) {
+						if(connection != null) {
+							((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
+						}
+						
+						clone.delete();
+						version.delete();
+					}
 				}
 			}).start();
 			
+			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
+			
+						
+		} else if(destination == Type.FILE_SYSTEM) {
+			final java.io.File newImage = new java.io.File(pathToNewImage);
+			
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
+						if(success) {
+							clone.delete();
+							version.delete();
+						}
+					} catch (IOException e) {
+						Logger.e(LOG, e);
+					}
+					
+				}
+			}).start();
+			
+			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
 		}
 	}
 }

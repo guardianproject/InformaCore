@@ -714,12 +714,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	@Override
-	public void onMetadataEmbeded(ITransportStub transportStub) {
-		reset();
-		sendMessage(Models.IMedia.VERSION, transportStub.asset.assetPath);
+	public void onMediaReadyForTransport(ITransportStub transportStub) {
 		TransportUtility.initTransport(transportStub);
 	}
-
+	
 	@Override
 	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
 		reset();

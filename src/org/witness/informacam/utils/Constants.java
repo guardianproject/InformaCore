@@ -50,7 +50,7 @@ public class Constants {
 	public interface MetadataEmbededListener {
 		public void onMetadataEmbeded(info.guardianproject.iocipher.File version);
 		public void onMetadataEmbeded(java.io.File version);
-		public void onMetadataEmbeded(ITransportStub transportStub);
+		public void onMediaReadyForTransport(ITransportStub transportStub);
 	}
 	
 	public interface VideoConstructorListener {

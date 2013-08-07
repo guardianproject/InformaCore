@@ -359,7 +359,7 @@ public class InformaCam extends Application {
 
 	public void saveStates() {
 		try {
-			saveState(user, new java.io.File(IManifest.USER));
+			//saveState(user, new java.io.File(IManifest.USER));
 			saveState(mediaManifest, new info.guardianproject.iocipher.File(IManifest.MEDIA));
 		
 		} catch(NullPointerException e) {
