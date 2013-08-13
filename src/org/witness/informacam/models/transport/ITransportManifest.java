@@ -1,6 +1,7 @@
 package org.witness.informacam.models.transport;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 
 public class ITransportManifest extends Model implements Serializable {
-	public List<ITransportStub> transports = null;
+	public List<ITransportStub> transports = new ArrayList<ITransportStub>();
 	
 	private static final long serialVersionUID = -4261623918639178561L;
 	
