@@ -300,7 +300,7 @@ public class InformaCam extends Application {
 			}
 		}
 		
-		installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);
+		installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);		
 		
 		notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
 		if(notificationsManifest.notifications.size() > 0) {

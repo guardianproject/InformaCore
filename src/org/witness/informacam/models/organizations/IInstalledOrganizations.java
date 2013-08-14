@@ -1,23 +1,17 @@
 package org.witness.informacam.models.organizations;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.ui.popups.UpdateICTDPopup;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Logger;
 
 import android.app.Activity;
-import android.os.Handler;
 import android.view.View;
 
 import com.google.common.base.Predicate;
@@ -97,6 +91,8 @@ public class IInstalledOrganizations extends Model {
 			
 			
 		}
+		
+		Logger.d(LOG, String.format("Installed Organizatins: %d", organizations.size()));
 
 	}
 	
