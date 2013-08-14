@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
@@ -78,7 +79,13 @@ public class IMediaManifest extends Model {
 			}
 		});
 		
-		return media_.iterator().next();
+		try {
+			return media_.iterator().next();
+		} catch(NullPointerException e) {
+			return null;
+		} catch(NoSuchElementException e) {
+			return null;
+		}
 	}
 	
 	public List<IMedia> getByDay(long timestamp, String mimeType) {

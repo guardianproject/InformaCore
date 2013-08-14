@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONObject;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 
@@ -23,5 +24,11 @@ public class IOrganization extends Model implements Serializable {
 	public IOrganization(JSONObject organization) {
 		super();
 		inflate(organization);
+	}
+	
+	public void save() {
+		InformaCam informaCam = InformaCam.getInstance();
+		informaCam.installedOrganizations.getByFingerprint(organizationFingerprint).inflate(this);
+		informaCam.installedOrganizations.save();
 	}
 }

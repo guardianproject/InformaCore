@@ -1,8 +1,10 @@
 package org.witness.informacam.informa.suckers;
 
+import java.util.List;
 import java.util.TimerTask;
 
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
 
@@ -52,7 +54,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 		});
 		
 		criteria = new Criteria();
-		criteria.setAccuracy(Criteria.ACCURACY_LOW);
+		criteria.setAccuracy(Criteria.ACCURACY_MEDIUM);
 		criteria.setPowerRequirement(Criteria.POWER_LOW);
 		
 		setTask(new TimerTask() {
@@ -89,24 +91,37 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	}
 	
 	public double[] updateLocation() {
+		Location l = null;
+		double[] location = new double[] {0.0, 0.0};
+
 		try {
-			String bestProvider = lm.getBestProvider(criteria, true); //we only want providers that are on
-			Location l = lm.getLastKnownLocation(bestProvider);
-			
-			if (l != null) {
-				//Log.d(LOG, "lat/lng: " + l.getLatitude() + ", " + l.getLongitude());
-				return new double[] {l.getLatitude(),l.getLongitude()};
-			} else {
-				return null;
+			List<String> providers = lm.getProviders(criteria, true);
+
+			for(String provider : providers) {
+				Logger.d(LOG, String.format("querying location provider %s", provider));
+				l = lm.getLastKnownLocation(provider);
+
+				if(l == null) {
+					continue;
+				}
+
+				location = new double[] {l.getLatitude(), l.getLongitude()};
+
+				if(location == new double[] {0.0, 0.0}) {
+					continue;
+				}
+
+				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
+				return location;
 			}
 			
 		} catch(NullPointerException e) {
-			Log.e(LOG,"location NPE", e);
-			return null;
+			Logger.e(LOG, e);
 		} catch(IllegalArgumentException e) {
-			Log.e(LOG, "location illegal arg",e);
-			return null;
+			Logger.e(LOG, e);
 		}
+
+		return location;
 	}
 	
 	public void stopUpdates() {

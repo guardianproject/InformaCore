@@ -15,6 +15,7 @@ import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.forms.IInstalledForms;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Forms;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.MediaHasher;
@@ -103,6 +104,7 @@ public class FormUtility {
 			if(installedForms.installedForms != null && installedForms.installedForms.size() > 0) {
 				for(IForm f : installedForms.installedForms) {
 					if(f.path.equals(form.path)){
+						form = f;
 						hasFormDef = true;
 						break;
 					}
@@ -121,6 +123,7 @@ public class FormUtility {
 
 		FormWrapper form_wrapper = new FormWrapper(new ByteArrayInputStream(xml), true);
 		if(form_wrapper.form_def == null) {
+			Logger.d(LOG, "form wrapper was null, exiting...");
 			return null;
 		}
 
@@ -135,16 +138,17 @@ public class FormUtility {
 	
 					Log.d(LOG, "new form: " + form.asJson().toString());
 					informaCam.saveState(installedForms, new info.guardianproject.iocipher.File(IManifest.FORMS));
-					return form;
+					
 				}
 			}
 			catch (IOException ioe)
 			{
 				Log.e(LOG,"iocipher saveState() error",ioe);
+				return null;
 			}
 		}
 
-		return null;
+		return form;
 	}
 
 	public static IForm importAndParse(Activity a, java.io.File xml) {

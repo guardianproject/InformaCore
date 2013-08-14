@@ -245,7 +245,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				byte[] ictdBytes = new byte[ictdIS.available()];
 				ictdIS.read(ictdBytes);
 				
-				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null);
+				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), null, this);
 				if(organization != null && !informaCam.user.isInOfflineMode) {
 					INotification notification = new INotification(getResources().getString(R.string.key_sent), getResources().getString(R.string.you_have_sent_your_credentials_to_x, organization.organizationName), Models.INotification.Type.NEW_KEY);
 					notification.taskComplete = false;

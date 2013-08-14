@@ -45,6 +45,11 @@ import android.util.Log;
 public class KeyUtility {
 
 	private final static String LOG = App.Crypto.LOG;
+	
+	public static String getFingerprintFromKey(byte[] keyblock) throws IOException, PGPException {
+		PGPPublicKey key = extractPublicKeyFromBytes(keyblock);
+		return new String(Hex.encode(key.getFingerprint()));
+	}
 
 	@SuppressWarnings("unchecked")
 	public static PGPSecretKey extractSecretKey(byte[] keyblock) {
@@ -81,8 +86,10 @@ public class KeyUtility {
 					key = k;
 			}
 		}
-		if(key == null)
+		
+		if(key == null) {
 			throw new IllegalArgumentException("there isn't an encryption key here.");
+		}
 
 		return key;
 	}

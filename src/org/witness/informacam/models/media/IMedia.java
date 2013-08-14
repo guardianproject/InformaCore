@@ -347,12 +347,16 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		if(associatedRegions != null && associatedRegions.size() > 0) {
 			for(IRegion region : associatedRegions) {
 				for(IForm form : region.associatedForms) {
-					if(data.userAppendedData == null) {
-						data.userAppendedData = new ArrayList<IRegionData>();
+					IRegionData regionData = new IRegionData(new IRegion(region));
+					
+					if(regionData.associatedForms != null) {
+						if(data.userAppendedData == null) {
+							data.userAppendedData = new ArrayList<IRegionData>();
+						}
+						
+						data.userAppendedData.add(regionData);
 					}
 					
-					// TODO: get locations from cache
-					data.userAppendedData.add(new IRegionData(new IRegion(region), null));
 					break;
 				}
 			}

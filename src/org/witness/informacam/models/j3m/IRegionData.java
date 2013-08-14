@@ -1,6 +1,7 @@
 package org.witness.informacam.models.j3m;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +17,7 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 public class IRegionData extends Model {
-	public List<IForm> associatedForms = new ArrayList<IForm>();
+	public List<IForm> associatedForms = null;
 	public IRegionBounds regionBounds = null;
 	public ILocation location = null;
 	public long timestamp = 0L;
@@ -55,13 +56,16 @@ public class IRegionData extends Model {
 		return obj;
 	}
 	
+	public IRegionData(IRegion region) {
+		this(region, null);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public IRegionData(IRegion region, ILocation location) {
 		super();
 		
 		timestamp = region.timestamp;
 		id = region.id;
-		associatedForms = new ArrayList<IForm>();
 		
 		this.location = location;
 		
@@ -78,22 +82,21 @@ public class IRegionData extends Model {
 		for(IForm form : region.associatedForms) {
 			try {
 				info.guardianproject.iocipher.FileInputStream is = new info.guardianproject.iocipher.FileInputStream(form.answerPath);
+				
 				JSONObject answerData = IOUtility.xmlToJson(is);
-				
-				Iterator<String> keys = answerData.keys();
-				int keysFound = 0;
-				while(keys.hasNext()) {
-					keys.next();
-					keysFound++;
+				if(answerData.length() == 0) {
+					continue;
 				}
 				
-				if(keysFound > 0) {
-					form.answerData = answerData;
-					form.answerPath = null;
-					form.title = null;
-					
-					associatedForms.add(form);
+				form.answerData = answerData;
+				form.answerPath = null;
+				form.title = null;
+				
+				if(associatedForms == null) {
+					associatedForms = new ArrayList<IForm>();
 				}
+				
+				associatedForms.add(form);
 			} catch (FileNotFoundException e) {
 				Logger.e(LOG, e);
 			}

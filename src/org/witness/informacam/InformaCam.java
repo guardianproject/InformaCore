@@ -18,6 +18,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.witness.informacam.crypto.CredentialManager;
+import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
@@ -54,6 +55,7 @@ import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListen
 import org.witness.informacam.utils.InnerBroadcaster;
 import org.witness.informacam.utils.TransportUtility;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
 import android.app.NotificationManager;
@@ -554,7 +556,7 @@ public class InformaCam extends Application {
 		return mEventListener;
 	}
 	
-	public IOrganization installICTD(JSONObject ictd, Handler callback) {
+	public IOrganization installICTD(JSONObject ictd, Handler callback, Activity a) {
 		IOrganization organization = null;
 		JSONArray forms = null;
 		
@@ -570,7 +572,10 @@ public class InformaCam extends Application {
 					ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(forms.getString(f).getBytes(), Base64.DEFAULT));
 					IForm form = FormUtility.importAndParse(new ByteArrayInputStream(baos.toByteArray()));
 					if(form != null) {
+						Logger.d(LOG, String.format("adding form\n%s", form.asJson().toString()));
 						forms.put(f, form.asJson());
+					} else {
+						Logger.d(LOG, String.format("form %d was null!?", f));
 					}
 					baos.close();
 				} catch (JSONException e) {
@@ -584,8 +589,22 @@ public class InformaCam extends Application {
 		
 		try {
 			ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes(), Base64.DEFAULT));
+			try {
+				/**
+				 * Instead of going by the stated fingerprint in the ICTD,
+				 * we'll get that directly from the KeyUtility.
+				 * 
+				 * (protection against bad actors!)
+				 */ 
+				String fingerprint = KeyUtility.getFingerprintFromKey(Base64.encode(baos.toByteArray(), Base64.DEFAULT));
+				ictd.put(Models.IOrganization.ORGANIZATION_FINGERPRINT, fingerprint);
+			} catch (PGPException e) {
+				Logger.e(LOG, e);
+				return null;
+			}
+			
 			info.guardianproject.iocipher.File publicKeyFile = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT, ictd.getString(Models.IOrganization.ORGANIZATION_FINGERPRINT) + ".asc");
-			Logger.d(LOG, new String(baos.toByteArray()));
+			
 			if(InformaCam.getInstance().ioService.saveBlob(baos.toByteArray(), publicKeyFile)) {
 				ictd.put(Models.IOrganization.PUBLIC_KEY, publicKeyFile.getAbsolutePath());
 			}
@@ -602,7 +621,7 @@ public class InformaCam extends Application {
 		
 		
 		if(organization != null) {
-			installedOrganizations.organizations.add(organization);
+			installedOrganizations.addOrganization(organization, a);
 			saveState(installedOrganizations);
 		
 			INotification notification = new INotification(getString(R.string.key_sent), getString(R.string.you_have_successfully_installed, organization.organizationName), Models.INotification.Type.NEW_KEY);			
@@ -612,7 +631,7 @@ public class InformaCam extends Application {
 		return organization;
 	}
 	
-	public IOrganization installICTD(Uri ictdURI, Handler callback) {
+	public IOrganization installICTD(Uri ictdURI, Handler callback, Activity a) {
 
 		try {
 			InputStream is = getContentResolver().openInputStream(ictdURI);
@@ -620,7 +639,7 @@ public class InformaCam extends Application {
 			is.read(rc);
 			is.close();
 
-			return installICTD((JSONObject) new JSONTokener(new String(rc)).nextValue(), callback); 
+			return installICTD((JSONObject) new JSONTokener(new String(rc)).nextValue(), callback, a); 
 			
 		} catch (FileNotFoundException e) {
 			Logger.e(LOG, e);
