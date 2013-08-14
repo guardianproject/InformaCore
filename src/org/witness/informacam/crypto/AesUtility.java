@@ -17,6 +17,7 @@ import javax.crypto.spec.IvParameterSpec;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Crypto;
 
 import android.util.Base64;
@@ -38,7 +39,7 @@ public class AesUtility {
 		}
 		
 		try {
-			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+			Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
 			cipher.init(Cipher.DECRYPT_MODE, secret_key, new IvParameterSpec(iv));
 			
 			new_message = cipher.doFinal(message);
@@ -68,7 +69,7 @@ public class AesUtility {
 	
 	public static String EncryptToKey(SecretKey secret_key, String message) {		
 		try {
-			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+			Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
 			cipher.init(Cipher.ENCRYPT_MODE, secret_key);
 			
 			AlgorithmParameters params = cipher.getParameters();

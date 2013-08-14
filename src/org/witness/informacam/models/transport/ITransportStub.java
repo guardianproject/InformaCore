@@ -104,5 +104,10 @@ public class ITransportStub extends Model implements Serializable {
 		public ITransportData() {
 			super();
 		}
+		
+		public ITransportData(ITransportData transportData) {
+			super();
+			inflate(transportData);
+		}
 	}
 }

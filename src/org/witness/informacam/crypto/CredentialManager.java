@@ -90,7 +90,6 @@ public class CredentialManager implements ICacheWordSubscriber {
 	public void setMasterPassword(String password) {
 		PassphraseSecrets secret = PassphraseSecrets.initializeSecrets(context, password.toCharArray());
 		cacheWord.setCachedSecrets(secret);
-		Log.d(LOG, "set cacheword secret\nalgo: " + secret.getSecretKey().getAlgorithm() + "\n:format: " + secret.getSecretKey().getFormat());
 	}
 	
 	public byte[] setAuthToken(String authToken) {
@@ -131,6 +130,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 		
 		informaCam.saveState(informaCam.user);
 		*/
+		
 		this.status = Codes.Status.LOCKED;
 		
 	}
@@ -161,15 +161,13 @@ public class CredentialManager implements ICacheWordSubscriber {
 			informaCam.initData();
 			informaCam.user.inflate(informaCam.ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
 			
-			/*
-			informaCam.user.isLoggedIn = true;
-			informaCam.user.lastLogIn = System.currentTimeMillis();
-			*/
-			
 			this.status = Codes.Status.UNLOCKED;
 			update(Codes.Messages.Home.INIT);
 			
 			/*
+			informaCam.user.isLoggedIn = true;
+			informaCam.user.lastLogIn = System.currentTimeMillis();
+			
 			try
 			{
 				informaCam.ioService.saveBlob(informaCam.user.asJson().toString().getBytes(), new java.io.File(IManifest.USER));

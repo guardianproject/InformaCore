@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
@@ -53,6 +54,9 @@ public class ITransportManifest extends Model implements Serializable {
 		} catch(NullPointerException e) {
 			Logger.e(LOG, e);
 			return null;
+		} catch(NoSuchElementException e) {
+			Logger.e(LOG, e);
+			return null;
 		}
 	}
 	
@@ -67,6 +71,9 @@ public class ITransportManifest extends Model implements Serializable {
 		try {
 			return transports_.iterator().next();
 		} catch(NullPointerException e) {
+			Logger.e(LOG, e);
+			return null;
+		} catch(NoSuchElementException e) {
 			Logger.e(LOG, e);
 			return null;
 		}
