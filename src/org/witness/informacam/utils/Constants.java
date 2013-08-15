@@ -7,7 +7,7 @@ import java.util.Vector;
 
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.models.utils.IRegionDisplay;
+import org.witness.informacam.ui.editors.IRegionDisplay;
 
 import android.net.Uri;
 import android.os.Environment;

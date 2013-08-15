@@ -8,7 +8,7 @@ import java.util.List;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
-import org.witness.informacam.models.utils.IRegionDisplay;
+import org.witness.informacam.ui.editors.IRegionDisplay;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.MediaHasher;
@@ -25,7 +25,7 @@ public class IRegion extends Model {
 	public IRegionBounds bounds = null;
 
 	private IRegionDisplay regionDisplay = null;
-	private IRegionDisplayListener mListener;
+	private IRegionDisplayListener mListener = null;
 	
 	public IRegion() {
 		super();

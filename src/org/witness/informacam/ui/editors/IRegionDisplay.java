@@ -1,4 +1,4 @@
-package org.witness.informacam.models.utils;
+package org.witness.informacam.ui.editors;
 
 import org.witness.informacam.R;
 import org.witness.informacam.models.media.IRegion;
@@ -26,7 +26,7 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	
 	private final static String LOG = App.LOG;
 	
-	private IRegionDisplayListener mListener;
+	private IRegionDisplayListener mListener = null;
 	
 	public IRegionDisplay(Context context, IRegion parent, IRegionDisplayListener listener) {
 		super(context);
