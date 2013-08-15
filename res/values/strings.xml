@@ -42,7 +42,10 @@
     <string name="analyzing">Analyzing \u2026</string>
     <string name="informacam_could_not_send">InformaCam could not send your media.</string>
     <string name="x_of_x_processed">(%1$d/%2$d media processed)</string>
-    <string name="an_ictd_for_x_already">An ICTD for %1$s already exists.  Update data?</string>
-    <string name="old_ictd">Old ICTD:</string>
-    <string name="new_ictd">New ICTD:</string>
+    <string name="an_ictd_for_x_already">An ICTD for %1$s already exists.  Please go over the changes below before updating.</string>
+    <string name="heres_whats_changed">Here\'s what\'s changed:</string>
+    <string name="old_version">Old Version</string>
+    <string name="new_version">New Version</string>
+    <string name="could_not_import_ictd">Could not import any ICTD file.  Please try again.</string>
+    <string name="this_ictd_has_not_changed">This ICTD has not actually changed.  Update anyway?</string>
 </resources>
