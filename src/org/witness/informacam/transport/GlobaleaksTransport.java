@@ -1,5 +1,6 @@
 package org.witness.informacam.transport;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -16,6 +17,11 @@ import org.witness.informacam.utils.Constants.Models;
 
 public class GlobaleaksTransport extends Transport {
 	GLSubmission submission = null;
+	
+	public final static String FULL_DESCRIPTION = "Full description";
+	public final static String FILES_DESCRIPTION = "Files description";
+	public final static String SHORT_TITLE = "Short title";
+	public final static String DEFAULT_SHORT_TITLE = "InformaCam submission from mobile client %s";
 
 	public GlobaleaksTransport() {
 		super(Models.ITransportStub.Globaleaks.TAG);
@@ -44,6 +50,11 @@ public class GlobaleaksTransport extends Transport {
 				if(submission.submission_gus != null) {
 					if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
 						submission.finalize = true;
+						try {
+							submission.wb_fields.put(SHORT_TITLE, String.format(DEFAULT_SHORT_TITLE, informaCam.user.alias));
+						} catch (JSONException e) {
+							Logger.e(LOG, e);
+						}
 
 						JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
 						if(receivers != null) {
@@ -63,7 +74,44 @@ public class GlobaleaksTransport extends Transport {
 							resend();
 						}
 
-						doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
+						Logger.d(LOG, "ABOUT TO PUT SUBMISSION:\n" + submission.asJson().toString());
+						/*
+						 * {
+						 * 		"files":[],
+						 * 		"wb_fields":{
+						 * 			"Short title":"InformaCam submission from mobile client jetta pre-14"
+						 * 		},
+						 * 		"submission_gus":"94c74825-acaa-426a-b2e9-b9ac3c18caff",
+						 * 		"receipt":"",
+						 * 		"mark":"submission",
+						 * 		"download_limit":"3",		#SHOULD BE INT!
+						 * 		"context_gus":"19aae9c8-93eb-44ce-9652-46c73a541f83",
+						 * 		"access_limit":"50",		#SHOULD BE INT!
+						 * 		"escalation_threshold":"0",
+						 * 		"receivers":[
+						 * 			"5bf0f9de-e64b-4a6e-901c-104009501a7f",
+						 * 			"070d828f-c690-4006-89c9-8e2b1cb7c97c",
+						 * 			"7bdf2f1e-9b53-4f56-a099-a748cdb78b4f",
+						 * 			"0d11e41f-7bb5-4eaf-a735-258b680b1e8f"
+						 * 		],
+						 * 		"id":"94c74825-acaa-426a-b2e9-b9ac3c18caff",
+						 * 		"creation_date":"2013-08-20T14:56:17.053271",
+						 * 		"pertinence":"0",
+						 * 		"expiration_date":"2013-09-04T14:56:17.053228",
+						 * 		"finalize":true
+						 * }
+						 */
+						
+						try {
+							JSONObject submissionResult = (JSONObject) doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
+							if(submissionResult != null) {
+								submission.inflate(submissionResult);
+								Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());
+							}
+						} catch(Exception e) {
+							Logger.e(LOG, e);
+						}
+						
 						finishSuccessfully();
 					} else {
 						resend();
@@ -155,7 +203,6 @@ public class GlobaleaksTransport extends Transport {
 				Logger.e(LOG, e);
 			}
 
-			Logger.d(LOG, values.toString());
 			super.inflate(values);
 		}
 
@@ -164,14 +211,14 @@ public class GlobaleaksTransport extends Transport {
 			JSONObject obj = super.asJson();
 
 			try {
-				obj = obj.put(DOWNLOAD_LIMIT, Integer.parseInt(DOWNLOAD_LIMIT));
+				obj = obj.put(DOWNLOAD_LIMIT, Integer.parseInt(obj.getString(DOWNLOAD_LIMIT)));
 			} catch (NumberFormatException e) {}
 			catch (JSONException e) {
 				Logger.e(LOG, e);
 			}
 
 			try {
-				obj = obj.put(ACCESS_LIMIT, Integer.parseInt(ACCESS_LIMIT));
+				obj = obj.put(ACCESS_LIMIT, Integer.parseInt(obj.getString(ACCESS_LIMIT)));
 			} catch (NumberFormatException e) {}
 			catch (JSONException e) {
 				Logger.e(LOG, e);
