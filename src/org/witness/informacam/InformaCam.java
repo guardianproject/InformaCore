@@ -491,7 +491,7 @@ public class InformaCam extends Application {
 	public void updateNotification(INotification notification) {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
 		
-		if(saveState(notificationsManifest) && mListAdapterListener != null) {	
+		if(saveState(notificationsManifest) && mListAdapterListener != null) {
 			h.post(new Runnable() {
 				@Override
 				public void run() {
@@ -519,6 +519,16 @@ public class InformaCam extends Application {
 		
 		saveState(notificationsManifest);
 		
+		if(mListAdapterListener != null) {
+			h.post(new Runnable() {
+				@Override
+				public void run() {
+					mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);	
+				}
+			});
+		}
+		
+		// is this really what we want to declare here?
 		if(callback != null) {
 			Message msg = new Message();
 			Bundle msgData = new Bundle();

@@ -1,8 +1,11 @@
 package org.witness.informacam.transport;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -182,7 +185,20 @@ public class Transport extends IntentService {
 			http.setRequestMethod("POST");
 			http.setRequestProperty("Content-Type", fileData.mimeType);
 			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
-			http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
+			//http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
+			
+			ByteArrayInputStream in = new ByteArrayInputStream(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
+			BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
+			
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = in.read(buffer)) != -1) {
+			   out.write(buffer, 0, len);
+			}
+			out.flush();
+			
+			in.close();
+			out.close();
 			
 			InputStream is = new BufferedInputStream(http.getInputStream());
 			http.connect();

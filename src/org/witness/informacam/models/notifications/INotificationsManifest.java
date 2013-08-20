@@ -45,9 +45,9 @@ public class INotificationsManifest extends Model {
 		}
 	}
 	
-	public void sortBy(int order) {
+	public List<INotification> sortBy(int order) {
 		if(notifications == null || notifications.size() == 0) {
-			return;
+			return null;
 		}
 		
 		switch(order) {
@@ -74,6 +74,8 @@ public class INotificationsManifest extends Model {
 			Collections.sort(notifications, DateAsc);
 			break;
 		}
+		
+		return notifications;
 	}
 
 	public void save() {

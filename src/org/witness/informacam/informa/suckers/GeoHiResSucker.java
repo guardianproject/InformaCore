@@ -20,7 +20,7 @@ import android.util.Log;
 public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	LocationManager lm;
 	Criteria criteria;
-	long currentNmeaTime;
+	long currentNmeaTime = 0L;
 	
 	private final static String LOG = Suckers.LOG;
 	
@@ -78,11 +78,6 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	
 	public ILogPack forceReturn() {
 		double[] loc = updateLocation();
-		if(loc == null) {
-			Log.d(LOG, "location was null");
-			loc = new double[] {0d, 0d};
-		}
-		
 		return new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
 	}
 	
@@ -102,19 +97,21 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 				l = lm.getLastKnownLocation(provider);
 
 				if(l == null) {
+					Logger.d(LOG, String.format("Location at provider %s is returning null...", provider));
 					continue;
 				}
 
 				location = new double[] {l.getLatitude(), l.getLongitude()};
+				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
 
 				if(location == new double[] {0.0, 0.0}) {
 					continue;
+				} else {
+					break;
 				}
 
-				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
-				return location;
+				
 			}
-			
 		} catch(NullPointerException e) {
 			Logger.e(LOG, e);
 		} catch(IllegalArgumentException e) {
