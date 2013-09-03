@@ -1,6 +1,5 @@
 package org.witness.informacam.transport;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -22,14 +21,17 @@ public class GlobaleaksTransport extends Transport {
 	public final static String FILES_DESCRIPTION = "Files description";
 	public final static String SHORT_TITLE = "Short title";
 	public final static String DEFAULT_SHORT_TITLE = "InformaCam submission from mobile client %s";
+	public final static String DEFAULT_FULL_DESCRIPTION = "PGP Fingerprint %s";
 
 	public GlobaleaksTransport() {
 		super(Models.ITransportStub.Globaleaks.TAG);
 	}
 
 	@Override
-	protected void init() {
-		super.init();		
+	protected boolean init() {
+		if(!super.init()) {
+			return false;
+		}
 
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
@@ -52,6 +54,7 @@ public class GlobaleaksTransport extends Transport {
 						submission.finalize = true;
 						try {
 							submission.wb_fields.put(SHORT_TITLE, String.format(DEFAULT_SHORT_TITLE, informaCam.user.alias));
+							submission.wb_fields.put(FULL_DESCRIPTION, String.format(DEFAULT_FULL_DESCRIPTION, informaCam.user.pgpKeyFingerprint));
 						} catch (JSONException e) {
 							Logger.e(LOG, e);
 						}
@@ -123,6 +126,8 @@ public class GlobaleaksTransport extends Transport {
 				Logger.e(LOG, e);
 			}
 		}
+		
+		return true;
 	}
 
 	@Override
@@ -227,5 +232,4 @@ public class GlobaleaksTransport extends Transport {
 			return obj;
 		}
 	}
-
 }

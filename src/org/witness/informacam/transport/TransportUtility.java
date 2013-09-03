@@ -1,14 +1,18 @@
-package org.witness.informacam.utils;
+package org.witness.informacam.transport;
+
+import java.net.URI;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.transport.GlobaleaksTransport;
+import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Transport;
+import org.witness.informacam.utils.Constants.Models.ITransportStub.RepositorySources;
 
 import android.content.Intent;
+import android.net.Uri;
 
 public class TransportUtility {
 	private static final String LOG = Transport.LOG;
@@ -26,6 +30,18 @@ public class TransportUtility {
 			
 			if(repository.source.equals(Models.ITransportStub.RepositorySources.GLOBALEAKS)) {
 				intent = new Intent(informaCam, GlobaleaksTransport.class);
+			}
+			
+			if(repository.source.equals(Models.ITransportStub.RepositorySources.APP)) {
+				// look up the APK by package name and signature
+				// so, since this is in the transport loop, i pretty much only ever have an encrypted file.  can i share this out as bytes? or must i burn it to SD?
+				
+				/*
+				Uri uri = URI.create("");
+				intent = new Intent(Intent.ACTION_SEND)
+					.setPackage(repository.packageName)
+					.putExtra(Intent.EXTRA_STREAM, uri);
+				*/
 			}
 			
 			if(intent != null) {

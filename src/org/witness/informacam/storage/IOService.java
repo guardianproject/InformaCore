@@ -18,6 +18,7 @@ import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.content.Context;
@@ -83,8 +84,7 @@ public class IOService {
 	}
 
 	@SuppressWarnings("static-access")
-	public boolean saveBlob(byte[] data, java.io.File file, String uriToDelete) throws IOException {
-	
+	public boolean saveBlob(byte[] data, java.io.File file, String uriToDelete) throws IOException {		
 		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
 		ByteArrayInputStream bais = new ByteArrayInputStream(data);
 		

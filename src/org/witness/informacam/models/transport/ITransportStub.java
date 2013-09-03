@@ -61,6 +61,20 @@ public class ITransportStub extends Model implements Serializable {
 		inflate(transportStub.asJson());
 	}
 	
+	public void reset() {
+		reset(null);
+	}
+	
+	public void reset(INotification associatedNotification) {
+		numTries = 0;
+		isHeld = false;
+		lastResult = null;
+		
+		if(associatedNotification != null) {
+			this.associatedNotification = associatedNotification;
+		}
+	}
+	
 	public void setAsset(String assetName, String assetPath, String mimeType) {
 		if(asset == null) {
 			asset = new ITransportData();
@@ -92,22 +106,14 @@ public class ITransportStub extends Model implements Serializable {
 	}
 	
 	public void save() {
-		InformaCam.getInstance().transportManifest.add(this);
-	}
+		InformaCam informaCam = InformaCam.getInstance();
+		ITransportStub transport = informaCam.transportManifest.getById(id);
 		
-	public class ITransportData extends Model implements Serializable {
-		public String assetPath = null;
-		public String assetName = null;
-		public String mimeType = null;
-		public String key = null;
-		
-		public ITransportData() {
-			super();
-		}
-		
-		public ITransportData(ITransportData transportData) {
-			super();
-			inflate(transportData);
+		if(transport == null) {
+			InformaCam.getInstance().transportManifest.add(this);
+		} else {
+			transport.inflate(this);
+			informaCam.transportManifest.save();
 		}
 	}
 }

@@ -15,6 +15,7 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.FormUtility;
+import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.ui.screens.WizardStepOne;
 import org.witness.informacam.ui.screens.WizardStepThree;
 import org.witness.informacam.ui.screens.WizardStepTwo;
@@ -28,7 +29,6 @@ import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.WizardListener;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.TransportUtility;
 
 import android.app.Activity;
 import android.content.Context;
@@ -249,7 +249,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 				if(organization != null && !informaCam.user.isInOfflineMode) {
 					INotification notification = new INotification(getResources().getString(R.string.key_sent), getResources().getString(R.string.you_have_sent_your_credentials_to_x, organization.organizationName), Models.INotification.Type.NEW_KEY);
 					notification.taskComplete = false;
-					informaCam.addNotification(notification);
+					informaCam.addNotification(notification, null);
 					
 					ITransportStub transportStub = new ITransportStub(organization, notification);
 					transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);

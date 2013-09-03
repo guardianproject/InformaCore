@@ -163,6 +163,8 @@ public class Constants {
 		public static final class Messages {
 			public static final class Transport {
 				public static final int GENERAL_FAILURE = 404;
+				public static final int ORBOT_NOT_RUNNING = 405;
+				public static final int ORBOT_UNINSTALLED = 406;
 			}
 			
 			public static final class Wizard {
@@ -552,6 +554,7 @@ public class Constants {
 			public class RepositorySources {
 				public final static String GOOGLE_DRIVE = "google_drive";
 				public final static String GLOBALEAKS = "globaleaks";
+				public final static String APP = "application";
 			}
 			
 			public class ResultCodes {
@@ -571,11 +574,14 @@ public class Constants {
 
 		public class IOrganization {
 			public static final String ORGANIZATION_DETAILS = "organizationDetails";
+			public static final String ORGANIZATION_ICON = "organizationIcon";
 			public static final String ORGANIZATION_NAME = "organizationName";
 			public static final String ORGANIZATION_FINGERPRINT = "organizationFingerprint";
 			public static final String PUBLIC_KEY = "publicKey";
 			public static final String FORMS = "forms";
 			public static final String REPOSITORIES = "repositories";
+			public static final String APPLICATION_SIGNATURE = "applicationSignature";
+			public static final String PACKAGE_NAME = "packageName";
 		}
 	}
 

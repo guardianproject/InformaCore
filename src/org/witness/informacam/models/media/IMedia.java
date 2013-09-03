@@ -1,7 +1,5 @@
 package org.witness.informacam.models.media;
 
-import info.guardianproject.onionkit.ui.OrbotHelper;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -29,9 +27,9 @@ import org.witness.informacam.models.j3m.ISensorCapture;
 import org.witness.informacam.models.notifications.IMail;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
-import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.ui.editors.IRegionDisplay;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -43,9 +41,7 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.TransportUtility;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -526,7 +522,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				}
 
 				notification.type = Models.INotification.Type.SHARED_MEDIA;				
-				informaCam.addNotification(notification);
+				informaCam.addNotification(notification, responseHandler);
 			} else {
 				// create a iocipher file
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
@@ -537,37 +533,26 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
 					if(organization != null) {
 						notification.taskComplete = false;
-						informaCam.addNotification(notification);
+						informaCam.addNotification(notification, responseHandler);
 						
 						submission = new ITransportStub(organization, notification);
 						
 						submission.setAsset(exportFile.getName().replace(".mp4", ".mkv"), exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Models.IMedia.MimeType.VIDEO);
 					}
 
-					boolean isTransportReady = checkTransportRequirements(submission, context,h);
-					
-					if (isTransportReady)
-					{
-						VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
-					}
+					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
 					
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 					if(organization != null) {
 						notification.taskComplete = false;
-						informaCam.addNotification(notification);
+						informaCam.addNotification(notification, responseHandler);
 						
 						submission = new ITransportStub(organization, notification);
 						
 						submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), Models.IMedia.MimeType.IMAGE);
 					}
-
-
-					boolean isTransportReady = checkTransportRequirements(submission, context, h);
 					
-					if (isTransportReady)
-					{
-						ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
-					}
+					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
 			}
 			progress += 10;
@@ -588,43 +573,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	@SuppressLint("DefaultLocale")
-	public boolean checkTransportRequirements (ITransportStub transport, Context context, Handler handler)
-	{
-		
-		for (IRepository repo : transport.organization.repositories)
-		{
-			
-			if (repo.asset_root != null && repo.asset_root.toLowerCase().contains(".onion"))
-			{
-				//make sure Orbot is up and running
-				
-				OrbotHelper oh = new OrbotHelper(context);
-				
-				if (!oh.isOrbotInstalled())
-				{
-					
-					handler.sendEmptyMessage(81181); //prompt handler to show Orbot install dialog
-					
-					return false;
-				}
-				else if (!oh.isOrbotRunning())
-				{
-					handler.sendEmptyMessage(81182); //prompt handler to show Orbot start dialog
-					return false;
-				}
-				else
-					return true;
-				
-				
-				
-			}
-			
-		}
-		
 	
-		return true;
-	}
 	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();

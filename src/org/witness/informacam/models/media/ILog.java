@@ -16,7 +16,7 @@ import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.TransportUtility;
+import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
@@ -188,7 +188,8 @@ public class ILog extends IMedia {
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 			notification.generateId();
-			informaCam.addNotification(notification);
+			// XXX: maybe proxyHandler?
+			informaCam.addNotification(notification, responseHandler);
 
 		} catch(JSONException e) {
 			Log.e(LOG, e.toString(),e);

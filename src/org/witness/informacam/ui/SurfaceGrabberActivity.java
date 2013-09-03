@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.app.Activity;
@@ -120,6 +121,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		try
 		{
 			String pathToData = System.currentTimeMillis() + "_baseImage";
+			
 			if(informaCam.ioService.saveBlob(data, new File(pathToData))) {
 				try {
 					informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, pathToData);

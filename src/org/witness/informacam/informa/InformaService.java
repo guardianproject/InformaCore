@@ -155,7 +155,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 				}
 								
 				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
-				if(currentTime == 0 || currentLocation == new double[] {0.0, 0.0}) {
+				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
 
 					if(GPS_WAITING < Suckers.GPS_WAIT_MAX) {

@@ -88,6 +88,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	public double[] updateLocation() {
 		Location l = null;
 		double[] location = new double[] {0.0, 0.0};
+		double[] isNull = new double[] {0.0, 0.0};
 
 		try {
 			List<String> providers = lm.getProviders(criteria, true);
@@ -104,7 +105,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 				location = new double[] {l.getLatitude(), l.getLongitude()};
 				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
 
-				if(location == new double[] {0.0, 0.0}) {
+				if(location == isNull) {
 					continue;
 				} else {
 					break;
@@ -117,7 +118,11 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 		} catch(IllegalArgumentException e) {
 			Logger.e(LOG, e);
 		}
-
+		
+		if(location == isNull) {
+			return null;
+		}
+		
 		return location;
 	}
 	

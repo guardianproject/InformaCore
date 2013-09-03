@@ -10,13 +10,16 @@ import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.transport.ITransportStub;
+import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
+import android.os.Handler;
 import android.util.Log;
 
 public class INotification extends Model implements Serializable {
+	private static final long serialVersionUID = -7775033354483776963L;
+	
 	public long timestamp = 0L;
 	public String label = null;
 	public String content = null;
@@ -93,7 +96,7 @@ public class INotification extends Model implements Serializable {
 		ITransportStub transportStub = InformaCam.getInstance().transportManifest.getByNotification(_id);
 		if(transportStub != null) {
 			canRetry = false;
-			transportStub.associatedNotification.inflate(this);
+			transportStub.reset(this);
 			save();
 			TransportUtility.initTransport(transportStub);
 		}

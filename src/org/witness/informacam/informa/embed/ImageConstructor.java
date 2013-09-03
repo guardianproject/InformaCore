@@ -1,5 +1,6 @@
 package org.witness.informacam.informa.embed;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -21,7 +22,6 @@ public class ImageConstructor {
 	info.guardianproject.iocipher.File pathToImage;
 	info.guardianproject.iocipher.File pathToJ3M;
 
-	java.io.File clone;
 	java.io.File version;
 	InformaCam informaCam;
 
@@ -58,14 +58,12 @@ public class ImageConstructor {
 
 		byte[] metadata = informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER);
 
-		clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToImage.getName());
-		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToImage.getAbsolutePath(), Type.IOCIPHER), clone, true);
-
 		version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToImage.getName());
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inPurgeable = true;
 		
-		Bitmap b = BitmapFactory.decodeFile(clone.getAbsolutePath(), opts);
+		ByteArrayInputStream bais = new ByteArrayInputStream(informaCam.ioService.getBytes(pathToImage.getAbsolutePath(), Type.IOCIPHER));
+		Bitmap b = BitmapFactory.decodeStream(bais);
 		
 		try {
 			java.io.FileOutputStream fos = new java.io.FileOutputStream(version);
@@ -80,6 +78,7 @@ public class ImageConstructor {
 			e.printStackTrace();
 		}
 		b.recycle();
+		bais.close();
 		
 		int c = constructImage(version.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
 
@@ -104,7 +103,6 @@ public class ImageConstructor {
 							((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 						}
 						
-						clone.delete();
 						version.delete();
 					}
 				}
@@ -119,7 +117,6 @@ public class ImageConstructor {
 			try {
 				boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
 				if(success) {
-					clone.delete();
 					version.delete();
 				}
 			} catch (IOException e) {

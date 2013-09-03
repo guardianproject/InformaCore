@@ -1,11 +1,12 @@
 package org.witness.informacam.transport;
 
+import info.guardianproject.onionkit.ui.OrbotHelper;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -18,12 +19,13 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.models.transport.ITransportStub.ITransportData;
+import org.witness.informacam.models.transport.ITransportData;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
@@ -34,12 +36,14 @@ import ch.boye.httpclientandroidlib.NameValuePair;
 import ch.boye.httpclientandroidlib.client.utils.URLEncodedUtils;
 import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
+import android.annotation.SuppressLint;
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 
+@SuppressLint("DefaultLocale")
 public class Transport extends IntentService {
 	ITransportStub transportStub;
 	IRepository repository;
@@ -59,9 +63,25 @@ public class Transport extends IntentService {
 		informaCam = InformaCam.getInstance();
 	}
 	
-	protected void init() {
+	protected boolean init() {
 		repository = transportStub.getRepository(repoName);
-		transportStub.numTries++;
+		
+		int transportRequirements = checkTransportRequirements();
+		if(transportRequirements == -1) {
+			transportStub.numTries++;
+		} else {
+			transportStub.numTries = (Models.ITransportStub.MAX_TRIES + 1);
+			Logger.d(LOG, "ACTUALLY NO ORBOT");
+			
+			finishUnsuccessfully(transportRequirements);
+			// Prompt to start up/install orbot here.
+			
+			
+			stopSelf();
+			return false;
+		}
+		
+		return true;
 	}
 	
 	protected void send() {}
@@ -71,11 +91,57 @@ public class Transport extends IntentService {
 		
 		if(transportStub.associatedNotification != null) {
 			transportStub.associatedNotification.taskComplete = true;
-			informaCam.updateNotification(transportStub.associatedNotification);
+			informaCam.updateNotification(transportStub.associatedNotification, informaCam.h);
 		}
 		
 		stopSelf();
 		
+	}
+	
+	protected void finishUnsuccessfully() {
+		finishUnsuccessfully(-1);
+	}
+	
+	protected void finishUnsuccessfully(int transportRequirements) {
+		if(informaCam.getEventListener() != null) {
+			Message message = new Message();
+			Bundle data = new Bundle();
+			
+			if(transportRequirements == -1) {
+				data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Transport.GENERAL_FAILURE);
+				data.putString(Codes.Extras.GENERAL_FAILURE, informaCam.getString(R.string.informacam_could_not_send));
+			} else {
+				data.putInt(Codes.Extras.MESSAGE_CODE, transportRequirements);
+			}
+			
+			message.setData(data);
+
+
+			informaCam.getEventListener().onUpdate(message);
+		}
+		
+		if(transportStub.associatedNotification != null) {
+			transportStub.associatedNotification.canRetry = true;
+			transportStub.associatedNotification.save();
+			
+			informaCam.transportManifest.add(transportStub);
+		}
+		
+		
+	}
+	
+	public int checkTransportRequirements () {
+		if(repository.asset_root != null && repository.asset_root.toLowerCase().contains(".onion")) {
+			OrbotHelper oh = new OrbotHelper(this);
+			
+			if(!oh.isOrbotInstalled()) {
+				return Codes.Messages.Transport.ORBOT_UNINSTALLED;
+			} else if(!oh.isOrbotRunning()) {
+				return Codes.Messages.Transport.ORBOT_NOT_RUNNING;
+			}
+		}
+	
+		return -1;
 	}
 	
 	protected void resend() {
@@ -83,97 +149,13 @@ public class Transport extends IntentService {
 			Logger.d(LOG, "POST FAILED.  Trying again.");
 			init();
 		} else {
-			if(informaCam.getEventListener() != null) {
-				Message message = new Message();
-				Bundle data = new Bundle();
-				data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Transport.GENERAL_FAILURE);
-				data.putString(Codes.Extras.GENERAL_FAILURE, informaCam.getString(R.string.informacam_could_not_send));
-				message.setData(data);
-
-
-				informaCam.getEventListener().onUpdate(message);
-			}
-			
-			if(transportStub.associatedNotification != null) {
-				transportStub.associatedNotification.canRetry = true;
-				transportStub.associatedNotification.save();
-				
-				informaCam.transportManifest.add(transportStub);
-			}
-			
+			finishUnsuccessfully();
 			stopSelf();
 		}
 	}
 	
+	@SuppressLint("DefaultLocale")
 	protected Object doPost(ITransportData fileData, String urlString) {
-		/*
-		String hyphens = "--";
-		String end = "\r\n";
-		String boundary = (hyphens + hyphens + System.currentTimeMillis() + hyphens + hyphens);
-		
-		HttpURLConnection http = buildConnection(urlString);
-		try {
-			http.setDoInput(true);
-			http.setDoOutput(true);
-			http.setUseCaches(false);
-			http.setRequestMethod("POST");
-			
-			String disposition = "Content-Disposition: form-data; name=\"" + fileData.key + "\"; filename=\"" + fileData.assetName + "\"";
-			String type = "Content-Type: " + fileData.mimeType;
-			StringBuffer requestBody = new StringBuffer()
-				.append(hyphens)
-				.append(boundary)
-				.append(end)
-				.append(disposition)
-				.append(end)
-				.append(type)
-				.append(end + end);
-			
-			http.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-			
-			OutputStream os = new DataOutputStream(http.getOutputStream());
-			os.write(requestBody.toString().getBytes());
-			
-			byte[] buf = new byte[1024];
-			
-			ByteArrayInputStream bais = new ByteArrayInputStream(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
-			while(bais.available() > 0) {
-				int read = bais.read(buf);
-				os.write(buf, 0, read);
-			}
-			
-			bais.close();
-			buf = null;
-			
-			StringBuffer requestEnd = new StringBuffer()
-				.append(end)
-				.append(hyphens)
-				.append(boundary)
-				.append(hyphens)
-				.append(end);
-			
-			os.write(requestEnd.toString().getBytes());
-			os.flush();
-			os.close();
-			
-			InputStream is = new BufferedInputStream(http.getInputStream());
-			
-			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
-			
-			if(http.getResponseCode() > -1) {
-				return(parseResponse(is));
-			}
-			
-		} catch (ProtocolException e) {
-			Logger.e(LOG, e);
-		} catch (IOException e) {
-			Logger.e(LOG, e);
-		}
-		
-		return null;
-		*/
-		
 		boolean useTorProxy = false;
 		
 		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
@@ -182,6 +164,7 @@ public class Transport extends IntentService {
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 		
 		try {
+			http.setDoOutput(true);
 			http.setRequestMethod("POST");
 			http.setRequestProperty("Content-Type", fileData.mimeType);
 			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
@@ -229,6 +212,7 @@ public class Transport extends IntentService {
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 			
 		try {
+			http.setDoOutput(true);
 			http.setRequestMethod("POST");
 			http.setRequestProperty("Content-Type", MimeType.JSON);
 			http.getOutputStream().write(postData.asJson().toString().getBytes());
@@ -262,6 +246,7 @@ public class Transport extends IntentService {
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 		
 		try {
+			http.setDoOutput(true);
 			http.setRequestMethod("PUT");
 			http.setRequestProperty("Content-Type", MimeType.JSON);
 			http.getOutputStream().write(putData.asJson().toString().getBytes());
@@ -326,6 +311,12 @@ public class Transport extends IntentService {
 			
 			if(http.getResponseCode() > -1) {
 				return(parseResponse(is));
+			} else {
+				try {
+					Logger.d(LOG, String.format(LOG, "ERROR IF PRESENT:\n%s", ((JSONObject) parseResponse(is)).toString()));
+				} catch(Exception e) {
+					Logger.e(LOG, e);
+				}
 			}
 			
 		} catch (ProtocolException e) {

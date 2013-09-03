@@ -41,9 +41,12 @@ public class ITransportManifest extends Model implements Serializable {
 		Collection<ITransportStub> transports_ = Collections2.filter(transports, new Predicate<ITransportStub>() {
 			@Override
 			public boolean apply(ITransportStub transport) {
+				Logger.d(LOG, String.format("retrying transport: %s", transport.id));
 				if(transport.associatedNotification != null) {
+					Logger.d(LOG, String.format("retrying transport notification: %s", transport.associatedNotification._id));
 					return transport.associatedNotification._id.equals(id);
 				} else {
+					Logger.d(LOG, "THERE IS NO NOTIFICATION HERE");
 					return false;
 				}
 			}
@@ -53,11 +56,11 @@ public class ITransportManifest extends Model implements Serializable {
 			return transports_.iterator().next();
 		} catch(NullPointerException e) {
 			Logger.e(LOG, e);
-			return null;
 		} catch(NoSuchElementException e) {
 			Logger.e(LOG, e);
-			return null;
 		}
+		
+		return null;
 	}
 	
 	public ITransportStub getById(final String id) {
@@ -72,11 +75,15 @@ public class ITransportManifest extends Model implements Serializable {
 			return transports_.iterator().next();
 		} catch(NullPointerException e) {
 			Logger.e(LOG, e);
-			return null;
 		} catch(NoSuchElementException e) {
 			Logger.e(LOG, e);
-			return null;
 		}
+		
+		return null;
+	}
+	
+	public void save() {
+		InformaCam.getInstance().saveState(this);
 	}
 
 }

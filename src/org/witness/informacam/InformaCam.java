@@ -40,6 +40,7 @@ import org.witness.informacam.models.utils.ILanguageMap;
 import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -53,7 +54,6 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
-import org.witness.informacam.utils.TransportUtility;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -307,10 +307,9 @@ public class InformaCam extends Application {
 			notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
 		
 			saveState(notificationsManifest);
-			
-			
 		}
 		
+		transportManifest = (ITransportManifest) getModel(transportManifest);
 		languageMap = (ILanguageMap) getModel(languageMap);
 	}
 	
@@ -382,44 +381,63 @@ public class InformaCam extends Application {
 	}
 
 	public boolean saveState(Model model) {		
+		boolean result = false;
 		
 		try
 		{
 			if(model.getClass().getName().equals(IKeyStore.class.getName())) {
 				
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.KEY_STORE_MANIFEST));
 			
 			} else if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
 			
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.ORGS));
+				
+				if(mListAdapterListener != null) {
+					h.post(new Runnable() {
+						@Override
+						public void run() {
+							mListAdapterListener.updateAdapter(Codes.Adapters.ORGANIZATIONS);	
+						}
+					});
+				}
 			
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
 				
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
 				
 			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
 			
-				return saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
+				result = saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
 			
 			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
 				
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
+				
+				if(mListAdapterListener != null) {
+					h.post(new Runnable() {
+						@Override
+						public void run() {
+							mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);	
+						}
+					});
+				}
 				
 			} else if(model.getClass().getName().equals(IDCIMDescriptor.class.getName())) {
 				
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.DCIM));
 				
 			} else if(model.getClass().getName().equals(IUser.class.getName())) {
 				
-				return ioService.saveBlob(model, new java.io.File(IManifest.USER));
+				result = ioService.saveBlob(model, new java.io.File(IManifest.USER));
 			
 			} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
 			
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.LANG));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.LANG));
 			
 			} else if(model.getClass().getName().equals(ITransportManifest.class.getName())) {
 				
-				return saveState(model, new info.guardianproject.iocipher.File(IManifest.TRANSPORT));
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.TRANSPORT));
 			
 			}
 		}
@@ -428,7 +446,7 @@ public class InformaCam extends Application {
 			Logger.e(LOG, ioe);
 		}
 		
-		return false;
+		return result;
 	}
 
 	public Model getModel(Model model) {
@@ -488,22 +506,20 @@ public class InformaCam extends Application {
 			mEventListener.onUpdate(message);
 	}
 
-	public void updateNotification(INotification notification) {
+	public void updateNotification(INotification notification, Handler callback) {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
+		saveState(notificationsManifest);
 		
+		/*
 		if(saveState(notificationsManifest) && mListAdapterListener != null) {
-			h.post(new Runnable() {
+			callback.post(new Runnable() {
 				@Override
 				public void run() {
 					mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);
 				}
 			});
 		}
-	}
-	
-	
-	public void addNotification(INotification notification) {
-		addNotification(notification, false, null);
+		*/
 	}
 	
 	public void addNotification(INotification notification, Handler callback) {
@@ -519,16 +535,7 @@ public class InformaCam extends Application {
 		
 		saveState(notificationsManifest);
 		
-		if(mListAdapterListener != null) {
-			h.post(new Runnable() {
-				@Override
-				public void run() {
-					mListAdapterListener.updateAdapter(Codes.Adapters.NOTIFICATIONS);	
-				}
-			});
-		}
-		
-		// is this really what we want to declare here?
+		// XXX: is this really what we want to declare here?
 		if(callback != null) {
 			Message msg = new Message();
 			Bundle msgData = new Bundle();
@@ -596,7 +603,6 @@ public class InformaCam extends Application {
 			}
 		}
 		
-		
 		try {
 			ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(((String) ictd.get(Models.IOrganization.PUBLIC_KEY)).getBytes(), Base64.DEFAULT));
 			try {
@@ -619,6 +625,17 @@ public class InformaCam extends Application {
 				ictd.put(Models.IOrganization.PUBLIC_KEY, publicKeyFile.getAbsolutePath());
 			}
 			baos.close();
+			
+			if(ictd.has(Models.IOrganization.ORGANIZATION_ICON)) {
+				info.guardianproject.iocipher.File iconFile = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT, ictd.getString(Models.IOrganization.ORGANIZATION_FINGERPRINT) + ".jpg");
+				if(IOUtility.unGZipAndSave(
+						Base64.decode(((String) ictd.get(Models.IOrganization.ORGANIZATION_ICON)).getBytes(), Base64.DEFAULT), 
+						iconFile.getAbsolutePath(), 
+						Type.IOCIPHER)
+						) {
+					ictd.put(Models.IOrganization.ORGANIZATION_ICON, iconFile.getAbsolutePath());
+				}
+			}
 			
 			organization = new IOrganization(ictd);
 			Logger.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());

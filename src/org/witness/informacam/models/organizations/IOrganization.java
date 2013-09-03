@@ -14,6 +14,7 @@ public class IOrganization extends Model implements Serializable {
 	public String organizationDetails = null;
 	public String publicKey = null;
 	public String organizationFingerprint = null;
+	public String organizationIcon = null;
 	public List<IRepository> repositories = new ArrayList<IRepository>();
 	public List<IForm> forms = new ArrayList<IForm>();
 	
