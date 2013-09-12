@@ -7,12 +7,24 @@
         android:id="@+id/surface_grabber_holder"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
+    
+    <TextView
+        android:id="@+id/surface_grabber_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dip"
+        android:textSize="30sp"
+        android:text="@string/zero"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_margin="10dip"
+        android:background="@drawable/progress_unaccepted" />
 
     <Button
         android:id="@+id/surface_grabber_button"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:text="@string/ok" />
+        android:text="@string/snap_a_picture" />
 
 </RelativeLayout>

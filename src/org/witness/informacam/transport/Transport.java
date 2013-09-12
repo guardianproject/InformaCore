@@ -246,7 +246,7 @@ public class Transport extends IntentService {
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 		
 		try {
-			http.setDoOutput(true);
+			//http.setDoOutput(true);
 			http.setRequestMethod("PUT");
 			http.setRequestProperty("Content-Type", MimeType.JSON);
 			http.getOutputStream().write(putData.asJson().toString().getBytes());

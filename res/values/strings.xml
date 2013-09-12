@@ -5,7 +5,7 @@
     <string name="name">Name</string>
     <string name="password">Password</string>
     <string name="password_again">Password again</string>
-    <string name="take_a_boring_photo">Take a boring photo</string>
+    <string name="take_a_boring_photo">Take 6 boring photos</string>
     <string name="we_are_generating_your">We are generating your key.  This will take a couple of minutes.</string>
     <string name="in_the_meantime_adjust">In the meantime, adjust your preferences:</string>    
     <string name="trashed">trashed</string>
@@ -13,6 +13,7 @@
     <string name="done">Done!</string>
     <string name="please_wait_while_your">Please wait while your key finishes generating.</string>
     <string name="ok">OK</string>
+    <string name="snap_a_picture">Snap a picture</string>
     <string name="clear">Clear</string>
     <string name="sorry_your_password_doesnt">Sorry, your password doesn\'t match.</string>
     <string name="your_password_should_be">Your password should be more than 10 characters.</string>
@@ -27,7 +28,7 @@
     <string name="x_has_verified_you">%1$s has verified you.  You may now send and receive media and messages from them.</string>
     <string name="send">Send\u2026</string>
     <string name="key_sent">Key Sent</string>
-    <string name="you_have_successfully_installed">You have successfully installed %1$s\'s ICTD file.</string>
+    <string name="you_have_successfully_installed">You have successfully installed %1$s\'s ICTD file.  Send your credentials to them, if it has not been done already.</string>
     <string name="you_have_successfully_sent">You have successfully sent your key to %1$s.  Once verified on their end, you can start sending and receiving media and messages.</string>
     <string name="you_have_sent_your_credentials_to_x">You have sent your credentials to %1$s.</string>
     <string name="export">Export</string>
@@ -48,4 +49,5 @@
     <string name="new_version">New Version</string>
     <string name="could_not_import_ictd">Could not import any ICTD file.  Please try again.</string>
     <string name="this_ictd_has_not_changed">This ICTD has not actually changed.  Update anyway?</string>
+    <string name="zero">0</string>
 </resources>

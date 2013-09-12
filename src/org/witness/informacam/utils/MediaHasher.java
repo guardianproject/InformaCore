@@ -76,6 +76,7 @@ public class MediaHasher
 		return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
 	}
 	
+	/*
 	public static String getBitmapHash(java.io.File file) throws NoSuchAlgorithmException, IOException {
 		Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
 		String hash = "";
@@ -117,5 +118,6 @@ public class MediaHasher
 		buf = null;
 		return hash;
 	}
+	*/
 	
 }

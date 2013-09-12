@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Camera;
 import org.witness.informacam.utils.Constants.Codes;
@@ -161,7 +162,9 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
+		Logger.d(LOG, "COMING BACK FROM ON-BOARD CAMERA");
 		if(controlsInforma) {
+			Logger.d(LOG, "ALSO, I CONTROL INFORMA");
 			informaCam.stopInforma();
 		} else {
 			onInformaStop(null);
@@ -203,9 +206,13 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			}
 		});
 		
-		
-		Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, informaCam.ioService.getDCIMDescriptor().asDescriptor());
-		setResult(Activity.RESULT_OK, result);
+		IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
+		if(dcimDescriptor.dcimList.size() > 0) {
+			Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
+			setResult(Activity.RESULT_OK, result);
+		} else {
+			setResult(Activity.RESULT_CANCELED);
+		}
 		finish();
 	}
 

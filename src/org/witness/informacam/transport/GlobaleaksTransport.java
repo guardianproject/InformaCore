@@ -196,17 +196,13 @@ public class GlobaleaksTransport extends Transport {
 				if(values.has(DOWNLOAD_LIMIT)) {
 					values = values.put(DOWNLOAD_LIMIT, Integer.toString(values.getInt(DOWNLOAD_LIMIT)));
 				}
-			} catch (JSONException e) {
-				Logger.e(LOG, e);
-			}
+			} catch (JSONException e) {}
 
 			try {
 				if(values.has(ACCESS_LIMIT)) {
 					values = values.put(ACCESS_LIMIT, Integer.toString(values.getInt(ACCESS_LIMIT)));
 				}
-			} catch (JSONException e) {
-				Logger.e(LOG, e);
-			}
+			} catch (JSONException e) {}
 
 			super.inflate(values);
 		}
@@ -218,16 +214,12 @@ public class GlobaleaksTransport extends Transport {
 			try {
 				obj = obj.put(DOWNLOAD_LIMIT, Integer.parseInt(obj.getString(DOWNLOAD_LIMIT)));
 			} catch (NumberFormatException e) {}
-			catch (JSONException e) {
-				Logger.e(LOG, e);
-			}
+			catch (JSONException e) {}
 
 			try {
 				obj = obj.put(ACCESS_LIMIT, Integer.parseInt(obj.getString(ACCESS_LIMIT)));
 			} catch (NumberFormatException e) {}
-			catch (JSONException e) {
-				Logger.e(LOG, e);
-			}
+			catch (JSONException e) {}
 
 			return obj;
 		}

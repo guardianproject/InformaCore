@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.credentials.IUser;
 import org.witness.informacam.models.forms.IForm;
+import org.witness.informacam.models.forms.IInstalledForms;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IMediaManifest;
@@ -69,6 +71,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
+import android.util.Log;
 import dalvik.system.DexFile;
 
 public class InformaCam extends Application {	
@@ -372,16 +375,39 @@ public class InformaCam extends Application {
 		
 	}
 
-	public boolean saveState(Model model, java.io.File cache) throws IOException {
+	private boolean saveState(Model model, java.io.File cache) throws IOException {
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
 
-	public boolean saveState(Model model, info.guardianproject.iocipher.File cache) throws IOException {
+	private boolean saveState(Model model, info.guardianproject.iocipher.File cache) throws IOException {
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
+	
+	public boolean saveState(Model model) {
+		return saveState(model, 0);
+	}
 
-	public boolean saveState(Model model) {		
+	private boolean saveState(Model model, int tries) {		
 		boolean result = false;
+		
+		// Model should be valid JSON before saving!
+		try {
+			new JSONTokener(model.asJson().toString()).nextValue();
+		} catch(JSONException e) {
+			Logger.e(LOG, e);
+			
+			if(tries <= 25) {
+				try {
+					Thread.sleep(500);
+					saveState(model, ++tries);
+				} catch (InterruptedException e1) {
+					Log.e(LOG, e1.toString());
+					e1.printStackTrace();
+				}
+			}
+			
+			return false;
+		}
 		
 		try
 		{
@@ -415,6 +441,7 @@ public class InformaCam extends Application {
 				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.NOTIFICATIONS));
 				
 				if(mListAdapterListener != null) {
+					
 					h.post(new Runnable() {
 						@Override
 						public void run() {
@@ -439,6 +466,9 @@ public class InformaCam extends Application {
 				
 				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.TRANSPORT));
 			
+			} else if(model.getClass().getName().equals(IInstalledForms.class.getName())) {
+				
+				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.FORMS));
 			}
 		}
 		catch (IOException ioe)
@@ -466,6 +496,8 @@ public class InformaCam extends Application {
 				bytes = ioService.getBytes(IManifest.LANG, Type.IOCIPHER);
 			} else if(model.getClass().getName().equals(ITransportManifest.class.getName())) {
 				bytes = ioService.getBytes(IManifest.TRANSPORT, Type.IOCIPHER);
+			} else if(model.getClass().getName().equals(IInstalledForms.class.getName())) {
+				bytes = ioService.getBytes(IManifest.FORMS, Type.IOCIPHER);
 			}
 
 			if(bytes != null) {
@@ -709,6 +741,49 @@ public class InformaCam extends Application {
 		return Intent.createChooser(intent, getString(R.string.send));
 	}
 	
+	public void importAsset(String assetPath, String destinationPath, int assetSource, int destinationSource, Model model) {
+		byte[] data = ioService.getBytes(assetPath, assetSource);
+		if(data != null) {
+			if(model != null) {
+				model.inflate(data);
+			}
+			
+			if(destinationSource == Type.IOCIPHER) {
+				info.guardianproject.iocipher.File asset = new info.guardianproject.iocipher.File(destinationPath);
+				ioService.saveBlob(data, asset);
+			} else if(destinationSource == Type.INTERNAL_STORAGE) {
+				java.io.File asset = new java.io.File(destinationPath);
+				try {
+					ioService.saveBlob(data, asset);
+				} catch (IOException e) {
+					Log.e(LOG, e.toString());
+					e.printStackTrace();
+				}
+			}
+			
+			
+		}
+	}
+	
+	public Intent exportAsset(String assetPath, int source) {
+		java.io.File asset = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "_tempAsset.json");
+		try {
+			if(ioService.saveBlob(ioService.getBytes(assetPath, source), asset, true)) {
+				Intent intent = new Intent()
+					.setAction(Intent.ACTION_SEND)
+					.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(asset))
+					.setType("*/*");
+				
+				return Intent.createChooser(intent, getString(R.string.send));
+			}
+		} catch (IOException e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
 	public void resendCredentials(IOrganization organization) {
 		ITransportStub transportStub = new ITransportStub(organization);
 		transportStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
@@ -734,6 +809,14 @@ public class InformaCam extends Application {
 	
 	public int getCredentialManagerStatus() {
 		return credentialManager.getStatus();
+	}
+	
+	public boolean isOutsideTheLoop(String action) {
+		if(Arrays.asList(Actions.OUTSIDE_THE_LOOP).contains(action)) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	public void startCron() {

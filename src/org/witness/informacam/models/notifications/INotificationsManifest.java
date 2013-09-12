@@ -1,22 +1,20 @@
 package org.witness.informacam.models.notifications;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.ListAdapterListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-
-import android.util.Log;
 
 public class INotificationsManifest extends Model {
 	public List<INotification> notifications = new ArrayList<INotification>();
@@ -73,6 +71,25 @@ public class INotificationsManifest extends Model {
 			};
 			Collections.sort(notifications, DateAsc);
 			break;
+		case Models.INotificationManifest.Sort.COMPLETED:
+			Collection<INotification> notifications_ = Collections2.filter(notifications, new Predicate<INotification>() {
+				@Override
+				public boolean apply(INotification notification) {
+					List<Integer> alwaysReturn = Arrays.asList(ArrayUtils.toObject(new int[] {
+							Models.INotification.Type.EXPORTED_MEDIA,
+							Models.INotification.Type.SHARED_MEDIA
+					}));
+					
+					return notification.taskComplete || alwaysReturn.contains(notification.type);
+				}
+			});
+			
+			try {
+				return new ArrayList<INotification>(notifications_);
+			} catch(NullPointerException e) {
+				Logger.e(LOG, e);
+				return null;
+			}
 		}
 		
 		return notifications;

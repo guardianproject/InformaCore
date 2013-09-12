@@ -23,6 +23,7 @@ import org.spongycastle.bcpg.sig.KeyFlags;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.openpgp.*;
 import org.spongycastle.util.encoders.Hex;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -122,12 +123,10 @@ public class KeyUtility {
 		String secretAuthToken, keyStorePassword;
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.update(data);
-		
-		// XXX: REMOVE THIS!
-		//informaCam.user.isInOfflineMode = true;
 
 		try {
-			byte[] baseImageBytes = informaCam.ioService.getBytes(informaCam.user.getString(IUser.PATH_TO_BASE_IMAGE), Storage.Type.INTERNAL_STORAGE);
+			// TODO: now we have 6 base images...
+			byte[] baseImageBytes = informaCam.ioService.getBytes(informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE).getString(0), Storage.Type.INTERNAL_STORAGE);
 
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
@@ -192,17 +191,25 @@ public class KeyUtility {
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
-			
-			if(
-					informaCam.ioService.saveBlob(baseImageBytes, new info.guardianproject.iocipher.File(IUser.BASE_IMAGE)) &&
-					informaCam.ioService.delete(informaCam.user.getString(IUser.PATH_TO_BASE_IMAGE), Storage.Type.INTERNAL_STORAGE)
-			) {
-				informaCam.user.remove(IUser.PATH_TO_BASE_IMAGE);
-
-				progress += 10;
-				data.putInt(Codes.Keys.UI.PROGRESS, progress);
-				informaCam.update(data);
+						
+			Map<String, byte[]> publicCredentials = new HashMap<String, byte[]>();
+			JSONArray baseImages = informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE);
+			for(int j=0; j<baseImages.length(); j++) {
+				if(j != 0) {
+					baseImageBytes = informaCam.ioService.getBytes(baseImages.getString(j), Storage.Type.INTERNAL_STORAGE);
+				}
+				
+				if(informaCam.ioService.saveBlob(baseImageBytes, new info.guardianproject.iocipher.File(IUser.BASE_IMAGE + "_" + j))) {
+					informaCam.ioService.delete(baseImages.getString(j), Storage.Type.INTERNAL_STORAGE);
+					publicCredentials.put(IUser.BASE_IMAGE + "_" + j, baseImageBytes);
+				}
 			}
+			
+			informaCam.user.remove(IUser.PATH_TO_BASE_IMAGE);
+
+			progress += 10;
+			data.putInt(Codes.Keys.UI.PROGRESS, progress);
+			informaCam.update(data);
 
 			Security.addProvider(new BouncyCastleProvider());
 			KeyPairGenerator kpg;
@@ -270,8 +277,6 @@ public class KeyUtility {
 			aos.close();
 			baos.flush();
 			
-			Map<String, byte[]> publicCredentials = new HashMap<String, byte[]>();
-			publicCredentials.put(IUser.BASE_IMAGE, baseImageBytes);
 			publicCredentials.put(IUser.PUBLIC_KEY, baos.toByteArray());			
 			baos.close();
 			

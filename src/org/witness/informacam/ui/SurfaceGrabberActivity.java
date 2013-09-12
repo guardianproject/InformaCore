@@ -2,14 +2,18 @@ package org.witness.informacam.ui;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.IUser;
 
 import android.app.Activity;
 import android.hardware.Camera;
@@ -22,9 +26,11 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class SurfaceGrabberActivity extends Activity implements OnClickListener, SurfaceHolder.Callback, PictureCallback {
 	Button button;
+	TextView progress;
 
 	SurfaceView view;
 	SurfaceHolder holder;
@@ -32,6 +38,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	Size size = null;
 	
 	private InformaCam informaCam = InformaCam.getInstance();
+	private List<String> baseImages = new ArrayList<String>();
 
 	private final static String LOG = App.ImageCapture.LOG;
 
@@ -43,6 +50,9 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 		button = (Button) findViewById(R.id.surface_grabber_button);
 		button.setOnClickListener(this);
+		
+		progress = (TextView) findViewById(R.id.surface_grabber_progress);
+		progress.setText(String.valueOf(baseImages.size()));
 
 		view = (SurfaceView) findViewById(R.id.surface_grabber_holder);
 		holder = view.getHolder();
@@ -120,18 +130,37 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		
 		try
 		{
-			String pathToData = System.currentTimeMillis() + "_baseImage";
+			String pathToData = IUser.BASE_IMAGE +"_" + baseImages.size();
 			
 			if(informaCam.ioService.saveBlob(data, new File(pathToData))) {
-				try {
-					informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, pathToData);
-					informaCam.user.hasBaseImage = true;
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString(),e);
+				data = null;
+				baseImages.add(pathToData);
+				progress.setText(String.valueOf(baseImages.size()));
+				
+				if(baseImages.size() == 6) {
+					button.setClickable(false);
+					button.setVisibility(View.GONE);
+					progress.setBackgroundResource(R.drawable.progress_accepted);
+					
+					JSONArray ja = new JSONArray();
+					for(String bi : baseImages) {
+						ja.put(bi);
+					}
+					
+					try {
+						informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, ja);
+						informaCam.user.hasBaseImage = true;
+						
+						setResult(Activity.RESULT_OK);
+						finish();
+						return;
+					} catch (JSONException e) {
+						Log.e(LOG, e.toString(),e);
+					}
 				}
-				setResult(Activity.RESULT_OK);
-				finish();
 			}
+			
+			camera.startPreview();
 		}
 		catch (IOException ioe)
 		{

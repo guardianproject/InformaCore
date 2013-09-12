@@ -100,6 +100,12 @@ public class Constants {
 		public static final String INFORMA_START = "org.witness.informacam.action.INFORMA_SERVICE_START";
 		public static final String INFORMA_STOP = "org.witness.informacam.action.INFORMA_SERVICE_STOP";
 		public static final String PERSISTENT_SERVICE = "org.witness.informacam.action.PERSISTENT_SERVICE";
+		public static final String VERIFIED_MOBILE_MEDIA = "info.guardianproject.action.VERIFIED_MOBILE_MEDIA";
+		
+		public static final String[] OUTSIDE_THE_LOOP = new String[] {
+			VERIFIED_MOBILE_MEDIA,
+			CAMERA
+		};
 	}
 
 	public final static class Codes {
@@ -390,6 +396,7 @@ public class Constants {
 		public class INotificationManifest {
 			public class Sort {
 				public final static int DATE_DESC = IMediaManifest.Sort.DATE_DESC;
+				public static final int COMPLETED = 2;
 				public final static int DATE_ASC = IMediaManifest.Sort.DATE_ASC;
 			}
 		}
