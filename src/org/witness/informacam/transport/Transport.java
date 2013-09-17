@@ -170,7 +170,7 @@ public class Transport extends IntentService {
 			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
 			//http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
 			
-			ByteArrayInputStream in = new ByteArrayInputStream(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
+			InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
 			BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
 			
 			byte[] buffer = new byte[1024];
