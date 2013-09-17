@@ -176,6 +176,10 @@ public class IOService {
 		
 	}
 	
+	public boolean saveBlob(InputStream data, info.guardianproject.iocipher.File file) throws IOException {
+		return saveBlob(data, file, null);
+	}
+	
 	public boolean saveBlob(InputStream is, info.guardianproject.iocipher.File file, String uri) throws IOException {
 
 		if(vfs == null) {

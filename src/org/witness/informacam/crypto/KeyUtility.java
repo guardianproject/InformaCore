@@ -125,7 +125,6 @@ public class KeyUtility {
 		informaCam.update(data);
 
 		try {
-			// TODO: now we have 6 base images...
 			byte[] baseImageBytes = informaCam.ioService.getBytes(informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE).getString(0), Storage.Type.INTERNAL_STORAGE);
 
 			progress += 10;
@@ -135,6 +134,8 @@ public class KeyUtility {
 			authToken = generatePassword(baseImageBytes);
 			secretAuthToken = generatePassword(baseImageBytes);
 			keyStorePassword = generatePassword(baseImageBytes);
+			
+			baseImageBytes = null;
 
 			informaCam.ioService.initIOCipher(authToken);
 
@@ -192,16 +193,16 @@ public class KeyUtility {
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 						
-			Map<String, byte[]> publicCredentials = new HashMap<String, byte[]>();
+			Map<String, InputStream> publicCredentials = new HashMap<String, InputStream>();
 			JSONArray baseImages = informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE);
 			for(int j=0; j<baseImages.length(); j++) {
-				if(j != 0) {
-					baseImageBytes = informaCam.ioService.getBytes(baseImages.getString(j), Storage.Type.INTERNAL_STORAGE);
-				}
 				
-				if(informaCam.ioService.saveBlob(baseImageBytes, new info.guardianproject.iocipher.File(IUser.BASE_IMAGE + "_" + j))) {
+				InputStream baseImageStream = informaCam.ioService.getStream(baseImages.getString(j), Storage.Type.INTERNAL_STORAGE);
+				
+				info.guardianproject.iocipher.File baseImage = new info.guardianproject.iocipher.File(IUser.BASE_IMAGE + "_" + j);
+				if(informaCam.ioService.saveBlob(baseImageStream, baseImage)) {
 					informaCam.ioService.delete(baseImages.getString(j), Storage.Type.INTERNAL_STORAGE);
-					publicCredentials.put(IUser.BASE_IMAGE + "_" + j, baseImageBytes);
+					publicCredentials.put(IUser.BASE_IMAGE + "_" + j, informaCam.ioService.getStream(baseImage.getAbsolutePath(), Storage.Type.IOCIPHER));
 				}
 			}
 			
@@ -277,13 +278,13 @@ public class KeyUtility {
 			aos.close();
 			baos.flush();
 			
-			publicCredentials.put(IUser.PUBLIC_KEY, baos.toByteArray());			
+			publicCredentials.put(IUser.PUBLIC_KEY, new ByteArrayInputStream(baos.toByteArray()));			
 			baos.close();
 			
 			JSONObject credentials = new JSONObject();
 			credentials.put(IUser.ALIAS, informaCam.user.getString(IUser.ALIAS));
 			credentials.put(IUser.EMAIL, informaCam.user.getString(IUser.EMAIL));
-			publicCredentials.put(IUser.CREDENTIALS, credentials.toString().getBytes());
+			publicCredentials.put(IUser.CREDENTIALS, new ByteArrayInputStream(credentials.toString().getBytes()));
 
 			IOUtility.zipFiles(publicCredentials, IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER);
 

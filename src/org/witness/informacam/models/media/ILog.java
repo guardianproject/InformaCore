@@ -1,6 +1,8 @@
 package org.witness.informacam.models.media;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
@@ -41,7 +44,7 @@ public class ILog extends IMedia {
 	public List<String> attachedMedia = new ArrayList<String>();
 	
 	private Handler proxyHandler;
-	private Map<String, byte[]> j3mZip;
+	private Map<String, InputStream> j3mZip;
 	
 	public ILog() {
 		super();
@@ -108,7 +111,7 @@ public class ILog extends IMedia {
 		
 		Log.d(LOG, "exporting a log!");
 		proxyHandler = h;
-		j3mZip = new HashMap<String, byte[]>();
+		j3mZip = new HashMap<String, InputStream>();
 		
 		responseHandler = new Handler() {
 			public int mediaHandled = 0;
@@ -121,10 +124,14 @@ public class ILog extends IMedia {
 					InformaCam informaCam = InformaCam.getInstance();
 					String version = b.getString(Models.IMedia.VERSION);
 										
-					byte[] versionBytes = informaCam.ioService.getBytes(version, Type.IOCIPHER);
+					InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
 					j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
+					try {
+						versionBytes.close();
+					} catch (IOException e) {
+						Logger.e(LOG, e);
+					}
 					
-					versionBytes = null;
 					mediaHandled++;
 					
 					if(mediaHandled == ILog.this.attachedMedia.size()) {
@@ -182,7 +189,7 @@ public class ILog extends IMedia {
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 
-			j3mZip.put("log.j3m", j3mObject.toString().getBytes());
+			j3mZip.put("log.j3m", new ByteArrayInputStream(j3mObject.toString().getBytes()));
 
 			progress += 5;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);

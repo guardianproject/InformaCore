@@ -173,8 +173,8 @@ public class IOUtility {
 		return null;
 
 	}
-
-	public static boolean zipFiles(Map<String, byte[]> elements, String fileName, int destination) {
+	
+	public static boolean zipFiles(Map<String, InputStream> elements, String fileName, int destination) {
 		ZipOutputStream zos = null;
 		Logger.d(LOG, "ZIPPING TO: " + fileName);
 		
@@ -191,19 +191,18 @@ public class IOUtility {
 				break;
 			}
 
-			Iterator<Entry<String, byte[]>> i = elements.entrySet().iterator();
+			Iterator<Entry<String, InputStream>> i = elements.entrySet().iterator();
 			while(i.hasNext()) {
-				Entry<String, byte[]> file = i.next();
+				Entry<String, InputStream> file = i.next();
 				
-				Log.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + file.getValue().length + ")");
+				Log.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + file.getValue().available() + ")");
 				
 				ZipEntry ze = new ZipEntry(file.getKey());
 				zos.putNextEntry(ze);
 
-				ByteArrayInputStream bais = new ByteArrayInputStream(file.getValue());
 				byte[] buf = new byte[1024];
 				int b;
-				while((b = bais.read(buf)) > 0) {
+				while((b = file.getValue().read(buf)) > 0) {
 					zos.write(buf, 0, b);
 				}
 				
