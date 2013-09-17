@@ -78,8 +78,59 @@ public class IOService {
 		}
 	}
 	
+	public boolean saveBlob(InputStream data, java.io.File file, boolean isPublic) throws IOException {
+		if(!isPublic) {
+			return saveBlob(data, file);
+		} else {
+			try {
+				java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+				
+				byte[] buf = new byte[1024];
+				int b;
+				while((b = data.read(buf)) > 0) {
+					fos.write(buf, 0, b);
+				}
+				
+				fos.flush();
+				fos.close();
+				
+				return true;
+			} catch (FileNotFoundException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
+			
+			return false;
+		}
+	}
+	
 	public boolean saveBlob(byte[] data, java.io.File file)  throws IOException {
 		return saveBlob(data, file, null);
+	}
+	
+	public boolean saveBlob(InputStream data, java.io.File file) throws IOException {
+		return saveBlob(data, file, null);
+	}
+	
+	public boolean saveBlob(InputStream data, java.io.File file, String uriToDelete) throws IOException {
+		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);		
+		
+		byte[] buf = new byte[1024];
+		int b;
+		while((b = data.read(buf)) > 0) {
+			fos.write(buf, 0, b);
+		}
+		fos.flush();
+		fos.close();
+		
+		if(uriToDelete != null) {
+			mContext.getContentResolver().delete(Uri.parse(uriToDelete), null, null);
+		}
+		
+		return true;
 	}
 
 	@SuppressWarnings("static-access")
@@ -312,7 +363,7 @@ public class IOService {
 			
 			try {
 				is = new info.guardianproject.iocipher.FileInputStream(file);
-				 
+				Log.d(LOG, "getting Stream (" + pathToData + ") available: " + is.available());
 			} catch (FileNotFoundException e) {
 				Log.d(LOG, "no, no bytes (" + pathToData + ")");
 				return null;
