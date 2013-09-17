@@ -51,7 +51,7 @@ public class GlobaleaksTransport extends Transport {
           mNotifyManager.notify(0, mBuilder.build());
           
 		submission = new GLSubmission();
-		submission.context_gus = repository.asset_root;
+		submission.context_gus = repository.asset_id;
 
 		transportStub.asset.key = "files";	// (?)
 
@@ -62,14 +62,7 @@ public class GlobaleaksTransport extends Transport {
 		
 		if(subResponse == null) {
 			
-			mBuilder
-		    .setContentText("Retrying upload again to: " + repository.asset_id)
-		    .setTicker("Retrying upload again to: " + repository.asset_id);
-		    
-		  mBuilder.setProgress(100, 0, false);
-			// Displays the progress bar for the first time.
-	          mNotifyManager.notify(0, mBuilder.build());
-	          
+	
 			
 			resend();
 		} else {
@@ -162,10 +155,6 @@ public class GlobaleaksTransport extends Transport {
 						
 						finishSuccessfully();
 					} else {
-						mBuilder
-					    .setContentText("Retrying upload again to: " + repository.asset_root)
-					    .setTicker("Retrying upload again to: " + repository.asset_root);
-					    
 						
 						resend();
 						
