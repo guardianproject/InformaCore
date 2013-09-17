@@ -3,6 +3,7 @@ package org.witness.informacam.transport;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +129,15 @@ public class GlobaleaksTransport extends Transport {
 		}
 		
 		return true;
+	}
+	
+	@Override
+	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
+		HttpURLConnection http = super.buildConnection(urlString, useTorProxy);
+		http.setRequestProperty("X-XSRF-TOKEN", "antani");
+		http.setRequestProperty("Cookie", "XSRF-TOKEN=antani;");
+		
+		return http;
 	}
 
 	@Override

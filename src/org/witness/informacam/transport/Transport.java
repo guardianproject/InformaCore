@@ -345,7 +345,7 @@ public class Transport extends IntentService {
 		return null;
 	}
 	
-	private HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
+	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
 		HttpURLConnection http = null;
 		Logger.d(LOG, "LETS CONNECT TO " + (urlString == null ? repository.asset_root : urlString));
 		
