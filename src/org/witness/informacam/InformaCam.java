@@ -274,11 +274,6 @@ public class InformaCam extends Application {
 			}
 			break;
 		case RUN:
-			java.io.File icDump = new java.io.File(Storage.EXTERNAL_DIR);
-			if(!icDump.exists()) {
-				icDump.mkdir();
-			}
-			
 			data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Home.INIT);
 			break;
 		}
@@ -799,6 +794,17 @@ public class InformaCam extends Application {
 	}
 	
 	public void setCredentialManager(CredentialManager credentialManager) {
+		java.io.File informaCamDump = new java.io.File(Storage.EXTERNAL_DIR);
+		if(!informaCamDump.exists()) {
+			informaCamDump.mkdir();
+		} else {
+			if(!informaCamDump.isDirectory()) {
+				informaCamDump.delete();
+				informaCamDump = new java.io.File(Storage.EXTERNAL_DIR);
+				informaCamDump.mkdir();
+			}
+		}
+		
 		this.credentialManager = credentialManager;
 		this.credentialManager.onResume();		
 	}
