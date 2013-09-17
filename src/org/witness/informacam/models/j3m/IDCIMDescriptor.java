@@ -72,6 +72,8 @@ public class IDCIMDescriptor extends Model {
 				}
 			}
 
+			String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
+			
 			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
 			cursor.close();
 

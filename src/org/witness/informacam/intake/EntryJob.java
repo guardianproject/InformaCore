@@ -271,11 +271,10 @@ public class EntryJob extends BackgroundTask {
 		java.io.File file = new java.io.File(entry.fileName);
 
 		if(!entry.isAvailable()) {
-			Logger.d(LOG, "ENTRY IS NULL!!!!!!!!  ABORTING?!");
 			entry = null;
 			return;
 		}
-
+		
 		entry.name = file.getName();
 		entry.size = file.length();
 		entry.timeCaptured = file.lastModified();	// Questionable...?
