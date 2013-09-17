@@ -208,7 +208,7 @@ public class Transport extends IntentService {
 		
 		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
 			useTorProxy = true;
-		
+				
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 			
 		try {
@@ -377,7 +377,7 @@ public class Transport extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Logger.d(LOG, "onHandleIntent called");
-				
+		
 		transportStub = (ITransportStub) intent.getSerializableExtra(Models.ITransportStub.TAG);
 		Log.d(LOG, "TRANSPORT:\n" + transportStub.asJson().toString()); 
 		
