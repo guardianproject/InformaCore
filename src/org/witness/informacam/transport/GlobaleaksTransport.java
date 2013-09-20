@@ -11,9 +11,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+
+import android.app.NotificationManager;
+import android.content.Context;
+import android.support.v4.app.NotificationCompat;
 
 public class GlobaleaksTransport extends Transport {
 	GLSubmission submission = null;
@@ -34,6 +39,17 @@ public class GlobaleaksTransport extends Transport {
 			return false;
 		}
 
+		NotificationManager mNotifyManager =
+		        (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
+		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
+		    .setContentText("Upload in progress to: " + repoName)
+		    .setTicker("Upload in progress")
+		    .setSmallIcon(android.R.drawable.ic_menu_upload);
+		  mBuilder.setProgress(100, 0, false);
+          // Displays the progress bar for the first time.
+          mNotifyManager.notify(0, mBuilder.build());
+          
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
 
@@ -45,11 +61,18 @@ public class GlobaleaksTransport extends Transport {
 		JSONObject subResponse = (JSONObject) doPost(submission, repository.asset_root + "/submission");
 		
 		if(subResponse == null) {
+			
+	
+			
 			resend();
 		} else {
 			try {
 				submission.inflate(subResponse);
 
+				  mBuilder.setProgress(100, 30, false);
+					// Displays the progress bar for the first time.
+			          mNotifyManager.notify(0, mBuilder.build());
+				
 				if(submission.submission_gus != null) {
 					if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
 						submission.finalize = true;
@@ -59,6 +82,11 @@ public class GlobaleaksTransport extends Transport {
 						} catch (JSONException e) {
 							Logger.e(LOG, e);
 						}
+						
+
+						  mBuilder.setProgress(100, 60, false);
+							// Displays the progress bar for the first time.
+					          mNotifyManager.notify(0, mBuilder.build());
 
 						JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
 						if(receivers != null) {
@@ -111,6 +139,15 @@ public class GlobaleaksTransport extends Transport {
 							if(submissionResult != null) {
 								submission.inflate(submissionResult);
 								Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());
+								
+								mBuilder
+							    .setContentText("Successful upload to: " + repository.asset_root)
+							    .setTicker("Successful upload to: " + repository.asset_root);
+							    mBuilder.setAutoCancel(true);
+								  mBuilder.setProgress(0, 0, false);
+									// Displays the progress bar for the first time.
+							          mNotifyManager.notify(0, mBuilder.build());
+								
 							}
 						} catch(Exception e) {
 							Logger.e(LOG, e);
@@ -118,7 +155,9 @@ public class GlobaleaksTransport extends Transport {
 						
 						finishSuccessfully();
 					} else {
+						
 						resend();
+						
 					}
 
 				}
