@@ -140,6 +140,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 		Log.d(LOG, "onCacheWordOpened()");
 		cacheWord.setTimeoutMinutes(-1);
 		
+		informaCam.initBroadcasters();
 		boolean hasIOCipher = !initIOCipher;
 		
 		if(initIOCipher) {

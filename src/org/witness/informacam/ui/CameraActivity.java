@@ -65,7 +65,6 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			Iterator<String> i = savedInstanceState.keySet().iterator();
 			while(i.hasNext()) {
 				String outState = i.next();
-				Log.d(LOG, "outstate: " + outState);
 				if(outState.equals(Camera.TAG) && savedInstanceState.getBoolean(Camera.TAG)) {
 					doInit = false;
 				}

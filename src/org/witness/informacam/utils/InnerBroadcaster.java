@@ -16,10 +16,20 @@ public class InnerBroadcaster extends BroadcastReceiver {
 	public IntentFilter intentFilter;
 	public int processId = -1;
 	public boolean isIntended = true;
+	
+	private boolean isMounted = false;
 
 	public InnerBroadcaster(IntentFilter intentFilter, int processId) {
 		this.intentFilter = intentFilter;
 		this.processId = processId;
+	}
+	
+	public void setMounted(boolean isMounted) {
+		this.isMounted = isMounted;
+	}
+	
+	public boolean isMounted() {
+		return isMounted;
 	}
 
 	@Override

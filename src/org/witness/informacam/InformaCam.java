@@ -118,6 +118,15 @@ public class InformaCam extends Application {
 		return mInstance;
 	}
 	
+	public void initBroadcasters() {
+		for(BroadcastReceiver br : broadcasters) {
+			if(!((InnerBroadcaster) br).isMounted()) {
+				((InnerBroadcaster) br).setMounted(true);
+				registerReceiver(br, ((InnerBroadcaster) br).intentFilter);
+			}
+		}
+	}
+	
 	
 	@Override
 	public void onCreate() {
@@ -137,6 +146,7 @@ public class InformaCam extends Application {
 				if(!isIntended) {
 					return;
 				}
+				
 				
 				if(intent.getAction().equals(Actions.ASSOCIATE_SERVICE)) {
 					int serviceCode = intent.getIntExtra(Codes.Keys.SERVICE, 0);
@@ -190,9 +200,7 @@ public class InformaCam extends Application {
 			}
 		});
 
-		for(BroadcastReceiver br : broadcasters) {
-			registerReceiver(br, ((InnerBroadcaster) br).intentFilter);
-		}
+		initBroadcasters();
 
 		informaServiceIntent = new Intent(this, InformaService.class);
 
@@ -208,7 +216,6 @@ public class InformaCam extends Application {
 				startup();
 			}
 		}.start();
-		
 		
 	}
 
@@ -233,7 +240,6 @@ public class InformaCam extends Application {
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
 				user.inflate(ubytes);
-				Logger.d(LOG, user.asJson().toString());
 				
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;
@@ -334,6 +340,7 @@ public class InformaCam extends Application {
 	public void shutdown() {
 		for(BroadcastReceiver br : broadcasters) {
 			try {
+				((InnerBroadcaster) br).setMounted(false);
 				unregisterReceiver(br);
 			} catch(IllegalArgumentException e) {
 				Logger.e(LOG, e);
@@ -751,8 +758,7 @@ public class InformaCam extends Application {
 				try {
 					ioService.saveBlob(data, asset);
 				} catch (IOException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+					Logger.e(LOG, e);
 				}
 			}
 			
@@ -772,8 +778,7 @@ public class InformaCam extends Application {
 				return Intent.createChooser(intent, getString(R.string.send));
 			}
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Logger.e(LOG, e);
 		}
 		
 		return null;
