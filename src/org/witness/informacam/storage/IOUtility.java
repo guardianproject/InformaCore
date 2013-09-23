@@ -1,5 +1,6 @@
 package org.witness.informacam.storage;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -220,36 +221,12 @@ public class IOUtility {
 	}
 
 	public final static Bitmap getBitmapFromFile(String pathToFile, int source) {
-		byte[] bytes = null;
-		Bitmap bitmap = null;
+		InputStream is = InformaCam.getInstance().ioService.getStream(pathToFile, source);
 
-		switch(source) {
-		case Type.IOCIPHER:
-			try {
-				info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToFile);
-				info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(file);
-
-				bytes = new byte[fis.available()];
-				fis.read(bytes);
-				fis.close();
-
-				BitmapFactory.Options opts = new BitmapFactory.Options();
-				opts.inPurgeable = true;
-				bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
-				bytes = null;
-			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-
-			break;
-		}
-
-		return bitmap;
-
+		BitmapFactory.Options opts = new BitmapFactory.Options();
+		opts.inPurgeable = true;
+		
+		return BitmapFactory.decodeStream(new BufferedInputStream(is), null, opts);
 	}
 
 	public static List<String> unzipFile (byte[] rawContent, String root, int destination) {
