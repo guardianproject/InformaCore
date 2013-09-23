@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.json.JSONException;
 import org.witness.informacam.informa.suckers.GeoSucker;
@@ -39,6 +40,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.util.Log;
 
 public class EntryJob extends BackgroundTask {
 	private static final long serialVersionUID = 3689090560752901928L;
@@ -46,13 +48,13 @@ public class EntryJob extends BackgroundTask {
 	boolean isThumbnail;
 
 	String parentId = null;
-	String informaCache = null;
+	String[] informaCache = null;
 	long timeOffset = 0L;
 	IDCIMEntry entry;
 
 	protected final static String LOG = "************************** EntryJob **************************";
 
-	public EntryJob(BackgroundProcessor backgroundProcessor, IDCIMEntry entry, String parentId, String informaCache, long timeOffset) {
+	public EntryJob(BackgroundProcessor backgroundProcessor, IDCIMEntry entry, String parentId, String[] informaCache, long timeOffset) {
 		super(backgroundProcessor);
 
 		this.entry = entry;
@@ -75,8 +77,7 @@ public class EntryJob extends BackgroundTask {
 					media._id = media.generateId(entry.originalHash);
 
 					media.associatedCaches = new ArrayList<String>();
-					media.associatedCaches.add(informaCache);
-
+					media.associatedCaches.addAll(Arrays.asList(informaCache));
 					media.genealogy = new IGenealogy();
 
 					media.genealogy.dateCreated = media.dcimEntry.timeCaptured + timeOffset;

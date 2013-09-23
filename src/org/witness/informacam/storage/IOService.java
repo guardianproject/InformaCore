@@ -187,11 +187,8 @@ public class IOService {
 			return false;
 		}
 		
-		Log.d(LOG, "touch (IOCipher) " + file.getAbsolutePath());
-		
-	
 		info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
-		
+		Log.d(LOG, "touch (IOCipher) " + file.getAbsolutePath() + " (b " + is.available() + ")");
 		
 		byte[] buf = new byte[1024];
 		int b;

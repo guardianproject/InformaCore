@@ -30,7 +30,7 @@ public class Intake extends IntentService {
 
 		IDCIMSerializable dcimDescriptor = ((IDCIMSerializable) intent.getSerializableExtra(Codes.Extras.RETURNED_MEDIA));
 		long timeOffset = intent.getLongExtra(Codes.Extras.TIME_OFFSET, 0L);
-		String cacheFile = intent.getStringExtra(Codes.Extras.INFORMA_CACHE);
+		String[] cacheFiles = intent.getStringArrayExtra(Codes.Extras.INFORMA_CACHE);
 		
 		String parentId = null;
 		if(intent.hasExtra(Codes.Extras.MEDIA_PARENT)) {
@@ -38,7 +38,7 @@ public class Intake extends IntentService {
 		}
 		
 		for(IDCIMEntry entry : dcimDescriptor.dcimList) {
-			queue.add(new EntryJob(queue, entry, parentId, cacheFile, timeOffset));
+			queue.add(new EntryJob(queue, entry, parentId, cacheFiles, timeOffset));
 			if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 				queue.numProcessing++;
 			}

@@ -286,7 +286,7 @@ public class Constants {
 		}
 
 		public final static class Accelerometer {
-			public final static long LOG_RATE = 500L;
+			public final static long LOG_RATE = 100L;
 			
 			public final static class Keys {
 				public static final String ACC = "acc";

@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -19,7 +21,6 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoHiResSucker;
-import org.witness.informacam.informa.suckers.GeoLowResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.j3m.ILocation;
@@ -70,8 +71,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public SensorLogger<PhoneSucker> _phone;
 	public SensorLogger<AccelerometerSucker> _acc;
 
-	private info.guardianproject.iocipher.File cacheFile;
-	private LoadingCache<Long, ILogPack> cache;
+	private info.guardianproject.iocipher.File cacheFile, cacheRoot;
+	private List<String> cacheFiles = new ArrayList<String>();
+	private LoadingCache<Long, ILogPack> cache = null;
+	
+	private final static long CACHE_MAX = 500;
+	private Timer cacheTimer;
+	
 	InformaCam informaCam;
 
 	Handler h = new Handler();
@@ -105,6 +111,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		for(BroadcastReceiver broadcaster : broadcasters) {
 			this.registerReceiver(broadcaster, ((InformaBroadcaster) broadcaster).intentFilter);
+		}
+		
+		cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
+		if(!cacheRoot.exists()) {
+			cacheRoot.mkdir();
 		}
 
 		initCache();
@@ -170,19 +181,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 				
 				onUpdate(((GeoSucker) _geo).forceReturn());
 				
-				info.guardianproject.iocipher.File cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
-				if(!cacheRoot.exists()) {
-					cacheRoot.mkdir();
-				}
-
-				try {
-					cacheFile = new info.guardianproject.iocipher.File(cacheRoot, MediaHasher.hash(new String(startTime + "_" + System.currentTimeMillis()).getBytes(), "MD5"));
-				} catch (NoSuchAlgorithmException e) {
-					Logger.e(LOG, e);
-				} catch (IOException e) {
-					Logger.e(LOG, e);
-				}
-				
 				try {
 					onUpdate(((PhoneSucker) _phone).forceReturn());
 				} catch (JSONException e) {
@@ -206,15 +204,36 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 	
 	public void flushCache(IMedia m) {
-		saveCache();
-		initCache();
-		
-		if(m != null) {
-			associateMedia(m);
-		}
+		saveCache(true, m);
 	}
 
 	private void initCache() {
+		try {
+			cacheFile = new info.guardianproject.iocipher.File(cacheRoot, MediaHasher.hash(new String(startTime + "_" + System.currentTimeMillis()).getBytes(), "MD5"));
+			cacheFiles.add(cacheFile.getAbsolutePath());
+		} catch (NoSuchAlgorithmException e) {
+			Logger.e(LOG, e);
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+		
+		cacheTimer = new Timer();
+		cacheTimer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				if(cache != null) {
+					
+					if(cache.size() >= CACHE_MAX) {
+						Log.d(LOG, "CACHE SIZE SO FAR: " + cache.size() + "\nSaving and restarting cache...");
+						saveCache(true, null);
+					}
+				}
+				
+			}
+			
+		}, 0, 4000L);
+		
 		startTime = System.currentTimeMillis();
 		cache = CacheBuilder.newBuilder()
 				.build(new CacheLoader<Long, ILogPack>() {
@@ -225,43 +244,58 @@ public class InformaService extends Service implements SuckerCacheListener {
 					}
 
 				});
+		
+	}
+	
+	private void saveCache() {
+		saveCache(false, null);
 	}
 
-	private void saveCache() {
-		ISuckerCache suckerCache = new ISuckerCache();
-		JSONArray cacheArray = new JSONArray();
+	private void saveCache(final boolean restartCache, final IMedia m) {		
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				ISuckerCache suckerCache = new ISuckerCache();
+				JSONArray cacheArray = new JSONArray();
 
-		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-		while(cIt.hasNext()) {
-			JSONObject cacheMap = new JSONObject();
-			Entry<Long, ILogPack> c = cIt.next();
-			try {
-				cacheMap.put(String.valueOf(c.getKey()), c.getValue());
-				cacheArray.put(cacheMap);
-			} catch(JSONException e) {
-				Logger.e(LOG, e);
+				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+				while(cIt.hasNext()) {
+					JSONObject cacheMap = new JSONObject();
+					Entry<Long, ILogPack> c = cIt.next();
+					try {
+						cacheMap.put(String.valueOf(c.getKey()), c.getValue());
+						cacheArray.put(cacheMap);
+					} catch(JSONException e) {
+						Logger.e(LOG, e);
+					}
+				}
+								
+				suckerCache.timeOffset = realStartTime;
+				suckerCache.cache = cacheArray;
+
+				informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
+
+				if(associatedMedia != null) {
+					IMedia media = informaCam.mediaManifest.getById(associatedMedia);
+					if(media.associatedCaches == null) {
+						media.associatedCaches = new ArrayList<String>();
+					}
+
+					if(!media.associatedCaches.contains(cacheFile.getAbsolutePath())) { 
+						media.associatedCaches.add(cacheFile.getAbsolutePath());
+					}
+
+					Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
+					media.save();
+				}
+				
+				if(m != null) {
+					associateMedia(m);
+				}
+				
+				InformaService.this.onCacheSaved(restartCache);
 			}
-		}
-
-		suckerCache.timeOffset = realStartTime;
-		suckerCache.cache = cacheArray;
-
-		informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
-
-		if(associatedMedia != null) {
-			IMedia media = informaCam.mediaManifest.getById(associatedMedia);
-			if(media.associatedCaches == null) {
-				media.associatedCaches = new ArrayList<String>();
-			}
-
-			if(!media.associatedCaches.contains(cacheFile.getAbsolutePath())) { 
-				media.associatedCaches.add(cacheFile.getAbsolutePath());
-			}
-
-			Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
-			media.save();
-		}
-		
+		}).start();		
 	}
 
 	@Override
@@ -486,6 +520,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public String getCacheFile() {
 		return cacheFile.getAbsolutePath();
 	}
+	
+	public List<String> getCacheFiles() {
+		return cacheFiles;
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -506,8 +544,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	@Override
 	public long onUpdate(ILogPack ILogPack) {
-		//long timestamp = ((GeoSucker) _geo).getTime();
-		// XXX: calculating time based off of inital time offset instead of querying sucker directly
 		long timestamp = getCurrentTime();
 		onUpdate(timestamp, ILogPack);
 		
@@ -545,5 +581,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		}
 
+	}
+
+	private void onCacheSaved(boolean restartCache) {
+		cacheTimer.cancel();
+		
+		if(restartCache) {
+			initCache();
+		}
 	}
 }

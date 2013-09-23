@@ -27,7 +27,6 @@ public class IDCIMDescriptor extends Model {
 	private long startTime = 0L;
 	private long timeOffset = 0L;
 	private String parentId = null;
-	private String cacheFile = null;
 
 	private final static String LOG = Storage.LOG;
 
@@ -95,7 +94,6 @@ public class IDCIMDescriptor extends Model {
 	public void startSession() {
 		InformaCam informaCam = InformaCam.getInstance();
 		timeOffset = informaCam.informaService.getTimeOffset();
-		cacheFile = informaCam.informaService.getCacheFile();
 		
 		Logger.d(LOG, "starting dcim session");
 	}
@@ -108,7 +106,10 @@ public class IDCIMDescriptor extends Model {
 			Intent intakeIntent = new Intent(informaCam, Intake.class);
 
 			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
-			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFile);
+			
+			List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));
+			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
 			if(parentId != null) {
 				intakeIntent.putExtra(Codes.Extras.MEDIA_PARENT, parentId);
