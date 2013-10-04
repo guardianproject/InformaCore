@@ -183,7 +183,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		h.post(new Runnable() {
 			@Override
 			public void run() {
-				informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId);
+				informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
 			}
 		});
 		

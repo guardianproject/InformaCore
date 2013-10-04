@@ -502,7 +502,7 @@ public class InformaCam extends Application {
 				bytes = ioService.getBytes(IManifest.FORMS, Type.IOCIPHER);
 			}
 
-			if(bytes != null) {
+			if(bytes != new byte[0]) {
 				model.inflate(bytes);
 			}
 

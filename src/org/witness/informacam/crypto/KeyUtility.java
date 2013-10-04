@@ -135,6 +135,8 @@ public class KeyUtility {
 			secretAuthToken = generatePassword(baseImageBytes);
 			keyStorePassword = generatePassword(baseImageBytes);
 			
+			// TODO: set up anonymization vector here
+			
 			baseImageBytes = null;
 
 			informaCam.ioService.initIOCipher(authToken);

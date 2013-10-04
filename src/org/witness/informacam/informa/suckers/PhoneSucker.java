@@ -138,6 +138,7 @@ public class PhoneSucker extends SensorLogger {
 	}
 	
 	public ILogPack forceReturn() throws JSONException {
+		// TODO: anonymize this value
 		ILogPack fr = new ILogPack(Phone.Keys.IMEI, getIMEI());
 		if(ba != null) {
 			fr.put(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, ba.getAddress());

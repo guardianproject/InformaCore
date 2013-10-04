@@ -20,6 +20,7 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
@@ -498,13 +499,9 @@ public class IOService {
 		vfs.unmount();
 	}
 	
-	public void startDCIMObserver(InformaCamEventListener listener) {
-		startDCIMObserver(listener, null);
-	}
-
-	public void startDCIMObserver(InformaCamEventListener listener, String parentId) {
+	public void startDCIMObserver(InformaCamEventListener listener, String parentId, ComponentName cameraComponent) {
 		InformaCam.getInstance().mediaManifest.setAllAsOld();
-		dcimObserver = new DCIMObserver(mContext, parentId);
+		dcimObserver = new DCIMObserver(mContext, parentId, cameraComponent);
 	}
 	
 	public IDCIMDescriptor getDCIMDescriptor() {

@@ -282,6 +282,7 @@ public class Constants {
 				public static final String VISIBLE_WIFI_NETWORKS = "visibleWifiNetworks";
 				public static final String BSSID = "bssid";
 				public static final String SSID = "ssid";
+				public static final String BLUETOOTH_DEVICE_REDACTED = "bluetoothDeviceRedacted";
 			}
 		}
 
@@ -384,11 +385,11 @@ public class Constants {
 
 		public class IMediaManifest {
 			public class Sort {
-				public final static int DATE_DESC = 1;
-				public final static int DATE_ASC = 4;
-				public final static int TYPE_PHOTO = 2;
-				public final static int TYPE_VIDEO = 3;
-				public final static int LOCATION = 0;
+				public final static int DATE_DESC = 0;
+				public final static int DATE_ASC = 3;
+				public final static int TYPE_PHOTO = 1;
+				public final static int TYPE_VIDEO = 2;
+				//public final static int LOCATION = 0;
 				public final static String IS_SHOWING = "isShowing";
 			}
 		}
@@ -606,6 +607,7 @@ public class Constants {
 		public static final String DEX = "dexDump";
 		public static final String LANG = "languageMap";
 		public static final String TRANSPORT = "transportManifest";
+		public static final String ANON = "userAnon";
 	}
 
 	public final static class App {
@@ -668,6 +670,7 @@ public class Constants {
 			public static final String ORGS_ROOT = "organizations";
 			public static final String LOG_DUMP = "iLogs";
 			public static final String ATTACHED_MEDIA = "attachedMedia";
+			public static final String DCIM = "/storage/extSdCard/DCIM/Camera";
 
 			public final static class Type {
 

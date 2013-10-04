@@ -162,9 +162,6 @@ public class IMediaManifest extends Model {
 				}
 			}
 			break;
-		case Models.IMediaManifest.Sort.LOCATION:
-			// TODO
-			return listMedia;
 		}
 		
 		return _listMedia;

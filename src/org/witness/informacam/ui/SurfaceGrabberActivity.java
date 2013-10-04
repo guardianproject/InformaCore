@@ -16,15 +16,19 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IUser;
 
 import android.app.Activity;
+import android.content.Context;
 import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -68,6 +72,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 		if(camera == null)
 			finish();
+		
+		setCameraDisplayOrientation();
 	}
 
 	@Override
@@ -168,4 +174,42 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	public void setCameraDisplayOrientation() 
+	{        
+	     if (camera == null)
+	     {
+	         return;             
+	     }
+
+	     Camera.CameraInfo info = new Camera.CameraInfo();
+	     for (int nCam = 0; nCam < Camera.getNumberOfCameras(); nCam++)
+	     {
+		     Camera.getCameraInfo(nCam, info);
+		     if (info.facing == CameraInfo.CAMERA_FACING_BACK)
+		    	 break;
+	     }
+
+	     WindowManager winManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+	     int rotation = winManager.getDefaultDisplay().getRotation();
+
+	     int degrees = 0;
+
+	     switch (rotation) 
+	     {
+	         case Surface.ROTATION_0: degrees = 0; break;
+	         case Surface.ROTATION_90: degrees = 90; break;
+	         case Surface.ROTATION_180: degrees = 180; break;
+	         case Surface.ROTATION_270: degrees = 270; break;
+	     }
+
+	     int result;
+	     if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) 
+	     {
+	         result = (info.orientation + degrees) % 360;
+	         result = (360 - result) % 360;  // compensate the mirror
+	     } else {  // back-facing
+	         result = (info.orientation - degrees + 360) % 360;
+	     }
+	     camera.setDisplayOrientation(result);
+	}
 }

@@ -28,6 +28,7 @@ public class INotification extends Model implements Serializable {
 	public int iconSource = Type.IOCIPHER;
 	public int type = 0;
 	public String _id = null;
+	public String mediaId = null;
 	public boolean taskComplete = true;
 	public boolean canRetry = false;
 	

@@ -112,11 +112,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public List<IForm> getForms(Activity a) {
 		IRegion region = getTopLevelRegion();
 		List<IForm> forms = new ArrayList<IForm>();
-		for(IForm form : region.associatedForms) {
-			byte[] answerBytes = InformaCam.getInstance().ioService.getBytes(form.answerPath, Type.IOCIPHER);
-			forms.add(new IForm(form, a, answerBytes));
+		if (region != null)	{
+			for(IForm form : region.associatedForms) {
+				byte[] answerBytes = InformaCam.getInstance().ioService.getBytes(form.answerPath, Type.IOCIPHER);
+				forms.add(new IForm(form, a, answerBytes));
+			}
 		}
-		
 		return forms;
 	}
 	
@@ -135,18 +136,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	public List<IRegion> getInnerLevelRegions() {
 		List<IRegion> innerLevelFormRegions = new ArrayList<IRegion>();
-		
-		for(IRegion region : associatedRegions) {
-			if(region.isInnerLevelRegion()) {
-				innerLevelFormRegions.add(region);
+		if (associatedRegions != null) {
+			for(IRegion region : associatedRegions) {
+				if(region.isInnerLevelRegion()) {
+					innerLevelFormRegions.add(region);
+				}
 			}
 		}
-		
 		return innerLevelFormRegions;
 	}
 
 	public IRegion getRegionAtRect() {
-		return getRegionAtRect(0, 0, 0, 0, 0, false);
+		return getRegionAtRect(0, 0, 0, 0, -1, false);
 	}
 
 	public IRegion getRegionAtRect(IRegionDisplay regionDisplay) {
@@ -512,6 +513,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			info.guardianproject.iocipher.File original = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
 
 			notification.generateId();
+			notification.mediaId = this._id;
+			
 			if(share) {
 				// create a java.io.file
 				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);

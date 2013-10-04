@@ -5,7 +5,6 @@ import info.guardianproject.cacheword.ICacheWordSubscriber;
 import info.guardianproject.cacheword.PassphraseSecrets;
 import info.guardianproject.cacheword.Wiper;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import javax.crypto.SecretKey;
