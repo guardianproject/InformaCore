@@ -570,18 +570,6 @@ public class InformaCam extends Application {
 		notificationsManifest.notifications.add(notification);
 		
 		saveState(notificationsManifest);
-		
-		// XXX: is this really what we want to declare here?
-		if(callback != null) {
-			Message msg = new Message();
-			Bundle msgData = new Bundle();
-			
-			msgData.putInt(Models.INotification.CLASS, Models.INotification.Type.NEW_KEY);
-			msgData.putInt(Models.INotification.ID, notificationsManifest.notifications.indexOf(notification));
-			msg.setData(msgData);
-			callback.sendMessage(msg);
-			
-		}
 	}
 
 	public void setListAdapterListener (ListAdapterListener lal)
@@ -787,7 +775,11 @@ public class InformaCam extends Application {
 	}
 	
 	public void resendCredentials(IOrganization organization) {
-		ITransportStub transportStub = new ITransportStub(organization);
+		INotification notification = new INotification(getResources().getString(R.string.key_sent), getResources().getString(R.string.you_have_sent_your_credentials_to_x, organization.organizationName), Models.INotification.Type.NEW_KEY);
+		notification.taskComplete = false;
+		addNotification(notification, null);
+		
+		ITransportStub transportStub = new ITransportStub(organization, notification);
 		transportStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
 		TransportUtility.initTransport(transportStub);
 	}
