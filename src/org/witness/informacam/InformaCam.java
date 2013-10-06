@@ -1,5 +1,7 @@
 package org.witness.informacam;
 
+import info.guardianproject.onionkit.ui.OrbotHelper;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -828,6 +830,15 @@ public class InformaCam extends Application {
 		}
 		
 		return false;
+	}
+	
+	public boolean isConnectedToTor() {
+		OrbotHelper oh = new OrbotHelper(this);
+		if(!oh.isOrbotInstalled() || !oh.isOrbotRunning()) {
+			return false;
+		}
+		
+		return true;
 	}
 	
 	public void startCron() {
