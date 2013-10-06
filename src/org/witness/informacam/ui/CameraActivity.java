@@ -46,8 +46,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		setContentView(R.layout.activity_camera_waiter);
 		
-		informaCam = (InformaCam)getApplication();
-		informaCam.setStatusListener(this);
+		informaCam = (InformaCam)getApplication();		
 		
 		h.post(new Runnable() {
 			@Override
@@ -128,7 +127,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	@Override
 	public void onResume() {
 		super.onResume();
-
+		informaCam.setStatusListener(this);
 	}
 
 	@Override
