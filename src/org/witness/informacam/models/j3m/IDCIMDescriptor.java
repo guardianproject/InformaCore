@@ -82,12 +82,10 @@ public class IDCIMDescriptor extends Model {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					if (informaCam.informaService != null && informaCam.informaService._geo != null) {
-						do {
-							entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
-							Log.d(LOG, "exif location: " + entry.exif.location[0] + ", " + entry.exif.location[1]);
-						} while(Arrays.equals(entry.exif.location, new float[] {0.0f, 0.0f}));
-					}
+					do {
+						entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
+						Log.d(LOG, "exif location: " + entry.exif.location[0] + ", " + entry.exif.location[1]);
+					} while(Arrays.equals(entry.exif.location, new float[] {0.0f, 0.0f}) && (informaCam.informaService != null && informaCam.informaService._geo != null));
 				}
 			}).start();
 			cursor.close();
