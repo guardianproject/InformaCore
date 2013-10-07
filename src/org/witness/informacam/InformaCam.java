@@ -504,7 +504,7 @@ public class InformaCam extends Application {
 				bytes = ioService.getBytes(IManifest.FORMS, Type.IOCIPHER);
 			}
 
-			if(bytes != new byte[0]) {
+			if(!Arrays.equals(bytes, new byte[0])) {
 				model.inflate(bytes);
 			}
 
@@ -718,6 +718,7 @@ public class InformaCam extends Application {
 	public void onTerminate() {
 		super.onTerminate();
 		
+		Logger.d(LOG, "InformaCam (Application) is terminating.");
 		this.shutdown();
 		credentialManager.logout();
 		
@@ -735,7 +736,7 @@ public class InformaCam extends Application {
 	
 	public void importAsset(String assetPath, String destinationPath, int assetSource, int destinationSource, Model model) {
 		byte[] data = ioService.getBytes(assetPath, assetSource);
-		if(data != null) {
+		if(!Arrays.equals(data, new byte[0])) {
 			if(model != null) {
 				model.inflate(data);
 			}

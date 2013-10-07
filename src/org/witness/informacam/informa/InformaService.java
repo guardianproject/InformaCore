@@ -305,9 +305,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 		saveCache();
 
 		try {
-			_geo.getSucker().stopUpdates();
 			_phone.getSucker().stopUpdates();
 			_acc.getSucker().stopUpdates();
+			_geo.getSucker().stopUpdates();
 		} catch(NullPointerException e) {
 			e.printStackTrace();
 		}

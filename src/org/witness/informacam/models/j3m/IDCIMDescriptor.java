@@ -2,6 +2,7 @@ package org.witness.informacam.models.j3m;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
@@ -18,6 +19,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore.MediaColumns;
+import android.util.Log;
 
 @SuppressLint("DefaultLocale")
 public class IDCIMDescriptor extends Model {	
@@ -27,6 +29,7 @@ public class IDCIMDescriptor extends Model {
 	private long startTime = 0L;
 	private long timeOffset = 0L;
 	private String parentId = null;
+	private InformaCam informaCam = InformaCam.getInstance();
 
 	private final static String LOG = Storage.LOG;
 
@@ -40,7 +43,7 @@ public class IDCIMDescriptor extends Model {
 	}
 
 	public void addEntry(Uri authority, boolean isThumbnail) {
-		IDCIMEntry entry = new IDCIMEntry();
+		final IDCIMEntry entry = new IDCIMEntry();
 		entry.authority = authority.toString();
 		
 		String sortBy = "date_added DESC";
@@ -74,6 +77,19 @@ public class IDCIMDescriptor extends Model {
 			String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
 			
 			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
+			entry.exif = new IExif();
+
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					if (informaCam.informaService != null && informaCam.informaService._geo != null) {
+						do {
+							entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
+							Log.d(LOG, "exif location: " + entry.exif.location[0] + ", " + entry.exif.location[1]);
+						} while(Arrays.equals(entry.exif.location, new float[] {0.0f, 0.0f}));
+					}
+				}
+			}).start();
 			cursor.close();
 
 			if(!isThumbnail) {

@@ -1,5 +1,6 @@
 package org.witness.informacam.informa.suckers;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.TimerTask;
 
@@ -105,7 +106,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 				location = new double[] {l.getLatitude(), l.getLongitude()};
 				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
 
-				if(location == isNull) {
+				if(Arrays.equals(location, isNull)) {
 					continue;
 				} else {
 					break;

@@ -1,9 +1,12 @@
 package org.witness.informacam.models.j3m;
 
+import java.io.Serializable;
+
 import org.witness.informacam.models.Model;
 
-public class IExif extends Model {
-
+public class IExif extends Model implements Serializable {
+	private static final long serialVersionUID = 3982862461387724113L;
+	
 	public String aperture = null;
 	public String make = null;
 	public String model = null;
@@ -21,6 +24,13 @@ public class IExif extends Model {
 	public long duration = 0L;
 	public float[] location = new float[] {0.0f, 0.0f};
 	
+	public IExif() {
+		super();
+	}
 	
+	public IExif(IExif exif) {
+		super();
+		inflate(exif);
+	}
 
 }

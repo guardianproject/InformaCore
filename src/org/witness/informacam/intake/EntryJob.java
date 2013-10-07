@@ -120,8 +120,6 @@ public class EntryJob extends BackgroundTask {
 						InformaCamEventListener mListener = informaCam.getEventListener();
 						if (mListener != null) {
 							mListener.onUpdate(message);
-						} else {
-							Logger.d(LOG, "I GUESS THE MLISTENER IS NULL");
 						}
 					}
 
@@ -141,31 +139,6 @@ public class EntryJob extends BackgroundTask {
 	}
 
 	private void parseExif() {
-		entry.exif = new IExif();
-
-		if (informaCam.informaService != null && informaCam.informaService._geo != null)
-		{
-			ILogPack logpack = ((GeoSucker) informaCam.informaService._geo).forceReturn();
-
-			if (logpack != null)
-			{
-				try {
-					entry.exif.location = Model.parseJSONAsFloatArray(logpack.getString(Geo.Keys.GPS_COORDS));
-				} catch (JSONException e) {
-					Logger.e(LOG, e);
-
-				} catch(NullPointerException e) {
-					Logger.e(LOG, e);
-					entry.exif.location = new float[] {0f,0f};
-				}
-			}
-			else
-			{
-
-				entry.exif.location = new float[] {0f,0f};
-			}
-		}
-
 		if(entry.mediaType.equals(MimeType.IMAGE)) {
 			try {
 				ExifInterface ei = new ExifInterface(entry.fileName);

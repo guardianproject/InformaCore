@@ -7,10 +7,12 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
+import android.util.Log;
 
 public class IVideoRegion extends IRegion {
 	public List<IVideoTrail> trail = null;
-	public int timestampInQuestion = 0;
+	
+	private long timestampInQuestion = 0;
 
 	private IRegionDisplayListener mListener;
 	
@@ -54,8 +56,14 @@ public class IVideoRegion extends IRegion {
 		return getBoundsAtTime(timestampInQuestion);
 	}
 	
+	public void setTimestampInQuestion(long timestamp) {
+		timestampInQuestion = timestamp;
+	}
+	
 	public IRegionBounds getBoundsAtTime(long timestamp) {
 		// TODO: is this really going to work?
+		Log.d(LOG, "TIMESTAMP : " + timestamp);
+		
 		if(trail != null) {
 			int t = 0;
 			for(IVideoTrail v : trail) {
@@ -68,6 +76,7 @@ public class IVideoRegion extends IRegion {
 				t++;
 			}
 		}
-		return null;
+		
+		return trail.get(0).bounds;
 	}
 }
