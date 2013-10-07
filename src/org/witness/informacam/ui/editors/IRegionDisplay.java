@@ -20,8 +20,10 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	Drawable activeD, inactiveD;
 	LayoutParams lp;
 	
+	public int indexOnScreen = -1;
 	public IRegionBounds bounds;
 	boolean isActive, isDragging;
+	
 	public IRegion parent;
 	
 	private final static String LOG = App.LOG;
@@ -48,10 +50,14 @@ public class IRegionDisplay extends ImageView implements OnClickListener {
 	}
 	
 	public void update() {
-		Log.d(LOG, "new bounds left: " + bounds.displayLeft + " and top: " + bounds.displayTop);
+		update(bounds.displayLeft, bounds.displayTop);
+	}
+	
+	public void update(int displayLeft, int displayTop) {
+		Log.d(LOG, "new bounds left: " + displayLeft + " and top: " + displayTop);
 		lp = (LayoutParams) getLayoutParams();
-		lp.leftMargin = bounds.displayLeft;
-		lp.topMargin = bounds.displayTop;
+		lp.leftMargin = displayLeft;
+		lp.topMargin = displayTop;
 		setLayoutParams(lp);
 		setImageDrawable(d);
 	}

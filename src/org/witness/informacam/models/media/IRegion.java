@@ -15,6 +15,7 @@ import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
+import android.view.View;
 
 public class IRegion extends Model {
 	public String id = null;
@@ -54,7 +55,7 @@ public class IRegion extends Model {
 			
 			try {
 				byte[] idBytes = new String(System.currentTimeMillis() + new String(Constants.App.Crypto.REGION_SALT)).getBytes();
-				this.id = MediaHasher.hash(idBytes, "MD5");
+				id = MediaHasher.hash(idBytes, "MD5");
 			} catch (NoSuchAlgorithmException e) {
 				Logger.e(LOG, e);
 			} catch (IOException e) {
@@ -115,7 +116,7 @@ public class IRegion extends Model {
 	public IRegionDisplay getRegionDisplay() {
 		return regionDisplay;
 	}
-
+	
 	public void update(Activity a) {
 		InformaCam informaCam = InformaCam.getInstance();
 		

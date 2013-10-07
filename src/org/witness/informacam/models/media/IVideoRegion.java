@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
+import org.witness.informacam.utils.Constants.Logger;
 
 import android.app.Activity;
 import android.util.Log;
@@ -28,6 +29,8 @@ public class IVideoRegion extends IRegion {
 	@Override
 	public void init(Activity context, IRegionBounds bounds, IRegionDisplayListener listener) {
 		trail = new ArrayList<IVideoTrail>();
+		Log.d(LOG, "start time: " + bounds.startTime);
+		
 		IVideoTrail v = new IVideoTrail(bounds.startTime, bounds);		
 		trail.add(v);
 		mListener = listener;
@@ -61,22 +64,24 @@ public class IVideoRegion extends IRegion {
 	}
 	
 	public IRegionBounds getBoundsAtTime(long timestamp) {
-		// TODO: is this really going to work?
+		// TODO: TreeSet logic...
 		Log.d(LOG, "TIMESTAMP : " + timestamp);
+		Log.d(LOG, "startTime: " + bounds.startTime);
+		Log.d(LOG, "endTime: " + bounds.endTime);
 		
 		if(trail != null) {
 			int t = 0;
 			for(IVideoTrail v : trail) {
+				Log.d(LOG, "TRAIL:\n" + v.asJson().toString());
+				
 				if(v.timestamp == timestamp) {
 					return v.bounds;
-				} else if(v.timestamp > timestamp) {
-					return trail.get(t - 1).bounds;
 				}
 				
 				t++;
 			}
 		}
 		
-		return trail.get(0).bounds;
+		return null;
 	}
 }
