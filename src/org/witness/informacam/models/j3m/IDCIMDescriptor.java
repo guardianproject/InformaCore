@@ -77,19 +77,6 @@ public class IDCIMDescriptor extends Model {
 			String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
 			
 			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
-			entry.exif = new IExif();
-
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					do {
-						entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
-						Log.d(LOG, "exif location: " + entry.exif.location[0] + ", " + entry.exif.location[1]);
-					} while(Arrays.equals(entry.exif.location, new float[] {0.0f, 0.0f}) && (informaCam.informaService != null && informaCam.informaService._geo != null));
-				}
-			}).start();
-			cursor.close();
-
 			if(!isThumbnail) {
 				IDCIMEntry clone = new IDCIMEntry(entry);
 
@@ -97,12 +84,23 @@ public class IDCIMDescriptor extends Model {
 					shortDescription.add(clone);
 				}
 			}
+			cursor.close();
+			
+			entry.exif = new IExif();
+			synchronized(entry) {
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						do {
+							entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
+							Log.d(LOG, "exif location: " + entry.exif.location[0] + ", " + entry.exif.location[1]);
+						} while(Arrays.equals(entry.exif.location, new float[] {0.0f, 0.0f}) && (informaCam.informaService != null && informaCam.informaService._geo != null));
+					}
+				}).start();
 
-			intakeList.add(entry);
-
+				intakeList.add(entry);
+			}
 		}
-
-
 	}
 
 	public void startSession() {
