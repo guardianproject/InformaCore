@@ -562,14 +562,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 			if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
 				try {
 					BluetoothDevice bd = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					// TODO: anonymize this value
-					ILogPack ILogPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());
-					
-					ILogPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());
-					
-					// TODO: anonymize this value
-					ILogPack.put(Phone.Keys.BLUETOOTH_DEVICE_REDACTED, bd.getAddress());
-					onUpdate(ILogPack);
+					ILogPack logPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());					
+					logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());					
+					onUpdate(logPack);
 
 				} catch(JSONException e) {}
 
