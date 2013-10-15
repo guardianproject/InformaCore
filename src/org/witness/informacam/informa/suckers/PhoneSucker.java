@@ -7,6 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.Constants.Suckers;
 
@@ -72,7 +73,11 @@ public class PhoneSucker extends SensorLogger {
 			public void run() {
 				if(getIsRunning()) {
 					try {
-						sendToBuffer(new ILogPack(Phone.Keys.CELL_ID, getCellId()));
+						ILogPack logPack = new ILogPack(Phone.Keys.CELL_ID, getCellId());
+						logPack.put(Phone.Keys.LAC, getLAC());
+						logPack.put(Phone.Keys.MCC, getMCC());
+						logPack.put(Phone.Keys.MNC, getMNC());
+						sendToBuffer(logPack);
 						
 						// find other bluetooth devices around
 						if(hasBluetooth && !ba.isDiscovering())
@@ -86,6 +91,9 @@ public class PhoneSucker extends SensorLogger {
 							
 						
 					} catch(NullPointerException e) {}
+					catch (JSONException e) {
+						Logger.e(LOG, e);
+					}
 				}
 			}
 		});
@@ -93,13 +101,39 @@ public class PhoneSucker extends SensorLogger {
 		getTimer().schedule(getTask(), 0, Phone.LOG_RATE);
 	}
 	
-	public String getIMEI() {
+	private String getLAC() {
 		try {
-			return tm.getDeviceId();
+			if(tm.getPhoneType() == TelephonyManager.PHONE_TYPE_GSM) {
+				GsmCellLocation gLoc = (GsmCellLocation) tm.getCellLocation();
+				if(gLoc != null) {
+					return Integer.toString(gLoc.getLac());
+				}
+			}
 		} catch(NullPointerException e) {
-			Log.e(LOG,"getIMEI error",e);
-			return null;
+			Logger.e(LOG, e);
 		}
+		
+		return null;
+	}
+	
+	private String getMCC() {
+		try {
+			return tm.getNetworkOperator().substring(0, 3);
+		} catch(NullPointerException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
+	}
+	
+	private String getMNC() {
+		try {
+			return tm.getNetworkOperator().substring(3);
+		} catch(NullPointerException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
 	}
 	
 	private String getCellId() {	
@@ -148,6 +182,21 @@ public class PhoneSucker extends SensorLogger {
 		String cId = getCellId() ;
 		if(cId != null) {
 			fr.put(Phone.Keys.CELL_ID, cId);
+		}
+		
+		String lac = getLAC();
+		if(lac != null) {
+			fr.put(Phone.Keys.LAC, lac);
+		}
+		
+		String mcc = getMCC();
+		if(mcc != null) {
+			fr.put(Phone.Keys.MCC, mcc);
+		}
+		
+		String mnc = getMNC();
+		if(mnc != null) {
+			fr.put(Phone.Keys.MCC, mnc);
 		}
 		
 		return fr;
