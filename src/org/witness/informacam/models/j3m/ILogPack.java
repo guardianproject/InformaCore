@@ -14,13 +14,17 @@ import android.util.Log;
 public class ILogPack extends Model {
 	public List<Integer> captureTypes = null;
 
-	public ILogPack() {}
+	public ILogPack() {
+		super();
+	}
 	
 	public ILogPack(String key, Object value) {
 		this(key, value, false);
 	}
 
 	public ILogPack(String key, Object value, boolean isCaptureEvent) {
+		super();
+		
 		if(isCaptureEvent) {
 			if(captureTypes == null) {
 				captureTypes = new ArrayList<Integer>();

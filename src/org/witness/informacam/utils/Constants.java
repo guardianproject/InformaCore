@@ -283,6 +283,9 @@ public class Constants {
 				public static final String BSSID = "bssid";
 				public static final String SSID = "ssid";
 				public static final String BLUETOOTH_DEVICE_REDACTED = "bluetoothDeviceRedacted";
+				public static final String LAC = "LAC";
+				public static final String MCC = "MCC";
+				public static final String MNC = "MNC";
 			}
 		}
 
