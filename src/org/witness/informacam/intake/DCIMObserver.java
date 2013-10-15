@@ -223,6 +223,9 @@ public class DCIMObserver {
 
 		@Override
 		public void onChange(boolean selfChange, Uri uri) {
+			// we don't need the coords now, but let's ping the informa service to update its location
+			informaCam.informaService.getCurrentLocation();
+			
 			if(uri != null) {
 				Log.d(LOG, "ON CHANGE CALLED (with URI!)");
 			}
