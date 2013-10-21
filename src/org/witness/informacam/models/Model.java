@@ -263,7 +263,12 @@ public class Model extends JSONObject {
 
 				if(f.getType() == List.class) {
 					JSONArray subValue = new JSONArray();
-					for(Object v : (List<?>) value) {
+					
+					Iterator it = ((List<?>) value).iterator();
+					
+					while (it.hasNext()){
+						Object v = it.next();
+						
 						if(v instanceof Model) {
 							subValue.put(((Model) v).asJson());
 						} else {
