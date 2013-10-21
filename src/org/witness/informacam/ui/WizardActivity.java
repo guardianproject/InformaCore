@@ -9,6 +9,7 @@ import java.util.Vector;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.notifications.INotification;
@@ -22,13 +23,13 @@ import org.witness.informacam.ui.screens.WizardStepTwo;
 import org.witness.informacam.ui.screens.WizardStepZero;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
+import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.WizardListener;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.app.Activity;
 import android.content.Context;
@@ -235,8 +236,16 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		
 		informaCam.saveState(informaCam.user);
 		informaCam.saveState(informaCam.languageMap);
-		informaCam.initData();
 		
+		try
+		{
+			informaCam.initData();
+		}
+		catch (PGPException re)
+		{
+			throw new RuntimeException("Could not init PGP data",re);
+		}
+				
 		try {
 			for(String s : informaCam.getAssets().list("includedOrganizations")) {
 				

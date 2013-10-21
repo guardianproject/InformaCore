@@ -9,14 +9,15 @@ import java.security.GeneralSecurityException;
 
 import javax.crypto.SecretKey;
 
+import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.ICredentials;
-import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.Actions;
+import org.witness.informacam.utils.Constants.App.Crypto;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.content.Context;
 import android.content.Intent;
@@ -137,6 +138,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 	@Override
 	public void onCacheWordOpened() {
 		Log.d(LOG, "onCacheWordOpened()");
+		
 		cacheWord.setTimeoutMinutes(-1);
 		
 		informaCam.initBroadcasters();
@@ -158,12 +160,18 @@ public class CredentialManager implements ICacheWordSubscriber {
 		}
 		
 		if(hasIOCipher) {
-			informaCam.initData();
-			informaCam.user.inflate(informaCam.ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
-			
-			this.status = Codes.Status.UNLOCKED;
-			update(Codes.Messages.Home.INIT);
-			
+			try
+			{
+				informaCam.initData();
+				informaCam.user.inflate(informaCam.ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
+				
+				this.status = Codes.Status.UNLOCKED;
+				update(Codes.Messages.Home.INIT);
+			}
+			catch (PGPException pge)
+			{
+				throw new RuntimeException("Could not initialize pgp secret key",pge);
+			}
 			/*
 			informaCam.user.isLoggedIn = true;
 			informaCam.user.lastLogIn = System.currentTimeMillis();

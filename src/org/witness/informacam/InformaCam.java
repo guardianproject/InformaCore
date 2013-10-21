@@ -292,12 +292,9 @@ public class InformaCam extends Application {
 		sendBroadcast(intent);
 	}
 	
-	public void initData() {
-		try {
-			signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
-		} catch (PGPException e) {
-			Logger.e(LOG, e);
-		}
+	public void initData() throws PGPException {
+		
+		signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
 		
 		mediaManifest = (IMediaManifest) getModel(mediaManifest);
 		if(mediaManifest.getMediaList().size() > 0) {
