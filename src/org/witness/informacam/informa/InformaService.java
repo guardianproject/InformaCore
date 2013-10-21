@@ -17,6 +17,7 @@ import java.util.concurrent.Future;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
@@ -107,6 +108,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@Override
 	public void onCreate() {
 		Log.d(LOG, "started.");
+		
+		if (Debug.WAIT_FOR_DEBUGGER)
+			android.os.Debug.waitForDebugger();
+		
 		informaCam =  (InformaCam)getApplication();
 
 		for(BroadcastReceiver broadcaster : broadcasters) {

@@ -49,6 +49,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
+import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
 	
@@ -251,8 +252,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public void save() {		
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.mediaManifest.getById(_id).inflate(asJson());
-
 		informaCam.saveState(informaCam.mediaManifest);
+	
 	}
 
 	public boolean rename(String alias) {
@@ -380,6 +381,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				try {
 					// get the data and loop through capture types
 					byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
+					
+					if (c == null)
+					{
+						Log.d(LOG,"cache was null: " + ac);
+						continue;
+					}
 					JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
 
 					for(int i=0; i<cache.length(); i++) {
