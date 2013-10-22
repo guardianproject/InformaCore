@@ -62,7 +62,17 @@ public class IRegion extends Model {
 				Logger.e(LOG, e);
 			}
 			
+			InformaCam.getInstance().startInforma();
+			
+			while (InformaCam.getInstance().informaService == null)
+			{
+				try {Thread.sleep(300);}
+				catch(Exception e){}
+				
+			}
+			
 			InformaCam.getInstance().informaService.addRegion(this);
+			InformaCam.getInstance().stopInforma();
 		}
 	}
 	
