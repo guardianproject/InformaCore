@@ -50,7 +50,10 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	}
 	
 	public long getTime() {
-		return mLastLocation.getTime();
+		if (mLastLocation != null)
+			return mLastLocation.getTime();
+		else
+			return 0;
 	}
 	
 	public double[] updateLocation() {
