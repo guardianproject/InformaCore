@@ -21,6 +21,7 @@ import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
+import org.witness.informacam.informa.suckers.GeoFusedSucker;
 import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
@@ -125,7 +126,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		initCache();
 
-		_geo = new GeoHiResSucker(this);
+		_geo = new GeoFusedSucker(this);
 		_geo.setSuckerCacheListener(this);
 		
 		_phone = new PhoneSucker(this);
