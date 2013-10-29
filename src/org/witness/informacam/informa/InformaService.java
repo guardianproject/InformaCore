@@ -1,5 +1,7 @@
 package org.witness.informacam.informa;
 
+import info.guardianproject.iocipher.VirtualFileSystem;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -22,7 +24,6 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.GeoFusedSucker;
-import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.j3m.ILocation;
@@ -164,14 +165,23 @@ public class InformaService extends Service implements SuckerCacheListener {
 		h.post(new Runnable() {
 			@Override
 			public void run() {
+				
+				if (_geo == null || _phone == null)
+					return; //suckers are not init'd
+				
 				startTime = System.currentTimeMillis();
-				long currentTime = ((GeoSucker) _geo).getTime();				
+				long currentTime = 0;
+				
+				currentTime = ((GeoSucker) _geo).getTime();				
 				
 				if(currentTime != 0) {
 					realStartTime = currentTime;					
 				}
 								
-				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
+				double[] currentLocation = null;
+				
+				currentLocation = ((GeoSucker) _geo).updateLocation();
+				
 				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
 
@@ -184,7 +194,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 					
 				}
 
-				
 				onUpdate(((GeoSucker) _geo).forceReturn());
 				
 				try {
