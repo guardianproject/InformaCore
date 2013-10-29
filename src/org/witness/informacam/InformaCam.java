@@ -209,15 +209,7 @@ public class InformaCam extends Application {
 		signatureService = new SignatureService(InformaCam.this);
 		ioService = new IOService(InformaCam.this);
 		
-		new Thread ()
-		{
-			
-			public void run ()
-			{
-		
-				startup();
-			}
-		}.start();
+		startup();
 		
 	}
 
