@@ -114,9 +114,19 @@ public class IVideoRegion extends IRegion {
 					return videoTrail.timestamp < timestamp;
 				}
 			});
-			Log.d(LOG, "lower end size: " + lowerEnd.size());
-			lower = Iterables.getLast(lowerEnd);
-			Log.d(LOG, "LOWER:\n" + lower.asJson().toString());
+			
+			try
+			{
+				Log.d(LOG, "lower end size: " + lowerEnd.size());
+				lower = Iterables.getLast(lowerEnd);
+				Log.d(LOG, "LOWER:\n" + lower.asJson().toString());
+			}
+			catch (NoSuchElementException e)
+			{
+				Log.d(LOG, "lower end size not found",e);
+				lower = new IVideoTrail();
+				
+			}
 			
 			Collection<IVideoTrail> higherEnd = Collections2.filter(trail, new Predicate<IVideoTrail>() {
 
