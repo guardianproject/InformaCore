@@ -1,11 +1,14 @@
 package org.witness.informacam.models.media;
 
+import info.guardianproject.iocipher.FileOutputStream;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -433,7 +436,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return export(context, h, organization, false);
 	}
 
-	@SuppressWarnings("unused")
 	public boolean export(Context context, Handler h, IOrganization organization, boolean share) {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
@@ -583,7 +585,128 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	
+	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) {
+		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		System.gc();
+		
+		responseHandler = h;
+		int progress = 0;
+		InformaCam informaCam = InformaCam.getInstance();
+
+		INotification notification = new INotification();
+		notification.icon = bitmapThumb;
+
+		// create data package
+		if(data == null) {
+			data = new IData();
+		}
+		data.exif = dcimEntry.exif;
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeSensorLogs();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeData();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeGenealogyAndIntent();
+		progress += 20;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		notification.label = context.getString(R.string.export);
+
+		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
+		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
+			mimeType = context.getString(R.string.log);
+		}
+
+		notification.content = context.getString(R.string.you_exported_this_x, mimeType);
+		if(organization != null) {
+			intent.intendedDestination = organization.organizationName;
+			notification.content = context.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
+		}
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		JSONObject j3mObject = null;
+		try {
+			j3mObject = new JSONObject();
+			JSONObject j3m = new JSONObject();
+			
+			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			
+			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
+			
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
+			
+			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+			
+			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
+
+			byte[] j3mBytes = j3mObject.toString().getBytes();
+
+			informaCam.ioService.saveBlob(j3mBytes, j3mFile);
+			progress += 10;
+			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + ".txt"; //txt = text file for J3M JSON DATA
+
+			notification.generateId();
+			notification.mediaId = this._id;
+			
+			if(share) {
+				// create a java.io.file
+				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);
+								
+				IOUtils.write(j3mBytes, new java.io.FileOutputStream(shareFile));
+				
+				notification.type = Models.INotification.Type.SHARED_MEDIA;				
+				informaCam.addNotification(notification, responseHandler);
+				
+				onMetadataEmbeded(shareFile);
+				
+			} else {
+				// create a iocipher file
+				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
+				
+				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
+				ITransportStub submission = null; 
+
+				if(organization != null) {
+					notification.taskComplete = false;
+					informaCam.addNotification(notification, responseHandler);
+					
+					IOUtils.write(j3mBytes, new FileOutputStream(exportFile));
+					
+					submission = new ITransportStub(organization, notification);
+					
+					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), "application/json");
+				}
+
+				
+			}
+			progress += 10;
+			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+			return false;
+		} catch (ConcurrentModificationException e) {
+			Logger.e(LOG, e);
+			return false;
+		}
+		catch (IOException e) {
+			Logger.e(LOG, e);
+			return false;
+		}
+
+		return true;
+	}
 	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
