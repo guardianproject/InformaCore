@@ -116,9 +116,17 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		informaCam =  (InformaCam)getApplication();
 
+		if (informaCam.ioService == null || (!informaCam.ioService.isMounted()))
+		{
+			//this seems like an auto-restart; we should stop
+			stopSelf();
+			return;
+		}
+		
 		for(BroadcastReceiver broadcaster : broadcasters) {
 			this.registerReceiver(broadcaster, ((InformaBroadcaster) broadcaster).intentFilter);
 		}
+		
 		
 		cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
 		if(!cacheRoot.exists()) {
@@ -266,51 +274,59 @@ public class InformaService extends Service implements SuckerCacheListener {
 		saveCache(false, null);
 	}
 
-	private void saveCache(final boolean restartCache, final IMedia m) {		
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				ISuckerCache suckerCache = new ISuckerCache();
-				JSONArray cacheArray = new JSONArray();
-
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				while(cIt.hasNext()) {
-					JSONObject cacheMap = new JSONObject();
-					Entry<Long, ILogPack> c = cIt.next();
-					try {
-						cacheMap.put(String.valueOf(c.getKey()), c.getValue());
-						cacheArray.put(cacheMap);
-					} catch(JSONException e) {
-						Logger.e(LOG, e);
+	private Thread mThread = null;
+	
+	private void saveCache(final boolean restartCache, final IMedia m) {	
+		
+		if (mThread == null || (!mThread.isAlive()))
+		{
+			mThread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					ISuckerCache suckerCache = new ISuckerCache();
+					JSONArray cacheArray = new JSONArray();
+	
+					Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+					while(cIt.hasNext()) {
+						JSONObject cacheMap = new JSONObject();
+						Entry<Long, ILogPack> c = cIt.next();
+						try {
+							cacheMap.put(String.valueOf(c.getKey()), c.getValue());
+							cacheArray.put(cacheMap);
+						} catch(JSONException e) {
+							Logger.e(LOG, e);
+						}
 					}
-				}
-								
-				suckerCache.timeOffset = realStartTime;
-				suckerCache.cache = cacheArray;
-
-				informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
-
-				if(associatedMedia != null) {
-					IMedia media = informaCam.mediaManifest.getById(associatedMedia);
-					if(media.associatedCaches == null) {
-						media.associatedCaches = new ArrayList<String>();
+									
+					suckerCache.timeOffset = realStartTime;
+					suckerCache.cache = cacheArray;
+	
+					informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
+	
+					if(associatedMedia != null) {
+						IMedia media = informaCam.mediaManifest.getById(associatedMedia);
+						if(media.associatedCaches == null) {
+							media.associatedCaches = new ArrayList<String>();
+						}
+	
+						if(!media.associatedCaches.contains(cacheFile.getAbsolutePath())) { 
+							media.associatedCaches.add(cacheFile.getAbsolutePath());
+						}
+	
+						Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
+						media.save();
 					}
-
-					if(!media.associatedCaches.contains(cacheFile.getAbsolutePath())) { 
-						media.associatedCaches.add(cacheFile.getAbsolutePath());
+					
+					if(m != null) {
+						associateMedia(m);
 					}
-
-					Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
-					media.save();
+					
+					InformaService.this.onCacheSaved(restartCache);
 				}
-				
-				if(m != null) {
-					associateMedia(m);
-				}
-				
-				InformaService.this.onCacheSaved(restartCache);
-			}
-		}).start();		
+			});
+			
+			mThread.start();		
+		}
 	}
 
 	@Override
