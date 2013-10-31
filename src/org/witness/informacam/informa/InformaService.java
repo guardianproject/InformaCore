@@ -169,6 +169,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 		this.associatedMedia = media._id;
 	}
 	
+	public void unassociateMedia() {
+		this.associatedMedia = null;
+	}
+	
 	private void init() {
 		h.post(new Runnable() {
 			@Override
@@ -248,7 +252,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 				if(cache != null) {
 					
 					if(cache.size() >= CACHE_MAX) {
-						Log.d(LOG, "CACHE SIZE SO FAR: " + cache.size() + "\nSaving and restarting cache...");
 						saveCache(true, null);
 					}
 				}
@@ -280,6 +283,12 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		if (mThread == null || (!mThread.isAlive()))
 		{
+
+			if (cache == null) //service may have been stopped
+				return;
+			
+			Log.d(LOG, "CACHE SIZE SO FAR: " + cache.size() + "\nSaving and restarting cache...");
+			
 			mThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -327,6 +336,12 @@ public class InformaService extends Service implements SuckerCacheListener {
 			
 			mThread.start();		
 		}
+		else
+		{
+
+			Log.d(LOG, "CACHE SAVE IN PROGRESS... WAITING IN LINE ...");
+		}
+		
 	}
 
 	@Override
