@@ -307,7 +307,7 @@ public class Constants {
 		}
 
 		public final static class Geo {
-			public final static long LOG_RATE = 10000L;
+			public final static long LOG_RATE = 1000L;
 
 			public final static class Keys {
 				public static final String GPS_COORDS = "gps_coords";
