@@ -14,6 +14,7 @@ import java.util.Vector;
 import org.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.MediaHasher;
 
@@ -123,10 +124,17 @@ public class IForm extends Model implements Serializable {
 				break;
 			}
 
-			view = questionDef.buildUI(a, view);
-			view.setId(v);
-			views.add(view);
-			v++;
+			try
+			{
+				view = questionDef.buildUI(a, view);
+				view.setId(v);
+				views.add(view);
+				v++;
+			}
+			catch (NumberFormatException nfe)
+			{
+				Log.e(Informa.LOG, "Error parsing ODF forms",nfe);
+			}
 		}
 
 		return views;

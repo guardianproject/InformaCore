@@ -20,8 +20,8 @@ import android.util.Log;
 public class AccelerometerSucker extends SensorLogger implements SensorEventListener {
 	SensorManager sm;
 	List<Sensor> availableSensors;
-	boolean hasAccelerometer, hasOrientation, hasLight, hasMagneticField;
-	org.witness.informacam.models.j3m.ILogPack currentAccelerometer, currentLight, currentMagField;
+	boolean hasAccelerometer, hasOrientation, hasMagneticField;
+	org.witness.informacam.models.j3m.ILogPack currentAccelerometer, currentMagField;
 	
 	private final static String LOG = Suckers.LOG;
 			
@@ -39,14 +39,12 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 				hasAccelerometer = true;
 				sm.registerListener(this, s, SensorManager.SENSOR_DELAY_NORMAL);
 				break;
-			case Sensor.TYPE_LIGHT:
-				sm.registerListener(this, s, SensorManager.SENSOR_DELAY_NORMAL);
-				hasLight = true;
-				break;
 			case Sensor.TYPE_MAGNETIC_FIELD:
 				sm.registerListener(this, s, SensorManager.SENSOR_DELAY_NORMAL);
 				hasOrientation = true;
 				break;
+				
+			
 			}
 				
 		}
@@ -58,8 +56,6 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 				try {
 					if(hasAccelerometer)
 						readAccelerometer();
-					if(hasLight)
-						readLight();
 					if(hasOrientation)
 						readOrientation();
 				} catch(JSONException e){}
@@ -79,15 +75,10 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 			sendToBuffer(currentMagField);
 	}
 	
-	private void readLight() throws JSONException, NullPointerException {
-		if(currentLight != null)
-			sendToBuffer(currentLight);
-	}
 	
 	public ILogPack forceReturn() throws JSONException {
 		ILogPack fr = new ILogPack(Accelerometer.Keys.ACC, currentAccelerometer);
 		fr.put(Accelerometer.Keys.ORIENTATION, currentMagField);
-		fr.put(Accelerometer.Keys.LIGHT, currentLight);
 		return fr;
 	}
 
@@ -115,10 +106,6 @@ public class AccelerometerSucker extends SensorLogger implements SensorEventList
 						sVals.put(Accelerometer.Keys.PITCH, geoMag[1]);
 						sVals.put(Accelerometer.Keys.ROLL, geoMag[2]);
 						currentMagField = sVals;
-						break;
-					case Sensor.TYPE_LIGHT:
-						sVals.put(Accelerometer.Keys.LIGHT_METER_VALUE, event.values[0]);
-						currentLight = sVals;
 						break;
 					}
 					

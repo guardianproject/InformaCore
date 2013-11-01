@@ -290,19 +290,38 @@ public class Constants {
 		}
 
 		public final static class Accelerometer {
-			public final static long LOG_RATE = 100L;
+			public final static long LOG_RATE = 300L;
 			
 			public final static class Keys {
 				public static final String ACC = "acc";
 				public static final String ORIENTATION = "orientation";
-				public static final String LIGHT = "light";
-				public static final String LIGHT_METER_VALUE = "lightMeterValue";
 				public static final String X = "acc_x";
 				public static final String Y = "acc_y";
 				public static final String Z = "acc_z";
 				public static final String PITCH = "pitch";
 				public static final String ROLL = "roll";
 				public static final String AZIMUTH = "azimuth";
+			}
+		}
+		
+		public final static class Environment {
+			public final static long LOG_RATE = 5000L;
+			
+			public final static class Keys {
+				public static final String AMBIENT_TEMP = "ambientTemperature";
+				public static final String AMBIENT_TEMP_CELSIUS = "ambientTemperatureCelsius";
+				
+				public static final String DEVICE_TEMP = "deviceTemperature";
+				public static final String DEVICE_TEMP_CELSIUS = "deviceTemperatureCelsius";
+				
+				public static final String HUMIDITY = "relativeHumidity";
+				public static final String HUMIDITY_PERC = "relativeHumidityPercentile";
+				
+				public static final String PRESSURE = "pressure";
+				public static final String PRESSURE_MBAR = "pressureHPAOrMBAR";
+
+				public static final String LIGHT = "light";
+				public static final String LIGHT_METER_VALUE = "lightMeterValue";
 			}
 		}
 
