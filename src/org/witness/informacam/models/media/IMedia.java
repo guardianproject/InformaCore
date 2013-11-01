@@ -654,10 +654,24 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + ".txt"; //txt = text file for J3M JSON DATA
+			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + ".j3m"; //txt = text file for J3M JSON DATA
 
 			notification.generateId();
 			notification.mediaId = this._id;
+			
+			if(!debugMode) {
+				// gzip *FIRST
+				j3mBytes = IOUtility.gzipBytes(j3mBytes);
+
+				// maybe encrypt
+				if(organization != null) {
+					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+				}
+				
+				// base64
+				j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+			}
+			
 			
 			if(share) {
 				// create a java.io.file
