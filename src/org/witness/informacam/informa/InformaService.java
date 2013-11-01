@@ -1,7 +1,5 @@
 package org.witness.informacam.informa;
 
-import info.guardianproject.iocipher.VirtualFileSystem;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -23,6 +21,7 @@ import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
+import org.witness.informacam.informa.suckers.EnvironmentalSucker;
 import org.witness.informacam.informa.suckers.GeoFusedSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
@@ -73,6 +72,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public SensorLogger<GeoSucker> _geo;
 	public SensorLogger<PhoneSucker> _phone;
 	public SensorLogger<AccelerometerSucker> _acc;
+	public SensorLogger<EnvironmentalSucker> _env;
 
 	private info.guardianproject.iocipher.File cacheFile, cacheRoot;
 	private List<String> cacheFiles = new ArrayList<String>();
@@ -143,6 +143,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		_acc = new AccelerometerSucker(this);
 		_acc.setSuckerCacheListener(this);
+		
+		_env = new EnvironmentalSucker(this);
+		_env.setSuckerCacheListener(this);
 		
 		informaService = InformaService.this;
 		sendBroadcast(new Intent()
@@ -354,6 +357,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			_phone.getSucker().stopUpdates();
 			_acc.getSucker().stopUpdates();
 			_geo.getSucker().stopUpdates();
+			_env.getSucker().stopUpdates();
 		} catch(NullPointerException e) {
 			e.printStackTrace();
 		}
@@ -361,6 +365,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		_geo = null;
 		_phone = null;
 		_acc = null;
+		_env = null;
 
 		for(BroadcastReceiver b : broadcasters) {
 			unregisterReceiver(b);

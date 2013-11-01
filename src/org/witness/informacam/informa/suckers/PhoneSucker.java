@@ -75,8 +75,7 @@ public class PhoneSucker extends SensorLogger {
 					try {
 						ILogPack logPack = new ILogPack(Phone.Keys.CELL_ID, getCellId());
 						logPack.put(Phone.Keys.LAC, getLAC());
-						logPack.put(Phone.Keys.MCC, getMCC());
-						logPack.put(Phone.Keys.MNC, getMNC());
+						logPack.put(Phone.Keys.MCC, getNetworkOperator());
 						sendToBuffer(logPack);
 						
 						// find other bluetooth devices around
@@ -108,7 +107,7 @@ public class PhoneSucker extends SensorLogger {
 				if(gLoc != null) {
 					return Integer.toString(gLoc.getLac());
 				}
-			}
+			}						
 		} catch(NullPointerException e) {
 			Logger.e(LOG, e);
 		}
@@ -116,9 +115,10 @@ public class PhoneSucker extends SensorLogger {
 		return null;
 	}
 	
-	private String getMCC() {
-		try {
-			return tm.getNetworkOperator().substring(0, 3);
+	private String getNetworkOperator() {
+		try {			
+			
+			return tm.getNetworkOperator();
 		} catch(NullPointerException e) {
 			Logger.e(LOG, e);
 		}
@@ -126,18 +126,9 @@ public class PhoneSucker extends SensorLogger {
 		return null;
 	}
 	
-	private String getMNC() {
-		try {
-			return tm.getNetworkOperator().substring(3);
-		} catch(NullPointerException e) {
-			Logger.e(LOG, e);
-		}
-		
-		return null;
-	}
 	
 	private String getCellId() {	
-		try {
+		try {			
 			String out = "";
 			if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_GSM) {
 				final GsmCellLocation gLoc = (GsmCellLocation) tm.getCellLocation();
@@ -189,15 +180,11 @@ public class PhoneSucker extends SensorLogger {
 			fr.put(Phone.Keys.LAC, lac);
 		}
 		
-		String mcc = getMCC();
+		String mcc = getNetworkOperator();
 		if(mcc != null) {
 			fr.put(Phone.Keys.MCC, mcc);
 		}
 		
-		String mnc = getMNC();
-		if(mnc != null) {
-			fr.put(Phone.Keys.MCC, mnc);
-		}
 		
 		return fr;
 	}
