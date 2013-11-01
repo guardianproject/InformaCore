@@ -368,7 +368,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 		_env = null;
 
 		for(BroadcastReceiver b : broadcasters) {
-			unregisterReceiver(b);
+			
+			try
+			{
+				unregisterReceiver(b);
+			}
+			catch (IllegalArgumentException iae)
+			{
+				//some broadcasters may not be registered; don't let this stop us from getting destroyed!
+			}
 		}
 
 		sendBroadcast(stopIntent.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
