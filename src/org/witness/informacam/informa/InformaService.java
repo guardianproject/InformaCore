@@ -590,10 +590,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 		try {
 			ILogPack lp = cache.getIfPresent(timestamp);
 			if(lp != null) {
-				Iterator<String> lIt = lp.keys();
-				while(lIt.hasNext()) {
-					String key = lIt.next();
-					ILogPack.put(key, lp.get(key));	
+				synchronized(lp) //lock access to lp so it is not modified
+				{
+					Iterator<String> lIt = lp.keys();
+					while(lIt.hasNext()) {
+						String key = lIt.next();
+						ILogPack.put(key, lp.get(key));	
+					}
 				}
 			}
 
