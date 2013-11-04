@@ -15,5 +15,6 @@
 	<classpathentry kind="lib" path="/ODKParser/libs/kxml2-2.3.0.jar"/>
 	<classpathentry kind="lib" path="libs/protobuf-j2me-1.0-RC1.jar"/>
 	<classpathentry kind="lib" path="/OnionKit/libs/httpclientandroidlib-1.1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="external/google-play-services_lib/libs/google-play-services.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

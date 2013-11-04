@@ -45,6 +45,7 @@ import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOService;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.TransportUtility;
+import org.witness.informacam.utils.ActivityPipe;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
@@ -97,6 +98,7 @@ public class InformaCam extends Application {
 	public InformaService informaService = null;
 
 	public Handler h = new Handler();
+	private ActivityPipe currentActivityPipe = null;
 
 	public List<String> models = new ArrayList<String>();
 
@@ -368,6 +370,7 @@ public class InformaCam extends Application {
 		
 	}
 
+	@SuppressWarnings("unused")
 	private boolean saveState(Model model, java.io.File cache) throws IOException {
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
@@ -804,6 +807,18 @@ public class InformaCam extends Application {
 	
 	public int getCredentialManagerStatus() {
 		return credentialManager.getStatus();
+	}
+	
+	public Activity requestFocus() {
+		if(mEventListener != null) {
+			return mEventListener.onFocusRequested();
+		}
+		
+		return null;
+	}
+	
+	public ActivityPipe getCurrentPipe() {
+		return currentActivityPipe;
 	}
 	
 	public boolean isOutsideTheLoop(String action) {

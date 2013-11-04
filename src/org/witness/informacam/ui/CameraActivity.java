@@ -219,5 +219,13 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 	}
 
+	@Override
+	public Activity onFocusRequested() {
+		return CameraActivity.this;
+	}
+
+	@Override
+	public void onFocusedActivityResult(int requestCode, int resultCode, Intent data) {}
+
 
 }
