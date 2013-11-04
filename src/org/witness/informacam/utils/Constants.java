@@ -595,6 +595,10 @@ public class Constants {
 			public class Globaleaks {
 				public final static String TAG = RepositorySources.GLOBALEAKS;
 			}
+			
+			public class GoogleDrive {
+				public final static String TAG = RepositorySources.GOOGLE_DRIVE;
+			}
 		}
 
 		public class IIdentity {

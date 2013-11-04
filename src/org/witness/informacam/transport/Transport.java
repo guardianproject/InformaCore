@@ -37,9 +37,12 @@ import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 import android.annotation.SuppressLint;
 import android.app.IntentService;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Message;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 @SuppressLint("DefaultLocale")
@@ -49,6 +52,8 @@ public class Transport extends IntentService {
 	String repoName;
 	
 	InformaCam informaCam;
+	protected NotificationCompat.Builder mBuilder;
+	protected NotificationManager mNotifyManager;
 	
 	protected final static String LOG = "************************** TRANSPORT **************************";
 	
@@ -63,22 +68,39 @@ public class Transport extends IntentService {
 	}
 	
 	protected boolean init() {
+		return init(true);
+	}
+	
+	protected boolean init(boolean requiresTor) {
 		repository = transportStub.getRepository(repoName);
 		
-		int transportRequirements = checkTransportRequirements();
-		if(transportRequirements == -1) {
-			transportStub.numTries++;
-		} else {
-			transportStub.numTries = (Models.ITransportStub.MAX_TRIES + 1);
-			Logger.d(LOG, "ACTUALLY NO ORBOT");
-			
-			finishUnsuccessfully(transportRequirements);
-			// Prompt to start up/install orbot here.
-			
-			
-			stopSelf();
-			return false;
+		if(requiresTor) {
+			int transportRequirements = checkTransportRequirements();
+			if(transportRequirements == -1) {
+				transportStub.numTries++;
+			} else {
+				transportStub.numTries = (Models.ITransportStub.MAX_TRIES + 1);
+				Logger.d(LOG, "ACTUALLY NO ORBOT");
+
+				finishUnsuccessfully(transportRequirements);
+				// Prompt to start up/install orbot here.
+
+
+				stopSelf();
+				return false;
+			}
 		}
+		
+		mNotifyManager =
+				(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		mBuilder = new NotificationCompat.Builder(this);
+		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
+			.setContentText("Upload in progress to: " + repoName)
+			.setTicker("Upload in progress")
+			.setSmallIcon(android.R.drawable.ic_menu_upload);
+		mBuilder.setProgress(100, 0, false);
+		// Displays the progress bar for the first time.
+		mNotifyManager.notify(0, mBuilder.build());
 		
 		return true;
 	}

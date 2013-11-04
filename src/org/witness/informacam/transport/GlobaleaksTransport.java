@@ -39,17 +39,6 @@ public class GlobaleaksTransport extends Transport {
 			return false;
 		}
 
-		NotificationManager mNotifyManager =
-		        (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
-		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
-		    .setContentText("Upload in progress to: " + repoName)
-		    .setTicker("Upload in progress")
-		    .setSmallIcon(android.R.drawable.ic_menu_upload);
-		  mBuilder.setProgress(100, 0, false);
-          // Displays the progress bar for the first time.
-          mNotifyManager.notify(0, mBuilder.build());
-          
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
 
