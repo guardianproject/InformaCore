@@ -23,6 +23,7 @@ import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.EnvironmentalSucker;
 import org.witness.informacam.informa.suckers.GeoFusedSucker;
+import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.j3m.ILocation;
@@ -51,6 +52,7 @@ import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -134,8 +136,14 @@ public class InformaService extends Service implements SuckerCacheListener {
 		}
 
 		initCache();
+		
+		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
 
-		_geo = new GeoFusedSucker(this);
+		if (prefGpsEnableHires)
+			_geo = new GeoHiResSucker(this);
+		else	
+			_geo = new GeoFusedSucker(this);
+		
 		_geo.setSuckerCacheListener(this);
 		
 		_phone = new PhoneSucker(this);
