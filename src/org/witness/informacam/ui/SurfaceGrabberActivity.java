@@ -44,6 +44,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	
 	private InformaCam informaCam = InformaCam.getInstance();
 	private List<String> baseImages = new ArrayList<String>();
+	private boolean mPreviewing;
 
 	private final static String LOG = App.ImageCapture.LOG;
 
@@ -108,6 +109,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 		camera.startPreview();
+		mPreviewing = true;
 	}
 
 	@Override
@@ -147,7 +149,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 	@Override
 	public void onClick(View view) {
-		if(view == button) {
+		if(view == button && mPreviewing) {
+			mPreviewing = false;
 			camera.takePicture(null, null, this);
 		}
 	}
@@ -187,7 +190,13 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 				}
 			}
 			
-			camera.startPreview();
+			view.post(new Runnable()
+			{
+				@Override
+				public void run() {
+					resumePreview();
+				}
+			});
 		}
 		catch (IOException ioe)
 		{
@@ -195,6 +204,12 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	private void resumePreview()
+	{
+		camera.startPreview();
+		mPreviewing = true;
+	}
+	
 	public void setCameraDisplayOrientation() 
 	{        
 	     if (camera == null || cameraInfo == null)
