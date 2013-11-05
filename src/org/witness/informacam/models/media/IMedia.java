@@ -56,6 +56,9 @@ import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
 	
+	public final static String EXPORT_MIME_TYPE = "application/json";
+	public final static String EXPORT_FILE_EXT = "j3m";
+	
 	public String rootFolder = null;
 	public String _id = null;
 	public String _rev = null;
@@ -654,10 +657,28 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + ".txt"; //txt = text file for J3M JSON DATA
+			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + '.' + EXPORT_FILE_EXT; //txt = text file for J3M JSON DATA
 
 			notification.generateId();
 			notification.mediaId = this._id;
+			
+			if(!debugMode) {
+				
+				// maybe encrypt
+				if(organization != null) {
+					
+					// gzip *FIRST
+					j3mBytes = IOUtility.gzipBytes(j3mBytes);
+
+					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+
+					// base64
+					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+
+				}
+				
+			}
+			
 			
 			if(share) {
 				// create a java.io.file
@@ -685,7 +706,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					
 					submission = new ITransportStub(organization, notification);
 					
-					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), "application/json");
+					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), EXPORT_MIME_TYPE);
 				}
 
 				
@@ -707,6 +728,75 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return true;
 	}
+
+	public String buildJ3M(Context context, Handler h) {
+		
+		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		System.gc();
+		
+		responseHandler = h;
+		int progress = 0;
+		InformaCam informaCam = InformaCam.getInstance();
+
+		INotification notification = new INotification();
+		notification.icon = bitmapThumb;
+
+		// create data package
+		if(data == null) {
+			data = new IData();
+		}
+		data.exif = dcimEntry.exif;
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeSensorLogs();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeData();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeGenealogyAndIntent();
+		progress += 20;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
+		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
+			mimeType = context.getString(R.string.log);
+		}
+		
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		JSONObject j3mObject = null;
+		try {
+			j3mObject = new JSONObject();
+			JSONObject j3m = new JSONObject();
+			
+			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			
+			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
+			
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
+			
+			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+
+			return j3mObject.toString();
+			
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+			
+		} catch (ConcurrentModificationException e) {
+			Logger.e(LOG, e);
+			
+		}
+
+		return null;
+	}
+
 	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();

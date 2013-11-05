@@ -1,7 +1,5 @@
 package org.witness.informacam.informa;
 
-import info.guardianproject.iocipher.VirtualFileSystem;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -23,7 +21,9 @@ import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
+import org.witness.informacam.informa.suckers.EnvironmentalSucker;
 import org.witness.informacam.informa.suckers.GeoFusedSucker;
+import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.j3m.ILocation;
@@ -52,6 +52,7 @@ import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -73,6 +74,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public SensorLogger<GeoSucker> _geo;
 	public SensorLogger<PhoneSucker> _phone;
 	public SensorLogger<AccelerometerSucker> _acc;
+	public SensorLogger<EnvironmentalSucker> _env;
 
 	private info.guardianproject.iocipher.File cacheFile, cacheRoot;
 	private List<String> cacheFiles = new ArrayList<String>();
@@ -134,8 +136,14 @@ public class InformaService extends Service implements SuckerCacheListener {
 		}
 
 		initCache();
+		
+		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
 
-		_geo = new GeoFusedSucker(this);
+		if (prefGpsEnableHires)
+			_geo = new GeoHiResSucker(this);
+		else	
+			_geo = new GeoFusedSucker(this);
+		
 		_geo.setSuckerCacheListener(this);
 		
 		_phone = new PhoneSucker(this);
@@ -143,6 +151,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		_acc = new AccelerometerSucker(this);
 		_acc.setSuckerCacheListener(this);
+		
+		_env = new EnvironmentalSucker(this);
+		_env.setSuckerCacheListener(this);
 		
 		informaService = InformaService.this;
 		sendBroadcast(new Intent()
@@ -354,6 +365,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			_phone.getSucker().stopUpdates();
 			_acc.getSucker().stopUpdates();
 			_geo.getSucker().stopUpdates();
+			_env.getSucker().stopUpdates();
 		} catch(NullPointerException e) {
 			e.printStackTrace();
 		}
@@ -361,9 +373,18 @@ public class InformaService extends Service implements SuckerCacheListener {
 		_geo = null;
 		_phone = null;
 		_acc = null;
+		_env = null;
 
 		for(BroadcastReceiver b : broadcasters) {
-			unregisterReceiver(b);
+			
+			try
+			{
+				unregisterReceiver(b);
+			}
+			catch (IllegalArgumentException iae)
+			{
+				//some broadcasters may not be registered; don't let this stop us from getting destroyed!
+			}
 		}
 
 		sendBroadcast(stopIntent.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
@@ -577,10 +598,13 @@ public class InformaService extends Service implements SuckerCacheListener {
 		try {
 			ILogPack lp = cache.getIfPresent(timestamp);
 			if(lp != null) {
-				Iterator<String> lIt = lp.keys();
-				while(lIt.hasNext()) {
-					String key = lIt.next();
-					ILogPack.put(key, lp.get(key));	
+				synchronized(lp) //lock access to lp so it is not modified
+				{
+					Iterator<String> lIt = lp.keys();
+					while(lIt.hasNext()) {
+						String key = lIt.next();
+						ILogPack.put(key, lp.get(key));	
+					}
 				}
 			}
 
