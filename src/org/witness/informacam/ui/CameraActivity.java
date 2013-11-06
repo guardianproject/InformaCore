@@ -162,7 +162,19 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		Logger.d(LOG, "COMING BACK FROM ON-BOARD CAMERA");
 		if(controlsInforma) {
 			Logger.d(LOG, "ALSO, I CONTROL INFORMA");
+			
+			informaCam.ioService.stopDCIMObserver();
 			informaCam.stopInforma();
+			
+			IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
+			if(dcimDescriptor.dcimList.size() > 0) {
+				Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
+				setResult(Activity.RESULT_OK, result);
+			} else {
+				setResult(Activity.RESULT_CANCELED);
+			}
+			finish();
+			
 		} else {
 			onInformaStop(null);
 		}
@@ -196,21 +208,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaStop(Intent intent) {
-		h.post(new Runnable() {
-			@Override
-			public void run() {
-				informaCam.ioService.stopDCIMObserver();
-			}
-		});
 		
-		IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
-		if(dcimDescriptor.dcimList.size() > 0) {
-			Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
-			setResult(Activity.RESULT_OK, result);
-		} else {
-			setResult(Activity.RESULT_CANCELED);
-		}
-		finish();
 	}
 
 	@Override
