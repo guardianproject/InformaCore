@@ -2,6 +2,7 @@ package org.witness.informacam.models.media;
 
 import info.guardianproject.iocipher.FileOutputStream;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
@@ -295,6 +297,32 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		region.init(activity, new IRegionBounds(top, left, width, height, startTime, endTime), listener);
+
+		boolean startedByUs = false;
+		
+		if (InformaCam.getInstance().informaService == null)
+		{
+			InformaCam.getInstance().startInforma();
+			startedByUs = true;
+			
+			int numTries = 5;
+			int tryIdx = 0;
+					
+			while (InformaCam.getInstance().informaService == null && tryIdx < numTries)
+			{
+				try {Thread.sleep(1000);}
+				catch(Exception e){}
+				
+				tryIdx++;
+				
+			}
+		}
+		
+		if (InformaCam.getInstance().informaService != null)
+			InformaCam.getInstance().informaService.addRegion(region);
+		
+		if (startedByUs)
+			InformaCam.getInstance().stopInforma();
 		
 		associatedRegions.add(region);
 		if(region.isInnerLevelRegion()) {
@@ -343,15 +371,17 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	@SuppressWarnings("unused")
-	protected void mungeData() {
+	protected void mungeData() throws FileNotFoundException {
 		if(data == null) {
 			data = new IData();
 		}
 		
-		if(associatedRegions != null && associatedRegions.size() > 0) {
+		if(associatedRegions != null) {
 			for(IRegion region : associatedRegions) {
+				
+				IRegionData regionData = new IRegionData(new IRegion(region));
+				
 				for(IForm form : region.associatedForms) {
-					IRegionData regionData = new IRegionData(new IRegion(region));
 					
 					if(regionData.associatedForms != null) {
 						if(data.userAppendedData == null) {
@@ -360,8 +390,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						
 						data.userAppendedData.add(regionData);
 					}
-					
-					break;
+										
 				}
 			}
 		}
@@ -431,15 +460,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 
-	public boolean export(Context context, Handler h) {
+	public boolean export(Context context, Handler h) throws FileNotFoundException {
 		return export(context, h, null, true);
 	}
 
-	public boolean export(Context context, Handler h, IOrganization organization) {
+	public boolean export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
 		return export(context, h, organization, false);
 	}
 
-	public boolean export(Context context, Handler h, IOrganization organization, boolean share) {
+	public boolean export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
 		
@@ -588,7 +617,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) {
+	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
 		
@@ -729,7 +758,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public String buildJ3M(Context context, Handler h) {
+	public String buildJ3M(Context context, Handler h) throws FileNotFoundException {
 		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
