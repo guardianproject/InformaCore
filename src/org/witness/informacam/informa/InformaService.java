@@ -165,7 +165,14 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 	
 	public ILocation getCurrentLocation() {
-		return new ILocation(((GeoSucker) _geo).updateLocation());
+		if (_geo != null)
+		{
+			ILocation loc = new ILocation(((GeoSucker) _geo).updateLocation());
+			
+			return loc;
+		}
+		else 
+			return null;
 	}
 
 	public long getCurrentTime() {
