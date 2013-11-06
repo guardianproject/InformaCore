@@ -8,11 +8,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -56,6 +52,8 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -63,8 +61,6 @@ import com.google.common.cache.LoadingCache;
 public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
 	private static InformaService informaService;
-
-	ExecutorService ex;
 
 	private long startTime = 0L;
 	private long realStartTime = 0L;
@@ -139,7 +135,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
 
-		if (prefGpsEnableHires)
+		boolean hasPlayServices = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext()) == ConnectionResult.SUCCESS;
+		
+		if (prefGpsEnableHires || (!hasPlayServices))
 			_geo = new GeoHiResSucker(this);
 		else	
 			_geo = new GeoFusedSucker(this);
@@ -208,9 +206,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 					realStartTime = currentTime;					
 				}
 								
-				double[] currentLocation = null;
-				
-				currentLocation = ((GeoSucker) _geo).updateLocation();
+				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
 				
 				if(currentTime == 0 || currentLocation == null) {
 					GPS_WAITING++;
@@ -220,10 +216,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 						return;
 					} else {
 						Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
+						GPS_WAITING = 0; //reset
 					}
 					
 				}
-
+				
 				onUpdate(((GeoSucker) _geo).forceReturn());
 				
 				try {
@@ -368,14 +365,17 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		saveCache();
 
-		try {
+		if (_phone != null)
 			_phone.getSucker().stopUpdates();
+		
+		if (_acc != null)
 			_acc.getSucker().stopUpdates();
+		
+		if (_geo != null)
 			_geo.getSucker().stopUpdates();
+		
+		if (_env != null)
 			_env.getSucker().stopUpdates();
-		} catch(NullPointerException e) {
-			e.printStackTrace();
-		}
 
 		_geo = null;
 		_phone = null;
@@ -406,99 +406,51 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return informaService;
 	}
 
-	public List<ILogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<List<ILogPack>> query = ex.submit(new Callable<List<ILogPack>>() {
-
-			@Override
-			public List<ILogPack> call() throws Exception {
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				List<ILogPack> events = new ArrayList<ILogPack>();
-				while(cIt.hasNext()) {
-					Entry<Long, ILogPack> entry = cIt.next();
-					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						events.add(entry.getValue());
-				}
-
-				return events;
-			}
-		});
-
-		List<ILogPack> events = query.get();
-		ex.shutdown();
+	public List<ILogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException, JSONException {
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+		List<ILogPack> events = new ArrayList<ILogPack>();
+		while(cIt.hasNext()) {
+			Entry<Long, ILogPack> entry = cIt.next();
+			if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+				events.add(entry.getValue());
+		}
 
 		return events;
 	}
 
 	public List<Entry<Long, ILogPack>> getAllEventsByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<List<Entry<Long, ILogPack>>> query = ex.submit(new Callable<List<Entry<Long, ILogPack>>>() {
-
-			@Override
-			public List<Entry<Long, ILogPack>> call() throws Exception {
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				List<Entry<Long, ILogPack>> events = new ArrayList<Entry<Long, ILogPack>>();
-				while(cIt.hasNext()) {
-					Entry<Long, ILogPack> entry = cIt.next();
-					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						events.add(entry);
-				}
-
-				return events;
-			}
-		});
-
-		List<Entry<Long, ILogPack>> events = query.get();
-		ex.shutdown();
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+		List<Entry<Long, ILogPack>> events = new ArrayList<Entry<Long, ILogPack>>();
+		while(cIt.hasNext()) {
+			Entry<Long, ILogPack> entry = cIt.next();
+			if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+				events.add(entry);
+		}
 
 		return events;
 	}
 
 	public Entry<Long, ILogPack> getEventByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<Entry<Long, ILogPack>> query = ex.submit(new Callable<Entry<Long, ILogPack>>() {
-
-			@Override
-			public Entry<Long, ILogPack> call() throws Exception {
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				Entry<Long, ILogPack> entry = null;
-				while(cIt.hasNext() && entry == null) {
-					Entry<Long, ILogPack> e = cIt.next();
-					if(e.getValue().has(CaptureEvent.Keys.TYPE) && e.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						entry = e;
-				}
-
-				return entry;
-			}
-		});
-
-		Entry<Long, ILogPack> entry = query.get();
-		ex.shutdown();
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+		Entry<Long, ILogPack> entry = null;
+		while(cIt.hasNext() && entry == null) {
+			Entry<Long, ILogPack> e = cIt.next();
+			if(e.getValue().has(CaptureEvent.Keys.TYPE) && e.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+				entry = e;
+		}
 
 		return entry;
 	}
 
 	public ILogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<ILogPack> query = ex.submit(new Callable<ILogPack>() {
+		Iterator<ILogPack> cIt = cache.asMap().values().iterator();
+		ILogPack ILogPack = null;
+		while(cIt.hasNext() && ILogPack == null) {
+			ILogPack lp = cIt.next();
 
-			@Override
-			public ILogPack call() throws Exception {
-				Iterator<ILogPack> cIt = cache.asMap().values().iterator();
-				ILogPack ILogPack = null;
-				while(cIt.hasNext() && ILogPack == null) {
-					ILogPack lp = cIt.next();
-
-					if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
-						ILogPack = lp;
-				}
-
-				return ILogPack;
-			}
-
-		});
-		ILogPack ILogPack = query.get();
-		ex.shutdown();
+			if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
+				ILogPack = lp;
+		}
 
 		return ILogPack;
 	}
