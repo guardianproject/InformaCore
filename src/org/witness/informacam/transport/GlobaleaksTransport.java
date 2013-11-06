@@ -17,7 +17,9 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 
 public class GlobaleaksTransport extends Transport {
@@ -39,13 +41,24 @@ public class GlobaleaksTransport extends Transport {
 			return false;
 		}
 
+		Intent resultIntent = new Intent(Intent.ACTION_VIEW);
+		
+		PendingIntent resultPendingIntent =
+			    PendingIntent.getActivity(
+			    this,
+			    0,
+			    resultIntent,
+			    PendingIntent.FLAG_UPDATE_CURRENT
+			);
+		
 		NotificationManager mNotifyManager =
 		        (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
-		    .setContentText("Upload in progress to: " + repoName)
-		    .setTicker("Upload in progress")
-		    .setSmallIcon(android.R.drawable.ic_menu_upload);
+		    .setContentText(getString(R.string.upload_in_progress) + ": " + repoName)
+		    .setTicker(getString(R.string.upload_in_progress))
+		    .setSmallIcon(android.R.drawable.ic_menu_upload)
+		    .setContentIntent(resultPendingIntent);
 		  mBuilder.setProgress(100, 0, false);
           // Displays the progress bar for the first time.
           mNotifyManager.notify(0, mBuilder.build());
