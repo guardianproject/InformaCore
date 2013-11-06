@@ -56,12 +56,12 @@ public class IRegionData extends Model {
 		return obj;
 	}
 	
-	public IRegionData(IRegion region) {
+	public IRegionData(IRegion region) throws FileNotFoundException {
 		this(region, null);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public IRegionData(IRegion region, ILocation location) {
+	public IRegionData(IRegion region, ILocation location) throws FileNotFoundException {
 		super();
 		
 		timestamp = region.timestamp;
@@ -80,26 +80,28 @@ public class IRegionData extends Model {
 		}		
 		
 		for(IForm form : region.associatedForms) {
-			try {
-				info.guardianproject.iocipher.FileInputStream is = new info.guardianproject.iocipher.FileInputStream(form.answerPath);
-				
-				JSONObject answerData = IOUtility.xmlToJson(is);
-				if(answerData.length() == 0) {
-					continue;
+			
+				info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(form.answerPath);
+				if (file.exists())
+				{
+					info.guardianproject.iocipher.FileInputStream is = new info.guardianproject.iocipher.FileInputStream(file);
+					
+					JSONObject answerData = IOUtility.xmlToJson(is);
+					if(answerData.length() == 0) {
+						continue;
+					}
+					
+					form.answerData = answerData;
+					form.answerPath = null;
+					form.title = null;
+					
+					if(associatedForms == null) {
+						associatedForms = new ArrayList<IForm>();
+					}
+					
+					associatedForms.add(form);
 				}
-				
-				form.answerData = answerData;
-				form.answerPath = null;
-				form.title = null;
-				
-				if(associatedForms == null) {
-					associatedForms = new ArrayList<IForm>();
-				}
-				
-				associatedForms.add(form);
-			} catch (FileNotFoundException e) {
-				Logger.e(LOG, e);
-			}
+			
 		}
 	}
 }
