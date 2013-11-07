@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Camera;
@@ -190,6 +191,9 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaStart(Intent intent) {
+		
+		informaCam.informaService = InformaService.getInstance();
+		
 		h.post(new Runnable() {
 			@Override
 			public void run() {
@@ -197,7 +201,6 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			}
 		});
 		
-
 		cameraIntent = new Intent(cameraIntentFlag);
 		cameraIntent.setComponent(cameraComponent);
 		startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
