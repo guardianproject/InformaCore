@@ -92,7 +92,8 @@ public class IDCIMDescriptor extends Model {
 					@Override
 					public void run() {
 						do {
-							if (informaCam.informaService != null && informaCam.informaService.getCurrentLocation() != null)
+							if (informaCam.informaService != null && informaCam.informaService._geo != null
+									&& informaCam.informaService.getCurrentLocation() != null)
 							{
 								entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
 								Log.d(LOG, "exif location: " + entry.exif.location[0] + ", " + entry.exif.location[1]);
