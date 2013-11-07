@@ -758,7 +758,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public String buildJ3M(Context context, Handler h) throws FileNotFoundException {
+	public String buildJ3M(Context context, boolean signData, Handler h) throws FileNotFoundException {
 		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
@@ -807,9 +807,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
 			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
 			
-			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
-			
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
+			if (signData)
+			{
+				byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());			
+				j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
+			}
 			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 
