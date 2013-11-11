@@ -663,6 +663,7 @@ public class Constants {
 				supported.add("com.sec.android.app.camera");
 				supported.add("com.android.camera");
 				supported.add("com.google.android.gallery3d");
+				supported.add("com.google.android.GoogleCamera");
 				SUPPORTED = Collections.unmodifiableList(supported);
 			}
 		}
