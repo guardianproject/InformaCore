@@ -10,7 +10,7 @@ external/android-ffmpeg-java
 external/OnionKit/libonionkit
 external/ODKFormParser
 external/CacheWord/cachewordlib
-external/google-play-services_lib
+external/google-play-services
 END
 
 for project in "${MAPFILE[@]}"; do
