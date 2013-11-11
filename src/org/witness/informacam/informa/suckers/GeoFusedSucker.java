@@ -9,6 +9,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
@@ -61,19 +62,25 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 			return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
 		} else {
 			
-			mLastLocation = mLocationClient.getLastLocation();
+			if (mLocationClient.isConnected())
+			{
+				mLastLocation = mLocationClient.getLastLocation();
 			
-			if (mLastLocation != null)
-				return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
-			else
-				return null;
+				if (mLastLocation != null)
+					return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
+				
+			}
 		}
+		
+		//nothing here right now
+		return null;
 	
 	}
 	
 	public void stopUpdates() {
 		
-		mLocationClient.disconnect();
+		if (mLocationClient != null && mLocationClient.isConnected())
+			mLocationClient.disconnect();
 	}
 
 	@Override
@@ -104,6 +111,5 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	@Override
 	public void onLocationChanged(Location location) {
 		mLastLocation = location;
-		Log.d(LOG, "LOCATION CHANGED!");
 	}
 }
