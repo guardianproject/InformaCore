@@ -36,7 +36,6 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 		mLocationClient = new LocationClient(context, this, this);
 		mLocationClient.connect();
 		
-		
 	}
 	
 	public ILogPack forceReturn() {
@@ -59,10 +58,15 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	public double[] updateLocation() {
 		
 		if (mLastLocation != null) {
-			//Log.d(LOG, "lat/lng: " + l.getLatitude() + ", " + l.getLongitude());
 			return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
 		} else {
-			return null;
+			
+			mLastLocation = mLocationClient.getLastLocation();
+			
+			if (mLastLocation != null)
+				return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
+			else
+				return null;
 		}
 	
 	}
