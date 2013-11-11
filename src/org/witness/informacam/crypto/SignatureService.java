@@ -2,12 +2,9 @@ package org.witness.informacam.crypto;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.security.SignatureException;
 
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.openpgp.PGPCompressedData;
@@ -23,11 +20,11 @@ import org.spongycastle.openpgp.PGPSignatureList;
 import org.spongycastle.openpgp.PGPUtil;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.models.j3m.ILogPack;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.App.Crypto.Signatures;
 
 import android.content.Context;
+import android.util.Log;
 
 public class SignatureService {
 	
@@ -56,87 +53,59 @@ public class SignatureService {
 		sk = null;		
 	}
 	
-	public boolean isVerified(final ILogPack data) {
-		boolean isVerified = false;
+	public boolean isVerified(final ILogPack data) throws IOException {
 
-		ExecutorService ex = Executors.newFixedThreadPool(100);
-		Future<Boolean> future = ex.submit(new Callable<Boolean>() {
+		try
+		{
+			byte[] signedData = (byte[]) data.remove(Signatures.Keys.SIGNATURE);
+			ByteArrayInputStream sd = new ByteArrayInputStream(signedData);				
 			
-			@SuppressWarnings("deprecation")
-			@Override
-			public Boolean call() throws Exception {
-				try {
-					byte[] signedData = (byte[]) data.remove(Signatures.Keys.SIGNATURE);
-					ByteArrayInputStream sd = new ByteArrayInputStream(signedData);				
+			InputStream is = PGPUtil.getDecoderStream(sd);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					
-					InputStream is = PGPUtil.getDecoderStream(sd);
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-							
-					PGPObjectFactory objFactory = new PGPObjectFactory(is);
-					PGPCompressedData cd = (PGPCompressedData) objFactory.nextObject();
-					
-					objFactory = new PGPObjectFactory(cd.getDataStream());
-					
-					PGPOnePassSignatureList sigList_o = (PGPOnePassSignatureList) objFactory.nextObject();
-					PGPOnePassSignature sig = sigList_o.get(0);
-					
-					PGPLiteralData ld = (PGPLiteralData) objFactory.nextObject();
-					InputStream literalIn = ld.getInputStream();
-					
-					sig.initVerify(publicKey, new BouncyCastleProvider());
-					
-					int read;
-					while((read = literalIn.read()) > 0) {
-						sig.update((byte) read);
-						baos.write(read);
-					}
-					
-					PGPSignatureList sigList = (PGPSignatureList) objFactory.nextObject();
-					
-					if(sig.verify(sigList.get(0)) && data.toString().equals(new String(baos.toByteArray()))) {
-						baos.close();			
-						return true;
-					} else {
-						baos.close();
-						return false;
-					}
-				} catch(NullPointerException e) {
-					return false;
-				}
+			PGPObjectFactory objFactory = new PGPObjectFactory(is);
+			PGPCompressedData cd = (PGPCompressedData) objFactory.nextObject();
+			
+			objFactory = new PGPObjectFactory(cd.getDataStream());
+			
+			PGPOnePassSignatureList sigList_o = (PGPOnePassSignatureList) objFactory.nextObject();
+			PGPOnePassSignature sig = sigList_o.get(0);
+			
+			PGPLiteralData ld = (PGPLiteralData) objFactory.nextObject();
+			InputStream literalIn = ld.getInputStream();
+			
+			sig.initVerify(publicKey, new BouncyCastleProvider());
+			
+			int read;
+			while((read = literalIn.read()) > 0) {
+				sig.update((byte) read);
+				baos.write(read);
 			}
-		});
-		
-		try {
-			isVerified = future.get();
-		} catch (InterruptedException e) {}
-		catch (ExecutionException e) {
-			e.printStackTrace();
+			
+			PGPSignatureList sigList = (PGPSignatureList) objFactory.nextObject();
+			
+			if(sig.verify(sigList.get(0)) && data.toString().equals(new String(baos.toByteArray()))) {
+				baos.close();			
+				return true;
+			} else {
+				baos.close();
+				return false;
+			}
+				
 		}
-		
-		ex.shutdown();
-		
-		return isVerified;
+		catch (PGPException e)
+		{
+			Log.d(LOG,"SignatureException: " + e.getMessage(),e);
+			return false;
+		} catch (SignatureException e) {
+			Log.d(LOG,"SignatureException: " + e.getMessage(),e);
+			return false;
+		}
+	
 	}
 	
 	public byte[] signData(final byte[] data) {
-		ExecutorService ex = Executors.newFixedThreadPool(100);
-		Future<byte[]> future = ex.submit(new Callable<byte[]>() {
-
-			@Override
-			public byte[] call() throws Exception {
-				return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);
-			}
-		});
-		
-		try {
-			return future.get();
-		} catch (InterruptedException e) {
-			Logger.e(LOG, e);
-			return null;
-		} catch (ExecutionException e) {
-			Logger.e(LOG, e);
-			return null;
-		}
+		return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);		
 	}
 	
 
