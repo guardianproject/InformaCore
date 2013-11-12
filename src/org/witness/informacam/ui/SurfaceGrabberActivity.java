@@ -76,28 +76,52 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		return CameraInfo.CAMERA_FACING_BACK;
 	}
 	
+	/**
+	 * Whether or not we can default to "other" direction if our preferred facing camera can't be opened
+	 * @return true to try camera facing other way, false otherwise
+	 */
+	protected boolean canUseOtherDirection()
+	{
+		return false;
+	}
+	
 	@Override
 	public void onResume() {
 		super.onResume();
 
-	     Camera.CameraInfo info = new Camera.CameraInfo();
-	     for (int nCam = 0; nCam < Camera.getNumberOfCameras(); nCam++)
-	     {
-		     Camera.getCameraInfo(nCam, info);
-		     if (info.facing == getCameraDirection())
-		     {
-		    	 camera = Camera.open(nCam);
-		    	 cameraInfo = info;
-		    	 break;
-		     }
-	     }
-
-		if(camera == null)
-			finish();
+		if (!tryCreateCamera(getCameraDirection()))
+		{
+			if (!canUseOtherDirection() || !tryCreateCamera(getOtherDirection(getCameraDirection())))
+			{
+				finish();
+				return;
+			}
+		}
 		
 		setCameraDisplayOrientation();
 	}
 
+	private int getOtherDirection(int facing)
+	{
+		return (facing == CameraInfo.CAMERA_FACING_BACK) ? CameraInfo.CAMERA_FACING_FRONT : CameraInfo.CAMERA_FACING_BACK;
+	}
+	
+	private boolean tryCreateCamera(int facing)
+	{
+	     Camera.CameraInfo info = new Camera.CameraInfo();
+	     for (int nCam = 0; nCam < Camera.getNumberOfCameras(); nCam++)
+	     {
+		     Camera.getCameraInfo(nCam, info);
+		     if (info.facing == facing)
+		     {
+		    	 camera = Camera.open(nCam);
+		    	 cameraInfo = info;
+		    	 return true;
+		     }
+	     }
+	     return false;
+	}
+	
 	@Override
 	public void onPause() {
 		if(camera != null)
