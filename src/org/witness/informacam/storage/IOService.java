@@ -396,7 +396,59 @@ public class IOService {
 
 		return is;
 	}
-	
+
+	public long getLength(String pathToData, int source) {
+
+		long fileLength = -1;
+		
+		switch(source) {
+		case Storage.Type.INTERNAL_STORAGE:
+			java.io.File fileData;
+			
+				fileData = new java.io.File(pathToData);
+				fileLength = fileData.length();
+			
+
+			break;
+		case Storage.Type.IOCIPHER:
+			
+			if(vfs == null) {
+				return -1;
+				/*
+				Log.d(LOG, "also, VFS IS NULL SO...");
+				
+				InformaCam informaCam = (InformaCam)getApplication();
+				
+				if(!informaCam.attemptLogin()) {
+					informaCam.promptForLogin();
+					return null;
+				}*/
+			}
+			
+				info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToData);
+				fileLength = file.length();
+			
+
+			break;
+		case Storage.Type.APPLICATION_ASSET:
+			
+				java.io.File fileAsset = new java.io.File(pathToData);
+				fileLength = fileAsset.length();
+			
+			break;
+		case Storage.Type.CONTENT_RESOLVER:
+			break;
+		case Storage.Type.FILE_SYSTEM:
+			
+				java.io.File file_ = new java.io.File(pathToData);
+				fileLength = file_.length();
+			
+			break;
+		}
+
+		return fileLength;
+	}
+
 	public java.io.File getPublicCredentials() {
 		byte[] publicCredentialsBytes = getBytes(Models.IUser.PUBLIC_CREDENTIALS, Type.IOCIPHER);
 		if(publicCredentialsBytes != null) {
