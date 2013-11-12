@@ -49,6 +49,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -67,10 +68,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	private int GPS_WAITING = 0;
 
-	public SensorLogger<GeoSucker> _geo;
-	public SensorLogger<PhoneSucker> _phone;
-	public SensorLogger<AccelerometerSucker> _acc;
-	public SensorLogger<EnvironmentalSucker> _env;
+	private SensorLogger<GeoSucker> _geo;
+	private SensorLogger<PhoneSucker> _phone;
+	private SensorLogger<AccelerometerSucker> _acc;
+	private SensorLogger<EnvironmentalSucker> _env;
 
 	private info.guardianproject.iocipher.File cacheFile, cacheRoot;
 	private List<String> cacheFiles = new ArrayList<String>();
@@ -137,15 +138,21 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		boolean hasPlayServices = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext()) == ConnectionResult.SUCCESS;
 		
-		if (prefGpsEnableHires || (!hasPlayServices))
-			_geo = new GeoHiResSucker(this);
-		else	
-			_geo = new GeoFusedSucker(this);
 		
-		_geo.setSuckerCacheListener(this);
+		boolean isAirplane = isAirplaneModeOn (this);
 		
-		_phone = new PhoneSucker(this);
-		_phone.setSuckerCacheListener(this);
+		if (!isAirplane)
+		{
+			if (prefGpsEnableHires || (!hasPlayServices))
+				_geo = new GeoHiResSucker(this);
+			else	
+				_geo = new GeoFusedSucker(this);
+			
+			_geo.setSuckerCacheListener(this);
+			
+			_phone = new PhoneSucker(this);
+			_phone.setSuckerCacheListener(this);
+		}
 		
 		_acc = new AccelerometerSucker(this);
 		_acc.setSuckerCacheListener(this);
@@ -160,6 +167,19 @@ public class InformaService extends Service implements SuckerCacheListener {
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 
 		init();
+	}
+	
+	/**
+	* Gets the state of Airplane Mode.
+	* 
+	* @param context
+	* @return true if enabled.
+	*/
+	private static boolean isAirplaneModeOn(Context context) {
+
+	   return Settings.System.getInt(context.getContentResolver(),
+	           Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+
 	}
 	
 	public ILocation getCurrentLocation() {
@@ -196,40 +216,44 @@ public class InformaService extends Service implements SuckerCacheListener {
 			@Override
 			public void run() {
 				
-				if (_geo == null || _phone == null)
-					return; //suckers are not init'd
 				
 				startTime = System.currentTimeMillis();
 				long currentTime = 0;
 				
-				currentTime = ((GeoSucker) _geo).getTime();				
-				
-				if(currentTime != 0) {
-					realStartTime = currentTime;					
-				}
-								
-				double[] currentLocation = ((GeoSucker) _geo).updateLocation();
-				
-				if(currentTime == 0 || currentLocation == null) {
-					GPS_WAITING++;
-
-					if(GPS_WAITING < Suckers.GPS_WAIT_MAX) {
-						h.postDelayed(this, 200);
-						return;
-					} else {
-						Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
-						GPS_WAITING = 0; //reset
+				if (_geo != null)
+				{
+					currentTime = ((GeoSucker) _geo).getTime();				
+					
+					if(currentTime != 0) {
+						realStartTime = currentTime;					
+					}
+									
+					double[] currentLocation = ((GeoSucker) _geo).updateLocation();
+					
+					if(currentTime == 0 || currentLocation == null) {
+						GPS_WAITING++;
+	
+						if(GPS_WAITING < Suckers.GPS_WAIT_MAX) {
+							h.postDelayed(this, 200);
+							return;
+						} else {
+							Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
+							GPS_WAITING = 0; //reset
+						}
+						
 					}
 					
+					onUpdate(((GeoSucker) _geo).forceReturn());
 				}
 				
-				onUpdate(((GeoSucker) _geo).forceReturn());
-				
-				try {
-					onUpdate(((PhoneSucker) _phone).forceReturn());
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+				if (_phone != null)
+				{
+					try {
+						onUpdate(((PhoneSucker) _phone).forceReturn());
+					} catch (JSONException e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
+					}
 				}
 				
 				if (informaCam != null)
@@ -485,13 +509,18 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@SuppressWarnings("unchecked")
 	public void addRegion(IRegion region) {
 		ILogPack ILogPack = new ILogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED, true);
-		ILogPack regionLocationData = ((GeoSucker) _geo).forceReturn();
-		try {
-			ILogPack.put(CaptureEvent.Keys.REGION_LOCATION_DATA, regionLocationData);
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+		
+		if (_geo != null)
+		{
+			ILogPack regionLocationData = ((GeoSucker) _geo).forceReturn();
+			try {
+				ILogPack.put(CaptureEvent.Keys.REGION_LOCATION_DATA, regionLocationData);
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
+		
 		Iterator<String> rIt = region.asJson().keys();
 		while(rIt.hasNext()) {
 			String key = rIt.next();
@@ -503,7 +532,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			}
 		}
 
-		Log.d(LOG, "HEY NEW REGION: " + ILogPack.asJson().toString());
+		//Log.d(LOG, "HEY NEW REGION: " + ILogPack.asJson().toString());
 		region.timestamp = onUpdate(ILogPack);
 	}
 
@@ -590,26 +619,29 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
-				try {
-					BluetoothDevice bd = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					ILogPack logPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());					
-					logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());					
-					onUpdate(logPack);
-
-				} catch(JSONException e) {}
-
-			} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-				try {
-					ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
-					onUpdate(ILogPack);
-				} catch(NullPointerException e) {
-					Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-					e.printStackTrace();
+			
+			if (informaService._phone != null)
+			{
+				if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
+					try {
+						BluetoothDevice bd = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+						ILogPack logPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());					
+						logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());					
+						onUpdate(logPack);
+	
+					} catch(JSONException e) {}
+	
+				} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+					try {
+						ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
+						onUpdate(ILogPack);
+					} catch(NullPointerException e) {
+						Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+						e.printStackTrace();
+					}
+	
 				}
-
 			}
-
 		}
 
 	}
