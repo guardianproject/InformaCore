@@ -8,13 +8,15 @@ import org.json.JSONObject;
 import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Logger;
-import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.Constants.Suckers;
+import org.witness.informacam.utils.Constants.Suckers.Phone;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.telephony.CellInfo;
+import android.telephony.CellInfoGsm;
 import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
@@ -29,6 +31,7 @@ public class PhoneSucker extends SensorLogger {
 	boolean hasBluetooth = false;
 	boolean hasWifi;
 	boolean wifiWasOn = false;
+	boolean hasTele = false;
 	
 	private final static String LOG = Suckers.LOG;
 	
@@ -40,6 +43,14 @@ public class PhoneSucker extends SensorLogger {
 		tm = (TelephonyManager) context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
 		ba = BluetoothAdapter.getDefaultAdapter();
 		wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+		
+		if (tm != null)
+		{
+			if (tm.getSimState() == TelephonyManager.SIM_STATE_READY)
+			{
+				hasTele = true;
+			}
+		}
 		
 		if(ba != null)
 		{
@@ -73,10 +84,16 @@ public class PhoneSucker extends SensorLogger {
 			public void run() {
 				if(getIsRunning()) {
 					try {
-						ILogPack logPack = new ILogPack(Phone.Keys.CELL_ID, getCellId());
-						logPack.put(Phone.Keys.LAC, getLAC());
-						logPack.put(Phone.Keys.MCC, getNetworkOperator());
-						sendToBuffer(logPack);
+						
+						if (hasTele)
+						{
+							ILogPack logPack = new ILogPack(Phone.Keys.CELL_ID, getCellId());
+							logPack.put(Phone.Keys.LAC, getLAC());
+							logPack.put(Phone.Keys.MCC, getNetworkOperator());
+							sendToBuffer(logPack);
+							
+							
+						}
 						
 						// find other bluetooth devices around
 						if(hasBluetooth && !ba.isDiscovering())
@@ -142,6 +159,7 @@ public class PhoneSucker extends SensorLogger {
 			return null;
 		}
 	}
+	
 	
 	public JSONArray getWifiNetworks() {
 		JSONArray wifi = new JSONArray();

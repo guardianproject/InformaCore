@@ -66,7 +66,7 @@ public class Constants {
 		public Logger() {}
 		
 		public static void e(String LOG, ExceptionInInitializerError e) {
-			Log.e(LOG, e.toString());
+			Log.e(LOG, e.toString(),e);
 			try {
 				Log.e(LOG, e.getMessage());
 			} catch(NullPointerException npe) {}
@@ -75,12 +75,8 @@ public class Constants {
 		}
 		
 		public static void e(String LOG, Exception e) {
-			Log.e(LOG, e.toString());
-			try {
-				Log.e(LOG, e.getMessage());
-			} catch(NullPointerException npe) {}
+			Log.e(LOG, e.toString(),e);
 			
-			e.printStackTrace();
 		}
 		
 		public static void d(String LOG, String msg) {
@@ -663,6 +659,7 @@ public class Constants {
 				supported.add("com.sec.android.app.camera");
 				supported.add("com.android.camera");
 				supported.add("com.google.android.gallery3d");
+				supported.add("com.google.android.GoogleCamera");
 				SUPPORTED = Collections.unmodifiableList(supported);
 			}
 		}
