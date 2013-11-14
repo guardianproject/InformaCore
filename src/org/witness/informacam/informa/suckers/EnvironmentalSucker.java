@@ -7,7 +7,6 @@ import org.json.JSONException;
 import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
-import org.witness.informacam.utils.Constants.Suckers.Accelerometer;
 import org.witness.informacam.utils.Constants.Suckers.Environment;
 
 import android.content.Context;
@@ -71,7 +70,7 @@ public class EnvironmentalSucker extends SensorLogger implements SensorEventList
 			}
 		});
 		
-		getTimer().schedule(getTask(), 0, Accelerometer.LOG_RATE);
+		getTimer().schedule(getTask(), 0, Environment.LOG_RATE);
 	}
 	
 	public ILogPack forceReturn() throws JSONException {
@@ -124,6 +123,7 @@ TYPE_TEMPERATURE	event.values[0]	°C	Device temperature.1
 						break;
 					case Sensor.TYPE_PRESSURE:
 						sVals.put(Environment.Keys.PRESSURE_MBAR, event.values[0]);
+						sVals.put(Environment.Keys.PRESSURE_ALTITUDE, SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, event.values[0]));
 						currentPressure = sVals;
 						break;
 					case Sensor.TYPE_LIGHT:
