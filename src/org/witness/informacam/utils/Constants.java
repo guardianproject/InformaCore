@@ -278,6 +278,8 @@ public class Constants {
 				public static final String VISIBLE_WIFI_NETWORKS = "visibleWifiNetworks";
 				public static final String BSSID = "bssid";
 				public static final String SSID = "ssid";
+				public static final String WIFI_FREQ = "wifiFreq";
+				public static final String WIFI_LEVEL = "wifiLevel";
 				public static final String BLUETOOTH_DEVICE_REDACTED = "bluetoothDeviceRedacted";
 				public static final String LAC = "LAC";
 				public static final String MCC = "MCC";
@@ -286,7 +288,7 @@ public class Constants {
 		}
 
 		public final static class Accelerometer {
-			public final static long LOG_RATE = 300L;
+			public final static long LOG_RATE = 500L;
 			
 			public final static class Keys {
 				public static final String ACC = "acc";
@@ -297,11 +299,14 @@ public class Constants {
 				public static final String PITCH = "pitch";
 				public static final String ROLL = "roll";
 				public static final String AZIMUTH = "azimuth";
+				public static final String PITCH_CORRECTED = "pitchCorrected";
+				public static final String ROLL_CORRECTED = "rollCorrected";
+				public static final String AZIMUTH_CORRECTED = "azimuthCorrected";
 			}
 		}
 		
 		public final static class Environment {
-			public final static long LOG_RATE = 5000L;
+			public final static long LOG_RATE = 1000L;
 			
 			public final static class Keys {
 				public static final String AMBIENT_TEMP = "ambientTemperature";
@@ -315,6 +320,7 @@ public class Constants {
 				
 				public static final String PRESSURE = "pressure";
 				public static final String PRESSURE_MBAR = "pressureHPAOrMBAR";
+				public static final String PRESSURE_ALTITUDE = "pressureAltitude";
 
 				public static final String LIGHT = "light";
 				public static final String LIGHT_METER_VALUE = "lightMeterValue";
@@ -326,6 +332,10 @@ public class Constants {
 
 			public final static class Keys {
 				public static final String GPS_COORDS = "gps_coords";
+				public static final String GPS_BEARING = "gps_bearing";
+				public static final String GPS_ALTITUDE = "gps_altitude";
+				public static final String GPS_SPEED = "gps_speed";
+				public static final String GPS_ACCURACY = "gps_accuracy";
 			}
 		}
 	}

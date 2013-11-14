@@ -1,5 +1,6 @@
 package org.witness.informacam.informa.suckers;
 
+import org.json.JSONException;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
@@ -9,7 +10,6 @@ import android.location.Criteria;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
@@ -40,13 +40,38 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	}
 	
 	public ILogPack forceReturn() {
+		
 		double[] loc = updateLocation();
 		if(loc == null) {
 			Log.d(LOG, "location was null");
 			loc = new double[] {0d, 0d};
 		}
 		
-		return new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		ILogPack iLogPack = new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		
+		if (mLastLocation != null){
+			try {
+				
+			if (mLastLocation.hasAccuracy())			
+					iLogPack.put(Geo.Keys.GPS_ACCURACY, mLastLocation.getAccuracy()+"");
+			
+			if (mLastLocation.hasAltitude())			
+				iLogPack.put(Geo.Keys.GPS_ALTITUDE, mLastLocation.getAltitude()+"");
+		
+			if (mLastLocation.hasSpeed())			
+				iLogPack.put(Geo.Keys.GPS_SPEED, mLastLocation.getSpeed()+"");
+		
+			if (mLastLocation.hasBearing())			
+				iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");		
+			
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		
+		return iLogPack;
 	}
 	
 	public long getTime() {
@@ -111,5 +136,13 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	@Override
 	public void onLocationChanged(Location location) {
 		mLastLocation = location;
+		
+		if(mLastLocation != null)
+		{
+			ILogPack iLogPack = forceReturn();
+			
+			if (iLogPack != null)
+				sendToBuffer(iLogPack);	
+		}
 	}
 }

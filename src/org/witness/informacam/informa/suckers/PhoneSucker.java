@@ -165,13 +165,14 @@ public class PhoneSucker extends SensorLogger {
 		JSONArray wifi = new JSONArray();
 		for(ScanResult wc : wm.getScanResults()) {
 			JSONObject scanResult = new JSONObject();
-			try {
+			try {				
+				scanResult.put(Phone.Keys.WIFI_FREQ, wc.frequency);
+				scanResult.put(Phone.Keys.WIFI_LEVEL, wc.level);
 				scanResult.put(Phone.Keys.BSSID, wc.BSSID);
 				scanResult.put(Phone.Keys.SSID, wc.SSID);
 				wifi.put(scanResult);
 			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Log.e(LOG, e.toString(),e);
 				continue;
 			}
 			

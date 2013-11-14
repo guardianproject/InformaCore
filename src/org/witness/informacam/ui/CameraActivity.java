@@ -6,6 +6,7 @@ import java.util.List;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.InformaService;
+import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Camera;
@@ -18,6 +19,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -45,6 +47,9 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		super.onCreate(savedInstanceState);
 		
 		setContentView(R.layout.activity_camera_waiter);
+		
+        int screenRotation = getWindowManager().getDefaultDisplay().getRotation();
+        AccelerometerSucker.setScreenRotation(screenRotation);
 		
 		informaCam = (InformaCam)getApplication();		
 		
@@ -101,8 +106,6 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		for(ResolveInfo ri : resolveInfo) {
 			String packageName = ri.activityInfo.packageName;
 			String name = ri.activityInfo.name;
-
-			Log.d(LOG, "found camera app: " + packageName);
 
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
 				cameraComponent = new ComponentName(packageName, name);
@@ -221,4 +224,13 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	}
 
 
+	   @Override
+       public void onConfigurationChanged(Configuration newConfig) {
+               super.onConfigurationChanged(newConfig);
+
+               int screenRotation = getWindowManager().getDefaultDisplay().getRotation();
+               AccelerometerSucker.setScreenRotation(screenRotation);
+
+               
+       }
 }
