@@ -1,5 +1,7 @@
 package org.witness.informacam.models.media;
 
+import java.util.ArrayList;
+
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
@@ -43,7 +45,9 @@ public class IVideo extends IMedia {
 			genealogy = new IGenealogy();
 		}
 		
-		genealogy.hashes = vc.hashVideo(dcimEntry.fileName);
+		String hash = vc.hashMedia(Type.IOCIPHER, dcimEntry.fileName,"mp4");		
+		genealogy.hashes = new ArrayList<String>();
+		genealogy.hashes.add(hash);
 		
 		// 2. copy over video
 		info.guardianproject.iocipher.File videoFile = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
