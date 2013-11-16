@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 
 import org.ffmpeg.android.BinaryInstaller;
 import org.ffmpeg.android.ShellUtils;
@@ -131,97 +130,76 @@ public class VideoConstructor {
 		}
 	}
 
-	public ArrayList<String> hashVideo(String pathToVideo) {
+	String newHash = null;
+	
+	
+	public String hashMedia(int fileType, String pathToMedia, String extension) {
 		/**
 		 * Hashes the video frames 
 		 * using FFMpeg's RGB hashing function and
 		 * hashes audio stream
 		 */
-		try {
+		
+		try
+		{
 			String ffmpegBin = new java.io.File(fileBinDir,"ffmpeg").getAbsolutePath();
 			Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 			
 			InformaCam informaCam = InformaCam.getInstance();
-			java.io.File tmpVid = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "tmp.mp4");
+			java.io.File tmpMedia = null;
 			
-			informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo, Type.IOCIPHER), tmpVid, true);
-			
-			ArrayList<String[]> ffmpegCommand = new ArrayList<String[]>();
-			
-			// just check available formats...
-			ffmpegCommand.add(new String[] {
-					ffmpegBin, "-formats"	
-			});
-			
-			// Does not work:
-			/*
-			ffmpegCommand.add(new String[] {
-					ffmpegBin, "-i", tmpVid.getAbsolutePath(),
-					"-f", "rawvideo", "-pix_fmt", 
-					"rgb24", "-f", "md5", "-"
-			});
-			
-			ffmpegCommand.add(new String[] {
-					ffmpegBin, "-i", tmpVid.getAbsolutePath(),
-					"-acodec", "copy", "-f", "md5", "-"
-			});
-			*/
-			
-			// TRY:
-			
-			/*
-			ffmpegCommand.add(new String[] {
-					ffmpegBin ,"-i", tmpVid.getAbsolutePath(),
-					"-f", "framemd5", "-"
-			});
-			
-			// OR:
-			ffmpegCommand.add(new String[] {
-					ffmpegBin, "-vsync", "0",
-					"-i", tmpVid.getAbsolutePath(),
-					"-v", "2", "-an", "-vcodec",
-					"rawvideo", "-f", "md5", "-"	
-			});
-			*/
-			
-			
-			final ArrayList<String> hashes = new ArrayList<String>();
-			for(String[] cmd : ffmpegCommand) {
-				StringBuffer sb = new StringBuffer();
-				for(String f: cmd) {
-					sb.append(f + " ");
-				}
-			
-				Log.d(LOG, "command to ffmpeg: " + sb.toString());
-				
-				
-				execProcess(cmd, new ShellUtils.ShellCallback () {
-
-					@Override
-					public void shellOut(String shellLine) {
-						Log.d(LOG, shellLine);
-						/*
-						if(shellLine.contains("MD5=")) {
-							hashes.add(shellLine.split("=")[1]);
-						}
-						*/
-					}
-
-					@Override
-					public void processComplete(int exitValue) {
-
-					}
-				});
+			if (fileType == Type.IOCIPHER)
+			{
+				tmpMedia = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "tmp." + extension);			
+				informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToMedia, Type.IOCIPHER), tmpMedia, true);
+			}
+			else if (fileType == Type.FILE_SYSTEM)
+			{
+				tmpMedia = new java.io.File(pathToMedia);
 			}
 			
-			tmpVid.delete();
-			return hashes;
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			String[] cmdHash = new String[] {
+					ffmpegBin, "-i", tmpMedia.getCanonicalPath(),
+					"-acodec", "copy", "-f", "md5", "-"
+			};					
+			
+			
+			execProcess(cmdHash, new ShellUtils.ShellCallback () {
+
+				@Override
+				public void shellOut(String shellLine) {
+				
+					if(shellLine.contains("MD5=")) {
+						String hashLine = shellLine.split("=")[1];
+						newHash = hashLine.split(" ")[0].trim();
+					}
+					
+				}
+
+				@Override
+				public void processComplete(int exitValue) {
+					
+						if (newHash == null)
+							newHash = "unknown";
+				}
+			});
+			
+			while (newHash == null)
+			{
+				try { Thread.sleep(500); } 
+				catch (Exception e){}
+			}
+			
+			if (fileType == Type.IOCIPHER)
+				tmpMedia.delete();
+			
+			return newHash;
+			
 		}
-		
-		return null;
+		catch (Exception e)
+		{
+			return null;
+		}
 	}
 	
 	private static void execProcess(String[] cmds, ShellUtils.ShellCallback sc) {

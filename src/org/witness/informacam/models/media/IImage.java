@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
@@ -54,6 +55,14 @@ public class IImage extends IMedia {
 			genealogy = new IGenealogy();
 		}
 		
+		//use the videocon hasher for images too... it works just fine
+		VideoConstructor vc = new VideoConstructor(informaCam);
+		
+		String hash = vc.hashMedia(Type.IOCIPHER, dcimEntry.fileName,"jpg");		
+		genealogy.hashes = new ArrayList<String>();
+		genealogy.hashes.add(hash);
+		
+		/*
 		genealogy.hashes = new ArrayList<String>();
 		try {
 			genealogy.hashes.add(MediaHasher.getBitmapHash(bitmap_));
@@ -62,7 +71,7 @@ public class IImage extends IMedia {
 		} catch (IOException e) {
 			Logger.e(LOG, e);
 		}
-
+		*/
 
 		bitmap = b.getAbsolutePath();
 		dcimEntry.fileName = null;
