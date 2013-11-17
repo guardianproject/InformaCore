@@ -1,6 +1,7 @@
 package org.witness.informacam.models.media;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -106,7 +107,7 @@ public class ILog extends IMedia {
 	
 	@SuppressLint("HandlerLeak")
 	@Override
-	public boolean export(final Context context, Handler h, final IOrganization organization, final boolean share) {
+	public boolean export(final Context context, Handler h, final IOrganization organization, final boolean share) throws FileNotFoundException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		Log.d(LOG, "exporting a log!");
@@ -220,7 +221,12 @@ public class ILog extends IMedia {
 						
 						m.associatedCaches.addAll(associatedCaches);
 						
-						m.export(context, responseHandler, organization, false);
+						try {
+							m.export(context, responseHandler, organization, false);
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 				}).start();
 				

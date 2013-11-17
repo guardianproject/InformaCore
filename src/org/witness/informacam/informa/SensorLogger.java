@@ -38,6 +38,8 @@ public class SensorLogger<T> {
 		
 	public SensorLogger(Context context) {
 		isRunning = true;
+		
+		mContext = context;
 	}
 	
 	public T getSucker() {
@@ -129,5 +131,10 @@ public class SensorLogger<T> {
 	public void setSuckerCacheListener (SuckerCacheListener scl)
 	{
 		mSuckerCacheListener = scl;
+	}
+	
+	public Context getContext ()
+	{
+		return mContext;
 	}
 }

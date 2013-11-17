@@ -22,6 +22,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	LocationManager lm;
 	Criteria criteria;
 	long currentNmeaTime = 0L;
+	private Location mLastLocation = null;
 	
 	private final static String LOG = Suckers.LOG;
 	
@@ -87,7 +88,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	}
 	
 	public double[] updateLocation() {
-		Location l = null;
+		
 		double[] location = new double[] {0.0, 0.0};
 		double[] isNull = new double[] {0.0, 0.0};
 
@@ -96,12 +97,14 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 
 			for(String provider : providers) {
 				Logger.d(LOG, String.format("querying location provider %s", provider));
-				l = lm.getLastKnownLocation(provider);
+				Location l = lm.getLastKnownLocation(provider);
 
 				if(l == null) {
 					Logger.d(LOG, String.format("Location at provider %s is returning null...", provider));
 					continue;
 				}
+				
+				mLastLocation = l;
 
 				location = new double[] {l.getLatitude(), l.getLongitude()};
 				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
@@ -136,6 +139,14 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	@Override
 	public void onLocationChanged(Location location) {
 		currentNmeaTime = location.getTime();
+		
+		mLastLocation = location;
+		
+		if(mLastLocation != null)
+		{
+			ILogPack iLogPack = forceReturn();
+			sendToBuffer(iLogPack);	
+		}
 	}
 
 	@Override

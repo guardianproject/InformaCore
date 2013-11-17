@@ -62,34 +62,7 @@ public class IRegion extends Model {
 				Logger.e(LOG, e);
 			}
 			
-			boolean startedByUs = false;
 			
-			if (InformaCam.getInstance().informaService == null)
-			{
-				InformaCam.getInstance().startInforma();
-				startedByUs = true;
-				
-				int numTries = 5;
-				int tryIdx = 0;
-						
-				while (InformaCam.getInstance().informaService == null && tryIdx < numTries)
-				{
-					try {Thread.sleep(300);}
-					catch(Exception e){}
-					
-					tryIdx++;
-					
-				}
-				
-				if (InformaCam.getInstance().informaService == null)
-					throw new RuntimeException ("Could not start informaservice");
-				
-			}
-			
-			InformaCam.getInstance().informaService.addRegion(this);
-			
-			if (startedByUs)
-				InformaCam.getInstance().stopInforma();
 		}
 	}
 	

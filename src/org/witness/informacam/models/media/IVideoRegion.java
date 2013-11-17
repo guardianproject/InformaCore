@@ -93,14 +93,17 @@ public class IVideoRegion extends IRegion {
 				}
 			});
 			
-			try {
-				return trailAtTime.iterator().next().bounds;
-			} catch(NullPointerException e) {
-				Logger.d(LOG, "we didn't get an exact match... moving on...");
-				// otherwise...
-			} catch(NoSuchElementException e) {
-				Logger.d(LOG, "we didn't get an exact match... moving on...");
-				// otherwise...
+			if (trailAtTime.size()>0)
+			{
+				try {
+					return trailAtTime.iterator().next().bounds;
+				} catch(NullPointerException e) {
+					Logger.d(LOG, "we didn't get an exact match... moving on...");
+					// otherwise...
+				} catch(NoSuchElementException e) {
+					Logger.d(LOG, "we didn't get an exact match... moving on...");
+					// otherwise...
+				}
 			}
 			
 			// get the subset (2) of objs whose timestamp is before ts, and after
@@ -115,17 +118,20 @@ public class IVideoRegion extends IRegion {
 				}
 			});
 			
-			try
+			if (lowerEnd.size() > 0)
 			{
-				Log.d(LOG, "lower end size: " + lowerEnd.size());
-				lower = Iterables.getLast(lowerEnd);
-				Log.d(LOG, "LOWER:\n" + lower.asJson().toString());
-			}
-			catch (NoSuchElementException e)
-			{
-				Log.d(LOG, "lower end size not found",e);
-				lower = new IVideoTrail();
-				
+				try
+				{
+					Log.d(LOG, "lower end size: " + lowerEnd.size());
+					lower = Iterables.getLast(lowerEnd);
+					Log.d(LOG, "LOWER:\n" + lower.asJson().toString());
+				}
+				catch (NoSuchElementException e)
+				{
+					Log.d(LOG, "lower end size not found",e);
+					lower = new IVideoTrail();
+					
+				}
 			}
 			
 			Collection<IVideoTrail> higherEnd = Collections2.filter(trail, new Predicate<IVideoTrail>() {

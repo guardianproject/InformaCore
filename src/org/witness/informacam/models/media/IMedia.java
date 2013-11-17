@@ -2,6 +2,7 @@ package org.witness.informacam.models.media;
 
 import info.guardianproject.iocipher.FileOutputStream;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
@@ -55,6 +57,9 @@ import android.util.Base64;
 import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
+	
+	public final static String EXPORT_MIME_TYPE = "application/json";
+	public final static String EXPORT_FILE_EXT = "j3m";
 	
 	public String rootFolder = null;
 	public String _id = null;
@@ -292,6 +297,32 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		region.init(activity, new IRegionBounds(top, left, width, height, startTime, endTime), listener);
+
+		boolean startedByUs = false;
+		
+		if (InformaCam.getInstance().informaService == null)
+		{
+			InformaCam.getInstance().startInforma();
+			startedByUs = true;
+			
+			int numTries = 5;
+			int tryIdx = 0;
+					
+			while (InformaCam.getInstance().informaService == null && tryIdx < numTries)
+			{
+				try {Thread.sleep(1000);}
+				catch(Exception e){}
+				
+				tryIdx++;
+				
+			}
+		}
+		
+		if (InformaCam.getInstance().informaService != null)
+			InformaCam.getInstance().informaService.addRegion(region);
+		
+		if (startedByUs)
+			InformaCam.getInstance().stopInforma();
 		
 		associatedRegions.add(region);
 		if(region.isInnerLevelRegion()) {
@@ -340,15 +371,17 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	@SuppressWarnings("unused")
-	protected void mungeData() {
+	protected void mungeData() throws FileNotFoundException {
 		if(data == null) {
 			data = new IData();
 		}
 		
-		if(associatedRegions != null && associatedRegions.size() > 0) {
+		if(associatedRegions != null) {
 			for(IRegion region : associatedRegions) {
+				
+				IRegionData regionData = new IRegionData(new IRegion(region));
+				
 				for(IForm form : region.associatedForms) {
-					IRegionData regionData = new IRegionData(new IRegion(region));
 					
 					if(regionData.associatedForms != null) {
 						if(data.userAppendedData == null) {
@@ -357,8 +390,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						
 						data.userAppendedData.add(regionData);
 					}
-					
-					break;
+										
 				}
 			}
 		}
@@ -428,15 +460,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 
-	public boolean export(Context context, Handler h) {
+	public boolean export(Context context, Handler h) throws FileNotFoundException {
 		return export(context, h, null, true);
 	}
 
-	public boolean export(Context context, Handler h, IOrganization organization) {
+	public boolean export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
 		return export(context, h, organization, false);
 	}
 
-	public boolean export(Context context, Handler h, IOrganization organization, boolean share) {
+	public boolean export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
 		
@@ -585,7 +617,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) {
+	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		System.gc();
 		
@@ -654,22 +686,26 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + ".j3m"; //txt = text file for J3M JSON DATA
+			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + '.' + EXPORT_FILE_EXT; //txt = text file for J3M JSON DATA
 
 			notification.generateId();
 			notification.mediaId = this._id;
 			
 			if(!debugMode) {
-				// gzip *FIRST
-				j3mBytes = IOUtility.gzipBytes(j3mBytes);
-
+				
 				// maybe encrypt
 				if(organization != null) {
+					
+					// gzip *FIRST
+					j3mBytes = IOUtility.gzipBytes(j3mBytes);
+
 					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+
+					// base64
+					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+
 				}
 				
-				// base64
-				j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
 			}
 			
 			
@@ -699,7 +735,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					
 					submission = new ITransportStub(organization, notification);
 					
-					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), "application/json");
+					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), EXPORT_MIME_TYPE);
 				}
 
 				
@@ -721,6 +757,77 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return true;
 	}
+
+	public String buildJ3M(Context context, boolean signData, Handler h) throws FileNotFoundException {
+		
+		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		System.gc();
+		
+		responseHandler = h;
+		int progress = 0;
+		InformaCam informaCam = InformaCam.getInstance();
+
+		INotification notification = new INotification();
+		notification.icon = bitmapThumb;
+
+		// create data package
+		if(data == null) {
+			data = new IData();
+		}
+		data.exif = dcimEntry.exif;
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeSensorLogs();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeData();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		mungeGenealogyAndIntent();
+		progress += 20;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
+		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
+			mimeType = context.getString(R.string.log);
+		}
+		
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+
+		JSONObject j3mObject = null;
+		try {
+			j3mObject = new JSONObject();
+			JSONObject j3m = new JSONObject();
+			
+			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			
+			if (signData)
+			{
+				byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());			
+				j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
+			}
+			
+			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+
+			return j3mObject.toString();
+			
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+			
+		} catch (ConcurrentModificationException e) {
+			Logger.e(LOG, e);
+			
+		}
+
+		return null;
+	}
+
 	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();

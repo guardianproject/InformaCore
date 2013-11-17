@@ -8,11 +8,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,6 +19,7 @@ import org.witness.informacam.R;
 import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.informa.suckers.EnvironmentalSucker;
 import org.witness.informacam.informa.suckers.GeoFusedSucker;
+import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
 import org.witness.informacam.models.j3m.ILocation;
@@ -51,9 +48,13 @@ import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -62,17 +63,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
 	private static InformaService informaService;
 
-	ExecutorService ex;
-
 	private long startTime = 0L;
 	private long realStartTime = 0L;
 
 	private int GPS_WAITING = 0;
 
-	public SensorLogger<GeoSucker> _geo;
-	public SensorLogger<PhoneSucker> _phone;
-	public SensorLogger<AccelerometerSucker> _acc;
-	public SensorLogger<EnvironmentalSucker> _env;
+	private SensorLogger<GeoSucker> _geo;
+	private SensorLogger<PhoneSucker> _phone;
+	private SensorLogger<AccelerometerSucker> _acc;
+	private SensorLogger<EnvironmentalSucker> _env;
 
 	private info.guardianproject.iocipher.File cacheFile, cacheRoot;
 	private List<String> cacheFiles = new ArrayList<String>();
@@ -134,12 +133,26 @@ public class InformaService extends Service implements SuckerCacheListener {
 		}
 
 		initCache();
-
-		_geo = new GeoFusedSucker(this);
-		_geo.setSuckerCacheListener(this);
 		
-		_phone = new PhoneSucker(this);
-		_phone.setSuckerCacheListener(this);
+		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
+
+		boolean hasPlayServices = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext()) == ConnectionResult.SUCCESS;
+		
+		
+		boolean isAirplane = isAirplaneModeOn (this);
+		
+		if (!isAirplane)
+		{
+			if (prefGpsEnableHires || (!hasPlayServices))
+				_geo = new GeoHiResSucker(this);
+			else	
+				_geo = new GeoFusedSucker(this);
+			
+			_geo.setSuckerCacheListener(this);
+			
+			_phone = new PhoneSucker(this);
+			_phone.setSuckerCacheListener(this);
+		}
 		
 		_acc = new AccelerometerSucker(this);
 		_acc.setSuckerCacheListener(this);
@@ -156,8 +169,30 @@ public class InformaService extends Service implements SuckerCacheListener {
 		init();
 	}
 	
+	/**
+	* Gets the state of Airplane Mode.
+	* 
+	* @param context
+	* @return true if enabled.
+	*/
+	private static boolean isAirplaneModeOn(Context context) {
+
+	   return Settings.System.getInt(context.getContentResolver(),
+	           Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+
+	}
+	
 	public ILocation getCurrentLocation() {
-		return new ILocation(((GeoSucker) _geo).updateLocation());
+		if (_geo != null)
+		{
+			double[] dLoc = ((GeoSucker) _geo).updateLocation();
+			
+			if (dLoc != null)
+				return new ILocation(dLoc);
+			
+		}
+		 
+		return null;
 	}
 
 	public long getCurrentTime() {
@@ -181,41 +216,44 @@ public class InformaService extends Service implements SuckerCacheListener {
 			@Override
 			public void run() {
 				
-				if (_geo == null || _phone == null)
-					return; //suckers are not init'd
 				
 				startTime = System.currentTimeMillis();
 				long currentTime = 0;
 				
-				currentTime = ((GeoSucker) _geo).getTime();				
-				
-				if(currentTime != 0) {
-					realStartTime = currentTime;					
-				}
-								
-				double[] currentLocation = null;
-				
-				currentLocation = ((GeoSucker) _geo).updateLocation();
-				
-				if(currentTime == 0 || currentLocation == null) {
-					GPS_WAITING++;
-
-					if(GPS_WAITING < Suckers.GPS_WAIT_MAX) {
-						h.postDelayed(this, 200);
-						return;
-					} else {
-						Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
+				if (_geo != null)
+				{
+					currentTime = ((GeoSucker) _geo).getTime();				
+					
+					if(currentTime != 0) {
+						realStartTime = currentTime;					
+					}
+									
+					double[] currentLocation = ((GeoSucker) _geo).updateLocation();
+					
+					if(currentTime == 0 || currentLocation == null) {
+						GPS_WAITING++;
+	
+						if(GPS_WAITING < Suckers.GPS_WAIT_MAX) {
+							h.postDelayed(this, 200);
+							return;
+						} else {
+							Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
+							GPS_WAITING = 0; //reset
+						}
+						
 					}
 					
+					onUpdate(((GeoSucker) _geo).forceReturn());
 				}
-
-				onUpdate(((GeoSucker) _geo).forceReturn());
 				
-				try {
-					onUpdate(((PhoneSucker) _phone).forceReturn());
-				} catch (JSONException e) {
-					Log.e(LOG, e.toString());
-					e.printStackTrace();
+				if (_phone != null)
+				{
+					try {
+						onUpdate(((PhoneSucker) _phone).forceReturn());
+					} catch (JSONException e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
+					}
 				}
 				
 				if (informaCam != null)
@@ -353,14 +391,17 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		saveCache();
 
-		try {
+		if (_phone != null)
 			_phone.getSucker().stopUpdates();
+		
+		if (_acc != null)
 			_acc.getSucker().stopUpdates();
+		
+		if (_geo != null)
 			_geo.getSucker().stopUpdates();
+		
+		if (_env != null)
 			_env.getSucker().stopUpdates();
-		} catch(NullPointerException e) {
-			e.printStackTrace();
-		}
 
 		_geo = null;
 		_phone = null;
@@ -391,99 +432,51 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return informaService;
 	}
 
-	public List<ILogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<List<ILogPack>> query = ex.submit(new Callable<List<ILogPack>>() {
-
-			@Override
-			public List<ILogPack> call() throws Exception {
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				List<ILogPack> events = new ArrayList<ILogPack>();
-				while(cIt.hasNext()) {
-					Entry<Long, ILogPack> entry = cIt.next();
-					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						events.add(entry.getValue());
-				}
-
-				return events;
-			}
-		});
-
-		List<ILogPack> events = query.get();
-		ex.shutdown();
+	public List<ILogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException, JSONException {
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+		List<ILogPack> events = new ArrayList<ILogPack>();
+		while(cIt.hasNext()) {
+			Entry<Long, ILogPack> entry = cIt.next();
+			if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+				events.add(entry.getValue());
+		}
 
 		return events;
 	}
 
 	public List<Entry<Long, ILogPack>> getAllEventsByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<List<Entry<Long, ILogPack>>> query = ex.submit(new Callable<List<Entry<Long, ILogPack>>>() {
-
-			@Override
-			public List<Entry<Long, ILogPack>> call() throws Exception {
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				List<Entry<Long, ILogPack>> events = new ArrayList<Entry<Long, ILogPack>>();
-				while(cIt.hasNext()) {
-					Entry<Long, ILogPack> entry = cIt.next();
-					if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						events.add(entry);
-				}
-
-				return events;
-			}
-		});
-
-		List<Entry<Long, ILogPack>> events = query.get();
-		ex.shutdown();
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+		List<Entry<Long, ILogPack>> events = new ArrayList<Entry<Long, ILogPack>>();
+		while(cIt.hasNext()) {
+			Entry<Long, ILogPack> entry = cIt.next();
+			if(entry.getValue().has(CaptureEvent.Keys.TYPE) && entry.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+				events.add(entry);
+		}
 
 		return events;
 	}
 
 	public Entry<Long, ILogPack> getEventByTypeWithTimestamp(final int type) throws JSONException, InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<Entry<Long, ILogPack>> query = ex.submit(new Callable<Entry<Long, ILogPack>>() {
-
-			@Override
-			public Entry<Long, ILogPack> call() throws Exception {
-				Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
-				Entry<Long, ILogPack> entry = null;
-				while(cIt.hasNext() && entry == null) {
-					Entry<Long, ILogPack> e = cIt.next();
-					if(e.getValue().has(CaptureEvent.Keys.TYPE) && e.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
-						entry = e;
-				}
-
-				return entry;
-			}
-		});
-
-		Entry<Long, ILogPack> entry = query.get();
-		ex.shutdown();
+		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
+		Entry<Long, ILogPack> entry = null;
+		while(cIt.hasNext() && entry == null) {
+			Entry<Long, ILogPack> e = cIt.next();
+			if(e.getValue().has(CaptureEvent.Keys.TYPE) && e.getValue().getInt(CaptureEvent.Keys.TYPE) == type)
+				entry = e;
+		}
 
 		return entry;
 	}
 
 	public ILogPack getEventByType(final int type) throws JSONException, InterruptedException, ExecutionException {
-		ex = Executors.newFixedThreadPool(100);
-		Future<ILogPack> query = ex.submit(new Callable<ILogPack>() {
+		Iterator<ILogPack> cIt = cache.asMap().values().iterator();
+		ILogPack ILogPack = null;
+		while(cIt.hasNext() && ILogPack == null) {
+			ILogPack lp = cIt.next();
 
-			@Override
-			public ILogPack call() throws Exception {
-				Iterator<ILogPack> cIt = cache.asMap().values().iterator();
-				ILogPack ILogPack = null;
-				while(cIt.hasNext() && ILogPack == null) {
-					ILogPack lp = cIt.next();
-
-					if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
-						ILogPack = lp;
-				}
-
-				return ILogPack;
-			}
-
-		});
-		ILogPack ILogPack = query.get();
-		ex.shutdown();
+			if(lp.has(CaptureEvent.Keys.TYPE) && lp.getInt(CaptureEvent.Keys.TYPE) == type)
+				ILogPack = lp;
+		}
 
 		return ILogPack;
 	}
@@ -516,13 +509,18 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@SuppressWarnings("unchecked")
 	public void addRegion(IRegion region) {
 		ILogPack ILogPack = new ILogPack(CaptureEvent.Keys.TYPE, CaptureEvent.REGION_GENERATED, true);
-		ILogPack regionLocationData = ((GeoSucker) _geo).forceReturn();
-		try {
-			ILogPack.put(CaptureEvent.Keys.REGION_LOCATION_DATA, regionLocationData);
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+		
+		if (_geo != null)
+		{
+			ILogPack regionLocationData = ((GeoSucker) _geo).forceReturn();
+			try {
+				ILogPack.put(CaptureEvent.Keys.REGION_LOCATION_DATA, regionLocationData);
+			} catch (JSONException e) {
+				Log.e(LOG, e.toString());
+				e.printStackTrace();
+			}
 		}
+		
 		Iterator<String> rIt = region.asJson().keys();
 		while(rIt.hasNext()) {
 			String key = rIt.next();
@@ -534,7 +532,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			}
 		}
 
-		Log.d(LOG, "HEY NEW REGION: " + ILogPack.asJson().toString());
+		//Log.d(LOG, "HEY NEW REGION: " + ILogPack.asJson().toString());
 		region.timestamp = onUpdate(ILogPack);
 	}
 
@@ -621,26 +619,29 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
-				try {
-					BluetoothDevice bd = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					ILogPack logPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());					
-					logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());					
-					onUpdate(logPack);
-
-				} catch(JSONException e) {}
-
-			} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-				try {
-					ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
-					onUpdate(ILogPack);
-				} catch(NullPointerException e) {
-					Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-					e.printStackTrace();
+			
+			if (informaService._phone != null)
+			{
+				if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
+					try {
+						BluetoothDevice bd = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+						ILogPack logPack = new ILogPack(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, bd.getAddress());					
+						logPack.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, bd.getName());					
+						onUpdate(logPack);
+	
+					} catch(JSONException e) {}
+	
+				} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+					try {
+						ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
+						onUpdate(ILogPack);
+					} catch(NullPointerException e) {
+						Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
+						e.printStackTrace();
+					}
+	
 				}
-
 			}
-
 		}
 
 	}
