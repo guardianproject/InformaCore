@@ -1,11 +1,11 @@
 package org.witness.informacam.informa.embed;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.ffmpeg.android.BinaryInstaller;
 import org.ffmpeg.android.ShellUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IMedia;
@@ -22,9 +22,11 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 public class VideoConstructor {
-	static String[] libraryAssets = {"ffmpeg"};
+	
 	static java.io.File fileBinDir;
-
+	
+	String ffmpegBin;
+	
 	info.guardianproject.iocipher.File pathToVideo;
 	info.guardianproject.iocipher.File pathToJ3M;
 
@@ -41,21 +43,10 @@ public class VideoConstructor {
 	private final static String LOG = Ffmpeg.LOG;
 
 	public VideoConstructor(Context context) {
-		// just push a call to ffmpeg
-		fileBinDir =  context.getDir("bin",0);
-
-		if (!new java.io.File(fileBinDir,libraryAssets[0]).exists()) {
-			BinaryInstaller bi = new BinaryInstaller(context,fileBinDir);
-			try {
-				bi.installFromRaw();
-			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
-		}
+		
+		fileBinDir = new File(context.getFilesDir().getParentFile(),"lib");
+		File fileBin = new File(fileBinDir,"libffmpeg.so");
+		ffmpegBin = fileBin.getAbsolutePath();
 	}
 	
 	public VideoConstructor(Context context, IMedia media, info.guardianproject.iocipher.File pathToVideo, info.guardianproject.iocipher.File pathToJ3M, String pathToNewVideo, int destination) throws IOException {
@@ -90,8 +81,6 @@ public class VideoConstructor {
 	}
 
 	private void constructVideo() throws IOException {
-		String ffmpegBin = new java.io.File(fileBinDir,"ffmpeg").getAbsolutePath();
-		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 
 		String[] ffmpegCommand = new String[] {
 				ffmpegBin, "-y", "-i", clone.getAbsolutePath(),
@@ -142,9 +131,6 @@ public class VideoConstructor {
 		
 		try
 		{
-			String ffmpegBin = new java.io.File(fileBinDir,"ffmpeg").getAbsolutePath();
-			Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
-			
 			InformaCam informaCam = InformaCam.getInstance();
 			java.io.File tmpMedia = null;
 			
@@ -237,8 +223,6 @@ public class VideoConstructor {
 
 	public Bitmap getAFrame(java.io.File source, int[] dims, int frame) throws IOException {		
 		final java.io.File tmp = new java.io.File(Storage.EXTERNAL_DIR, "bmp_" + System.currentTimeMillis());
-		String ffmpegBin = new java.io.File(fileBinDir,"ffmpeg").getAbsolutePath();
-		Runtime.getRuntime().exec("chmod 700 " + ffmpegBin);
 
 		String[] ffmpegCommand = new String[] {
 				ffmpegBin, "-t", String.valueOf(frame), 
