@@ -283,9 +283,12 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			e.printStackTrace();
 		}
 
-		Iterator<String> it = getIntent().getExtras().keySet().iterator();
-		while(it.hasNext()) {
-			getIntent().removeExtra(it.next());
+		if (getIntent().getExtras() != null && getIntent().getExtras().size() > 0)
+		{
+			Iterator<String> it = getIntent().getExtras().keySet().iterator();
+			while(it.hasNext()) {
+				getIntent().removeExtra(it.next());
+			}
 		}
 		
 		setResult(Activity.RESULT_OK);
@@ -300,8 +303,8 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 	}
 
 	@Override
-	public void onUpdate(Message message) {
-		((InformaCamEventListener) fragments.get(3)).onUpdate(message);
+	public void onUpdate(Message message) {		
+		((InformaCamEventListener) fragments.get(fragments.size() - 1)).onUpdate(message);
 
 	}
 

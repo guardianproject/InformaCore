@@ -110,7 +110,7 @@ public class IMediaManifest extends Model {
 		});
 		
 		if(limit != -1) {
-			return new ArrayList<IMedia>(media_).subList(0, (limit - 1));
+			return new ArrayList<IMedia>(media_).subList(0, limit);
 		}
 		
 		return new ArrayList<IMedia>(media_);
