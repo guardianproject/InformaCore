@@ -39,6 +39,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	SurfaceView view;
 	SurfaceHolder holder;
 	Camera camera;
+	CameraInfo cameraInfo;
 	Size size = null;
 	
 	private InformaCam informaCam = InformaCam.getInstance();
@@ -51,7 +52,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_surface_grabber);
+		setContentView(getLayout());
 
 		button = (Button) findViewById(R.id.surface_grabber_button);
 		button.setOnClickListener(this);
@@ -65,18 +66,62 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);		
 	}
 
+	protected int getLayout()
+	{
+		return R.layout.activity_surface_grabber;
+	}
+	
+	protected int getCameraDirection()
+	{
+		return CameraInfo.CAMERA_FACING_BACK;
+	}
+	
+	/**
+	 * Whether or not we can default to "other" direction if our preferred facing camera can't be opened
+	 * @return true to try camera facing other way, false otherwise
+	 */
+	protected boolean canUseOtherDirection()
+	{
+		return false;
+	}
+	
 	@Override
 	public void onResume() {
 		super.onResume();
 
-		camera = Camera.open();
-
-		if(camera == null)
-			finish();
+		if (!tryCreateCamera(getCameraDirection()))
+		{
+			if (!canUseOtherDirection() || !tryCreateCamera(getOtherDirection(getCameraDirection())))
+			{
+				finish();
+				return;
+			}
+		}
 		
 		setCameraDisplayOrientation();
 	}
 
+	private int getOtherDirection(int facing)
+	{
+		return (facing == CameraInfo.CAMERA_FACING_BACK) ? CameraInfo.CAMERA_FACING_FRONT : CameraInfo.CAMERA_FACING_BACK;
+	}
+	
+	private boolean tryCreateCamera(int facing)
+	{
+	     Camera.CameraInfo info = new Camera.CameraInfo();
+	     for (int nCam = 0; nCam < Camera.getNumberOfCameras(); nCam++)
+	     {
+		     Camera.getCameraInfo(nCam, info);
+		     if (info.facing == facing)
+		     {
+		    	 camera = Camera.open(nCam);
+		    	 cameraInfo = info;
+		    	 return true;
+		     }
+	     }
+	     return false;
+	}
+	
 	@Override
 	public void onPause() {
 		if(camera != null)
@@ -191,17 +236,9 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	
 	public void setCameraDisplayOrientation() 
 	{        
-	     if (camera == null)
+	     if (camera == null || cameraInfo == null)
 	     {
 	         return;             
-	     }
-
-	     Camera.CameraInfo info = new Camera.CameraInfo();
-	     for (int nCam = 0; nCam < Camera.getNumberOfCameras(); nCam++)
-	     {
-		     Camera.getCameraInfo(nCam, info);
-		     if (info.facing == CameraInfo.CAMERA_FACING_BACK)
-		    	 break;
 	     }
 
 	     WindowManager winManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
@@ -218,12 +255,12 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	     }
 
 	     int result;
-	     if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) 
+	     if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) 
 	     {
-	         result = (info.orientation + degrees) % 360;
+	         result = (cameraInfo.orientation + degrees) % 360;
 	         result = (360 - result) % 360;  // compensate the mirror
 	     } else {  // back-facing
-	         result = (info.orientation - degrees + 360) % 360;
+	         result = (cameraInfo.orientation - degrees + 360) % 360;
 	     }
 	     camera.setDisplayOrientation(result);
 	}
