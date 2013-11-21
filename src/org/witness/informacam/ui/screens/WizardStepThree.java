@@ -11,6 +11,7 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.WizardListener;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -203,4 +204,14 @@ public class WizardStepThree extends Fragment implements OnClickListener, Inform
 		}
 		
 	}
+
+
+	@Override
+	public Activity onFocusRequested() {
+		return a;
+	}
+
+
+	@Override
+	public void onFocusedActivityResult(int requestCode, int resultCode, Intent data) {}
 }

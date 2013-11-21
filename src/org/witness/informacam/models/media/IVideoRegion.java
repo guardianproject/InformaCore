@@ -2,16 +2,10 @@ package org.witness.informacam.models.media;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.TreeSet;
-
-import javax.annotation.Nullable;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 import org.witness.informacam.utils.Constants.Logger;
 

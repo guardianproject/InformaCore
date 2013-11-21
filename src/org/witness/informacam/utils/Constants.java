@@ -9,6 +9,8 @@ import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.ui.editors.IRegionDisplay;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Message;
@@ -29,6 +31,8 @@ public class Constants {
 
 	public interface InformaCamEventListener {
 		public void onUpdate(Message message);
+		public Activity onFocusRequested();
+		public void onFocusedActivityResult(int requestCode, int resultCode, Intent data);
 	}
 
 	public interface WizardListener {
@@ -115,6 +119,11 @@ public class Constants {
 			public static final int RETRY_GET = 105;
 			public static final int INFORMA_SERVICE = 106;
 			public static final int BACKGROUND_PROCESSOR = 107;
+		}
+		
+		public final static class Authentication {
+			public final static int REQUEST_ACCOUNT_PICKER = 200;
+			public final static int REQUEST_AUTHORIZATION = 201;
 		}
 		
 		public final static class Tasks {
