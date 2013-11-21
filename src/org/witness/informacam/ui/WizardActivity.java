@@ -273,16 +273,6 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 			e.printStackTrace();
 		}
 		
-		try {
-			for(String s : informaCam.getAssets().list("includedForms")) {
-				InputStream formXML = informaCam.ioService.getStream("includedForms/" + s, Type.APPLICATION_ASSET);
-				FormUtility.importAndParse(formXML);
-			}
-		} catch(IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
-
 		if (getIntent().getExtras() != null && getIntent().getExtras().size() > 0)
 		{
 			Iterator<String> it = getIntent().getExtras().keySet().iterator();

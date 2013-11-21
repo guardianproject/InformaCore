@@ -223,6 +223,68 @@ public class Transport extends IntentService {
 		return null;
 	}
 	
+	protected Object doPost(Model postData, ITransportData fileData, String urlString) {
+		// multipart
+		boolean useTorProxy = false;
+		
+		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
+			useTorProxy = true;
+				
+		HttpURLConnection http = buildConnection(urlString, useTorProxy);
+		
+		String boundary = "**11**22**44**99**InformaCam**";
+		String hyphens = "--";
+		String lineEnd = "\n";
+		
+		StringBuffer contentBuffer = new StringBuffer();
+		contentBuffer.append((hyphens + boundary + lineEnd).getBytes());
+		contentBuffer.append(("Content-Type:application/json;charset=UTF-8" + lineEnd + lineEnd).getBytes());
+		contentBuffer.append((postData.asJson().toString() + lineEnd + lineEnd).getBytes());
+		
+		contentBuffer.append((hyphens + boundary + lineEnd).getBytes());
+		contentBuffer.append(("Content-Type:" + fileData.mimeType + lineEnd + lineEnd).getBytes());
+		
+		try {
+			InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = in.read(buffer)) != -1) {
+				contentBuffer.append(buffer);
+			}
+			in.close();
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+			return null;
+		}
+		
+		contentBuffer.append((hyphens + boundary + hyphens).getBytes());
+		Logger.d(LOG, contentBuffer.toString());
+		
+		try {
+			http.setDoOutput(true);
+			http.setRequestMethod("POST");
+			http.setRequestProperty("Content-Type", "multipart/related;boundary=\"" + boundary + "\"");
+			http.setRequestProperty("Content-Length", Long.toString(contentBuffer.length()));
+			
+			InputStream is = new BufferedInputStream(http.getInputStream());
+			http.connect();
+			
+			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+			
+			if(http.getResponseCode() > -1) {
+				return(parseResponse(is));
+			}
+
+		} catch (ProtocolException e) {
+			Logger.e(LOG, e);
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
+	}
+	
 	protected Object doPost(Model postData, String urlString) {
 		
 		boolean useTorProxy = false;

@@ -97,6 +97,7 @@ public class Constants {
 		public static final String INFORMA_STOP = "org.witness.informacam.action.INFORMA_SERVICE_STOP";
 		public static final String PERSISTENT_SERVICE = "org.witness.informacam.action.PERSISTENT_SERVICE";
 		public static final String VERIFIED_MOBILE_MEDIA = "info.guardianproject.action.VERIFIED_MOBILE_MEDIA";
+		public static final String USER_ACCEPT_ACTION = "org.witness.informacam.action.USER_ACCEPT_ACTION";
 		
 		public static final String[] OUTSIDE_THE_LOOP = new String[] {
 			VERIFIED_MOBILE_MEDIA,
@@ -604,6 +605,14 @@ public class Constants {
 			
 			public class GoogleDrive {
 				public final static String TAG = RepositorySources.GOOGLE_DRIVE;
+				
+				public class Permissions {
+					public final static String USER = "user";
+				}
+				
+				public class Roles {
+					public final static String WRITER = "writer";
+				}
 			}
 		}
 

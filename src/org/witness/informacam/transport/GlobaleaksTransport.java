@@ -74,9 +74,6 @@ public class GlobaleaksTransport extends Transport {
 		JSONObject subResponse = (JSONObject) doPost(submission, repository.asset_root + "/submission");
 		
 		if(subResponse == null) {
-			
-	
-			
 			resend();
 		} else {
 			try {
