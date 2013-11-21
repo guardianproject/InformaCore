@@ -308,12 +308,4 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 
 	@Override
 	public void onSubFragmentInitialized() {}
-
-	@Override
-	public Activity onFocusRequested() {
-		return WizardActivity.this;
-	}
-
-	@Override
-	public void onFocusedActivityResult(int requestCode, int resultCode, Intent data) {}
 }

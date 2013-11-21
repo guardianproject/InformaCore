@@ -31,8 +31,6 @@ public class Constants {
 
 	public interface InformaCamEventListener {
 		public void onUpdate(Message message);
-		public Activity onFocusRequested();
-		public void onFocusedActivityResult(int requestCode, int resultCode, Intent data);
 	}
 
 	public interface WizardListener {
@@ -614,6 +612,12 @@ public class Constants {
 			
 			public class GoogleDrive {
 				public final static String TAG = RepositorySources.GOOGLE_DRIVE;
+				public static final String SCOPE = "oauth2:https://www.googleapis.com/auth/drive";
+				
+				public class Urls {
+					public final static String UPLOAD = "https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart";
+					public final static String SHARE = "https://www.googleapis.com/drive/v2/files/%s/permissions";
+				}
 				
 				public class Permissions {
 					public final static String USER = "user";

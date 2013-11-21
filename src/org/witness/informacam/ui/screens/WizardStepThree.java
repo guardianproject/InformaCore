@@ -204,14 +204,4 @@ public class WizardStepThree extends Fragment implements OnClickListener, Inform
 		}
 		
 	}
-
-
-	@Override
-	public Activity onFocusRequested() {
-		return a;
-	}
-
-
-	@Override
-	public void onFocusedActivityResult(int requestCode, int resultCode, Intent data) {}
 }
