@@ -1,13 +1,18 @@
 package org.witness.informacam.transport;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.ITransportStub.GoogleDrive;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
@@ -21,7 +26,6 @@ import android.content.Intent;
 import android.os.Bundle;
 
 public class GoogleDriveTransport extends Transport {
-	GDSubmissionMetadata metadata;
 	GDSubmissionPermission permission;
 	String fileId = null;
 	AuthToken authToken = null;
@@ -40,20 +44,69 @@ public class GoogleDriveTransport extends Transport {
 				return false;
 			}
 			
-			metadata = new GDSubmissionMetadata();
 			// upload to drive, on success: file id is in there
+			mBuilder.setProgress(100, 30, false);
+			mNotifyManager.notify(0, mBuilder.build());
 			
-			// insert permission
-			permission = new GDSubmissionPermission();
-			
+			JSONObject subResponse = (JSONObject) doPost(new GDSubmissionMetadata(), transportStub.asset, GoogleDrive.Urls.UPLOAD);
+			if(subResponse == null) {
+				resend();
+			} else {
+				try {
+					fileId = subResponse.getString("id");
+					// share to our google drive person
+					subResponse = (JSONObject) doPost(new GDSubmissionPermission(), String.format(GoogleDrive.Urls.SHARE, fileId));
+					Logger.d(LOG, "CONFIRM:\n" + transportStub.lastResult);
+					mBuilder.setProgress(100, 60, false);
+					mNotifyManager.notify(0, mBuilder.build());
+					
+					if(subResponse == null) {
+						resend();
+					} else {
+						Logger.d(LOG, "CONFIRM:\n" + transportStub.lastResult);
+						mBuilder
+							.setContentText("Successful upload to: " + repository.asset_root)
+							.setTicker("Successful upload to: " + repository.asset_root);
+						mBuilder.setAutoCancel(true);
+						mBuilder.setProgress(0, 0, false);
+						mNotifyManager.notify(0, mBuilder.build());
+					}
+					
+				} catch (JSONException e) {
+					Logger.e(LOG, e);
+					resend();
+				}
+				
+			}
+		} else {
+			Logger.d(LOG, "AUTH TOKEN NULL-- WHAT TO DO?");
 		}
 		return true;
+	}
+	
+	@Override
+	public Object parseResponse(InputStream response) {
+		super.parseResponse(response);
+		try {
+			response.close();
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+
+		try {
+			return (JSONObject) new JSONTokener(transportStub.lastResult).nextValue();
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+		}
+
+		Logger.d(LOG, "THIS POST DID NOT WORK");
+		return null;
 	}
 
 	@Override
 	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
 		HttpURLConnection http = super.buildConnection(urlString, useTorProxy);
-		http.setRequestProperty("Authorization", authToken.token);
+		http.setRequestProperty("Authorization", "Bearer " + authToken.token);
 
 		return http;
 	}
