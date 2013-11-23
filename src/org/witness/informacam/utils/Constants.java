@@ -474,7 +474,7 @@ public class Constants {
 				public final static String VIDEO = "video/mp4";
 				public final static String VIDEO_3GPP = "video/3gpp";
 				public static final String LOG = "informacam/log";
-				public static final String ZIP = "application/octet-stream";
+				public static final String ZIP = "application/zip";
 				public static final String ICTD = "application/octet-stream";
 				public static final String JSON = "application/json";
 			}
