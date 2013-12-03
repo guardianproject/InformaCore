@@ -50,7 +50,7 @@ public class EntryJob extends BackgroundTask {
 	String parentId = null;
 	String[] informaCache = null;
 	long timeOffset = 0L;
-	IDCIMEntry entry;
+	protected IDCIMEntry entry;
 
 	protected final static String LOG = "************************** EntryJob **************************";
 
@@ -268,7 +268,7 @@ public class EntryJob extends BackgroundTask {
 		}		
 	}	
 
-	private void commit() {
+	protected void commit() {
 		// delete/encrypt/replace all the data
 		info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
 		try {
