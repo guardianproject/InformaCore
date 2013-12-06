@@ -424,8 +424,10 @@ public class InformaCam extends Application {
 			
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
 				
-				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-				
+				synchronized (model)
+				{
+					result = saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
+				}
 			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
 			
 				result = saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));

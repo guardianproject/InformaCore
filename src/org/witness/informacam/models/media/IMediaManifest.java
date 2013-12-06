@@ -24,7 +24,10 @@ public class IMediaManifest extends Model {
 	public IMediaManifest() {}
 	
 	public boolean save() {
-		return InformaCam.getInstance().saveState(this);
+		synchronized (this)
+		{
+			return InformaCam.getInstance().saveState(this);
+		}
 	}
 	
 	public List<IMedia> getMediaList ()
@@ -44,19 +47,23 @@ public class IMediaManifest extends Model {
 	
 	public boolean removeMediaItem (IMedia mediaToRemove)
 	{
-		boolean res = listMedia.remove(mediaToRemove);
-		save();
+		synchronized (this)
+		{
+			boolean res = listMedia.remove(mediaToRemove);
+			save();
 		
-		return res;
+			return res;
+		}
 	}
 	
 	public boolean addMediaItem (IMedia mediaToAdd)
 	{
-		boolean res = listMedia.add(mediaToAdd);
-		save();
-		
-		return res;
-		
+		synchronized (this)
+		{
+			boolean res = listMedia.add(mediaToAdd);
+			save();
+			return res;
+		}
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })

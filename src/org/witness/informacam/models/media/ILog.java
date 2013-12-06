@@ -68,7 +68,7 @@ public class ILog extends IMedia {
 		inflate(media.asJson());
 	}
 	
-	public void sealLog(boolean share, IOrganization organization) throws IOException {
+	public void sealLog(boolean share, IOrganization organization, INotification notification) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		
@@ -94,7 +94,7 @@ public class ILog extends IMedia {
 				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
 				informaCam.ioService.saveBlob(Base64.encode(j3mBytes, Base64.DEFAULT), log);
 				
-				ITransportStub submission = new ITransportStub(organization);
+				ITransportStub submission = new ITransportStub(organization, notification);
 				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG);
 				
 				
@@ -113,7 +113,9 @@ public class ILog extends IMedia {
 		Log.d(LOG, "exporting a log!");
 		proxyHandler = h;
 		j3mZip = new HashMap<String, InputStream>();
-		
+
+		final INotification notification = new INotification();
+
 		responseHandler = new Handler() {
 			public int mediaHandled = 0;
 			
@@ -140,7 +142,7 @@ public class ILog extends IMedia {
 						try
 						{
 							Log.d(LOG, "Handled all the media!");
-							sealLog(share, organization);
+							sealLog(share, organization, notification);
 						}
 						catch (IOException ioe)
 						{
@@ -153,7 +155,6 @@ public class ILog extends IMedia {
 
 		int progress = 0;
 
-		INotification notification = new INotification();
 		// its icon will probably be some sort of stock thing
 		
 		// append its data sensory data, form data, etc.
@@ -169,7 +170,7 @@ public class ILog extends IMedia {
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 		notification.label = context.getString(R.string.export);
-
+		notification.mediaId = this._id;
 		notification.content = context.getString(R.string.you_exported_this_x, "log");
 		if(organization != null) {
 			intent.intendedDestination = organization.organizationName;
@@ -196,6 +197,7 @@ public class ILog extends IMedia {
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 			notification.generateId();
+			notification.taskComplete = false;
 			// XXX: maybe proxyHandler?
 			informaCam.addNotification(notification, responseHandler);
 
@@ -219,7 +221,8 @@ public class ILog extends IMedia {
 							m.associatedCaches = new ArrayList<String>();
 						}
 						
-						m.associatedCaches.addAll(associatedCaches);
+						if (associatedCaches != null)
+							m.associatedCaches.addAll(associatedCaches);
 						
 						try {
 							m.export(context, responseHandler, organization, false);
@@ -238,7 +241,7 @@ public class ILog extends IMedia {
 			
 			try
 			{
-				sealLog(share, organization);
+				sealLog(share, organization, notification);
 			}
 			catch (IOException ioe)
 			{
