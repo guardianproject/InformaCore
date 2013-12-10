@@ -77,26 +77,30 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	}
 	
 	/**
-	 * Whether or not we can default to "other" direction if our preferred facing camera can't be opened
-	 * @return true to try camera facing other way, false otherwise
-	 */
-	protected boolean canUseOtherDirection()
-	{
-		return false;
-	}
+     * Whether or not we can default to "other" direction if our preferred facing camera can't be opened
+     * @return true to try camera facing other way, false otherwise
+     */
+    protected boolean canUseOtherDirection()
+    {
+            return false;
+    }
+
 	
 	@Override
 	public void onResume() {
 		super.onResume();
 
 		if (!tryCreateCamera(getCameraDirection()))
-		{
-			if (!canUseOtherDirection() || !tryCreateCamera(getOtherDirection(getCameraDirection())))
-			{
-				finish();
-				return;
-			}
-		}
+        {
+                if (!canUseOtherDirection() || !tryCreateCamera(getOtherDirection(getCameraDirection())))
+                {
+                        finish();
+                        return;
+                }
+        }
+
+		if(camera == null)
+			finish();
 		
 		setCameraDisplayOrientation();
 	}

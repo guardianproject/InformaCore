@@ -97,6 +97,7 @@ public class Constants {
 		public static final String INFORMA_STOP = "org.witness.informacam.action.INFORMA_SERVICE_STOP";
 		public static final String PERSISTENT_SERVICE = "org.witness.informacam.action.PERSISTENT_SERVICE";
 		public static final String VERIFIED_MOBILE_MEDIA = "info.guardianproject.action.VERIFIED_MOBILE_MEDIA";
+		public static final String USER_ACCEPT_ACTION = "org.witness.informacam.action.USER_ACCEPT_ACTION";
 		
 		public static final String[] OUTSIDE_THE_LOOP = new String[] {
 			VERIFIED_MOBILE_MEDIA,
@@ -114,6 +115,11 @@ public class Constants {
 			public static final int RETRY_GET = 105;
 			public static final int INFORMA_SERVICE = 106;
 			public static final int BACKGROUND_PROCESSOR = 107;
+		}
+		
+		public final static class Authentication {
+			public final static int REQUEST_ACCOUNT_PICKER = 200;
+			public final static int REQUEST_AUTHORIZATION = 201;
 		}
 		
 		public final static class Tasks {
@@ -466,9 +472,10 @@ public class Constants {
 				public final static String VIDEO = "video/mp4";
 				public final static String VIDEO_3GPP = "video/3gpp";
 				public static final String LOG = "informacam/log";
-				public static final String ZIP = "application/octet-stream";
+				public static final String ZIP = "application/zip";
 				public static final String ICTD = "application/octet-stream";
 				public static final String JSON = "application/json";
+				public static final String J3M = JSON;
 			}
 
 			public class j3m {
@@ -601,6 +608,24 @@ public class Constants {
 			public class Globaleaks {
 				public final static String TAG = RepositorySources.GLOBALEAKS;
 			}
+			
+			public class GoogleDrive {
+				public final static String TAG = RepositorySources.GOOGLE_DRIVE;
+				public static final String SCOPE = "oauth2:https://www.googleapis.com/auth/drive";
+				
+				public class Urls {
+					public final static String UPLOAD = "https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart";
+					public final static String SHARE = "https://www.googleapis.com/drive/v2/files/%s/permissions";
+				}
+				
+				public class Permissions {
+					public final static String USER = "user";
+				}
+				
+				public class Roles {
+					public final static String WRITER = "writer";
+				}
+			}
 		}
 
 		public class IIdentity {
@@ -686,6 +711,11 @@ public class Constants {
 
 		public final static class Background {
 			public final static String LOG = "******************** InformaCam : BackgroundProcessor ********************";
+		}
+		
+		public final static class Forms {
+			public static final String FREE_AUDIO = "iWitness Free Audio Annotation";
+			public static final String FREE_TEXT = "iWitness Free Text Annotations";
 		}
 		
 		public final static class Storage {

@@ -368,6 +368,7 @@ public class InformaCam extends Application {
 		
 	}
 
+	@SuppressWarnings("unused")
 	private boolean saveState(Model model, java.io.File cache) throws IOException {
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
