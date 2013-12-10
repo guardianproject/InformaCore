@@ -616,7 +616,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 	
-	public String exportHash(Context context) {
+	public String exportHash() {
 		
 		//generate public hash id from values
 		String creatorHash = genealogy.createdOnDevice;
