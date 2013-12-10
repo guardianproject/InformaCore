@@ -11,7 +11,6 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,7 +49,6 @@ import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -620,12 +618,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		
 		//generate public hash id from values
 		String creatorHash = genealogy.createdOnDevice;
-		String mediaHash = StringUtils.join(genealogy.hashes);
-
+		StringBuffer mediaHash = new StringBuffer();
+		for(String mHash : genealogy.hashes) {
+			mediaHash.append(mHash);
+		}
+				
 		MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-1");
-			md.update((creatorHash+mediaHash).getBytes());
+			md.update((creatorHash + mediaHash.toString()).getBytes());
 			byte[] byteData = md.digest();
 
 			StringBuffer hexString = new StringBuffer();
