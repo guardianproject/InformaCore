@@ -9,8 +9,6 @@ import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.ui.editors.IRegionDisplay;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Message;
@@ -477,6 +475,7 @@ public class Constants {
 				public static final String ZIP = "application/zip";
 				public static final String ICTD = "application/octet-stream";
 				public static final String JSON = "application/json";
+				public static final String J3M = JSON;
 			}
 
 			public class j3m {
@@ -712,6 +711,11 @@ public class Constants {
 
 		public final static class Background {
 			public final static String LOG = "******************** InformaCam : BackgroundProcessor ********************";
+		}
+		
+		public final static class Forms {
+			public static final String FREE_AUDIO = "iWitness Free Audio Annotation";
+			public static final String FREE_TEXT = "iWitness Free Text Annotations";
 		}
 		
 		public final static class Storage {
