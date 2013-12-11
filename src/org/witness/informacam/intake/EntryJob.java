@@ -47,10 +47,10 @@ public class EntryJob extends BackgroundTask {
 
 	boolean isThumbnail;
 
-	String parentId = null;
-	String[] informaCache = null;
-	long timeOffset = 0L;
-	IDCIMEntry entry;
+	protected String parentId = null;
+	protected String[] informaCache = null;
+	protected long timeOffset = 0L;
+	protected IDCIMEntry entry;
 
 	protected final static String LOG = "************************** EntryJob **************************";
 
