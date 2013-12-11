@@ -10,6 +10,8 @@ import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 
 public class IOrganization extends Model implements Serializable {
+	private static final long serialVersionUID = 5005603473230382669L;
+	
 	public String organizationName = null;
 	public String organizationDetails = null;
 	public String publicKey = null;

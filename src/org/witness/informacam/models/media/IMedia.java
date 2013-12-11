@@ -371,7 +371,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		mungeData(null);
 	}
 	
-	@SuppressWarnings("unused")
 	protected void mungeData(IOrganization organization) throws FileNotFoundException {
 		if(data == null) {
 			data = new IData();
