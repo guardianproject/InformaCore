@@ -24,7 +24,7 @@ import android.support.v4.app.NotificationCompat;
 
 public class GlobaleaksTransport extends Transport {
 	GLSubmission submission = null;
-	
+
 	public final static String FULL_DESCRIPTION = "Full description";
 	public final static String FILES_DESCRIPTION = "Files description";
 	public final static String SHORT_TITLE = "Short title";
@@ -42,27 +42,26 @@ public class GlobaleaksTransport extends Transport {
 		}
 
 		Intent resultIntent = new Intent(Intent.ACTION_VIEW);
-		
+
 		PendingIntent resultPendingIntent =
-			    PendingIntent.getActivity(
-			    this,
-			    0,
-			    resultIntent,
-			    PendingIntent.FLAG_UPDATE_CURRENT
-			);
-		
-		NotificationManager mNotifyManager =
-		        (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+				PendingIntent.getActivity(
+						this,
+						0,
+						resultIntent,
+						PendingIntent.FLAG_UPDATE_CURRENT
+						);
+
+		NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
-		    .setContentText(getString(R.string.upload_in_progress) + ": " + repoName)
-		    .setTicker(getString(R.string.upload_in_progress))
-		    .setSmallIcon(android.R.drawable.ic_menu_upload)
-		    .setContentIntent(resultPendingIntent);
-		  mBuilder.setProgress(100, 0, false);
-          // Displays the progress bar for the first time.
-          mNotifyManager.notify(0, mBuilder.build());
-          
+		.setContentText(getString(R.string.upload_in_progress) + ": " + repoName)
+		.setTicker(getString(R.string.upload_in_progress))
+		.setSmallIcon(android.R.drawable.ic_menu_upload)
+		.setContentIntent(resultPendingIntent);
+		mBuilder.setProgress(100, 0, false);
+		// Displays the progress bar for the first time.
+		mNotifyManager.notify(0, mBuilder.build());
+
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
 
@@ -72,20 +71,17 @@ public class GlobaleaksTransport extends Transport {
 
 		// init submission
 		JSONObject subResponse = (JSONObject) doPost(submission, repository.asset_root + "/submission");
-		
+
 		if(subResponse == null) {
-			
-	
-			
 			resend();
 		} else {
 			try {
 				submission.inflate(subResponse);
 
-				  mBuilder.setProgress(100, 30, false);
-					// Displays the progress bar for the first time.
-			          mNotifyManager.notify(0, mBuilder.build());
-				
+				mBuilder.setProgress(100, 30, false);
+				// Displays the progress bar for the first time.
+				mNotifyManager.notify(0, mBuilder.build());
+
 				if(submission.submission_gus != null) {
 					if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
 						submission.finalize = true;
@@ -95,11 +91,10 @@ public class GlobaleaksTransport extends Transport {
 						} catch (JSONException e) {
 							Logger.e(LOG, e);
 						}
-						
 
-						  mBuilder.setProgress(100, 60, false);
-							// Displays the progress bar for the first time.
-					          mNotifyManager.notify(0, mBuilder.build());
+						mBuilder.setProgress(100, 60, false);
+						// Displays the progress bar for the first time.
+						mNotifyManager.notify(0, mBuilder.build());
 
 						JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
 						if(receivers != null) {
@@ -146,31 +141,31 @@ public class GlobaleaksTransport extends Transport {
 						 * 		"finalize":true
 						 * }
 						 */
-						
+
 						try {
 							JSONObject submissionResult = (JSONObject) doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
 							if(submissionResult != null) {
 								submission.inflate(submissionResult);
 								Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());
-								
+
 								mBuilder
-							    .setContentText("Successful upload to: " + repository.asset_root)
-							    .setTicker("Successful upload to: " + repository.asset_root);
-							    mBuilder.setAutoCancel(true);
-								  mBuilder.setProgress(0, 0, false);
-									// Displays the progress bar for the first time.
-							          mNotifyManager.notify(0, mBuilder.build());
-								
+									.setContentText("Successful upload to: " + repository.asset_root)
+									.setTicker("Successful upload to: " + repository.asset_root);
+								mBuilder.setAutoCancel(true);
+								mBuilder.setProgress(0, 0, false);
+								// Displays the progress bar for the first time.
+								mNotifyManager.notify(0, mBuilder.build());
+
 							}
 						} catch(Exception e) {
 							Logger.e(LOG, e);
 						}
-						
+
 						finishSuccessfully();
 					} else {
-						
+
 						resend();
-						
+
 					}
 
 				}
@@ -179,16 +174,16 @@ public class GlobaleaksTransport extends Transport {
 				Logger.e(LOG, e);
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	@Override
 	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
 		HttpURLConnection http = super.buildConnection(urlString, useTorProxy);
 		http.setRequestProperty("X-XSRF-TOKEN", "antani");
 		http.setRequestProperty("Cookie", "XSRF-TOKEN=antani;");
-		
+
 		return http;
 	}
 
@@ -221,7 +216,7 @@ public class GlobaleaksTransport extends Transport {
 
 	public class GLSubmission extends Model implements Serializable {
 		private static final long serialVersionUID = -2831519338966909927L;
-		
+
 		public String context_gus = null;
 		public String submission_gus = null;
 		public boolean finalize = false;
@@ -242,16 +237,16 @@ public class GlobaleaksTransport extends Transport {
 		private final static String DOWNLOAD_LIMIT = "download_limit";
 		private final static String ACCESS_LIMIT = "access_limit";
 		private final static String RECEIVER_GUS = "receiver_gus";
-		
+
 		public GLSubmission() {
 			super();
 		}
-		
+
 		public GLSubmission(GLSubmission submission) {
 			super();
 			inflate(submission);
 		}
-		
+
 		@Override
 		public void inflate(JSONObject values) {
 			try {

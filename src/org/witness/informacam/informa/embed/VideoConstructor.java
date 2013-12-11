@@ -147,7 +147,25 @@ public class VideoConstructor {
 			String[] cmdHash = new String[] {
 					ffmpegBin, "-i", tmpMedia.getCanonicalPath(),
 					"-acodec", "copy", "-f", "md5", "-"
-			};					
+			};				
+			
+			if (extension.equalsIgnoreCase("jpg"))
+			{
+				//different hash for images
+				//ffmpeg -f image2 -i IMG_20131209_054750.jpg -vcodec copy -an -crf 32 -threads 1 -f md5 -
+				
+				cmdHash = new String[] {
+						ffmpegBin, 
+						"-f","image2",
+						"-i", tmpMedia.getCanonicalPath(),
+						"-vcodec", "copy",
+						"-an",
+						"-crf","32",
+						"-threads","1",
+						"-f", "md5", 
+						"-"
+				};			
+			}
 			
 			
 			execProcess(cmdHash, new ShellUtils.ShellCallback () {

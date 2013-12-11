@@ -4,6 +4,7 @@ import info.guardianproject.onionkit.ui.OrbotHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -223,6 +224,83 @@ public class Transport extends IntentService {
 		return null;
 	}
 	
+	protected Object doPost(Model postData, ITransportData fileData, String urlString) {
+		// multipart
+		boolean useTorProxy = false;
+		
+		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
+			useTorProxy = true;
+				
+		HttpURLConnection http = buildConnection(urlString, useTorProxy);
+		
+		String boundary = "==11==22==44==99==InformaCam==";
+		String hyphens = "--";
+		String lineEnd = "\n";
+		
+		long bytesWritten = 0;
+		List<StringBuffer> contentBuffer = new ArrayList<StringBuffer>();
+
+		StringBuffer sb = new StringBuffer();
+		sb.append((hyphens + boundary + lineEnd));
+		sb.append(("Content-type: application/json; charset=UTF-8" + lineEnd + lineEnd));
+		sb.append((postData.asJson().toString() + lineEnd + lineEnd));
+		sb.append((hyphens + boundary + lineEnd));
+		sb.append(("Content-type: " + fileData.mimeType + lineEnd + lineEnd));
+
+		bytesWritten += sb.toString().getBytes().length;
+		contentBuffer.add(sb);
+
+		sb = new StringBuffer();
+		sb.append((lineEnd + lineEnd));
+		sb.append((hyphens + boundary + hyphens));
+		
+		bytesWritten += sb.toString().getBytes().length;
+		contentBuffer.add(sb);
+		
+		try {
+			InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
+			bytesWritten += in.available();
+			
+			http.setDoOutput(true);
+			
+			http.setRequestMethod("POST");
+			http.setRequestProperty("Content-Type", "multipart/related; boundary=\"" + boundary + "\"");
+			http.setRequestProperty("Content-Length", Long.toString(bytesWritten));
+			
+			BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
+			out.write(contentBuffer.get(0).toString().getBytes());
+			Logger.d(LOG, contentBuffer.get(0).toString());
+			
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = in.read(buffer)) != -1) {
+			   out.write(buffer, 0, len);
+			}
+			in.close();
+			Logger.d(LOG, "[... data ...]");
+			
+			out.write(contentBuffer.get(1).toString().getBytes());
+			Logger.d(LOG, contentBuffer.get(1).toString());
+			
+			out.flush();
+			out.close();
+			
+			InputStream is = new BufferedInputStream(http.getInputStream());
+			http.connect();
+			
+			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+			
+			if(http.getResponseCode() > -1) {
+				return(parseResponse(is));
+			}
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
+	}
+	
 	protected Object doPost(Model postData, String urlString) {
 		
 		boolean useTorProxy = false;
@@ -380,8 +458,11 @@ public class Transport extends IntentService {
 			
 			if (useTorProxy)
 			{
+				Logger.d(LOG, "AND USING TOR PROXY");
 				Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", 8118));
 				http = (HttpURLConnection) url.openConnection(proxy);
+			} else {
+				http = (HttpURLConnection) url.openConnection();
 			}
 			
 			http.setUseCaches(false);
