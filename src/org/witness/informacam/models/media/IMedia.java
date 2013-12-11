@@ -367,8 +367,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		intent.pgpKeyFingerprint = informaCam.user.pgpKeyFingerprint;
 	}
 	
-	@SuppressWarnings("unused")
 	protected void mungeData() throws FileNotFoundException {
+		mungeData(null);
+	}
+	
+	@SuppressWarnings("unused")
+	protected void mungeData(IOrganization organization) throws FileNotFoundException {
 		if(data == null) {
 			data = new IData();
 		}
@@ -378,9 +382,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 				IRegionData regionData = new IRegionData(new IRegion(region));
 				
-				for(IForm form : region.associatedForms) {
-					
+				for(IForm form : region.associatedForms) {					
 					if(regionData.associatedForms != null) {
+						if(organization != null) {
+							try {
+								if(!organization.getFormNamespaces().contains(form.namespace)) {
+									continue;
+								}
+							} catch(NullPointerException e) {
+								continue;
+							}
+						}
+						
 						if(data.userAppendedData == null) {
 							data.userAppendedData = new ArrayList<IRegionData>();
 						}
@@ -488,7 +501,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		mungeData();
+		mungeData(organization);
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -668,7 +681,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		mungeData();
+		mungeData(organization);
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 

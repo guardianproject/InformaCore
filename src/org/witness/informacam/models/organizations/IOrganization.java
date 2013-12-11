@@ -27,6 +27,20 @@ public class IOrganization extends Model implements Serializable {
 		inflate(organization);
 	}
 	
+	public List<String> getFormNamespaces() {
+		List<String> formNamespaces = null;
+		
+		for(IForm f : forms) {
+			if(formNamespaces == null) {
+				formNamespaces = new ArrayList<String>();
+			}
+			
+			formNamespaces.add(f.namespace);
+		}
+		
+		return formNamespaces;
+	}
+	
 	public void save() {
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.installedOrganizations.getByFingerprint(organizationFingerprint).inflate(this);
