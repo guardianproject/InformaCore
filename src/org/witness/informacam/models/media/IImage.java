@@ -1,15 +1,11 @@
 package org.witness.informacam.models.media;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.utils.ImageUtility;
-import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.graphics.Bitmap;

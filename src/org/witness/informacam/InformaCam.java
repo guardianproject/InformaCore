@@ -305,7 +305,7 @@ public class InformaCam extends Application {
 		}
 		
 		transportManifest = (ITransportManifest) getModel(transportManifest);
-		languageMap = (ILanguageMap) getModel(languageMap);
+		languageMap = (ILanguageMap) getModel(languageMap);		
 	}
 	
 	private void setModels() {
@@ -604,6 +604,11 @@ public class InformaCam extends Application {
 					IForm form = FormUtility.importAndParse(new ByteArrayInputStream(baos.toByteArray()));
 					if(form != null) {
 						Logger.d(LOG, String.format("adding form\n%s", form.asJson().toString()));
+						
+						if(form.namespace.equals(App.Forms.FREE_AUDIO) || form.namespace.equals(App.Forms.FREE_TEXT)) {
+							form.isMaster = true;
+						}
+						
 						forms.put(f, form.asJson());
 					} else {
 						Logger.d(LOG, String.format("form %d was null!?", f));

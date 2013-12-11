@@ -48,6 +48,7 @@
     <string name="old_version">Old Version</string>
     <string name="new_version">New Version</string>
     <string name="could_not_import_ictd">Could not import any ICTD file.  Please try again.</string>
+    <string name="imported_ictd_for_x">Imported ICTD file for %1$s</string>
     <string name="this_ictd_has_not_changed">This ICTD has not actually changed.  Update anyway?</string>
     <string name="zero">0</string>
     <string name="please_wait_video_loading">Please wait.  Video loading \u2026</string>

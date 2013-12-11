@@ -14,6 +14,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.forms.IInstalledForms;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Forms;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -32,6 +33,11 @@ public class FormUtility {
 
 		try {
 			installedForms.inflate(informaCam.ioService.getBytes(IManifest.FORMS, Type.IOCIPHER));
+			for(IForm form : installedForms.installedForms) {
+				if(form.namespace.equals(App.Forms.FREE_AUDIO) || form.namespace.equals(App.Forms.FREE_TEXT)) {
+					form.isMaster = true;
+				}
+			}
 		} catch(NullPointerException e) {
 			installedForms.installedForms = new ArrayList<IForm>();
 		}

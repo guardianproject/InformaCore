@@ -30,7 +30,8 @@ public class IForm extends Model implements Serializable {
 	public String path = null;
 	public String answerPath = null;
 	public JSONObject answerData = null;
-	public String id = null; 
+	public String id = null;
+	public boolean isMaster = false;
 
 	FormWrapper fw = null;
 	Activity a = null;
