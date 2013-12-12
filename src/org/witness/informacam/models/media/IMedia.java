@@ -4,6 +4,7 @@ import info.guardianproject.iocipher.FileOutputStream;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -18,7 +19,6 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
-import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
@@ -57,10 +57,7 @@ import android.util.Base64;
 import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
-	
-	public final static String EXPORT_MIME_TYPE = "application/json";
-	public final static String EXPORT_FILE_EXT = "j3m";
-	
+
 	public String rootFolder = null;
 	public String _id = null;
 	public String _rev = null;
@@ -616,6 +613,37 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return true;
 	}
+	
+	public String exportHash() {
+		
+		//generate public hash id from values
+		String creatorHash = genealogy.createdOnDevice;
+		StringBuffer mediaHash = new StringBuffer();
+		for(String mHash : genealogy.hashes) {
+			mediaHash.append(mHash);
+		}
+				
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-1");
+			md.update((creatorHash + mediaHash.toString()).getBytes());
+			byte[] byteData = md.digest();
+
+			StringBuffer hexString = new StringBuffer();
+			for (int i=0;i<byteData.length;i++) {
+				String hex=Integer.toHexString(0xff & byteData[i]);
+				if(hex.length()==1) hexString.append('0');
+				hexString.append(hex);
+			}
+
+			return hexString.toString();
+
+		} catch (NoSuchAlgorithmException e) {
+			Logger.e(LOG, e);
+		}
+		
+		return null;
+	}
 
 	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
@@ -686,7 +714,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + '.' + EXPORT_FILE_EXT; //txt = text file for J3M JSON DATA
+			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + '.' + Models.IMedia.J3M; //txt = text file for J3M JSON DATA
 
 			notification.generateId();
 			notification.mediaId = this._id;
@@ -732,10 +760,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					informaCam.addNotification(notification, responseHandler);
 					
 					IOUtils.write(j3mBytes, new FileOutputStream(exportFile));
-					
 					submission = new ITransportStub(organization, notification);
-					
-					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), EXPORT_MIME_TYPE);
+					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), MimeType.J3M);
 				}
 
 				
@@ -827,7 +853,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return null;
 	}
-
 	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
