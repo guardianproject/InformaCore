@@ -91,8 +91,12 @@ public class ILog extends IMedia {
 
 			if(organization != null) {
 				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
-				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
-				informaCam.ioService.saveBlob(Base64.encode(j3mBytes, Base64.DEFAULT), log);
+				if (!debugMode)
+				{
+					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+				}
+				informaCam.ioService.saveBlob(j3mBytes, log);
 				
 				ITransportStub submission = new ITransportStub(organization, notification);
 				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG);
@@ -129,11 +133,6 @@ public class ILog extends IMedia {
 										
 					InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
 					j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
-					try {
-						versionBytes.close();
-					} catch (IOException e) {
-						Logger.e(LOG, e);
-					}
 					
 					mediaHandled++;
 					
@@ -225,7 +224,7 @@ public class ILog extends IMedia {
 							m.associatedCaches.addAll(associatedCaches);
 						
 						try {
-							m.export(context, responseHandler, organization, false);
+							m.export(context, responseHandler, null, false);
 						} catch (FileNotFoundException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
