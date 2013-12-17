@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import org.apache.commons.io.IOUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.intake.DCIMObserver;
 import org.witness.informacam.models.Model;
@@ -86,11 +87,7 @@ public class IOService {
 			try {
 				java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
 				
-				byte[] buf = new byte[1024];
-				int b;
-				while((b = data.read(buf)) > 0) {
-					fos.write(buf, 0, b);
-				}
+				IOUtils.copyLarge(data, fos);
 				
 				fos.flush();
 				fos.close();
@@ -119,11 +116,8 @@ public class IOService {
 	public boolean saveBlob(InputStream data, java.io.File file, String uriToDelete) throws IOException {
 		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);		
 		
-		byte[] buf = new byte[1024];
-		int b;
-		while((b = data.read(buf)) > 0) {
-			fos.write(buf, 0, b);
-		}
+		IOUtils.copyLarge(data, fos);
+		
 		fos.flush();
 		fos.close();
 		
@@ -137,13 +131,9 @@ public class IOService {
 	@SuppressWarnings("static-access")
 	public boolean saveBlob(byte[] data, java.io.File file, String uriToDelete) throws IOException {		
 		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
-		ByteArrayInputStream bais = new ByteArrayInputStream(data);
 		
-		byte[] buf = new byte[1024];
-		int b;
-		while((b = bais.read(buf)) > 0) {
-			fos.write(buf, 0, b);
-		}
+		IOUtils.write(data,  fos);
+		
 		fos.flush();
 		fos.close();
 		
@@ -191,13 +181,7 @@ public class IOService {
 		info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
 		Log.d(LOG, "touch (IOCipher) " + file.getAbsolutePath() + " (b " + is.available() + ")");
 		
-		byte[] buf = new byte[1024];
-		int b;
-		while((b = is.read(buf)) > 0) {
-			fos.write(buf, 0, b);
-		}			
-		fos.flush();
-		fos.close();
+		IOUtils.copyLarge(is,  fos);
 		
 		if(uri != null) {
 			mContext.getContentResolver().delete(Uri.parse(uri), null, null);
