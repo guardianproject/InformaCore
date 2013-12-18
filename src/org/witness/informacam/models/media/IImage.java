@@ -1,20 +1,23 @@
 package org.witness.informacam.models.media;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
+import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.Logger;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
+import android.util.Log;
 
 public class IImage extends IMedia {
 	public String bitmap;
@@ -29,26 +32,39 @@ public class IImage extends IMedia {
 	}
 
 	@Override
-	public boolean analyze() {
+	public boolean analyze() throws IOException {
 		super.analyze();
-
+		
+		if (Debug.WAIT_FOR_DEBUGGER)
+			android.os.Debug.waitForDebugger();
+		
 		InformaCam informaCam = InformaCam.getInstance();
 
-		byte[] bytes = informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER);
+		InputStream isImage = informaCam.ioService.getStream(dcimEntry.fileName, Type.IOCIPHER);
 
-		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inPurgeable = true;
-		opts.inInputShareable = false;
+		BitmapFactory.Options opts = new BitmapFactory.Options();		                            
+		opts.inScaled = false; 		
+		opts.inPurgeable=true;
 
-		if (bytes == null)
-			return false;
-		
-		final Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
+		Bitmap bitmap_ = BitmapFactory.decodeStream(isImage, null, opts);
 		height = bitmap_.getHeight();
 		width = bitmap_.getWidth();
-
+				
 		info.guardianproject.iocipher.File b = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
-		informaCam.ioService.saveBlob(bytes, b);
+		try {
+			isImage.close();
+			
+			isImage = informaCam.ioService.getStream(dcimEntry.fileName, Type.IOCIPHER);
+			
+			informaCam.ioService.saveBlob(isImage, b);	
+			
+		} catch (IOException e) {
+
+			Log.e(LOG,"error analyzing image",e);
+			return false;
+		}
+		
+		bitmap = b.getAbsolutePath();
 		
 		// hash
 		if(genealogy == null) {
@@ -56,28 +72,24 @@ public class IImage extends IMedia {
 		}
 		
 		//use the videocon hasher for images too... it works just fine
-		VideoConstructor vc = new VideoConstructor(informaCam);
+		//VideoConstructor vc = new VideoConstructor(informaCam);		
+		//String hash = vc.hashMedia(Type.IOCIPHER, dcimEntry.fileName,"jpg");
+		String hash = null;
 		
-		String hash = vc.hashMedia(Type.IOCIPHER, dcimEntry.fileName,"jpg");		
+		try
+		{
+			hash = MediaHasher.getJpegHash(informaCam.ioService.getStream(dcimEntry.fileName, Type.IOCIPHER));			
+			Log.d(LOG,"import media hash:" + hash);
+		}
+		catch (Exception e)
+		{
+			Log.e(LOG,"error media hash",e);
+				
+		}
+		
 		genealogy.hashes = new ArrayList<String>();
 		genealogy.hashes.add(hash);
 		
-		/*
-		genealogy.hashes = new ArrayList<String>();
-		try {
-			genealogy.hashes.add(MediaHasher.getBitmapHash(bitmap_));
-		} catch (NoSuchAlgorithmException e) {
-			Logger.e(LOG, e);
-		} catch (IOException e) {
-			Logger.e(LOG, e);
-		}
-		*/
-
-		bitmap = b.getAbsolutePath();
-		dcimEntry.fileName = null;
-
-		bytes = null;
-
 		info.guardianproject.iocipher.File bThumb = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.thumbnailName);
 		informaCam.ioService.saveBlob(Base64.decode(informaCam.ioService.getBytes(dcimEntry.thumbnailFileName, Type.IOCIPHER), Base64.DEFAULT), bThumb);
 		bitmapThumb = bThumb.getAbsolutePath();
