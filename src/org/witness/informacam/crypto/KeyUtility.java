@@ -197,7 +197,7 @@ public class KeyUtility {
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 						
-			Map<String, InputStream> publicCredentials = new HashMap<String, InputStream>();
+			Map<String, Object> publicCredentials = new HashMap<String, Object>();
 			JSONArray baseImages = informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE);
 			for(int j=0; j<baseImages.length(); j++) {
 				

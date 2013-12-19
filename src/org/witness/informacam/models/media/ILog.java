@@ -15,6 +15,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.models.j3m.IDCIMEntry;
+import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.transport.ITransportStub;
@@ -43,9 +44,10 @@ public class ILog extends IMedia {
 	public long endTime = 0L;
 
 	public List<String> attachedMedia = new ArrayList<String>();
+	public List<String> attachedData = new ArrayList<String>();
 	
 	private Handler proxyHandler;
-	private Map<String, InputStream> j3mZip;
+	private Map<String, Object> j3mZip;
 	
 	public ILog() {
 		super();
@@ -70,6 +72,30 @@ public class ILog extends IMedia {
 	
 	public void sealLog(boolean share, IOrganization organization, INotification notification) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
+		
+		JSONObject j3mObject = null;
+		try {
+			j3mObject = new JSONObject();
+			JSONObject j3m = new JSONObject();
+			
+			// TODO: instead of data, put attachedData (only sensor log file names instead of unwrapped data)
+			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
+			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
+
+			j3mZip.put("log.j3m", new ByteArrayInputStream(j3mObject.toString().getBytes()));
+
+			notification.generateId();
+			notification.taskComplete = false;
+			// XXX: maybe proxyHandler?
+			informaCam.addNotification(notification, responseHandler);
+
+		} catch(JSONException e) {
+			Log.e(LOG, e.toString(),e);
+		}
 		
 		
 		// zip up everything, encrypt if required
@@ -109,6 +135,32 @@ public class ILog extends IMedia {
 		reset();
 	}
 	
+	@Override
+	protected void mungeSensorLogs(Handler h) {
+		if(associatedCaches != null && associatedCaches.size() > 0) {
+			int progress = 0;
+			int progressInterval = (int) (40/associatedCaches.size());
+			
+			InformaCam informaCam = InformaCam.getInstance();
+			for(String associatedCache : associatedCaches) {
+				j3mZip.put(associatedCache, associatedCache);
+				data.attachments.add(associatedCache);
+				
+				progress += progressInterval;
+				sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+			}
+		}
+	}
+	
+	@Override
+	protected void mungeData() throws FileNotFoundException {
+		if(data == null) {
+			data = new IData();
+		}
+		
+		data.attachments = new ArrayList<String>();
+	}
+	
 	@SuppressLint("HandlerLeak")
 	@Override
 	public boolean export(final Context context, Handler h, final IOrganization organization, final boolean share) throws FileNotFoundException {
@@ -116,7 +168,8 @@ public class ILog extends IMedia {
 		
 		Log.d(LOG, "exporting a log!");
 		proxyHandler = h;
-		j3mZip = new HashMap<String, InputStream>();
+		// TODO: instead of InputStream, put path (OK)
+		j3mZip = new HashMap<String, Object>();
 
 		final INotification notification = new INotification();
 
@@ -130,9 +183,10 @@ public class ILog extends IMedia {
 				if(b.containsKey(Models.IMedia.VERSION)) {
 					InformaCam informaCam = InformaCam.getInstance();
 					String version = b.getString(Models.IMedia.VERSION);
-										
-					InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
-					j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
+					
+					// TODO: instead of InputStream, put path (OK)
+					//InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
+					j3mZip.put(version.substring(version.lastIndexOf("/") + 1), version);
 					
 					mediaHandled++;
 					
@@ -157,8 +211,10 @@ public class ILog extends IMedia {
 		// its icon will probably be some sort of stock thing
 		
 		// append its data sensory data, form data, etc.
+		// TODO: This will have to be overriden (OK)
 		mungeData();
 		
+		// TODO: ADD caches to zip file instead (OK)
 		mungeSensorLogs(proxyHandler);
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
@@ -178,34 +234,8 @@ public class ILog extends IMedia {
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		JSONObject j3mObject = null;
-		try {
-			j3mObject = new JSONObject();
-			JSONObject j3m = new JSONObject();
-			
-			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
-			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
-			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
-			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-			Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
-
-			j3mZip.put("log.j3m", new ByteArrayInputStream(j3mObject.toString().getBytes()));
-
-			progress += 5;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-			notification.generateId();
-			notification.taskComplete = false;
-			// XXX: maybe proxyHandler?
-			informaCam.addNotification(notification, responseHandler);
-
-		} catch(JSONException e) {
-			Log.e(LOG, e.toString(),e);
-		}
-		
 		if(attachedMedia != null && attachedMedia.size() > 0) {
-			data.attachments = getAttachedMediaIds();
+			data.attachments.addAll(getAttachedMediaIds());
 			
 			int progressIncrement = (int) (50/(attachedMedia.size() * 2));
 
@@ -215,19 +245,17 @@ public class ILog extends IMedia {
 					@Override
 					public void run() {
 						IMedia m = InformaCam.getInstance().mediaManifest.getById(s);
-						
-						if(m.associatedCaches == null) {
-							m.associatedCaches = new ArrayList<String>();
+
+						// TODO: add caches to log's attachments
+						if(m.associatedCaches != null && !m.associatedCaches.isEmpty()) {
+							data.attachments.addAll(m.associatedCaches);
+							m.associatedCaches.clear();
 						}
-						
-						if (associatedCaches != null)
-							m.associatedCaches.addAll(associatedCaches);
 						
 						try {
 							m.export(context, responseHandler, null, false);
 						} catch (FileNotFoundException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							Logger.e(LOG, e);
 						}
 					}
 				}).start();

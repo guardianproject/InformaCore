@@ -1,5 +1,7 @@
 package org.witness.informacam.storage;
 
+import info.guardianproject.iocipher.FileInputStream;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -175,7 +177,12 @@ public class IOUtility {
 
 	}
 	
-	public static boolean zipFiles(Map<String, InputStream> elements, String fileName, int destination) {
+	public static boolean zipFiles(Map<String, Object> elements, String fileName, int destination) {
+		return zipFiles(elements, fileName, destination, Type.IOCIPHER);
+	}
+	
+	// TODO: Map<String, Object> and if Object is String, get its input stream
+	public static boolean zipFiles(Map<String, Object> elements, String fileName, int destination, int source) {
 		ZipOutputStream zos = null;
 		Logger.d(LOG, "ZIPPING TO: " + fileName);
 		
@@ -184,26 +191,35 @@ public class IOUtility {
 			case Type.IOCIPHER:
 				zos = new ZipOutputStream(new info.guardianproject.iocipher.FileOutputStream(fileName));
 				break;
-			case Type.INTERNAL_STORAGE:
-				zos = new ZipOutputStream(new java.io.FileOutputStream(fileName));
-				break;
-			case Type.FILE_SYSTEM:
+			default:
 				zos = new ZipOutputStream(new java.io.FileOutputStream(fileName));
 				break;
 			}
 
-			Iterator<Entry<String, InputStream>> i = elements.entrySet().iterator();
+			Iterator<Entry<String, Object>> i = elements.entrySet().iterator();
 			while(i.hasNext()) {
-				Entry<String, InputStream> file = i.next();
+				Entry<String, Object> file = i.next();
 				
-				Log.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + file.getValue().available() + ")");
+				InputStream is = null;
+				if(file.getValue() instanceof InputStream) {
+					is = (InputStream) file.getValue();
+				} else if(file.getValue() instanceof String) {
+					InformaCam informaCam = InformaCam.getInstance();
+					is = informaCam.ioService.getStream((String) file.getValue(), source);
+				}
+				
+				if(is == null) {
+					continue;
+				}
+				
+				Log.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + is.available() + ")");
 				
 				ZipEntry ze = new ZipEntry(file.getKey());
 				zos.putNextEntry(ze);
 
 				byte[] buf = new byte[1024];
 				int b;
-				while((b = file.getValue().read(buf)) > 0) {
+				while((b = is.read(buf)) > 0) {
 					zos.write(buf, 0, b);
 				}
 				
