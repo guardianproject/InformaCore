@@ -40,7 +40,6 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	SurfaceHolder holder;
 	Camera camera;
 	CameraInfo cameraInfo;
-	Size size = null;
 	
 	private InformaCam informaCam = InformaCam.getInstance();
 	private List<String> baseImages = new ArrayList<String>();
@@ -140,23 +139,30 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		mPreviewing = true;
 	}
 
+	protected Size choosePictureSize(List<Size> localSizes)
+	{
+		Size size = null;
+		
+		for(Size sz : localSizes) {
+			Log.d(LOG, "w: " + sz.width + ", h: " + sz.height);
+			if(sz.width > 480 && sz.width <= 640)
+				size = sz;
+			
+			if(size != null)
+				break;
+		}
+		
+		if(size == null)
+			size = localSizes.get(localSizes.size() - 1);
+		return size;
+	}
+	
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		try {
 			camera.setPreviewDisplay(holder);
-			List<Size> localSizes = camera.getParameters().getSupportedPictureSizes();
 			
-			for(Size sz : localSizes) {
-				Log.d(LOG, "w: " + sz.width + ", h: " + sz.height);
-				if(sz.width > 480 && sz.width <= 640)
-					size = sz;
-				
-				if(size != null)
-					break;
-			}
-			
-			if(size == null)
-				size = localSizes.get(localSizes.size() - 1);
+			Size size = choosePictureSize(camera.getParameters().getSupportedPictureSizes());
 
 			Camera.Parameters params = camera.getParameters();
 			params.setPictureSize(size.width, size.height);
@@ -232,10 +238,13 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		}
 	}
 
-	private void resumePreview()
+	protected void resumePreview()
 	{
-		camera.startPreview();
-		mPreviewing = true;
+		if (!mPreviewing)
+		{
+			camera.startPreview();
+			mPreviewing = true;
+		}
 	}
 	
 	public void setCameraDisplayOrientation() 

@@ -2,10 +2,13 @@ package org.witness.informacam.informa.embed;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.apache.commons.io.IOUtils;
 import org.ffmpeg.android.ShellUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IMedia;
@@ -30,9 +33,9 @@ public class VideoConstructor {
 	info.guardianproject.iocipher.File pathToVideo;
 	info.guardianproject.iocipher.File pathToJ3M;
 
-	java.io.File clone;
-	java.io.File version;
-	java.io.File metadata;
+//	java.io.File clone;
+//	java.io.File version;
+//	java.io.File metadata;
 
 	String pathToNewVideo;
 	int destination;
@@ -65,30 +68,35 @@ public class VideoConstructor {
 
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		metadata = new java.io.File(Storage.EXTERNAL_DIR, "metadata_" + pathToJ3M.getName());
+		java.io.File metadata = new java.io.File(Storage.EXTERNAL_DIR, "metadata_" + pathToJ3M.getName());
 		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER), metadata, true);
 
-		clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToVideo.getName());
-		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToVideo.getAbsolutePath(), Type.IOCIPHER), clone, true);
+		java.io.File clone = new java.io.File(Storage.EXTERNAL_DIR, "clone_" + pathToVideo.getName());
 
-		version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToVideo.getName().replace(".mp4", ".mkv"));
+		java.io.File version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToVideo.getName().replace(".mp4", ".mkv"));
 		try {
-			constructVideo();
+			InputStream is = informaCam.ioService.getStream(pathToVideo.getAbsolutePath(), Type.IOCIPHER);			
+			java.io.FileOutputStream fos = new java.io.FileOutputStream(clone);			
+			IOUtils.copy(is,fos);			
+			fos.flush();
+			fos.close();
+
+			constructVideo(metadata, clone, version);
 		} catch (IOException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}
 	}
 
-	private void constructVideo() throws IOException {
+	private void constructVideo(java.io.File fileMetadata, java.io.File fileVideo, java.io.File fileOutput) throws IOException {
 
 		String[] ffmpegCommand = new String[] {
-				ffmpegBin, "-y", "-i", clone.getAbsolutePath(),
-				"-attach", metadata.getAbsolutePath(),
+				ffmpegBin, "-y", "-i", fileVideo.getAbsolutePath(),
+				"-attach", fileMetadata.getAbsolutePath(),
 				"-metadata:s:2", "mimetype=text/plain",
 				"-vcodec", "copy",
-				"-acodec", "copy",
-				version.getAbsolutePath()
+				"-an",
+				fileOutput.getAbsolutePath()
 		};
 
 		StringBuffer sb = new StringBuffer();
@@ -113,7 +121,7 @@ public class VideoConstructor {
 
 			Log.d(LOG, "ffmpeg process completed");
 
-			finish();
+			finish(fileMetadata, fileVideo, fileOutput);
 		} catch (Exception e) {
 			Logger.e(LOG, e);
 		}
@@ -136,8 +144,15 @@ public class VideoConstructor {
 			
 			if (fileType == Type.IOCIPHER)
 			{
-				tmpMedia = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "tmp." + extension);			
-				informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToMedia, Type.IOCIPHER), tmpMedia, true);
+				tmpMedia = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "tmp." + extension);		
+				
+				InputStream is = informaCam.ioService.getStream(pathToMedia, Type.IOCIPHER);			
+				java.io.FileOutputStream fos = new java.io.FileOutputStream(tmpMedia);			
+				IOUtils.copy(is,fos);			
+				fos.flush();
+				fos.close();
+				
+				//informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToMedia, Type.IOCIPHER), tmpMedia, true);
 			}
 			else if (fileType == Type.FILE_SYSTEM)
 			{
@@ -146,22 +161,16 @@ public class VideoConstructor {
 			
 			String[] cmdHash = new String[] {
 					ffmpegBin, "-i", tmpMedia.getCanonicalPath(),
-					"-acodec", "copy", "-f", "md5", "-"
+					"-vcodec", "copy", "-acodec", "copy", "-f", "md5", "-"
 			};				
 			
 			if (extension.equalsIgnoreCase("jpg"))
-			{
-				//different hash for images
-				//ffmpeg -f image2 -i IMG_20131209_054750.jpg -vcodec copy -an -crf 32 -threads 1 -f md5 -
-				
+			{				
 				cmdHash = new String[] {
 						ffmpegBin, 
-						"-f","image2",
 						"-i", tmpMedia.getCanonicalPath(),
 						"-vcodec", "copy",
 						"-an",
-						"-crf","32",
-						"-threads","1",
 						"-f", "md5", 
 						"-"
 				};			
@@ -172,7 +181,7 @@ public class VideoConstructor {
 
 				@Override
 				public void shellOut(String shellLine) {
-				
+					
 					if(shellLine.contains("MD5=")) {
 						String hashLine = shellLine.split("=")[1];
 						newHash = hashLine.split(" ")[0].trim();
@@ -278,7 +287,7 @@ public class VideoConstructor {
 		return BitmapFactory.decodeFile(tmp.getAbsolutePath());
 	}
 	
-	public void finish() {
+	public void finish(final java.io.File fileMetadata, final java.io.File fileVideo, final java.io.File fileOutput) {
 		// move back to iocipher
 		
 		final InformaCam informaCam = InformaCam.getInstance();
@@ -286,21 +295,24 @@ public class VideoConstructor {
 		if(destination == Type.IOCIPHER) {
 			final info.guardianproject.iocipher.File newVideo = new info.guardianproject.iocipher.File(pathToNewVideo);
 			
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo);
-					if(success) {
-						if(connection != null) {
-							((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
-						}
-						
-						version.delete();
-						clone.delete();
-						metadata.delete();
+			try
+			{
+				boolean success = informaCam.ioService.saveBlob(new FileInputStream(fileOutput), newVideo);			
+				
+				if(success) {
+					if(connection != null) {
+						((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 					}
+					
+					fileOutput.delete();
+					fileVideo.delete();
+					fileMetadata.delete();
 				}
-			}).start();
+			}
+			catch (IOException fnfe)
+			{
+				Log.e(LOG,"Could not export video file",fnfe);
+			}
 			
 			((MetadataEmbededListener) media).onMetadataEmbeded(newVideo);	
 			
@@ -308,11 +320,11 @@ public class VideoConstructor {
 			java.io.File newVideo = new java.io.File(pathToNewVideo);
 			
 			try {
-				boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newVideo, true);
+				boolean success = informaCam.ioService.saveBlob(new FileInputStream(fileOutput), newVideo, true);
 				if(success) {
-					version.delete();
-					clone.delete();
-					metadata.delete();
+					fileOutput.delete();
+					fileVideo.delete();
+					fileMetadata.delete();
 				}
 			} catch(IOException e) {
 				Logger.e(LOG, e);

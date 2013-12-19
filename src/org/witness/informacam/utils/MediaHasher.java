@@ -2,6 +2,8 @@ package org.witness.informacam.utils;
 
 import org.spongycastle.util.encoders.Hex;
 
+import de.matthiasmann.jpegdecoder.JPEGDecoder;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,19 +56,68 @@ public class MediaHasher
 	
 	}
 	
+	public static String getJpegHash(InputStream is) throws NoSuchAlgorithmException, IOException {
+		
+		
+		JPEGDecoder decoder = new JPEGDecoder(is);
+	    decoder.decodeHeader();
+	    int width = decoder.getImageWidth();
+	    int height = decoder.getImageHeight();
+	    decoder.startDecode();
+	    
+	    int stride = width*4; //4 bytes per pixel RGBA
+	
+	    MessageDigest digester = MessageDigest.getInstance("SHA-1");
+		
+	//    System.out.println("Stride: " + stride);
+	    
+		for(int h=0; h<decoder.getNumMCURows(); h++) {
+			
+		    ByteBuffer bb = ByteBuffer.allocate(stride * decoder.getMCURowHeight());
+
+		//	System.out.println("handling row: " + h);
+			
+		    decoder.decodeRGB(bb, stride, 1);
+			
+			digester.update(bb.array());
+			
+		}
+		
+		byte[] messageDigest = digester.digest();
+		return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
+	}
+
 	public static String getBitmapHash(Bitmap bitmap) throws NoSuchAlgorithmException, IOException {
-		MessageDigest digester = MessageDigest.getInstance("MD5");
+		MessageDigest digester = MessageDigest.getInstance("SHA-1");
 		
 		for(int h=0; h<bitmap.getHeight(); h++) {
 			int[] row = new int[bitmap.getWidth()];
 			bitmap.getPixels(row, 0, row.length, 0, h, row.length, 1);
 			
+
+			//System.out.println("row " + h + "=" + row[0]);
+			
 			byte[] rowBytes = new byte[row.length];
 			for(int b=0; b<row.length; b++) {
-				rowBytes[b] = (byte) row[b];
+				
+				int p = row[b];
+				rowBytes[b] = (byte) p;
+				
+
+				int R = (p >> 16) & 0xff;
+				int G = (p >> 8) & 0xff;
+				int B = p & 0xff;
+				
+				if (b == 0)
+				System.out.println("row " + h + ": " + R +"," + G + "," + B);
 			}
 			
 			digester.update(rowBytes);
+
+			//byte[] messageDigest = digester.digest();
+			//String lineHash = new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
+			//System.out.println("line " + h + "=" + lineHash);
+			
 			rowBytes = null;
 			row = null;
 			

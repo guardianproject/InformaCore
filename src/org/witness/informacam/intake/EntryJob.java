@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.json.JSONException;
+import org.witness.informacam.informa.embed.ImageConstructor;
+import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.j3m.IDCIMEntry;
@@ -86,7 +88,7 @@ public class EntryJob extends BackgroundTask {
 						((ILog) informaCam.mediaManifest.getById(this.parentId)).attachedMedia.add(media._id);
 						informaCam.mediaManifest.save();
 					}
-
+					
 					boolean isFinishedProcessing = false;
 
 					if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
@@ -96,6 +98,8 @@ public class EntryJob extends BackgroundTask {
 							informaCam.mediaManifest.addMediaItem(image);
 							isFinishedProcessing = true;
 						}
+						
+					
 					} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
 						IVideo video = new IVideo(media);
 
@@ -221,15 +225,14 @@ public class EntryJob extends BackgroundTask {
 			b_.recycle();
 			mmr.release();
 		}
-
-		if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+		else if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 			InputStream is = informaCam.ioService.getStream(entry.fileName, Type.FILE_SYSTEM);
 
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inSampleSize = 8;
 
 			b = BitmapFactory.decodeStream(is, null, opts);
-
+			
 		}
 
 		if(b != null) {
@@ -259,7 +262,7 @@ public class EntryJob extends BackgroundTask {
 			entry.uri = IOUtility.getUriFromFile(informaCam, Uri.parse(entry.authority), file).toString();
 		}
 
-		Logger.d(LOG, "analyzing: " + entry.asJson().toString());
+		//Logger.d(LOG, "analyzing: " + entry.asJson().toString());
 
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 			parseExif();
@@ -268,7 +271,7 @@ public class EntryJob extends BackgroundTask {
 		}		
 	}	
 
-	private void commit() {
+	protected void commit() {
 		// delete/encrypt/replace all the data
 		info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
 		try {
@@ -282,9 +285,29 @@ public class EntryJob extends BackgroundTask {
 		info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(reviewDump, entry.name);
 		info.guardianproject.iocipher.File newFileThumb = new info.guardianproject.iocipher.File(reviewDump, entry.thumbnailName);
 
-
 		try
 		{
+			java.io.FileInputStream srcFile = null;
+			
+			if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+				/**
+				java.io.File metaFile = new java.io.File(entry.fileName + "_meta.jpg");
+				ImageConstructor.constructImage(entry.fileName, metaFile.getCanonicalPath(), "test",4);
+				
+				if (metaFile.exists())
+					srcFile = new java.io.FileInputStream(metaFile);
+				else
+				{
+					srcFile = new java.io.FileInputStream(entry.fileName);
+				}**/
+
+				srcFile = new java.io.FileInputStream(entry.fileName);
+			}
+			else
+			{
+				srcFile = new java.io.FileInputStream(entry.fileName);
+			}
+			
 			//save the thumbnail first, don't delete, and there is no source URI
 			informaCam.ioService.saveBlob(
 					entry.thumbnailFile, 
@@ -295,7 +318,7 @@ public class EntryJob extends BackgroundTask {
 
 			//now save the big one - delete the original file
 			informaCam.ioService.saveBlob(
-					new FileInputStream(entry.fileName), 
+					srcFile, 
 					newFile,
 					entry.uri);
 

@@ -383,26 +383,9 @@ public class InformaCam extends Application {
 
 	private boolean saveState(Model model, int tries) {		
 		boolean result = false;
-		
-		// Model should be valid JSON before saving!
-		try {
-			new JSONTokener(model.asJson().toString()).nextValue();
-		} catch(JSONException e) {
-			Logger.e(LOG, e);
-			
-			if(tries <= 25) {
-				try {
-					Thread.sleep(500);
-					saveState(model, ++tries);
-				} catch (InterruptedException e1) {
-					Log.e(LOG, e1.toString());
-					e1.printStackTrace();
-				}
-			}
-			
-			return false;
-		}
-		
+
+		synchronized (model)
+		{
 		try
 		{
 			if(model.getClass().getName().equals(IKeyStore.class.getName())) {
@@ -425,7 +408,6 @@ public class InformaCam extends Application {
 			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
 				
 				result = saveState(model, new info.guardianproject.iocipher.File(IManifest.MEDIA));
-				
 			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
 			
 				result = saveState(model, new info.guardianproject.iocipher.File(Models.IUser.SECRET));
@@ -469,7 +451,7 @@ public class InformaCam extends Application {
 		{
 			Logger.e(LOG, ioe);
 		}
-		
+		}
 		return result;
 	}
 

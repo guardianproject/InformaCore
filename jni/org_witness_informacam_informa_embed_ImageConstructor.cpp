@@ -29,7 +29,7 @@ Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage
     const char* metadataObjectString;
     std::vector<unsigned char> metadata;
 
-    const char* TAG = "********************** INFORMA_JNI **********************";
+    const char* TAG = "INFORMA_JNI";
     __android_log_write(ANDROID_LOG_DEBUG, TAG, "3. setting metadata");
 
     try {

@@ -70,6 +70,7 @@ public class GoogleDriveTransport extends Transport {
 						mBuilder.setAutoCancel(true);
 						mBuilder.setProgress(0, 0, false);
 						mNotifyManager.notify(0, mBuilder.build());
+						finishSuccessfully();
 					}
 					
 				} catch (JSONException e) {
