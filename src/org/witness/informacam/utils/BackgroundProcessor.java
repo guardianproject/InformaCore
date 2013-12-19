@@ -13,7 +13,9 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 	
 	public int numProcessing = 0;
 	public int numCompleted = 0;
-		
+	
+	private boolean stopped = false;
+	
 	private final static String LOG = Background.LOG;
 	
 	public void setOnBatchComplete(BackgroundTask onBatchComplete) {
@@ -21,6 +23,7 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 	}
 	
 	public void stop() {
+		stopped = true;
 		if(onBatchComplete != null) {
 			add(onBatchComplete);
 		}
@@ -28,7 +31,7 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 
 	@Override
 	public void run() {
-		while(true) {
+		while(!stopped || this.size() > 0) {
 			try {
 				while((currentTask = take()) != null) {
 					Log.d(LOG, "starting a new task. current queue size: " + size());

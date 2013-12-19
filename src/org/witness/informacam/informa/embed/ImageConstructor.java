@@ -94,19 +94,14 @@ public class ImageConstructor {
 		if(destination == Type.IOCIPHER) {
 			final info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
 			
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
-					if(success) {
-						if(connection != null) {
-							((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
-						}
-						
-						version.delete();
-					}
+			boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
+			if(success) {
+				if(connection != null) {
+					((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 				}
-			}).start();
+				
+				version.delete();
+			}
 			
 			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
 			
