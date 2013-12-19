@@ -1,21 +1,20 @@
 package org.witness.informacam.informa.embed;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.utils.Constants.Logger;
-import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Logger;
+import org.witness.informacam.utils.Constants.MetadataEmbededListener;
+import org.witness.informacam.utils.MediaHasher;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Bitmap.CompressFormat;
 import android.util.Log;
 
 public class ImageConstructor {
@@ -59,31 +58,32 @@ public class ImageConstructor {
 		byte[] metadata = informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER);
 
 		version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToImage.getName());
-		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inPurgeable = true;
-		
-		ByteArrayInputStream bais = new ByteArrayInputStream(informaCam.ioService.getBytes(pathToImage.getAbsolutePath(), Type.IOCIPHER));
-		Bitmap b = BitmapFactory.decodeStream(bais);
 		
 		try {
-			java.io.FileOutputStream fos = new java.io.FileOutputStream(version);
-			b.compress(CompressFormat.JPEG, 100, fos);
+			InputStream is = informaCam.ioService.getStream(pathToImage.getAbsolutePath(), Type.IOCIPHER);			
+			java.io.FileOutputStream fos = new java.io.FileOutputStream(version);			
+			IOUtils.copy(is,fos);			
 			fos.flush();
 			fos.close();
-		} catch (FileNotFoundException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
 		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, "error copying file to output",e);
 		}
-		b.recycle();
-		bais.close();
-		
-		int c = constructImage(version.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
 
-		if(c > 0) {
-			finish();
+		try
+		{
+			int c = constructImage(version.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
+
+			String hashAfter = MediaHasher.getJpegHash(new FileInputStream(version.getAbsolutePath()));			
+			Log.d(LOG,"export media hash:" + hashAfter);
+			
+			
+			if(c > 0) {
+				finish();
+			}
+		}
+		catch (Exception e)
+		{
+			Log.e(LOG,"error unable to export image",e);
 		}
 	}
 

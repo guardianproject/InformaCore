@@ -870,7 +870,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return details.toString();
 	}
 
-	public boolean analyze() {
+	public boolean analyze() throws IOException {
 		isNew = true;
 		
 		if(genealogy == null) {

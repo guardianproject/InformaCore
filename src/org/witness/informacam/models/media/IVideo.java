@@ -1,5 +1,6 @@
 package org.witness.informacam.models.media;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.witness.informacam.InformaCam;
@@ -31,7 +32,7 @@ public class IVideo extends IMedia {
 	}
 
 	@Override
-	public boolean analyze() {
+	public boolean analyze() throws IOException {
 		super.analyze();
 
 		InformaCam informaCam = InformaCam.getInstance();
@@ -51,7 +52,7 @@ public class IVideo extends IMedia {
 		
 		// 2. copy over video
 		info.guardianproject.iocipher.File videoFile = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
-		informaCam.ioService.saveBlob(informaCam.ioService.getBytes(dcimEntry.fileName, Type.IOCIPHER), videoFile);
+		informaCam.ioService.saveBlob(informaCam.ioService.getStream(dcimEntry.fileName, Type.IOCIPHER), videoFile);
 		informaCam.ioService.delete(dcimEntry.fileName, Type.IOCIPHER);
 		dcimEntry.fileName = videoFile.getAbsolutePath();
 		video = videoFile.getAbsolutePath();
