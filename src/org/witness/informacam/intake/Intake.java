@@ -12,9 +12,9 @@ import android.app.IntentService;
 import android.content.Intent;
 
 public class Intake extends IntentService {
-	BackgroundProcessor queue;
+	protected BackgroundProcessor queue;
 	
-	private final static String LOG = "************************** J3M INTAKE **************************";
+	protected final static String LOG = "************************** J3M INTAKE **************************";
 	
 	public Intake() {
 		super(Storage.Intake.TAG);		
