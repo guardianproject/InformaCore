@@ -95,7 +95,7 @@ public class VideoConstructor {
 				"-attach", fileMetadata.getAbsolutePath(),
 				"-metadata:s:2", "mimetype=text/plain",
 				"-vcodec", "copy",
-				"-acodec", "copy",
+				"-an",
 				fileOutput.getAbsolutePath()
 		};
 
@@ -161,7 +161,7 @@ public class VideoConstructor {
 			
 			String[] cmdHash = new String[] {
 					ffmpegBin, "-i", tmpMedia.getCanonicalPath(),
-					"-acodec", "copy", "-f", "md5", "-"
+					"-vcodec", "copy", "-acodec", "copy", "-f", "md5", "-"
 			};				
 			
 			if (extension.equalsIgnoreCase("jpg"))
