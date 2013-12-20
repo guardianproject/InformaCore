@@ -73,6 +73,10 @@ public class ILog extends IMedia {
 	public void sealLog(boolean share, IOrganization organization, INotification notification) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
+		for(String associatedCache : associatedCaches) {
+			j3mZip.put(associatedCache, associatedCache);
+		}
+		
 		JSONObject j3mObject = null;
 		try {
 			j3mObject = new JSONObject();
@@ -99,7 +103,7 @@ public class ILog extends IMedia {
 		
 		
 		// zip up everything, encrypt if required
-		String logName = ("log_" + System.currentTimeMillis() + ".zip");
+		String logName = ("log_" + System.currentTimeMillis() + ".j3mlog");
 		
 		if(share) {
 			java.io.File log = new java.io.File(Storage.EXTERNAL_DIR, logName);
@@ -137,13 +141,13 @@ public class ILog extends IMedia {
 	
 	@Override
 	protected void mungeSensorLogs(Handler h) {
+		
 		if(associatedCaches != null && associatedCaches.size() > 0) {
 			int progress = 0;
 			int progressInterval = (int) (40/associatedCaches.size());
 			
 			InformaCam informaCam = InformaCam.getInstance();
 			for(String associatedCache : associatedCaches) {
-				j3mZip.put(associatedCache, associatedCache);
 				data.attachments.add(associatedCache);
 				
 				progress += progressInterval;

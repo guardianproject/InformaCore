@@ -167,8 +167,11 @@ public class Transport extends IntentService {
 	}
 	
 	protected void resend() {
+		transportStub.numTries++;
+		transportStub.save();
+		
 		if(transportStub.numTries <= Models.ITransportStub.MAX_TRIES) {
-			Logger.d(LOG, "POST FAILED.  Trying again.");
+			Logger.d(LOG, "POST FAILED.  Trying again. (" + transportStub.numTries + ")");
 			init();
 		} else {
 			finishUnsuccessfully();
