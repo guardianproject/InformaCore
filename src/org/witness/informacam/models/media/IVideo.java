@@ -46,7 +46,7 @@ public class IVideo extends IMedia {
 			genealogy = new IGenealogy();
 		}
 		
-		String hash = vc.hashMedia(Type.IOCIPHER, dcimEntry.fileName,"mp4");		
+		String hash = vc.hashVideo(Type.IOCIPHER, dcimEntry.fileName,"mp4");		
 		genealogy.hashes = new ArrayList<String>();
 		genealogy.hashes.add(hash);
 		

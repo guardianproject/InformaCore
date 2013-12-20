@@ -88,14 +88,14 @@ public class VideoConstructor {
 		}
 	}
 
-	private void constructVideo(java.io.File fileMetadata, java.io.File fileVideo, java.io.File fileOutput) throws IOException {
+	private void constructVideo(final java.io.File fileMetadata, final java.io.File fileVideo, final java.io.File fileOutput) throws IOException {
 
 		String[] ffmpegCommand = new String[] {
 				ffmpegBin, "-y", "-i", fileVideo.getAbsolutePath(),
 				"-attach", fileMetadata.getAbsolutePath(),
 				"-metadata:s:2", "mimetype=text/plain",
 				"-vcodec", "copy",
-				"-an",
+				"-acodec", "copy",
 				fileOutput.getAbsolutePath()
 		};
 
@@ -115,13 +115,13 @@ public class VideoConstructor {
 
 				@Override
 				public void processComplete(int exitValue) {
+					Log.d(LOG, "ffmpeg process completed");
 
+					finish(fileMetadata, fileVideo, fileOutput);
 				}
 			});
 
-			Log.d(LOG, "ffmpeg process completed");
 
-			finish(fileMetadata, fileVideo, fileOutput);
 		} catch (Exception e) {
 			Logger.e(LOG, e);
 		}
@@ -130,7 +130,7 @@ public class VideoConstructor {
 	String newHash = null;
 	
 	
-	public String hashMedia(int fileType, String pathToMedia, String extension) {
+	public String hashVideo(int fileType, String pathToMedia, String extension) {
 		/**
 		 * Hashes the video frames 
 		 * using FFMpeg's RGB hashing function and
@@ -151,8 +151,6 @@ public class VideoConstructor {
 				IOUtils.copy(is,fos);			
 				fos.flush();
 				fos.close();
-				
-				//informaCam.ioService.saveBlob(informaCam.ioService.getBytes(pathToMedia, Type.IOCIPHER), tmpMedia, true);
 			}
 			else if (fileType == Type.FILE_SYSTEM)
 			{
@@ -161,21 +159,8 @@ public class VideoConstructor {
 			
 			String[] cmdHash = new String[] {
 					ffmpegBin, "-i", tmpMedia.getCanonicalPath(),
-					"-vcodec", "copy", "-acodec", "copy", "-f", "md5", "-"
+					"-vcodec", "copy", "-an", "-f", "md5", "-"
 			};				
-			
-			if (extension.equalsIgnoreCase("jpg"))
-			{				
-				cmdHash = new String[] {
-						ffmpegBin, 
-						"-i", tmpMedia.getCanonicalPath(),
-						"-vcodec", "copy",
-						"-an",
-						"-f", "md5", 
-						"-"
-				};			
-			}
-			
 			
 			execProcess(cmdHash, new ShellUtils.ShellCallback () {
 
@@ -233,11 +218,11 @@ public class VideoConstructor {
 				}
 			}
 
-
-			if (process != null) {
-				process.destroy();   
-			}
-		} catch (IOException e) {
+			sc.processComplete(process.waitFor());
+			
+			process.destroy();   
+			
+		} catch (Exception e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 		}      
