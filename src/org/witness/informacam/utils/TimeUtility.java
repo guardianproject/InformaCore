@@ -20,7 +20,7 @@ public class TimeUtility {
 		Calendar cal = Calendar.getInstance();
 		TimeZone tz = cal.getTimeZone();
 		
-		return tz.getDisplayName();
+		return tz.getID();
 	}
 	
 	public final static long timestampToMillis(String ts, String dateFormat) throws ParseException {
