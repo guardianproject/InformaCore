@@ -23,6 +23,7 @@ public class IDCIMEntry extends Model implements Serializable {
 
 	public long size = 0L;
 	public long timeCaptured = 0L;
+	public String timezone = null;
 	public long id = 0L;
 	
 	public IDCIMEntry() {

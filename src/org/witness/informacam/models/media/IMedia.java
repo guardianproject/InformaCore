@@ -26,6 +26,7 @@ import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IData;
 import org.witness.informacam.models.j3m.IGenealogy;
+import org.witness.informacam.models.j3m.IIntakeData;
 import org.witness.informacam.models.j3m.IIntent;
 import org.witness.informacam.models.j3m.IRegionData;
 import org.witness.informacam.models.j3m.ISensorCapture;
@@ -73,7 +74,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public int height = 0;
 
 	public IDCIMEntry dcimEntry = null;
-
+	public IIntakeData intakeData = null;
+	
 	public IData data = null;
 	public IIntent intent = null;
 	public IGenealogy genealogy = null;
@@ -373,6 +375,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			data = new IData();
 		}
 		
+		data.intakeData = intakeData;
+		
 		if(associatedRegions != null) {
 			for(IRegion region : associatedRegions) {
 				
@@ -428,7 +432,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
 						
 						if(captureEvent.has(CaptureEvent.Keys.TYPE)) {
-							// TODO: this should be better formulated.
 							JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
 
 							for(int ct=0; ct<captureTypes.length(); ct++) {

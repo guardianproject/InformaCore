@@ -1,6 +1,5 @@
 package org.witness.informacam.intake;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -8,14 +7,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.json.JSONException;
-import org.witness.informacam.informa.embed.ImageConstructor;
-import org.witness.informacam.informa.embed.VideoConstructor;
-import org.witness.informacam.informa.suckers.GeoSucker;
-import org.witness.informacam.models.Model;
 import org.witness.informacam.models.j3m.IDCIMEntry;
-import org.witness.informacam.models.j3m.IExif;
 import org.witness.informacam.models.j3m.IGenealogy;
-import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.models.j3m.IIntakeData;
 import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.ILog;
 import org.witness.informacam.models.media.IMedia;
@@ -30,9 +24,9 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
-import org.witness.informacam.utils.Constants.Suckers.Geo;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
+import org.witness.informacam.utils.TimeUtility;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -42,7 +36,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
 import android.provider.MediaStore;
-import android.util.Log;
 
 public class EntryJob extends BackgroundTask {
 	private static final long serialVersionUID = 3689090560752901928L;
@@ -64,7 +57,7 @@ public class EntryJob extends BackgroundTask {
 		this.informaCache = informaCache;
 		this.timeOffset = timeOffset;
 	}
-
+	
 	@Override
 	protected boolean onStart() {
 
@@ -76,6 +69,7 @@ public class EntryJob extends BackgroundTask {
 				if(!isThumbnail) {
 					IMedia media = new IMedia();
 					media.dcimEntry = entry;
+					media.dcimEntry.timezone = TimeUtility.getTimezone();
 					media._id = media.generateId(entry.originalHash);
 
 					media.associatedCaches = new ArrayList<String>();
@@ -95,6 +89,7 @@ public class EntryJob extends BackgroundTask {
 						IImage image = new IImage(media);
 
 						if(image.analyze()) {
+							image.intakeData = new IIntakeData(image);
 							informaCam.mediaManifest.addMediaItem(image);
 							isFinishedProcessing = true;
 						}
@@ -104,6 +99,7 @@ public class EntryJob extends BackgroundTask {
 						IVideo video = new IVideo(media);
 
 						if(video.analyze()) {
+							video.intakeData = new IIntakeData(video);
 							informaCam.mediaManifest.addMediaItem(video);
 							isFinishedProcessing = true;
 						}
@@ -111,6 +107,8 @@ public class EntryJob extends BackgroundTask {
 
 					if(isFinishedProcessing) {
 						backgroundProcessor.numCompleted++;
+						
+						
 						
 						Bundle data = new Bundle();
 						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);

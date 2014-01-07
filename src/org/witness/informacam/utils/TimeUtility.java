@@ -3,8 +3,10 @@ package org.witness.informacam.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import org.witness.informacam.utils.Constants.Time.DateFormats;
 
@@ -13,6 +15,13 @@ import android.util.Log;
 
 @SuppressLint("SimpleDateFormat")
 public class TimeUtility {
+	
+	public final static String getTimezone() {
+		Calendar cal = Calendar.getInstance();
+		TimeZone tz = cal.getTimeZone();
+		
+		return tz.getDisplayName();
+	}
 	
 	public final static long timestampToMillis(String ts, String dateFormat) throws ParseException {
 		//2012:06:12 10:42:04

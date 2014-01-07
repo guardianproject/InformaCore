@@ -43,8 +43,6 @@ public class SignatureService {
 	
 	@SuppressWarnings({"deprecation" })
 	public void initKey(ISecretKey sk) throws PGPException {
-		
-
 		authKey = sk.secretAuthToken;
 		secretKey = KeyUtility.extractSecretKey(sk.secretKey.getBytes());
 		privateKey = secretKey.extractPrivateKey(authKey.toCharArray(), new BouncyCastleProvider());

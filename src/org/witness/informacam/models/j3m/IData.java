@@ -9,4 +9,5 @@ public class IData extends Model {
 	public List<IRegionData> userAppendedData = null;
 	public IExif exif = null;
 	public List<String> attachments = null;
+	public IIntakeData intakeData = null;
 }
