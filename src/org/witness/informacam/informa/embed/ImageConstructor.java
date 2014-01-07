@@ -73,8 +73,8 @@ public class ImageConstructor {
 		{
 			int c = constructImage(version.getAbsolutePath(), version.getAbsolutePath(), new String(metadata), metadata.length);
 
-			String hashAfter = MediaHasher.getJpegHash(new FileInputStream(version.getAbsolutePath()));			
-			Log.d(LOG,"export media hash:" + hashAfter);
+		//	String hashAfter = MediaHasher.getJpegHash(new FileInputStream(version.getAbsolutePath()));			
+		//	Log.d(LOG,"export media hash:" + hashAfter);
 			
 			
 			if(c > 0) {
