@@ -375,7 +375,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			data = new IData();
 		}
 		
-		data.intakeData = intakeData;
+		if(intakeData != null) {
+			data.intakeData = intakeData;
+		}
 		
 		if(associatedRegions != null) {
 			for(IRegion region : associatedRegions) {
