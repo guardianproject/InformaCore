@@ -72,6 +72,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private SensorLogger<PhoneSucker> _phone;
 	private SensorLogger<AccelerometerSucker> _acc;
 	private SensorLogger<EnvironmentalSucker> _env;
+	private boolean suckersActive = false;
 
 	private info.guardianproject.iocipher.File cacheFile, cacheRoot;
 	private List<String> cacheFiles = new ArrayList<String>();
@@ -105,7 +106,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return binder;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void onCreate() {
 		Log.d(LOG, "started.");
@@ -122,43 +122,12 @@ public class InformaService extends Service implements SuckerCacheListener {
 			return;
 		}
 		
-		for(BroadcastReceiver broadcaster : broadcasters) {
-			this.registerReceiver(broadcaster, ((InformaBroadcaster) broadcaster).intentFilter);
-		}
-		
-		
 		cacheRoot = new info.guardianproject.iocipher.File(IManifest.CACHES);
 		if(!cacheRoot.exists()) {
 			cacheRoot.mkdir();
 		}
 
-		initCache();
-		
-		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
-
-		boolean hasPlayServices = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext()) == ConnectionResult.SUCCESS;
-		
-		
-		boolean isAirplane = isAirplaneModeOn (this);
-		
-		if (!isAirplane)
-		{
-			if (prefGpsEnableHires || (!hasPlayServices))
-				_geo = new GeoHiResSucker(this);
-			else	
-				_geo = new GeoFusedSucker(this);
-			
-			_geo.setSuckerCacheListener(this);
-			
-			_phone = new PhoneSucker(this);
-			_phone.setSuckerCacheListener(this);
-		}
-		
-		_acc = new AccelerometerSucker(this);
-		_acc.setSuckerCacheListener(this);
-		
-		_env = new EnvironmentalSucker(this);
-		_env.setSuckerCacheListener(this);
+		startAllSuckers();
 		
 		informaService = InformaService.this;
 		sendBroadcast(new Intent()
@@ -385,10 +354,51 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 	}
 
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-
+	@SuppressWarnings("unchecked")
+	public void startAllSuckers() {
+		if(suckersActive) {
+			return;
+		}
+		
+		Logger.d(LOG, "STARTING INFORMA SUCKERS...");
+		for(BroadcastReceiver broadcaster : broadcasters) {
+			this.registerReceiver(broadcaster, ((InformaBroadcaster) broadcaster).intentFilter);
+		}
+		
+		initCache();
+		
+		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
+		boolean hasPlayServices = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext()) == ConnectionResult.SUCCESS;
+		boolean isAirplane = isAirplaneModeOn (this);
+		
+		if (!isAirplane)
+		{
+			if (prefGpsEnableHires || (!hasPlayServices))
+				_geo = new GeoHiResSucker(this);
+			else	
+				_geo = new GeoFusedSucker(this);
+			
+			_geo.setSuckerCacheListener(this);
+			
+			_phone = new PhoneSucker(this);
+			_phone.setSuckerCacheListener(this);
+		}
+		
+		_acc = new AccelerometerSucker(this);
+		_acc.setSuckerCacheListener(this);
+		
+		_env = new EnvironmentalSucker(this);
+		_env.setSuckerCacheListener(this);
+		
+		suckersActive = true;
+	}
+	
+	public void stopAllSuckers() {
+		if(!suckersActive) {
+			return;
+		}
+		
+		Logger.d(LOG, "STOPPING INFORMA SUCKERS...");
 		saveCache();
 
 		if (_phone != null)
@@ -419,6 +429,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 				//some broadcasters may not be registered; don't let this stop us from getting destroyed!
 			}
 		}
+		
+		suckersActive = false;
+	}
+	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+
+		stopAllSuckers();
 
 		sendBroadcast(stopIntent.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, informaCam.getProcess()));
 		

@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
@@ -56,6 +55,7 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.ListAdapterListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
 
@@ -807,13 +807,16 @@ public class InformaCam extends Application {
 	}
 	
 	public void startCron() {
+		startCron(Suckers.DEFAULT_CRON_INTERVAL);
+	}
+	
+	public void startCron(int minutes) {
+		Log.d(LOG, "START CRON WITH " + minutes);
 		Intent startCron = new Intent(this, Cron.class);
 		cronPI = PendingIntent.getService(this, 0, startCron, 0);
 		
 		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-		Calendar calendar = Calendar.getInstance();
-		calendar.add(Calendar.SECOND, 30);
-		alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 30 * 1000, cronPI);
+		alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), minutes * 60 * 1000, cronPI);
 	}
 	
 	public void stopCron() {

@@ -166,6 +166,7 @@ public class Constants {
 			public static final String TIME_OFFSET = "informaTimeOffset";
 			public static final String NUM_PROCESSING = "numProcessing";
 			public static final String NUM_COMPLETED = "numCompleted";
+			public static final String CRON_INTERVAL = "informaCronInterval";
 		}
 
 		public static final class Messages {
@@ -250,6 +251,8 @@ public class Constants {
 	public final static class Suckers {
 		public final static String LOG = "******************** InformaCam : Suckers ********************";
 		public static final int GPS_WAIT_MAX = 30;
+		public static final int DEFAULT_CRON_INTERVAL = 45;
+		public static final int DEFAULT_CRON_ACTIVE_INTERVAL = 1;
 
 		public final static class CaptureEvent {
 			public final static int METADATA_CAPTURED = 272;

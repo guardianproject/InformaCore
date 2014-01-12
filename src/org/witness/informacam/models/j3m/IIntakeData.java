@@ -8,10 +8,20 @@ public class IIntakeData extends Model {
 	public String data = null;
 	public String signature = null;
 	
-	public IIntakeData(IMedia m) {
+	public IIntakeData() {
+		super();
+	}
+	
+	public IIntakeData(IIntakeData intakeData) {
+		super();
+		inflate(intakeData);
+	}
+	
+	public IIntakeData(long timeCreated, String timezone, long timeOffset) {
+		super();
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		data = m.asJson().toString();
+		data = "timezone=" + timezone + ";timeCreated=" + timeCreated + ";timeOffset=" + timeOffset;
 		signature = new String(informaCam.signatureService.signData(data.getBytes()));
 	}
 }

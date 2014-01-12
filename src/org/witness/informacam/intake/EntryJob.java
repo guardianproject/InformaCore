@@ -83,13 +83,15 @@ public class EntryJob extends BackgroundTask {
 						informaCam.mediaManifest.save();
 					}
 					
+					media.intakeData = new IIntakeData(media.dcimEntry.timeCaptured, media.dcimEntry.timezone, timeOffset);
+					Logger.d(LOG, media.intakeData.asJson().toString());
+					
 					boolean isFinishedProcessing = false;
 
 					if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 						IImage image = new IImage(media);
 
 						if(image.analyze()) {
-							image.intakeData = new IIntakeData(image);
 							informaCam.mediaManifest.addMediaItem(image);
 							isFinishedProcessing = true;
 						}
@@ -99,7 +101,6 @@ public class EntryJob extends BackgroundTask {
 						IVideo video = new IVideo(media);
 
 						if(video.analyze()) {
-							video.intakeData = new IIntakeData(video);
 							informaCam.mediaManifest.addMediaItem(video);
 							isFinishedProcessing = true;
 						}
