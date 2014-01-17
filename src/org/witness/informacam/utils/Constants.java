@@ -698,6 +698,7 @@ public class Constants {
 				supported.add("com.android.camera");
 				supported.add("com.google.android.gallery3d");
 				supported.add("com.google.android.GoogleCamera");
+				supported.add("com.motorola.camera");
 				SUPPORTED = Collections.unmodifiableList(supported);
 			}
 		}
