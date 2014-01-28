@@ -36,6 +36,14 @@ public class GoogleDriveTransport extends Transport {
 
 	@Override
 	protected boolean init() {
+		//Following lines make debugging Google permission easier. Make sure that
+		//the service account permission is revoked (on your google account "security"
+		//settings page) and then uncomment the following lines to remove the local
+		//cached token.
+		//authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
+		//if(authToken.token != null)
+		//	GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
+
 		// authenticate google drive
 		authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
 		if(authToken.token != null) {
@@ -112,14 +120,17 @@ public class GoogleDriveTransport extends Transport {
 		return http;
 	}
 
-	public class GoogleDriveEventBroadcaster extends BroadcastReceiver {
-
+	public static class GoogleDriveEventBroadcaster extends BroadcastReceiver {
+		
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Logger.d(LOG, intent.getAction());
 			Bundle b = intent.getExtras();
-			for(String k : b.keySet()) {
-				Logger.d(LOG, k);
+			if (b != null)
+			{
+				for(String k : b.keySet()) {
+					Logger.d(LOG, k);
+				}
 			}
 
 		}
