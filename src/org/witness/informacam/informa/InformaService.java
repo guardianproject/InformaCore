@@ -165,7 +165,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	}
 
 	public long getCurrentTime() {
-		return System.currentTimeMillis() + (realStartTime == 0 ? 0 : (startTime - realStartTime));
+		//return System.currentTimeMillis() + (realStartTime == 0 ? 0 : (startTime - realStartTime));
+		return System.currentTimeMillis();
 	}
 	
 	public long getTimeOffset() {

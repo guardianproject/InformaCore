@@ -76,7 +76,7 @@ public class EntryJob extends BackgroundTask {
 					media.associatedCaches.addAll(Arrays.asList(informaCache));
 					media.genealogy = new IGenealogy();
 
-					media.genealogy.dateCreated = media.dcimEntry.timeCaptured + timeOffset;
+					media.genealogy.dateCreated = media.dcimEntry.timeCaptured;
 
 					if(this.parentId != null) {
 						((ILog) informaCam.mediaManifest.getById(this.parentId)).attachedMedia.add(media._id);
