@@ -6,15 +6,15 @@ if ! type -P android &> /dev/null; then
     exit 1
 fi
 
-declare -a MAPFILE=('external/android-ffmpeg-java' 'external/OnionKit/libonionkit' 'external/ODKFormParser' 'external/CacheWord/cachewordlib' 'external/google-play-services')
+declare -a MAPFILE=('external/android-ffmpeg-java' 'external/OnionKit/libnetcipher' 'external/ODKFormParser' 'external/CacheWord/cachewordlib' 'external/google-play-services')
 
 for project in "${MAPFILE[@]}"; do
-    android update lib-project --path $project -t android-18
+    android update lib-project --path $project -t android-19
 done
 
 cp external/CacheWord/cachewordlib/libs/iocipher.jar libs/iocipher.jar
 
 cp libs/android-support-v4.jar external/CacheWord/cachewordlib/libs/android-support-v4.jar
-cp libs/android-support-v4.jar external/OnionKit/libonionkit/libs/android-support-v4.jar
+cp libs/android-support-v4.jar external/OnionKit/libnetcipher/libs/android-support-v4.jar
 
-android update project --path . -t android-17 -n InformaCamCore --subprojects
+android update project --path . -t android-19 -n InformaCamCore --subprojects
