@@ -2,8 +2,6 @@
 <classpath>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="gen"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry exported="true" kind="lib" path="libs/scpg-jdk15on-1.47.0.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/sc-light-jdk15on-1.47.0.2.jar"/>
@@ -12,5 +10,7 @@
 	<classpathentry kind="lib" path="libs/protobuf-j2me-1.0-RC1.jar"/>
 	<classpathentry kind="lib" path="/OnionKit/libs/httpclientandroidlib-1.1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/gson-2.1.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

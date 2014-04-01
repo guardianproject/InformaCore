@@ -9,9 +9,12 @@ fi
 declare -a MAPFILE=('external/android-ffmpeg-java' 'external/OnionKit/libonionkit' 'external/ODKFormParser' 'external/CacheWord/cachewordlib' 'external/google-play-services')
 
 for project in "${MAPFILE[@]}"; do
-    android update lib-project --path $project -t android-17
+    android update lib-project --path $project -t android-18
 done
 
-cp libs/iocipher.jar external/CacheWord/cachewordlib/libs/iocipher.jar
+cp external/CacheWord/cachewordlib/libs/iocipher.jar libs/iocipher.jar
+
+cp libs/android-support-v4.jar external/CacheWord/cachewordlib/libs/android-support-v4.jar
+cp libs/android-support-v4.jar external/OnionKit/libonionkit/libs/android-support-v4.jar
 
 android update project --path . -t android-17 -n InformaCamCore --subprojects

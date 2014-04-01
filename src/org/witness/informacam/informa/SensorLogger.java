@@ -91,10 +91,13 @@ public class SensorLogger<T> {
 	}
 	
 	public ILogPack forceReturn() throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, JSONException {
-		if(_sucker.getClass().getDeclaredMethod("forceReturn", null) != null) {
-			Method fr = _sucker.getClass().getDeclaredMethod("forceReturn", null);
+		
+		Class<?> args = null;
+		
+		if(_sucker.getClass().getDeclaredMethod("forceReturn", args) != null) {
+			Method fr = _sucker.getClass().getDeclaredMethod("forceReturn", args);
 			
-			ILogPack logPack = (ILogPack) fr.invoke(_sucker, null);
+			ILogPack logPack = (ILogPack) fr.invoke(_sucker, args);
 			if(logPack.captureTypes == null) {
 				logPack.captureTypes = new ArrayList<Integer>();
 			}

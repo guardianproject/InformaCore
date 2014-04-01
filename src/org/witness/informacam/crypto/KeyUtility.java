@@ -168,7 +168,8 @@ public class KeyUtility {
 					// there is not credential block, so override this.
 					if(firstUse) {
 						Log.d(LOG, "INIT: onCacheWordOpened()");
-						cacheWord.setTimeoutMinutes(-1);
+						
+						cacheWord.setTimeoutSeconds(-1);
 						
 						String authTokenBlobBytes = new String(setAuthToken(authToken));
 
