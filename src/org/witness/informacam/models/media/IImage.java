@@ -9,6 +9,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Logger;
+import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
 
@@ -68,7 +69,7 @@ public class IImage extends IMedia {
 		// 3. list and preview
 		byte[] listViewBytes = ImageUtility.downsampleImageForListOrPreview(bitmap_);
 		
-		if(informaCam.user.preferences.encryptOriginals) {
+		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 			info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(dcimEntry.originalHash, "PREVIEW_" + dcimEntry.name);
 			info.guardianproject.iocipher.File list_view = new info.guardianproject.iocipher.File(dcimEntry.originalHash, "LIST_VIEW_" + dcimEntry.name);
 			

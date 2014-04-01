@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Vector;
 
+import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
 import org.witness.informacam.utils.Constants.Logger;
@@ -223,11 +224,16 @@ public class DCIMObserver {
 
 		@Override
 		public void onChange(boolean selfChange, Uri uri) {
-			if(uri != null) {
-				Log.d(LOG, "ON CHANGE CALLED (with URI!)");
-			}
-
 			boolean isThumbnail = false;
+			
+			if(Debug.DEBUG) {
+				Logger.d(LOG, "AUTHORITY: " + authority.toString());
+				
+				if(uri != null) {
+					Log.d(LOG, "ON CHANGE CALLED (with URI!)");
+					Logger.d(LOG, "URI: " + uri.toString());
+				}
+			}
 
 			if(
 					authority.equals(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI) || 

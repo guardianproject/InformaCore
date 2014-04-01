@@ -1,10 +1,14 @@
 package org.witness.informacam.models.credentials;
 
 import java.io.Serializable;
+import java.util.Iterator;
 
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 @SuppressWarnings("serial")
 public class IUser extends Model implements Serializable {
@@ -22,7 +26,9 @@ public class IUser extends Model implements Serializable {
 	public String pgpKeyFingerprint = null;
 	
 	public boolean isInOfflineMode = false;
-	public IPreferences preferences = null; 
+	//public IPreferences preferences = null; 
+	
+	private SharedPreferences sp = null;
 	
 	public IUser() {
 		super();
@@ -31,6 +37,18 @@ public class IUser extends Model implements Serializable {
 	public IUser(JSONObject user) {
 		super();
 		inflate(user);
+	}
+	
+	public Object getPreference(String prefKey, Object defaultObj) {
+		if(sp == null) {
+			sp = PreferenceManager.getDefaultSharedPreferences(InformaCam.getInstance());
+		}
+		
+		if(sp.contains(prefKey)) {
+			return sp.getAll().get(prefKey);
+		}
+		
+		return defaultObj;
 	}
 	
 	public void setIsLoggedIn(boolean isLoggedIn) {

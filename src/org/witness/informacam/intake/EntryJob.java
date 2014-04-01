@@ -25,6 +25,7 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
+import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.ImageUtility;
 import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.TimeUtility;
@@ -202,7 +203,7 @@ public class EntryJob extends BackgroundTask {
 
 			byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
 			
-			if(informaCam.user.preferences.encryptOriginals) {
+			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(entry.originalHash, "PREVIEW_" + entry.name);
 				informaCam.ioService.saveBlob(previewBytes, preview);
 				entry.preview = new IAsset(preview.getAbsolutePath());
@@ -244,7 +245,7 @@ public class EntryJob extends BackgroundTask {
 			String tPath = entry.name.substring(entry.name.lastIndexOf("."));
 			String thumbnailFileName = entry.name.replace(tPath, "_thumb.jpg");
 			
-			if(informaCam.user.preferences.encryptOriginals) {
+			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File thumbnail = new info.guardianproject.iocipher.File(entry.originalHash, thumbnailFileName);
 				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, true), thumbnail);
 				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
@@ -286,7 +287,7 @@ public class EntryJob extends BackgroundTask {
 		// Make folder for assets according to preferences
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 			
-			if(informaCam.user.preferences.encryptOriginals) {
+			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(entry.originalHash);
 				try {
 					if(!rootFolder.exists()) {
@@ -314,7 +315,7 @@ public class EntryJob extends BackgroundTask {
 
 	protected void commit() {
 		//XXX: get preference here, save and delete original if encryptOriginals
-		if(InformaCam.getInstance().user.preferences.encryptOriginals) {
+		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 			info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(entry.originalHash, entry.name);
 			
 			try {

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.intake.Intake;
 import org.witness.informacam.models.Model;
@@ -55,7 +56,23 @@ public class IDCIMDescriptor extends Model {
 		Cursor cursor = InformaCam.getInstance().getContentResolver().query(authority, null, null, null, sortBy);
 
 		if(cursor != null && cursor.moveToFirst()) {
-			entry.fileAsset = new IAsset(cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA)), Storage.Type.FILE_SYSTEM);
+			String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
+			
+			/*
+			 * IF the path is not already in out dcimList
+			 */
+			for(IDCIMEntry e : this.intakeList) {
+				if(Debug.DEBUG) {
+					
+					Logger.d(LOG, e.asJson().toString());
+				}
+				
+				if(path.equals(e.fileAsset.path)) { 
+					return;
+				}
+			}
+			
+			entry.fileAsset = new IAsset(path, Storage.Type.FILE_SYSTEM);
 
 			if(!isThumbnail) {
 				entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));

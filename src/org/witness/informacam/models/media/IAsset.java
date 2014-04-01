@@ -6,17 +6,22 @@ import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.Models.IUser;
 
 @SuppressWarnings("serial")
 public class IAsset extends Model implements Serializable {
 	public String path = null;
 	public int source = Storage.Type.IOCIPHER;
 	
+	public IAsset() {
+		super();
+	}
+	
 	public IAsset(String path) {
 		super();
 		this.path = path;
 		
-		if(InformaCam.getInstance().user.preferences.encryptOriginals) {
+		if((Boolean) InformaCam.getInstance().user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 			this.source = Storage.Type.IOCIPHER;
 		} else {
 			this.source = Storage.Type.FILE_SYSTEM;
