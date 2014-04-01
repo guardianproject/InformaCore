@@ -1,7 +1,6 @@
 package org.witness.informacam.intake;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
@@ -102,6 +101,7 @@ public class DCIMObserver {
 			stopWatching();
 		}
 
+		@SuppressWarnings("unused")
 		private void lsof() {
 			lsof(true, null);
 		}

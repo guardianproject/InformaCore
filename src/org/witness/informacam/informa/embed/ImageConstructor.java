@@ -1,6 +1,5 @@
 package org.witness.informacam.informa.embed;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -13,7 +12,6 @@ import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
-import org.witness.informacam.utils.MediaHasher;
 
 import android.util.Log;
 

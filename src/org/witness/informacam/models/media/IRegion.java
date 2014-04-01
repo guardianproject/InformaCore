@@ -15,7 +15,6 @@ import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
-import android.view.View;
 
 public class IRegion extends Model {
 	public String id = null;

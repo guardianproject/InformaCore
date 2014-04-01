@@ -7,15 +7,11 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.storage.IOUtility;
-import org.witness.informacam.utils.ImageUtility;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
 
 public class IVideo extends IMedia {
-	public String video = null;
+	public IAsset video = null;
 	
 	public IVideo() {
 		super();
@@ -27,8 +23,8 @@ public class IVideo extends IMedia {
 	}
 	
 	@Override
-	public Bitmap getBitmap(String pathToFile) {
-		return IOUtility.getBitmapFromFile(bitmapThumb, Type.IOCIPHER);
+	public Bitmap getBitmap(IAsset bitmapAsset) {
+		return IOUtility.getBitmapFromFile(dcimEntry.preview.path, dcimEntry.preview.source);
 	}
 
 	@Override
@@ -46,43 +42,12 @@ public class IVideo extends IMedia {
 			genealogy = new IGenealogy();
 		}
 		
-		String hash = vc.hashVideo(Type.IOCIPHER, dcimEntry.fileName,"mp4");		
+		String hash = vc.hashVideo(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source, "mp4");		
 		genealogy.hashes = new ArrayList<String>();
 		genealogy.hashes.add(hash);
 		
 		// 2. copy over video
-		info.guardianproject.iocipher.File videoFile = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
-		informaCam.ioService.saveBlob(informaCam.ioService.getStream(dcimEntry.fileName, Type.IOCIPHER), videoFile);
-		informaCam.ioService.delete(dcimEntry.fileName, Type.IOCIPHER);
-		dcimEntry.fileName = videoFile.getAbsolutePath();
-		video = videoFile.getAbsolutePath();
-
-		// 3. thumb
-		info.guardianproject.iocipher.File bThumb = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.thumbnailName);
-		informaCam.ioService.saveBlob(Base64.decode(informaCam.ioService.getBytes(dcimEntry.thumbnailFileName, Type.IOCIPHER), Base64.DEFAULT), bThumb);
-		bitmapThumb = bThumb.getAbsolutePath();
-		dcimEntry.thumbnailFile = null;
-		dcimEntry.thumbnailFileName = null;
-
-		// 4. list and preview
-		String nameRoot = dcimEntry.name.substring(0, dcimEntry.name.lastIndexOf("."));
-		final info.guardianproject.iocipher.File bList = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_list.jpg"));
-		final info.guardianproject.iocipher.File bPreview = new info.guardianproject.iocipher.File(rootFolder, (nameRoot + "_preview.jpg"));
-
-		byte[] bytes = informaCam.ioService.getBytes(dcimEntry.previewFrame, Type.IOCIPHER);
-		Bitmap bitmap_ = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-		bytes = null;
-
-		byte[] listViewBytes = ImageUtility.downsampleImageForListOrPreview(bitmap_);
-		informaCam.ioService.saveBlob(listViewBytes, bList);
-		informaCam.ioService.saveBlob(listViewBytes, bPreview);
-
-		bitmapPreview = bPreview.getAbsolutePath();
-		bitmapList = bList.getAbsolutePath();
-
-		listViewBytes = null;
-		bitmap_.recycle();
-	
+		video = dcimEntry.fileAsset;	
 		return true;
 	}
 }

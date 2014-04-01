@@ -139,7 +139,8 @@ public static void setScreenRotation(int screenRotation) {
          
  }
 
- private String frm(float sensorValue) {
+ @SuppressWarnings("unused")
+private String frm(float sensorValue) {
 
          return df.format(sensorValue);
  }
@@ -156,9 +157,15 @@ public static void setScreenRotation(int screenRotation) {
  private float[] mGeomagnetic = new float[3];
  private boolean mGravityUsed, mGeomagneticUsed;
 
- private float azimuth; // View to draw a compass 2D represents North
+ @SuppressWarnings("unused")
+private float azimuth; // View to draw a compass 2D represents North
+ 
+ @SuppressWarnings("unused")
  private float pitch, roll; // used to show id the device is horizontal
+ 
+ @SuppressWarnings("unused")
  private float inclination;// Magnetic north and real North
+ 
  private float alpha = 0.09f;// low pass filter factor
  private boolean useLowPassFilter = false; // set to true if you have a GUI implementation of compass!
 

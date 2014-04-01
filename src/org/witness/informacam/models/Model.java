@@ -237,6 +237,7 @@ public class Model extends JSONObject {
 		return floatArray;
 	}
 	
+	@SuppressWarnings("rawtypes")
 	public JSONObject asJson() {
 		fields = this.getClass().getFields();
 		JSONObject json = new JSONObject();

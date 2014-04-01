@@ -2,7 +2,6 @@ package org.witness.informacam.informa;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Suckers;
 
 import android.app.Service;
@@ -10,7 +9,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 public class Cron extends Service {
 	private final static String LOG = App.Background.LOG;

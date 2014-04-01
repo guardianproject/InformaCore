@@ -9,12 +9,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 
-import android.os.Handler;
 import android.util.Log;
 
 public class INotification extends Model implements Serializable {
@@ -24,8 +23,8 @@ public class INotification extends Model implements Serializable {
 	public String label = null;
 	public String content = null;
 	public String from = null;
-	public String icon = null;
-	public int iconSource = Type.IOCIPHER;
+	
+	public IAsset icon = null;
 	public int type = 0;
 	public String _id = null;
 	public String mediaId = null;

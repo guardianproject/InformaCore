@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
 public class MediaHasher 
 {
@@ -62,7 +61,7 @@ public class MediaHasher
 		JPEGDecoder decoder = new JPEGDecoder(is);
 	    decoder.decodeHeader();
 	    int width = decoder.getImageWidth();
-	    int height = decoder.getImageHeight();
+	    //int height = decoder.getImageHeight();
 	    decoder.startDecode();
 	    
 	    int stride = width*4; //4 bytes per pixel RGBA

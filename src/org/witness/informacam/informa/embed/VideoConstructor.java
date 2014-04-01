@@ -3,7 +3,6 @@ package org.witness.informacam.informa.embed;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -130,7 +129,7 @@ public class VideoConstructor {
 	String newHash = null;
 	
 	
-	public String hashVideo(int fileType, String pathToMedia, String extension) {
+	public String hashVideo(String pathToMedia, int fileType, String extension) {
 		/**
 		 * Hashes the video frames 
 		 * using FFMpeg's RGB hashing function and

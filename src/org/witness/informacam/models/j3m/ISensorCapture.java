@@ -11,8 +11,6 @@ import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 
-import android.util.Log;
-
 public class ISensorCapture extends Model {
 	public long timestamp = 0L;
 	public int captureType = CaptureEvent.SENSOR_PLAYBACK;

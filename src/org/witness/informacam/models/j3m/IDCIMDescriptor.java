@@ -2,12 +2,12 @@ package org.witness.informacam.models.j3m;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.intake.Intake;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Logger;
@@ -19,7 +19,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore.MediaColumns;
-import android.util.Log;
 
 @SuppressLint("DefaultLocale")
 public class IDCIMDescriptor extends Model {	
@@ -56,7 +55,7 @@ public class IDCIMDescriptor extends Model {
 		Cursor cursor = InformaCam.getInstance().getContentResolver().query(authority, null, null, null, sortBy);
 
 		if(cursor != null && cursor.moveToFirst()) {
-			entry.fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
+			entry.fileAsset = new IAsset(cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA)), Storage.Type.FILE_SYSTEM);
 
 			if(!isThumbnail) {
 				entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
@@ -74,7 +73,7 @@ public class IDCIMDescriptor extends Model {
 				}
 			}
 
-			String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
+			// String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
 			
 			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
 			if(!isThumbnail) {

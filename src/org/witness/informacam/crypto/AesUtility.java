@@ -17,7 +17,6 @@ import javax.crypto.spec.IvParameterSpec;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Crypto;
 
 import android.util.Base64;

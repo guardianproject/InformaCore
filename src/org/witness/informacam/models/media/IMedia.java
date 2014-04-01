@@ -30,7 +30,6 @@ import org.witness.informacam.models.j3m.IIntakeData;
 import org.witness.informacam.models.j3m.IIntent;
 import org.witness.informacam.models.j3m.IRegionData;
 import org.witness.informacam.models.j3m.ISensorCapture;
-import org.witness.informacam.models.notifications.IMail;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.transport.ITransportStub;
@@ -58,14 +57,11 @@ import android.util.Base64;
 import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
-
 	public String rootFolder = null;
+	
 	public String _id = null;
-	public String _rev = null;
 	public String alias = null;
-	public String bitmapThumb = null;
-	public String bitmapList = null;
-	public String bitmapPreview = null;
+		
 	public long lastEdited = 0L;
 	public boolean isNew = false;
 	public List<String> associatedCaches = null;
@@ -79,8 +75,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public IData data = null;
 	public IIntent intent = null;
 	public IGenealogy genealogy = null;
-	public List<IMail> messages = null;
-
+	
 	public CharSequence detailsAsText = null;
 
 	protected Handler responseHandler;
@@ -88,8 +83,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	private Bitmap mThumbnail = null;
 	
-	public Bitmap getBitmap(String pathToFile) {
-		return IOUtility.getBitmapFromFile(pathToFile, Type.IOCIPHER);
+	public Bitmap getBitmap(IAsset bitmapAsset) {
+		return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source);
 	}
 
 	public Bitmap testImage ()
@@ -99,8 +94,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public Bitmap getThumbnail ()
 	{
-		if (mThumbnail == null && bitmapThumb != null)
-			mThumbnail = getBitmap(bitmapThumb);
+		if (mThumbnail == null && dcimEntry.thumbnail != null)
+			mThumbnail = getBitmap(dcimEntry.thumbnail);
 		
 		return mThumbnail;
 	}
@@ -479,7 +474,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		InformaCam informaCam = InformaCam.getInstance();
 
 		INotification notification = new INotification();
-		notification.icon = bitmapThumb;
+		notification.icon = dcimEntry.thumbnail;
 
 		// create data package
 		if(data == null) {
@@ -562,8 +557,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				// create a java.io.file
 				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);
 				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+					@SuppressWarnings("unused")
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, shareFile.getAbsolutePath(), Type.FILE_SYSTEM);
 				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+					@SuppressWarnings("unused")
 					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, shareFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.FILE_SYSTEM);
 				}
 
@@ -586,6 +583,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						submission.setAsset(exportFile.getName().replace(".mp4", ".mkv"), exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Models.IMedia.MimeType.VIDEO);
 					}
 
+					@SuppressWarnings("unused")
 					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
 					
 				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
@@ -598,6 +596,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 						submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), Models.IMedia.MimeType.IMAGE);
 					}
 					
+					@SuppressWarnings("unused")
 					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
 				}
 			}
@@ -659,7 +658,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		InformaCam informaCam = InformaCam.getInstance();
 
 		INotification notification = new INotification();
-		notification.icon = bitmapThumb;
+		notification.icon = dcimEntry.thumbnail;
 
 		// create data package
 		if(data == null) {
@@ -799,7 +798,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		InformaCam informaCam = InformaCam.getInstance();
 
 		INotification notification = new INotification();
-		notification.icon = bitmapThumb;
+		notification.icon = dcimEntry.thumbnail;
 
 		// create data package
 		if(data == null) {
@@ -821,10 +820,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 20;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
+		/*
 		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
 		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
 			mimeType = context.getString(R.string.log);
 		}
+		*/
 		
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);

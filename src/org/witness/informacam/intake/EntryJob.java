@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.json.JSONException;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntakeData;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.ILog;
 import org.witness.informacam.models.media.IMedia;
@@ -18,7 +20,6 @@ import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.BackgroundTask;
 import org.witness.informacam.utils.Constants.App.Storage;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Logger;
@@ -77,7 +78,7 @@ public class EntryJob extends BackgroundTask {
 					media.genealogy = new IGenealogy();
 
 					media.genealogy.dateCreated = media.dcimEntry.timeCaptured;
-
+					
 					if(this.parentId != null) {
 						((ILog) informaCam.mediaManifest.getById(this.parentId)).attachedMedia.add(media._id);
 						informaCam.mediaManifest.save();
@@ -144,7 +145,7 @@ public class EntryJob extends BackgroundTask {
 	private void parseExif() {
 		if(entry.mediaType.equals(MimeType.IMAGE)) {
 			try {
-				ExifInterface ei = new ExifInterface(entry.fileName);
+				ExifInterface ei = new ExifInterface(entry.fileAsset.path);
 
 				entry.exif.aperture = ei.getAttribute(ExifInterface.TAG_APERTURE);
 				entry.exif.timestamp = ei.getAttribute(ExifInterface.TAG_DATETIME);
@@ -163,7 +164,7 @@ public class EntryJob extends BackgroundTask {
 			}
 		} else if(entry.mediaType.equals(MimeType.VIDEO)) {
 			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-			mmr.setDataSource(entry.fileName);
+			mmr.setDataSource(entry.fileAsset.path);
 
 			entry.exif.duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
 			entry.exif.width = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
@@ -190,7 +191,7 @@ public class EntryJob extends BackgroundTask {
 			}
 
 			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-			mmr.setDataSource(entry.fileName);
+			mmr.setDataSource(entry.fileAsset.path);
 
 			Bitmap b_ = mmr.getFrameAtTime();
 			if(b_ == null) {
@@ -200,22 +201,27 @@ public class EntryJob extends BackgroundTask {
 			}
 
 			byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
-
-			info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
-			try {
-				if(!reviewDump.exists()) {
-					reviewDump.mkdir();
+			
+			if(informaCam.user.preferences.encryptOriginals) {
+				info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(entry.originalHash, "PREVIEW_" + entry.name);
+				informaCam.ioService.saveBlob(previewBytes, preview);
+				entry.preview = new IAsset(preview.getAbsolutePath());
+			} else {
+				java.io.File preview = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "PREVIEW_" + entry.name);
+				java.io.File list_view = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "LIST_VIEW_" + entry.name);
+				
+				try {
+					informaCam.ioService.saveBlob(previewBytes, preview);
+					informaCam.ioService.saveBlob(previewBytes, list_view);
+				} catch (IOException e) {
+					Logger.e(LOG, e);
 				}
-			} catch(ExceptionInInitializerError e) {
-				Logger.e(LOG, e);
+				
+				entry.preview = new IAsset(preview.getAbsolutePath());
+				entry.list_view = new IAsset(list_view.getAbsolutePath());
 			}
 
-			info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(reviewDump, "PREVIEW_" + entry.name);
-
-			informaCam.ioService.saveBlob(previewBytes, preview);
 			previewBytes = null;
-
-			entry.previewFrame = preview.getAbsolutePath();
 
 			if(b == null) {
 				b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
@@ -225,7 +231,7 @@ public class EntryJob extends BackgroundTask {
 			mmr.release();
 		}
 		else if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-			InputStream is = informaCam.ioService.getStream(entry.fileName, Type.FILE_SYSTEM);
+			InputStream is = informaCam.ioService.getStream(entry.fileAsset.path, entry.fileAsset.source);
 
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inSampleSize = 8;
@@ -235,16 +241,30 @@ public class EntryJob extends BackgroundTask {
 		}
 
 		if(b != null) {
-			entry.thumbnailFile = IOUtility.getBytesFromBitmap(b, true);
-			b.recycle();
-
 			String tPath = entry.name.substring(entry.name.lastIndexOf("."));
-			entry.thumbnailName = entry.name.replace(tPath, "_thumb.jpg");
+			String thumbnailFileName = entry.name.replace(tPath, "_thumb.jpg");
+			
+			if(informaCam.user.preferences.encryptOriginals) {
+				info.guardianproject.iocipher.File thumbnail = new info.guardianproject.iocipher.File(entry.originalHash, thumbnailFileName);
+				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, true), thumbnail);
+				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
+			} else {
+				java.io.File thumbnail = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), thumbnailFileName);
+				try {
+					informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, true), thumbnail);
+				} catch (IOException e) {
+					Logger.e(LOG, e);
+				}
+				
+				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
+			}
+			
+			b.recycle();			
 		}
 	}
 
 	private void analyze() throws IOException, NoSuchAlgorithmException, JSONException {
-		java.io.File file = new java.io.File(entry.fileName);
+		java.io.File file = new java.io.File(entry.fileAsset.path);
 
 		if(!entry.isAvailable()) {
 			entry = null;
@@ -261,9 +281,31 @@ public class EntryJob extends BackgroundTask {
 			entry.uri = IOUtility.getUriFromFile(informaCam, Uri.parse(entry.authority), file).toString();
 		}
 
-		//Logger.d(LOG, "analyzing: " + entry.asJson().toString());
+		Logger.d(LOG, "analyzing: " + entry.asJson().toString());
 
+		// Make folder for assets according to preferences
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
+			
+			if(informaCam.user.preferences.encryptOriginals) {
+				info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(entry.originalHash);
+				try {
+					if(!rootFolder.exists()) {
+						rootFolder.mkdir();
+					}
+				} catch(ExceptionInInitializerError e) {
+					Logger.e(LOG, e);
+				}
+			} else {
+				java.io.File rootFolder = new java.io.File(Storage.EXTERNAL_DIR, entry.originalHash);
+				try {
+					if(!rootFolder.exists()) {
+						rootFolder.mkdir();
+					}
+				} catch(ExceptionInInitializerError e) {
+					Logger.e(LOG, e);
+				}
+			}
+			
 			parseExif();
 			parseThumbnails();
 			commit();
@@ -271,61 +313,21 @@ public class EntryJob extends BackgroundTask {
 	}	
 
 	protected void commit() {
-		// delete/encrypt/replace all the data
-		info.guardianproject.iocipher.File reviewDump = new info.guardianproject.iocipher.File(Storage.REVIEW_DUMP);
-		try {
-			if(!reviewDump.exists()) {
-				reviewDump.mkdir();
-			}
-		} catch(ExceptionInInitializerError e) {
-			Logger.e(LOG, e);
-		}
-
-		info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(reviewDump, entry.name);
-		info.guardianproject.iocipher.File newFileThumb = new info.guardianproject.iocipher.File(reviewDump, entry.thumbnailName);
-
-		try
-		{
-			java.io.FileInputStream srcFile = null;
+		//XXX: get preference here, save and delete original if encryptOriginals
+		if(InformaCam.getInstance().user.preferences.encryptOriginals) {
+			info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(entry.originalHash, entry.name);
 			
-			if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
-				/**
-				java.io.File metaFile = new java.io.File(entry.fileName + "_meta.jpg");
-				ImageConstructor.constructImage(entry.fileName, metaFile.getCanonicalPath(), "test",4);
-				
-				if (metaFile.exists())
-					srcFile = new java.io.FileInputStream(metaFile);
-				else
-				{
-					srcFile = new java.io.FileInputStream(entry.fileName);
-				}**/
-
-				srcFile = new java.io.FileInputStream(entry.fileName);
+			try {
+				java.io.FileInputStream srcFile = new java.io.FileInputStream(entry.fileAsset.path);
+								
+				if(informaCam.ioService.saveBlob(srcFile, newFile, entry.uri) && informaCam.ioService.delete(entry.fileAsset.path, entry.fileAsset.source)) {
+					entry.fileAsset = new IAsset(newFile.getAbsolutePath(), Storage.Type.IOCIPHER);
+				}
+			} catch (IOException e) {
+				Logger.e(LOG, e);
 			}
-			else
-			{
-				srcFile = new java.io.FileInputStream(entry.fileName);
-			}
-			
-			//save the thumbnail first, don't delete, and there is no source URI
-			informaCam.ioService.saveBlob(
-					entry.thumbnailFile, 
-					newFileThumb);
-
-			entry.thumbnailFileName = newFileThumb.getAbsolutePath();
-			entry.thumbnailFile = null;
-
-			//now save the big one - delete the original file
-			informaCam.ioService.saveBlob(
-					srcFile, 
-					newFile,
-					entry.uri);
-
-			entry.fileName = newFile.getAbsolutePath();
 		}
-		catch (IOException e)
-		{
-			Logger.e(LOG, e);
-		}
+		
+		
 	}
 }

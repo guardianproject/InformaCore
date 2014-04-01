@@ -22,6 +22,7 @@ public class IUser extends Model implements Serializable {
 	public String pgpKeyFingerprint = null;
 	
 	public boolean isInOfflineMode = false;
+	public IPreferences preferences = null; 
 	
 	public IUser() {
 		super();

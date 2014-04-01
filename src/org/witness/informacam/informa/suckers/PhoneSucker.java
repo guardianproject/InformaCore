@@ -15,8 +15,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.telephony.CellInfo;
-import android.telephony.CellInfoGsm;
 import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;

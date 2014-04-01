@@ -24,7 +24,7 @@ public class EnvironmentalSucker extends SensorLogger implements SensorEventList
 	
 	private final static String LOG = Suckers.LOG;
 			
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	public EnvironmentalSucker(Context context) {
 		super(context);
 		setSucker(this);
@@ -101,6 +101,7 @@ TYPE_RELATIVE_HUMIDITY	event.values[0]	%	Ambient relative humidity.
 TYPE_TEMPERATURE	event.values[0]	°C	Device temperature.1
 
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onSensorChanged(SensorEvent event) {
 		synchronized(this) {

@@ -51,6 +51,7 @@ public class SignatureService {
 		sk = null;		
 	}
 	
+	@SuppressWarnings("deprecation")
 	public boolean isVerified(final ILogPack data) throws IOException {
 
 		try

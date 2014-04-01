@@ -1,18 +1,13 @@
 package org.witness.informacam.transport;
 
-import java.net.URI;
-
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.App.Transport;
-import org.witness.informacam.utils.Constants.Models.ITransportStub.RepositorySources;
 
 import android.content.Intent;
-import android.net.Uri;
 
 public class TransportUtility {
 	private static final String LOG = Transport.LOG;

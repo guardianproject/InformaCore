@@ -24,6 +24,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.DOMException;
@@ -51,6 +52,15 @@ import android.util.Log;
 
 public class IOUtility {
 	private final static String LOG = App.Storage.LOG;
+	
+	public static String buildPublicPath(String[] segments) {
+		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, buildPath(segments)}, "/");
+	}
+	
+	public static String buildPath(String[] segments) {
+		Log.d(LOG, StringUtils.join(segments, "/"));
+		return StringUtils.join(segments, "/");
+	}
 
 	public static Uri getUriFromFile(Context context, Uri authority, java.io.File file) {
 		Uri uri = null;

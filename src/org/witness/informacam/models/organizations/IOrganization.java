@@ -9,6 +9,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 
+@SuppressWarnings("serial")
 public class IOrganization extends Model implements Serializable {
 	public String organizationName = null;
 	public String organizationDetails = null;

@@ -4,21 +4,23 @@ import java.io.Serializable;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.models.media.IAsset;
 
 @SuppressWarnings("serial")
 public class IDCIMEntry extends Model implements Serializable {
 	public String uri = null;
-	public String fileName = null;
+	
 	public String name = null;
 	public String authority = null;
 	public String originalHash = null;
 	public String bitmapHash = null;
 	public String mediaType = null;
-	public byte[] thumbnailFile = null;
-	public String thumbnailName = null;
-	public String thumbnailFileName = null;
-	public String previewFrame = null;
+	
+	public IAsset fileAsset = null;
+	public IAsset thumbnail = null;
+	public IAsset preview = null;
+	public IAsset list_view = null;
+	
 	public IExif exif = null;
 
 	public long size = 0L;
@@ -39,7 +41,7 @@ public class IDCIMEntry extends Model implements Serializable {
 		boolean isAvailable = false;
 		
 		do {
-			isAvailable = InformaCam.getInstance().ioService.isAvailable(fileName, Type.FILE_SYSTEM);
+			isAvailable = InformaCam.getInstance().ioService.isAvailable(fileAsset.path, fileAsset.source);
 		} while(!isAvailable);
 		
 		return isAvailable;

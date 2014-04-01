@@ -1,9 +1,7 @@
 package org.witness.informacam.models.j3m;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONException;
@@ -60,7 +58,6 @@ public class IRegionData extends Model {
 		this(region, null);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public IRegionData(IRegion region, ILocation location) throws FileNotFoundException {
 		super();
 		

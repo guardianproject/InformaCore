@@ -2,7 +2,6 @@ package org.witness.informacam.models.j3m;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.models.media.IMedia;
 
 public class IIntakeData extends Model {
 	public String data = null;
