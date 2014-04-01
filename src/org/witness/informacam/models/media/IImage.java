@@ -83,8 +83,8 @@ public class IImage extends IMedia {
 			java.io.File list_view = new java.io.File(IOUtility.buildPublicPath(new String [] {dcimEntry.originalHash}), "LIST_VIEW_" + dcimEntry.name);
 			
 			try {
-				informaCam.ioService.saveBlob(listViewBytes, preview);
-				informaCam.ioService.saveBlob(listViewBytes, list_view);
+				informaCam.ioService.saveBlob(listViewBytes, preview, true);
+				informaCam.ioService.saveBlob(listViewBytes, list_view, true);
 			} catch (IOException e) {
 				Logger.e(LOG, e);
 			}

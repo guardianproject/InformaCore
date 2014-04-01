@@ -6,8 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.json.JSONException;
-import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntakeData;
@@ -85,15 +85,15 @@ public class EntryJob extends BackgroundTask {
 						informaCam.mediaManifest.save();
 					}
 					
-					media.intakeData = new IIntakeData(media.dcimEntry.timeCaptured, media.dcimEntry.timezone, timeOffset);
-					Logger.d(LOG, media.intakeData.asJson().toString());
-					
 					boolean isFinishedProcessing = false;
 
 					if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 						IImage image = new IImage(media);
 
 						if(image.analyze()) {
+							image.intakeData = new IIntakeData(image.dcimEntry.timeCaptured, image.dcimEntry.timezone, timeOffset, ArrayUtils.toString(image.genealogy.hashes));
+							Logger.d(LOG, image.intakeData.asJson().toString());
+							
 							informaCam.mediaManifest.addMediaItem(image);
 							isFinishedProcessing = true;
 						}
@@ -103,6 +103,9 @@ public class EntryJob extends BackgroundTask {
 						IVideo video = new IVideo(media);
 
 						if(video.analyze()) {
+							video.intakeData = new IIntakeData(video.dcimEntry.timeCaptured, video.dcimEntry.timezone, timeOffset, ArrayUtils.toString(video.genealogy.hashes));
+							Logger.d(LOG, video.intakeData.asJson().toString());
+
 							informaCam.mediaManifest.addMediaItem(video);
 							isFinishedProcessing = true;
 						}
@@ -168,9 +171,13 @@ public class EntryJob extends BackgroundTask {
 			mmr.setDataSource(entry.fileAsset.path);
 
 			entry.exif.duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-			entry.exif.width = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-			entry.exif.height = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+			
+			/*
+			 * these keys are min API 14
+			 */
 			try {
+				entry.exif.width = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+				entry.exif.height = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
 				entry.exif.orientation = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
 			} catch(NumberFormatException e) {
 				Logger.e(LOG, e);
@@ -212,8 +219,8 @@ public class EntryJob extends BackgroundTask {
 				java.io.File list_view = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "LIST_VIEW_" + entry.name);
 				
 				try {
-					informaCam.ioService.saveBlob(previewBytes, preview);
-					informaCam.ioService.saveBlob(previewBytes, list_view);
+					informaCam.ioService.saveBlob(previewBytes, preview, true);
+					informaCam.ioService.saveBlob(previewBytes, list_view, true);
 				} catch (IOException e) {
 					Logger.e(LOG, e);
 				}
@@ -230,8 +237,7 @@ public class EntryJob extends BackgroundTask {
 
 			b_.recycle();
 			mmr.release();
-		}
-		else if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
+		} else if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 			InputStream is = informaCam.ioService.getStream(entry.fileAsset.path, entry.fileAsset.source);
 
 			BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -247,13 +253,16 @@ public class EntryJob extends BackgroundTask {
 			
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File thumbnail = new info.guardianproject.iocipher.File(entry.originalHash, thumbnailFileName);
-				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, true), thumbnail);
+				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, 50), thumbnail);
 				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
 			} else {
 				java.io.File thumbnail = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), thumbnailFileName);
+				Logger.d(LOG, "THUMBNAIL PLACED AT: ");
+				Logger.d(LOG, thumbnail.getAbsolutePath());
 				try {
-					informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, true), thumbnail);
+					informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, 50), thumbnail, true);
 				} catch (IOException e) {
+					Logger.d(LOG, "WHAAAT?");
 					Logger.e(LOG, e);
 				}
 				

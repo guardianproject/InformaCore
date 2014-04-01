@@ -114,7 +114,6 @@ public class IOService {
 	}
 	
 	public boolean saveBlob(InputStream data, java.io.File file, String uriToDelete) throws IOException {
-		@SuppressWarnings("static-access")
 		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);		
 		
 		IOUtils.copyLarge(data, fos);
@@ -129,7 +128,6 @@ public class IOService {
 		return true;
 	}
 
-	@SuppressWarnings("static-access")
 	public boolean saveBlob(byte[] data, java.io.File file, String uriToDelete) throws IOException {		
 		java.io.FileOutputStream fos = mContext.openFileOutput(file.getName(), mContext.MODE_PRIVATE);
 		

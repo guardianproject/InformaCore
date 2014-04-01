@@ -235,11 +235,6 @@ public class InformaCam extends Application {
 				fis.read(ubytes);
 				user.inflate(ubytes);
 				
-				/**
-				 * this is to set some testing preferences
-				 */
-				Debug.testUser_1();
-				
 				if(credentialManager.getStatus() == Codes.Status.UNLOCKED) {
 					startCode = RUN;
 				} else if(credentialManager.getStatus() == Codes.Status.LOCKED) {
@@ -311,6 +306,11 @@ public class InformaCam extends Application {
 		
 		transportManifest = (ITransportManifest) getModel(transportManifest);
 		languageMap = (ILanguageMap) getModel(languageMap);
+		
+		/**
+		 * this is to set some testing preferences
+		 */
+		Debug.testUser_1();
 	}
 	
 	private void setModels() {

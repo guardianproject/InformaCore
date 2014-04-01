@@ -120,6 +120,14 @@ public class IOUtility {
 		
 		return null;
 	}
+	
+	public final static byte[] getBytesFromBitmap(Bitmap bitmap) {
+		return getBytesFromBitmap(bitmap, false);
+	}
+	
+	public final static byte[] getBytesFromBitmap(Bitmap bitmap, int quality) {
+		return getBytesFromBitmap(bitmap, quality, false);
+	}
 
 	public final static byte[] getBytesFromBitmap(Bitmap bitmap, boolean asBase64) {
 		return getBytesFromBitmap(bitmap, 100, asBase64);

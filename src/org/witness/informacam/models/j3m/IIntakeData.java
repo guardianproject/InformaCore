@@ -16,11 +16,11 @@ public class IIntakeData extends Model {
 		inflate(intakeData);
 	}
 	
-	public IIntakeData(long timeCreated, String timezone, long timeOffset) {
+	public IIntakeData(long timeCreated, String timezone, long timeOffset, String originalHash) {
 		super();
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		data = "timezone=" + timezone + ";timeCreated=" + timeCreated + ";timeOffset=" + timeOffset;
+		data = "timezone=" + timezone + ";timeCreated=" + timeCreated + ";timeOffset=" + timeOffset +";originalHash=" + originalHash;
 		signature = new String(informaCam.signatureService.signData(data.getBytes()));
 	}
 }
