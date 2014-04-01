@@ -418,6 +418,7 @@ public class Constants {
 			public static final String PUBLIC_KEY = "publicKey";
 			public static final String BELONGS_TO_USER = "belongs_to_user";
 			public static final String LANG_DEFAULT = "langDefault";
+			public static final String ASSET_ENCRYPTION = "assetEncryption";
 		}
 
 		public class IMediaManifest {
