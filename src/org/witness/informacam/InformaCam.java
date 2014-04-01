@@ -76,7 +76,10 @@ import android.util.Base64;
 import android.util.Log;
 import dalvik.system.DexFile;
 
-public class InformaCam extends Application {	
+public class InformaCam extends Application {
+	/*
+	 * set dynamic debug settings in initData
+	 */
 	
 	private final static String LOG = App.LOG;
 
@@ -309,8 +312,8 @@ public class InformaCam extends Application {
 		
 		/**
 		 * this is to set some testing preferences
+		 * i.e. Debug.testUser_1();
 		 */
-		Debug.testUser_1();
 	}
 	
 	private void setModels() {
