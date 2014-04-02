@@ -31,6 +31,7 @@ public class IImage extends IMedia {
 	
 	@Override
 	protected void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
+		@SuppressWarnings("unused")
 		ImageConstructor ic = new ImageConstructor(this, destinationAsset, submission);
 	}
 

@@ -44,15 +44,13 @@ public class VideoConstructor {
 		ffmpegBin = fileBin.getAbsolutePath();
 	}
 	
-	public VideoConstructor(Context context, IMedia media, IAsset destinationAsset, ITransportStub connection) throws IOException {
-		this(context);
+	public VideoConstructor(InformaCam informaCam, IMedia media, IAsset destinationAsset, ITransportStub connection) throws IOException {
+		this(informaCam);
 		
 		this.media = media;
 		this.destinationAsset = destinationAsset;
 		this.sourceAsset = this.media.dcimEntry.fileAsset;
 		this.connection = connection;
-
-		InformaCam informaCam = InformaCam.getInstance();
 		
 		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 		if(!publicRoot.exists()) {

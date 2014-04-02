@@ -1,7 +1,5 @@
 package org.witness.informacam.models.media;
 
-import info.guardianproject.iocipher.FileOutputStream;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -10,7 +8,6 @@ import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
-import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,8 +16,6 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
-import org.witness.informacam.informa.embed.ImageConstructor;
-import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
@@ -36,7 +31,6 @@ import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.ui.editors.IRegionDisplay;
-import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
@@ -707,8 +701,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			informaCam.ioService.saveBlob(j3mBytes, j3mAsset);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
-
-			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name + '.' + Models.IMedia.J3M; //txt = text file for J3M JSON DATA
 
 			notification.generateId();
 			notification.mediaId = this._id;
