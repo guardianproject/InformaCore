@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
-import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 
 import android.graphics.Bitmap;
@@ -28,12 +27,6 @@ public class IVideo extends IMedia {
 		return IOUtility.getBitmapFromFile(dcimEntry.preview.path, dcimEntry.preview.source);
 	}
 	
-	@Override
-	protected void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
-		@SuppressWarnings("unused")
-		VideoConstructor vc = new VideoConstructor(InformaCam.getInstance(), this, destinationAsset, submission);
-	}
-
 	@Override
 	public boolean analyze() throws IOException {
 		super.analyze();

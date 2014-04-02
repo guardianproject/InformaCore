@@ -2,6 +2,7 @@ package org.witness.informacam.informa.embed;
 
 import java.io.IOException;
 
+import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.media.IMedia;
@@ -9,6 +10,7 @@ import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
 
@@ -40,8 +42,7 @@ public class ImageConstructor {
 		this.destinationAsset = destinationAsset;
 		this.connection = connection;
 		
-		sourceAsset = this.media.dcimEntry.fileAsset;
-		
+		sourceAsset = this.media.dcimEntry.fileAsset;		
 		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 		if(!publicRoot.exists()) {
 			publicRoot.mkdir();
@@ -72,11 +73,15 @@ public class ImageConstructor {
 		}
 	}
 
-	public void finish(boolean intentedForIOCipher) throws IOException {
+	public void finish(boolean intentedForIOCipher) {
 		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
 		// if this was in encrypted space, delete temp files
 		if(intentedForIOCipher) {
-			destinationAsset.copy(Type.FILE_SYSTEM, Type.IOCIPHER, media.rootFolder);
+			try {
+				destinationAsset.copy(Type.FILE_SYSTEM, Type.IOCIPHER, media.rootFolder);
+			} catch (IOException e) {
+				Logger.e(LOG, e);
+			}
 			
 			java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 			InformaCam.getInstance().ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);

@@ -16,6 +16,8 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.informa.embed.ImageConstructor;
+import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
@@ -462,6 +464,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public boolean export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
 		responseHandler = h;
@@ -578,6 +581,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
 			}
 			
+			Logger.d(LOG, "EXPORT ASSET SETTINGS: " + exportAsset.asJson().toString());
 			constructExport(exportAsset, submission);
 			
 			if(submission != null) {
@@ -602,7 +606,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 	
-	protected void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {}
+	private void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
+		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
+			@SuppressWarnings("unused")
+			ImageConstructor ic = new ImageConstructor(this, destinationAsset, submission);
+		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+			@SuppressWarnings("unused")
+			VideoConstructor vc = new VideoConstructor(InformaCam.getInstance(), this, destinationAsset, submission);
+		}
+	}
 	
 	public String exportHash() {
 		
@@ -637,6 +649,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
 		responseHandler = h;
@@ -759,6 +772,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public String buildJ3M(Context context, boolean signData, Handler h) throws FileNotFoundException {
 		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
 		responseHandler = h;

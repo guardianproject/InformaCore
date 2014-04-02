@@ -21,8 +21,8 @@ public class Debug {
 		boolean enc = (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false);
 		Logger.d(LOG, "USER ENC: " + enc);
 		
-		informaCam.mediaManifest.listMedia.clear();
-		informaCam.mediaManifest.save();
+		//informaCam.mediaManifest.listMedia.clear();
+		//informaCam.mediaManifest.save();
 	}
 
 }
