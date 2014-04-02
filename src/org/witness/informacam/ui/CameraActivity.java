@@ -106,11 +106,20 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		for(ResolveInfo ri : resolveInfo) {
 			String packageName = ri.activityInfo.packageName;
 			String name = ri.activityInfo.name;
+			
+			/*
+			 * TODO: the user's perefered camera app should be a settable preference.
+			 */
 
+			/*
 			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
 				cameraComponent = new ComponentName(packageName, name);
 				break;
 			}
+			*/
+			
+			cameraComponent = new ComponentName(packageName, name);
+			break;
 		}
 
 		if(resolveInfo.isEmpty() || cameraComponent == null) {

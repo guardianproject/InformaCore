@@ -62,7 +62,7 @@ import com.google.common.cache.LoadingCache;
 public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
 	private static InformaService informaService;
-
+	
 	private long startTime = 0L;
 	private long realStartTime = 0L;
 

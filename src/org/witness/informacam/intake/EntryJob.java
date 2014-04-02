@@ -58,6 +58,7 @@ public class EntryJob extends BackgroundTask {
 		this.parentId = parentId;
 		this.informaCache = informaCache;
 		this.timeOffset = timeOffset;
+		
 	}
 	
 	@Override
@@ -91,7 +92,7 @@ public class EntryJob extends BackgroundTask {
 						IImage image = new IImage(media);
 
 						if(image.analyze()) {
-							image.intakeData = new IIntakeData(image.dcimEntry.timeCaptured, image.dcimEntry.timezone, timeOffset, ArrayUtils.toString(image.genealogy.hashes));
+							image.intakeData = new IIntakeData(image.dcimEntry.timeCaptured, image.dcimEntry.timezone, timeOffset, ArrayUtils.toString(image.genealogy.hashes), image.dcimEntry.cameraComponent);
 							Logger.d(LOG, image.intakeData.asJson().toString());
 							
 							informaCam.mediaManifest.addMediaItem(image);
@@ -103,7 +104,7 @@ public class EntryJob extends BackgroundTask {
 						IVideo video = new IVideo(media);
 
 						if(video.analyze()) {
-							video.intakeData = new IIntakeData(video.dcimEntry.timeCaptured, video.dcimEntry.timezone, timeOffset, ArrayUtils.toString(video.genealogy.hashes));
+							video.intakeData = new IIntakeData(video.dcimEntry.timeCaptured, video.dcimEntry.timezone, timeOffset, ArrayUtils.toString(video.genealogy.hashes), video.dcimEntry.cameraComponent);
 							Logger.d(LOG, video.intakeData.asJson().toString());
 
 							informaCam.mediaManifest.addMediaItem(video);

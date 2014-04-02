@@ -16,6 +16,7 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -30,12 +31,14 @@ public class IDCIMDescriptor extends Model {
 	private long timeOffset = 0L;
 	private String parentId = null;
 	private InformaCam informaCam = InformaCam.getInstance();
+	private String cameraComponent = null;
 
 	private final static String LOG = Storage.LOG;
 
-	public IDCIMDescriptor(String parentId) {
+	public IDCIMDescriptor(String parentId, ComponentName cameraComponent) {
 		startTime = System.currentTimeMillis()/1000;
 		this.parentId = parentId;
+		this.cameraComponent = cameraComponent.getPackageName();
 	}
 
 	public IDCIMSerializable asDescriptor() {
@@ -63,7 +66,6 @@ public class IDCIMDescriptor extends Model {
 			 */
 			for(IDCIMEntry e : this.intakeList) {
 				if(Debug.DEBUG) {
-					
 					Logger.d(LOG, e.asJson().toString());
 				}
 				
@@ -84,6 +86,7 @@ public class IDCIMDescriptor extends Model {
 				}
 
 				entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
+				entry.cameraComponent = cameraComponent;
 
 				if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
 					entry.mediaType = MimeType.VIDEO;

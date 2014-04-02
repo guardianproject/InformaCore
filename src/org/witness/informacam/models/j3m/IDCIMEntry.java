@@ -22,6 +22,7 @@ public class IDCIMEntry extends Model implements Serializable {
 	public IAsset list_view = null;
 	
 	public IExif exif = null;
+	public String cameraComponent = null;
 
 	public long size = 0L;
 	public long timeCaptured = 0L;

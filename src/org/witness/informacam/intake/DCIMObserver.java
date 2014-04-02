@@ -27,8 +27,11 @@ public class DCIMObserver {
 	private final static String LOG = Storage.LOG;
 
 	public IDCIMDescriptor dcimDescriptor;
+	public ComponentName cameraComponent;
+	
 	List<ContentObserver> observers;
 	InformaCam informaCam = InformaCam.getInstance();
+	
 
 	Handler h;
 	private Context mContext;
@@ -41,6 +44,7 @@ public class DCIMObserver {
 	public DCIMObserver(Context context, String parentId, ComponentName cameraComponent) {
 
 		mContext = context;
+		this.cameraComponent = cameraComponent;
 
 		List<RunningAppProcessInfo> running = ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
 		for(RunningAppProcessInfo r : running) {
@@ -68,7 +72,7 @@ public class DCIMObserver {
 			mContext.getContentResolver().registerContentObserver(((Observer) o).authority, false, o);
 		}
 
-		dcimDescriptor = new IDCIMDescriptor(parentId);
+		dcimDescriptor = new IDCIMDescriptor(parentId, cameraComponent);
 		fileMonitor.start();
 		dcimDescriptor.startSession();
 
