@@ -89,9 +89,14 @@ public class ImageConstructor {
 		boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getStream(version.getAbsolutePath(), Type.FILE_SYSTEM), destinationAsset);
 		if(success) {
 			if(connection != null) {
-				
+				((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 			}
-			version.delete();
+		}
+		
+		// if this was in encrypted space, delete temp files
+		if(media.dcimEntry.fileAsset.source == Type.IOCIPHER) {
+			java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
+			InformaCam.getInstance().ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
 		}
 		
 		((MetadataEmbededListener) media).onMetadataEmbeded(destinationAsset);

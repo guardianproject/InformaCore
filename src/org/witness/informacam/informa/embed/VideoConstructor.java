@@ -54,8 +54,7 @@ public class VideoConstructor {
 
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		String publicRootPath = IOUtility.buildPublicPath(new String[] { media.rootFolder });
-		java.io.File publicRoot = new java.io.File(publicRootPath);
+		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 		if(!publicRoot.exists()) {
 			publicRoot.mkdir();
 		}
@@ -104,6 +103,17 @@ public class VideoConstructor {
 				@Override
 				public void processComplete(int exitValue) {
 					Log.d(LOG, "ffmpeg process completed");
+					
+					// if this was in encrypted space, delete temp files
+					if(media.dcimEntry.fileAsset.source == Type.IOCIPHER) {
+						java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
+						InformaCam.getInstance().ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
+					}
+					
+					if(connection != null) {
+						((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
+					}
+					
 					((MetadataEmbededListener) media).onMetadataEmbeded(destinationAsset);
 				}
 			});
