@@ -11,10 +11,16 @@ import org.witness.informacam.utils.Constants.Models.IUser;
 @SuppressWarnings("serial")
 public class IAsset extends Model implements Serializable {
 	public String path = null;
+	public String name = null;
 	public int source = Storage.Type.IOCIPHER;
 	
 	public IAsset() {
 		super();
+	}
+	
+	public IAsset(int source) {
+		super();
+		this.source = source;
 	}
 	
 	public IAsset(String path) {
@@ -33,6 +39,15 @@ public class IAsset extends Model implements Serializable {
 		
 		this.path = path;
 		this.source = source;
+	}
+	
+	public IAsset(String path, int source, String name) {
+		super();
+		
+		this.path = path;
+		this.source = source;
+		this.name = name;
+		
 	}
 	
 	public IAsset(IAsset asset) {

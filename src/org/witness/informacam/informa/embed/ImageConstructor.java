@@ -5,25 +5,24 @@ import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.transport.ITransportStub;
+import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
+import org.witness.informacam.utils.Constants.Models;
 
 import android.util.Log;
 
 public class ImageConstructor {
-	info.guardianproject.iocipher.File pathToImage;
-	info.guardianproject.iocipher.File pathToJ3M;
-
 	java.io.File version;
 	InformaCam informaCam;
 
-	String pathToNewImage;
-	int destination;
+	IAsset destinationAsset;
 	IMedia media;
 	ITransportStub connection;
 	
@@ -39,26 +38,25 @@ public class ImageConstructor {
 			String j3mString, 
 			int j3mStringLength);
 	
-	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination) throws IOException {
-		this(media, pathToImage, pathToJ3M, pathToNewImage, destination, null);
-	}
-
-	public ImageConstructor(IMedia media, info.guardianproject.iocipher.File pathToImage, info.guardianproject.iocipher.File pathToJ3M, String pathToNewImage, int destination, ITransportStub connection) throws IOException {
+	public ImageConstructor(IMedia media, IAsset destinationAsset, ITransportStub connection) throws IOException {
 		informaCam = InformaCam.getInstance();
 
-		this.pathToImage = pathToImage;
-		this.pathToJ3M = pathToJ3M;
-		this.pathToNewImage = pathToNewImage;
-		this.destination = destination;
 		this.media = media;
+		this.destinationAsset = destinationAsset;
 		this.connection = connection;
+		
+		if(this.media.dcimEntry.fileAsset.source == Type.IOCIPHER) {
+			java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
+			if(!publicRoot.exists()) {
+				publicRoot.mkdir();
+			}
+		}
 
-		byte[] metadata = informaCam.ioService.getBytes(pathToJ3M.getAbsolutePath(), Type.IOCIPHER);
-
-		version = new java.io.File(Storage.EXTERNAL_DIR, "version_" + pathToImage.getName());
+		byte[] metadata = informaCam.ioService.getBytes(this.media.getAsset(Models.IMedia.Assets.J3M));
+		version = new java.io.File(IOUtility.buildPublicPath(new String[] { this.media.rootFolder, "version_" + media.dcimEntry.fileAsset.name }));
 		
 		try {
-			InputStream is = informaCam.ioService.getStream(pathToImage.getAbsolutePath(), Type.IOCIPHER);			
+			InputStream is = informaCam.ioService.getStream(media.dcimEntry.fileAsset);			
 			java.io.FileOutputStream fos = new java.io.FileOutputStream(version);			
 			IOUtils.copy(is,fos);			
 			fos.flush();
@@ -85,38 +83,17 @@ public class ImageConstructor {
 		}
 	}
 
-	public void finish() {
-		// move back to iocipher
-		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destination + ")");
+	public void finish() throws IOException {
+		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
+		
+		boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getStream(version.getAbsolutePath(), Type.FILE_SYSTEM), destinationAsset);
+		if(success) {
+			if(connection != null) {
 				
-		if(destination == Type.IOCIPHER) {
-			final info.guardianproject.iocipher.File newImage = new info.guardianproject.iocipher.File(pathToNewImage);
-			
-			boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage);
-			if(success) {
-				if(connection != null) {
-					((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
-				}
-				
-				version.delete();
 			}
-			
-			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
-			
-						
-		} else if(destination == Type.FILE_SYSTEM) {
-			java.io.File newImage = new java.io.File(pathToNewImage);
-			
-			try {
-				boolean success = informaCam.ioService.saveBlob(informaCam.ioService.getBytes(version.getAbsolutePath(), Type.FILE_SYSTEM), newImage, true);
-				if(success) {
-					version.delete();
-				}
-			} catch (IOException e) {
-				Logger.e(LOG, e);
-			}
-			
-			((MetadataEmbededListener) media).onMetadataEmbeded(newImage);
+			version.delete();
 		}
+		
+		((MetadataEmbededListener) media).onMetadataEmbeded(destinationAsset);
 	}
 }

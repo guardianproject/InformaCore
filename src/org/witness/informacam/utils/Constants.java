@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Vector;
 
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.ui.editors.IRegionDisplay;
 
@@ -48,8 +49,7 @@ public class Constants {
 	}
 	
 	public interface MetadataEmbededListener {
-		public void onMetadataEmbeded(info.guardianproject.iocipher.File version);
-		public void onMetadataEmbeded(java.io.File version);
+		public void onMetadataEmbeded(IAsset version);
 		public void onMediaReadyForTransport(ITransportStub transportStub);
 	}
 	
@@ -480,6 +480,10 @@ public class Constants {
 				public static final String ICTD = "application/octet-stream";
 				public static final String JSON = "application/json";
 				public static final String J3M = JSON;
+			}
+			
+			public class Assets {
+				public final static String J3M = "informacam.j3m";
 			}
 
 			public class j3m {

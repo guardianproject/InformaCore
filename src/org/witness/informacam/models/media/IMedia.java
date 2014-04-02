@@ -43,6 +43,7 @@ import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.MediaHasher;
@@ -526,8 +527,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
-			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
-
 			byte[] j3mBytes = j3mObject.toString().getBytes();
 			
 			if(!debugMode) {
@@ -543,63 +542,55 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
 			}
 
-			informaCam.ioService.saveBlob(j3mBytes, j3mFile);
+			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
+			informaCam.ioService.saveBlob(j3mBytes, j3mAsset);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
 			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
-			info.guardianproject.iocipher.File original = new info.guardianproject.iocipher.File(rootFolder, dcimEntry.name);
-
 			notification.generateId();
 			notification.mediaId = this._id;
 			
+			ITransportStub submission = null;
+			int exportDestination = Type.IOCIPHER;
 			if(share) {
-				// create a java.io.file
-				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);
-				if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-					@SuppressWarnings("unused")
-					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, shareFile.getAbsolutePath(), Type.FILE_SYSTEM);
-				} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-					@SuppressWarnings("unused")
-					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, shareFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.FILE_SYSTEM);
-				}
-
-				notification.type = Models.INotification.Type.SHARED_MEDIA;				
-				informaCam.addNotification(notification, responseHandler);
+				exportDestination = Type.FILE_SYSTEM;
+				notification.type = Models.INotification.Type.SHARED_MEDIA;
 			} else {
-				// create a iocipher file
+				if(!(Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
+					exportDestination = Type.FILE_SYSTEM;
+				}
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 				
-				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
-				ITransportStub submission = null; 
-
-				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
-					if(organization != null) {
-						notification.taskComplete = false;
-						informaCam.addNotification(notification, responseHandler);
-						
-						submission = new ITransportStub(organization, notification);
-						
-						submission.setAsset(exportFile.getName().replace(".mp4", ".mkv"), exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Models.IMedia.MimeType.VIDEO);
-					}
-
-					@SuppressWarnings("unused")
-					VideoConstructor videoConstructor = new VideoConstructor(context, this, original, j3mFile, exportFile.getAbsolutePath().replace(".mp4", ".mkv"), Type.IOCIPHER, submission);
+				
+				if(organization != null) {
+					notification.taskComplete = false;
+					informaCam.addNotification(notification, responseHandler);
 					
-				} else if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
-					if(organization != null) {
-						notification.taskComplete = false;
-						informaCam.addNotification(notification, responseHandler);
-						
-						submission = new ITransportStub(organization, notification);
-						
-						submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), Models.IMedia.MimeType.IMAGE);
-					}
-					
-					@SuppressWarnings("unused")
-					ImageConstructor imageConstructor = new ImageConstructor(this, original, j3mFile, exportFile.getAbsolutePath(), Type.IOCIPHER, submission);
+					submission = new ITransportStub(organization, notification);
 				}
 			}
+			
+			IAsset exportAsset = new IAsset(exportDestination);
+			exportAsset.name = exportFileName;
+			exportAsset.path = IOUtility.buildPath(new String[] { rootFolder, exportFileName });
+			
+			if(exportDestination == Type.FILE_SYSTEM) {
+				exportAsset.path = IOUtility.buildPublicPath(new String[] { exportAsset.path });
+			}
+			
+			if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+				exportAsset.name = exportAsset.name.replace(".mp4", ".mkv");
+				exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
+			}
+			
+			constructExport(exportAsset, submission);
+			
+			if(submission != null) {
+				submission.setAsset(exportAsset, dcimEntry.mediaType);
+			}
+			
+			informaCam.addNotification(notification, responseHandler);			
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -609,14 +600,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		} catch (ConcurrentModificationException e) {
 			Logger.e(LOG, e);
 			return false;
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			Logger.e(LOG, e);
 			return false;
 		}
-
+		
 		return true;
 	}
+	
+	protected void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {}
 	
 	public String exportHash() {
 		
@@ -707,14 +699,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
 			
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
-			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
-			info.guardianproject.iocipher.File j3mFile = new info.guardianproject.iocipher.File(rootFolder, this.dcimEntry.originalHash + "_" + System.currentTimeMillis() + ".j3m");
-
 			byte[] j3mBytes = j3mObject.toString().getBytes();
 
-			informaCam.ioService.saveBlob(j3mBytes, j3mFile);
+			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
+			informaCam.ioService.saveBlob(j3mBytes, j3mAsset);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -740,36 +730,22 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 			}
 			
-			
+			ITransportStub submission = null;
 			if(share) {
-				// create a java.io.file
-				java.io.File shareFile = new java.io.File(Storage.EXTERNAL_DIR, exportFileName);
-								
-				IOUtils.write(j3mBytes, new java.io.FileOutputStream(shareFile));
-				
-				notification.type = Models.INotification.Type.SHARED_MEDIA;				
-				informaCam.addNotification(notification, responseHandler);
-				
-				onMetadataEmbeded(shareFile);
-				
+				notification.type = Models.INotification.Type.SHARED_MEDIA;
 			} else {
-				// create a iocipher file
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 				
-				info.guardianproject.iocipher.File exportFile = new info.guardianproject.iocipher.File(rootFolder, exportFileName);
-				ITransportStub submission = null; 
-
 				if(organization != null) {
 					notification.taskComplete = false;
 					informaCam.addNotification(notification, responseHandler);
 					
-					IOUtils.write(j3mBytes, new FileOutputStream(exportFile));
 					submission = new ITransportStub(organization, notification);
-					submission.setAsset(exportFile.getName(), exportFile.getAbsolutePath(), MimeType.J3M);
+					submission.setAsset(j3mAsset, dcimEntry.mediaType);
 				}
-
-				
 			}
+			
+			onMetadataEmbeded(j3mAsset);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -957,14 +933,35 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	@Override
-	public void onMetadataEmbeded(info.guardianproject.iocipher.File version) {
+	public void onMetadataEmbeded(IAsset version) {
 		reset();
-		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
+		sendMessage(Models.IMedia.VERSION, version.path);
+	}
+	
+	public IAsset addAsset(String name) {
+		String path = IOUtility.buildPath(new String[] { rootFolder, Models.IMedia.Assets.J3M });
+		int source = dcimEntry.fileAsset.source;
+		
+		if(source == Type.FILE_SYSTEM) {
+			path = IOUtility.buildPublicPath(new String[] { path });
+		}
+		
+		return new IAsset(path, source, name);
 	}
 
-	@Override
-	public void onMetadataEmbeded(java.io.File version) {
-		reset();
-		sendMessage(Models.IMedia.VERSION, version.getAbsolutePath());
+	public IAsset getAsset(String name) {
+		InformaCam informaCam = InformaCam.getInstance();
+		String path = IOUtility.buildPath(new String[] { rootFolder, name });
+		int source = dcimEntry.fileAsset.source;
+		
+		if(source == Type.FILE_SYSTEM) {
+			path = IOUtility.buildPublicPath(new String[] { path });
+		}
+		
+		if(informaCam.ioService.getBytes(path, source) == null) {
+			return null;
+		}
+		
+		return new IAsset(path, source, name);
 	}	
 }

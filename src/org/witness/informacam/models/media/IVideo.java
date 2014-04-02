@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 
 import android.graphics.Bitmap;
@@ -25,6 +27,11 @@ public class IVideo extends IMedia {
 	@Override
 	public Bitmap getBitmap(IAsset bitmapAsset) {
 		return IOUtility.getBitmapFromFile(dcimEntry.preview.path, dcimEntry.preview.source);
+	}
+	
+	@Override
+	protected void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
+		VideoConstructor vc = new VideoConstructor(InformaCam.getInstance(), this, destinationAsset, submission);
 	}
 
 	@Override

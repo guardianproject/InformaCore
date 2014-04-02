@@ -15,6 +15,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.intake.DCIMObserver;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -52,8 +53,22 @@ public class IOService {
 			Log.d(LOG, "removing unsafe file: " + f.getAbsolutePath());
 			f.delete();
 		}
-		
+	}
 	
+	public boolean saveBlob(InputStream data, IAsset asset) throws IOException {
+		if(asset.source == Type.IOCIPHER) {
+			return saveBlob(data, new info.guardianproject.iocipher.File(asset.path));
+		} else {
+			return saveBlob(data, new java.io.File(asset.path), true);
+		}
+	}
+	
+	public boolean saveBlob(byte[] data, IAsset asset) throws IOException { 
+		if(asset.source == Type.IOCIPHER) {
+			return saveBlob(data, new info.guardianproject.iocipher.File(asset.path));
+		} else {
+			return saveBlob(data, new java.io.File(asset.path), true);
+		}
 	}
 
 	public boolean saveBlob(byte[] data, java.io.File file, boolean isPublic)  throws IOException {
@@ -223,6 +238,10 @@ public class IOService {
 		return false;
 	}
 	
+	public byte[] getBytes(IAsset asset) {
+		return getBytes(asset.path, asset.source);
+	}
+	
 	public byte[] getBytes(String pathToData, int source) {
 		byte[] bytes = new byte[0];
 
@@ -310,6 +329,11 @@ public class IOService {
 
 		Log.d(LOG, "(" + pathToData + ") bytes here: " + bytes.length);
 		return bytes;
+	}
+	
+	
+	public InputStream getStream(IAsset asset) {
+		return getStream(asset.path, asset.source);
 	}
 	
 	public InputStream getStream(String pathToData, int source) {

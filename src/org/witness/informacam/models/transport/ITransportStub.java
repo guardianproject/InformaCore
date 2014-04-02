@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.models.organizations.IRepository;
@@ -83,6 +84,10 @@ public class ITransportStub extends Model implements Serializable {
 		asset.assetName = assetName;
 		asset.assetPath = assetPath;
 		asset.mimeType = mimeType;
+	}
+	
+	public void setAsset(IAsset asset, String mimeType) {
+		setAsset(asset.name, asset.path, mimeType);
 	}
 	
 	public String getAssetRootOfRepository(String source) {

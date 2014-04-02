@@ -6,7 +6,9 @@ import java.util.ArrayList;
 
 import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.models.j3m.IGenealogy;
+import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models.IUser;
@@ -25,6 +27,11 @@ public class IImage extends IMedia {
 	public IImage(IMedia media) {
 		super();
 		inflate(media.asJson());
+	}
+	
+	@Override
+	protected void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
+		ImageConstructor ic = new ImageConstructor(this, destinationAsset, submission);
 	}
 
 	@Override
