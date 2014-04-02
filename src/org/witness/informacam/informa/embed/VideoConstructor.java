@@ -49,31 +49,33 @@ public class VideoConstructor {
 		
 		this.media = media;
 		this.destinationAsset = destinationAsset;
-		this.sourceAsset = this.media.dcimEntry.fileAsset;
 		this.connection = connection;
+		
+		sourceAsset = this.media.dcimEntry.fileAsset;
+		metadata = media.getAsset(Models.IMedia.Assets.J3M);
 		
 		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 		if(!publicRoot.exists()) {
 			publicRoot.mkdir();
 		}
 		
-		metadata = media.getAsset(Models.IMedia.Assets.J3M);
-		
-		if(this.media.dcimEntry.fileAsset.source == Type.IOCIPHER) {
-			byte[] metadataBytes = informaCam.ioService.getBytes(metadata);
-			metadata.source = Type.FILE_SYSTEM;
-			metadata.path = IOUtility.buildPublicPath(new String[] { media.rootFolder, metadata.name });
-			informaCam.ioService.saveBlob(metadataBytes, metadata);
+		boolean intendedForIOCipher = false;
+		if(sourceAsset.source == Type.IOCIPHER) {
+			// If the assets were in IOCIPHER, we have to save them to local storage.
+			// unfortunately, Ffmpeg CLI works that way.
+			metadata.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder);
+			sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder);			
 			
-			sourceAsset.path = IOUtility.buildPublicPath(new String[] { media.rootFolder, sourceAsset.name });
-			sourceAsset.source = Type.FILE_SYSTEM;
-			informaCam.ioService.saveBlob(informaCam.ioService.getStream(media.dcimEntry.fileAsset), sourceAsset);
+			// this means we also have to save the resulting media to public
+			// (and copy to iocipher later)
+			this.destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
+			intendedForIOCipher = true;
 		}
 		
-		constructVideo();
+		constructVideo(intendedForIOCipher);
 	}
 
-	private void constructVideo() throws IOException {
+	private void constructVideo(final boolean intendedForIOCipher) throws IOException {
 
 		String[] ffmpegCommand = new String[] {
 				ffmpegBin, "-y", "-i", sourceAsset.path,
@@ -101,11 +103,18 @@ public class VideoConstructor {
 				@Override
 				public void processComplete(int exitValue) {
 					Log.d(LOG, "ffmpeg process completed");
+					InformaCam informaCam = InformaCam.getInstance();
 					
-					// if this was in encrypted space, delete temp files
-					if(media.dcimEntry.fileAsset.source == Type.IOCIPHER) {
+					// if user wanted this encrypted, copy the destination asset
+					if(intendedForIOCipher) {
+						try {
+							destinationAsset.copy(Type.FILE_SYSTEM, Type.IOCIPHER, media.rootFolder);
+						} catch (IOException e) {
+							Logger.e(LOG, e);
+						}
+						
 						java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
-						InformaCam.getInstance().ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
+						informaCam.ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
 					}
 					
 					if(connection != null) {

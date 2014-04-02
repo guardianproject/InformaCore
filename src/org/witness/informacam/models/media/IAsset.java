@@ -1,11 +1,16 @@
 package org.witness.informacam.models.media;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models.IUser;
 
 @SuppressWarnings("serial")
@@ -60,17 +65,30 @@ public class IAsset extends Model implements Serializable {
 		inflate(asset);
 	}
 	
-	public void get() {
-		switch(this.source) {
-		case Storage.Type.IOCIPHER:
-			break;
-		case Storage.Type.FILE_SYSTEM:
-			break;
-		case Storage.Type.APPLICATION_ASSET:
-			break;
-		case Storage.Type.CONTENT_RESOLVER:
-			break;
+	public boolean copy(int fromSource, int toSource, String rootFolder) throws IOException {
+		return copy(fromSource, toSource, rootFolder, true);
+	}
+	
+	public boolean copy(int fromSource, int toSource, String rootFolder, boolean copyStreams) throws IOException {
+		InformaCam informaCam = InformaCam.getInstance();
+		Logger.d(LOG, "COPYINGING " + path + " from " + fromSource + " to " + toSource);
+		
+		String oldPath = path;
+		String newPath = IOUtility.buildPath(new String[] { rootFolder, name });
+		if(toSource == Type.FILE_SYSTEM) {
+			newPath = IOUtility.buildPath(new String[] { newPath });
 		}
+		
+		if(copyStreams) {
+			InputStream is = informaCam.ioService.getStream(oldPath, fromSource);
+			if(is == null || !informaCam.ioService.saveBlob(is, new IAsset(newPath, toSource))) {
+				return false;
+			}
+		}
+		
+		source = toSource;
+		path = newPath;
+		return true;
 	}
 
 }
