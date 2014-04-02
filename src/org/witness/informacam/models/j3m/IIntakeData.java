@@ -1,10 +1,14 @@
 package org.witness.informacam.models.j3m;
 
+import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.Constants.Logger;
+
+import android.util.Base64;
 
 public class IIntakeData extends Model {
-	public String data = null;
+	public byte[] data = null;
 	public String signature = null;
 	
 	public IIntakeData() {
@@ -20,7 +24,19 @@ public class IIntakeData extends Model {
 		super();
 		InformaCam informaCam = InformaCam.getInstance();
 				
-		data = "timezone=" + timezone + ";timeCreated=" + timeCreated + ";timeOffset=" + timeOffset +";cameraComponentPackageName=" + cameraComponentPackageName + ";originalHash=" + originalHash;
-		signature = new String(informaCam.signatureService.signData(data.getBytes()));
+		JSONObject dataObj = new JSONObject();
+		
+		try {
+			dataObj.put("timezone", timezone);
+			dataObj.put("timeCreated", timeCreated);
+			dataObj.put("timeOffset", timeOffset);
+			dataObj.put("cameraComponentPackageName", cameraComponentPackageName);
+			dataObj.put("originalHash", originalHash);
+			
+			data = Base64.encode(dataObj.toString().getBytes(), Base64.DEFAULT);
+			signature = new String(informaCam.signatureService.signData(data));
+		} catch(Exception e) {
+			Logger.e(LOG, e);
+		}
 	}
 }
