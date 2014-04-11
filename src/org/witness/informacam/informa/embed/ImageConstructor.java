@@ -9,6 +9,7 @@ import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App.Informa;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
@@ -75,10 +76,16 @@ public class ImageConstructor {
 
 	public void finish(boolean intentedForIOCipher) {
 		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
+		
+		android.os.Debug.waitForDebugger();
+		
+		int storageType = Storage.Type.FILE_SYSTEM;
+		
 		// if this was in encrypted space, delete temp files
 		if(intentedForIOCipher) {
 			try {
 				destinationAsset.copy(Type.FILE_SYSTEM, Type.IOCIPHER, media.rootFolder);
+				storageType = Storage.Type.IOCIPHER;
 			} catch (IOException e) {
 				Logger.e(LOG, e);
 			}
@@ -88,6 +95,7 @@ public class ImageConstructor {
 		}
 		
 		if(connection != null) {
+			connection.setAsset(destinationAsset, "image/jpeg", storageType);
 			((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 		}
 		

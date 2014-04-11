@@ -22,6 +22,7 @@ import org.witness.informacam.ui.screens.WizardStepTwo;
 import org.witness.informacam.ui.screens.WizardStepZero;
 import org.witness.informacam.ui.screens.WizardSubFragmentFinish;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
@@ -260,7 +261,7 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 					informaCam.addNotification(notification, null);
 					
 					ITransportStub transportStub = new ITransportStub(organization, notification);
-					transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
+					transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP, Storage.Type.IOCIPHER);
 					TransportUtility.initTransport(transportStub);
 				}
 			}
