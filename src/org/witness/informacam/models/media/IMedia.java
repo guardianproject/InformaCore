@@ -33,6 +33,7 @@ import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.ui.editors.IRegionDisplay;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
@@ -585,7 +586,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			constructExport(exportAsset, submission);
 			
 			if(submission != null) {
-				submission.setAsset(exportAsset, dcimEntry.mediaType);
+				submission.setAsset(exportAsset, dcimEntry.mediaType, exportDestination);
 			}
 			
 			informaCam.addNotification(notification, responseHandler);			
@@ -746,7 +747,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 					informaCam.addNotification(notification, responseHandler);
 					
 					submission = new ITransportStub(organization, notification);
-					submission.setAsset(j3mAsset, dcimEntry.mediaType);
+					submission.setAsset(j3mAsset, dcimEntry.mediaType, Storage.Type.IOCIPHER);
 				}
 			}
 			
