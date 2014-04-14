@@ -50,29 +50,21 @@ public class PhoneSucker extends SensorLogger {
 			}
 		}
 		
-		if(ba != null)
+		if(ba != null && ba.isEnabled()) //only use bluetooth if the user has it on
 		{
 			hasBluetooth = true;
-			// if bluetooth is off, turn it on... (be sure to turn off when finished)
-			if(!ba.isEnabled())
-				ba.enable();
+	
 		}
 		else
 			Log.d(LOG,"no bt?");
 		
-		if(wm != null) {
+		if(wm != null && wm.isWifiEnabled()) { //only use wifi if it is on
 			// is wifi on?
-			// if not, turn on, and set hasWifi to true
-			if(wm.isWifiEnabled()) {
-				hasWifi = true;
-				wifiWasOn = true;
-			} else {
-				wm.setWifiEnabled(true);
-			}
 			
+			hasWifi = true;
+			wifiWasOn = true;
+		
 			
-			
-			// but don't let it auto-associate
 		}
 		
 		// TODO: if bluetooth is off, turn it on... (be sure to turn off when finished)
@@ -98,7 +90,7 @@ public class PhoneSucker extends SensorLogger {
 							ba.startDiscovery();
 						
 						// scan for network ssids
-						if(!wm.startScan()) {
+						if(hasWifi && !wm.startScan()) {
 							// TODO: alert user to this error
 							
 						}
@@ -161,19 +153,23 @@ public class PhoneSucker extends SensorLogger {
 	
 	public JSONArray getWifiNetworks() {
 		JSONArray wifi = new JSONArray();
-		for(ScanResult wc : wm.getScanResults()) {
-			JSONObject scanResult = new JSONObject();
-			try {				
-				scanResult.put(Phone.Keys.WIFI_FREQ, wc.frequency);
-				scanResult.put(Phone.Keys.WIFI_LEVEL, wc.level);
-				scanResult.put(Phone.Keys.BSSID, wc.BSSID);
-				scanResult.put(Phone.Keys.SSID, wc.SSID);
-				wifi.put(scanResult);
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString(),e);
-				continue;
+		
+		if (hasWifi)
+		{
+			for(ScanResult wc : wm.getScanResults()) {
+				JSONObject scanResult = new JSONObject();
+				try {				
+					scanResult.put(Phone.Keys.WIFI_FREQ, wc.frequency);
+					scanResult.put(Phone.Keys.WIFI_LEVEL, wc.level);
+					scanResult.put(Phone.Keys.BSSID, wc.BSSID);
+					scanResult.put(Phone.Keys.SSID, wc.SSID);
+					wifi.put(scanResult);
+				} catch (JSONException e) {
+					Log.e(LOG, e.toString(),e);
+					continue;
+				}
+				
 			}
-			
 		}
 		
 		return wifi;

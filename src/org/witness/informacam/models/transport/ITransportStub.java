@@ -76,7 +76,7 @@ public class ITransportStub extends Model implements Serializable {
 		}
 	}
 	
-	public void setAsset(String assetName, String assetPath, String mimeType) {
+	public void setAsset(String assetName, String assetPath, String mimeType, int storageType) {
 		if(asset == null) {
 			asset = new ITransportData();
 		}
@@ -84,10 +84,11 @@ public class ITransportStub extends Model implements Serializable {
 		asset.assetName = assetName;
 		asset.assetPath = assetPath;
 		asset.mimeType = mimeType;
+		asset.storageType = storageType;
 	}
 	
-	public void setAsset(IAsset asset, String mimeType) {
-		setAsset(asset.name, asset.path, mimeType);
+	public void setAsset(IAsset asset, String mimeType, int storageType) {
+		setAsset(asset.name, asset.path, mimeType, storageType);
 	}
 	
 	public String getAssetRootOfRepository(String source) {

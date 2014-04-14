@@ -98,7 +98,7 @@ public class ILog extends IMedia {
 				informaCam.ioService.saveBlob(j3mBytes, log);
 				
 				ITransportStub submission = new ITransportStub(organization, notification);
-				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG);
+				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG, Storage.Type.IOCIPHER);
 				
 				
 				TransportUtility.initTransport(submission);

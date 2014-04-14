@@ -54,7 +54,7 @@ public class GlobaleaksTransport extends Transport {
 		NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
-		.setContentText(getString(R.string.upload_in_progress) + ": " + repoName)
+		.setContentText(getString(R.string.upload_in_progress) + ": " + transportStub.organization.organizationName)
 		.setTicker(getString(R.string.upload_in_progress))
 		.setSmallIcon(android.R.drawable.ic_menu_upload)
 		.setContentIntent(resultPendingIntent);
@@ -65,7 +65,7 @@ public class GlobaleaksTransport extends Transport {
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
 
-		transportStub.asset.key = "files";	// (?)
+//		transportStub.asset.key = "files";	// (?)
 
 		Logger.d(LOG, submission.asJson().toString());
 

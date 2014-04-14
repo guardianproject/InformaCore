@@ -2,11 +2,13 @@ package org.witness.informacam.informa.embed;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.apache.commons.io.IOUtils;
+import org.ffmpeg.android.FfmpegController;
 import org.ffmpeg.android.ShellUtils;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IAsset;
@@ -27,9 +29,10 @@ import android.util.Log;
 
 public class VideoConstructor {
 	
-	static java.io.File fileBinDir;
+	java.io.File fileBinDir;
 	
-	String ffmpegBin;
+	FfmpegController ffmpegCtrl;
+	String ffmpegBinPath;
 	
 	IMedia media;
 	IAsset destinationAsset, sourceAsset, metadata;
@@ -37,11 +40,14 @@ public class VideoConstructor {
 
 	private final static String LOG = Ffmpeg.LOG;
 
-	public VideoConstructor(Context context) {
+	public VideoConstructor(Context context) throws FileNotFoundException, IOException {
 		
-		fileBinDir = new File(context.getFilesDir().getParentFile(),"lib");
-		File fileBin = new File(fileBinDir,"libffmpeg.so");
-		ffmpegBin = fileBin.getAbsolutePath();
+		File fileDirTmp = context.getCacheDir();
+		
+		fileBinDir = context.getDir("bin",Context.MODE_PRIVATE);
+		ffmpegCtrl = new FfmpegController(context, fileDirTmp);
+		ffmpegBinPath = new File(fileBinDir,"ffmpeg").getCanonicalPath();
+
 	}
 	
 	public VideoConstructor(InformaCam informaCam, IMedia media, IAsset destinationAsset, ITransportStub connection) throws IOException {
@@ -78,7 +84,7 @@ public class VideoConstructor {
 	private void constructVideo(final boolean intendedForIOCipher) throws IOException {
 
 		String[] ffmpegCommand = new String[] {
-				ffmpegBin, "-y", "-i", sourceAsset.path,
+				ffmpegBinPath, "-y", "-i", sourceAsset.path,
 				"-attach", metadata.path,
 				"-metadata:s:2", "mimetype=text/plain",
 				"-vcodec", "copy",
@@ -105,10 +111,13 @@ public class VideoConstructor {
 					Log.d(LOG, "ffmpeg process completed");
 					InformaCam informaCam = InformaCam.getInstance();
 					
+					int storageType = Storage.Type.FILE_SYSTEM;
+					
 					// if user wanted this encrypted, copy the destination asset
 					if(intendedForIOCipher) {
 						try {
 							destinationAsset.copy(Type.FILE_SYSTEM, Type.IOCIPHER, media.rootFolder);
+							storageType = Storage.Type.IOCIPHER;
 						} catch (IOException e) {
 							Logger.e(LOG, e);
 						}
@@ -118,6 +127,8 @@ public class VideoConstructor {
 					}
 					
 					if(connection != null) {
+						
+						connection.setAsset(destinationAsset, "video/mp4", storageType);
 						((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 					}
 					
@@ -162,7 +173,7 @@ public class VideoConstructor {
 			}
 			
 			String[] cmdHash = new String[] {
-					ffmpegBin, "-i", tmpMedia.getCanonicalPath(),
+					ffmpegBinPath, "-i", tmpMedia.getCanonicalPath(),
 					"-vcodec", "copy", "-an", "-f", "md5", "-"
 			};				
 			
@@ -241,7 +252,7 @@ public class VideoConstructor {
 		final java.io.File tmp = new java.io.File(Storage.EXTERNAL_DIR, "bmp_" + System.currentTimeMillis());
 
 		String[] ffmpegCommand = new String[] {
-				ffmpegBin, "-t", String.valueOf(frame), 
+				ffmpegBinPath, "-t", String.valueOf(frame), 
 				"-i", source.getAbsolutePath(),
 				"-ss", "0.5",
 				"-s", (dims[0] + "x" + dims[1]),

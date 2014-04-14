@@ -17,23 +17,22 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IRepository;
-import org.witness.informacam.models.transport.ITransportStub;
 import org.witness.informacam.models.transport.ITransportData;
+import org.witness.informacam.models.transport.ITransportStub;
+import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
-
-import ch.boye.httpclientandroidlib.NameValuePair;
-import ch.boye.httpclientandroidlib.client.utils.URLEncodedUtils;
-import ch.boye.httpclientandroidlib.message.BasicNameValuePair;
 
 import android.annotation.SuppressLint;
 import android.app.IntentService;
@@ -191,7 +190,7 @@ public class Transport extends IntentService {
 			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
 			//http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
 			
-			InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
+			InputStream in = informaCam.ioService.getStream(fileData.assetPath, fileData.storageType);
 			BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
 			
 			byte[] buffer = new byte[1024];
@@ -478,6 +477,7 @@ public class Transport extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Logger.d(LOG, "onHandleIntent called");
+		android.os.Debug.waitForDebugger();
 		
 		transportStub = (ITransportStub) intent.getSerializableExtra(Models.ITransportStub.TAG);
 		Log.d(LOG, "TRANSPORT:\n" + transportStub.asJson().toString()); 

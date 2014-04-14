@@ -761,7 +761,7 @@ public class InformaCam extends Application {
 		addNotification(notification, null);
 		
 		ITransportStub transportStub = new ITransportStub(organization, notification);
-		transportStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP);
+		transportStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP, Type.IOCIPHER);
 		TransportUtility.initTransport(transportStub);
 	}
 	
