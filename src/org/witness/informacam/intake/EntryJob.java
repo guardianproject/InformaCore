@@ -283,6 +283,7 @@ public class EntryJob extends BackgroundTask {
 		}
 		
 		entry.name = file.getName();
+		entry.fileAsset.name = entry.name;
 		entry.size = file.length();
 		entry.timeCaptured = file.lastModified();	// Questionable...?
 
@@ -325,15 +326,9 @@ public class EntryJob extends BackgroundTask {
 
 	protected void commit() {
 		//XXX: get preference here, save and delete original if encryptOriginals
-		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
-			info.guardianproject.iocipher.File newFile = new info.guardianproject.iocipher.File(entry.originalHash, entry.name);
-			
+		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {			
 			try {
-				java.io.FileInputStream srcFile = new java.io.FileInputStream(entry.fileAsset.path);
-								
-				if(informaCam.ioService.saveBlob(srcFile, newFile, entry.uri) && informaCam.ioService.delete(entry.fileAsset.path, entry.fileAsset.source)) {
-					entry.fileAsset = new IAsset(newFile.getAbsolutePath(), Storage.Type.IOCIPHER);
-				}
+				entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash);
 			} catch (IOException e) {
 				Logger.e(LOG, e);
 			}

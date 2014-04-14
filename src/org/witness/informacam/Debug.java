@@ -3,6 +3,9 @@ package org.witness.informacam;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models.IUser;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 public class Debug {
 	
 	public static final String DEBUG_TAG = "ICDEBUG";
@@ -23,5 +26,19 @@ public class Debug {
 		
 		//informaCam.mediaManifest.listMedia.clear();
 		//informaCam.mediaManifest.save();
+	}
+	
+	public static void fix_default_asset_encryption() {
+		InformaCam informaCam = InformaCam.getInstance();
+		
+		boolean originalImageHandling = (Boolean) informaCam.user.getPreference("originalImageHandling", false);
+		Logger.d(LOG, "USER'S ORIGINAL ENC SETTINGS: " + originalImageHandling);
+		
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(InformaCam.getInstance());
+		SharedPreferences.Editor ed = sp.edit();
+		ed.putString(IUser.ASSET_ENCRYPTION, originalImageHandling ? "0" : "1");
+		ed.commit();
+		
+		Logger.d(LOG, "USER'S ENC SETTINGS NOW: " + (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false));
 	}
 }

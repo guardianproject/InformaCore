@@ -6,6 +6,7 @@ import java.util.Iterator;
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.utils.Constants.Logger;
 
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -39,13 +40,25 @@ public class IUser extends Model implements Serializable {
 		inflate(user);
 	}
 	
-	public Object getPreference(String prefKey, Object defaultObj) {
+	public Object getPreference(String prefKey, Object defaultObj) {		
 		if(sp == null) {
 			sp = PreferenceManager.getDefaultSharedPreferences(InformaCam.getInstance());
 		}
-		
+				
 		if(sp.contains(prefKey)) {
-			return sp.getAll().get(prefKey);
+			Object value = sp.getAll().get(prefKey);
+			
+			if(!value.getClass().getName().equals(defaultObj.getClass().getName())) {
+				if(defaultObj instanceof Boolean) {
+					if(value instanceof String && (value.equals("1") || value.equals("0"))) {						
+						return value.equals("1") ? true : false;
+					} else if(value instanceof Integer && ((Integer) value == 1 || (Integer) value == 0)) {
+						return (Integer) value == 1 ? true : false;
+					}
+				}
+			}
+			
+			return value;
 		}
 		
 		return defaultObj;

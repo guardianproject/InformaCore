@@ -311,9 +311,11 @@ public class InformaCam extends Application {
 		languageMap = (ILanguageMap) getModel(languageMap);
 		
 		/**
+		 * XXX
 		 * this is to set some testing preferences
 		 * i.e. Debug.testUser_1();
 		 */
+		//Debug.fix_default_asset_encryption();
 	}
 	
 	private void setModels() {
