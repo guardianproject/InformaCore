@@ -24,5 +24,4 @@ public class Debug {
 		//informaCam.mediaManifest.listMedia.clear();
 		//informaCam.mediaManifest.save();
 	}
-
 }
