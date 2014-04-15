@@ -17,6 +17,7 @@ import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.content.Context;
@@ -59,6 +60,8 @@ public class CredentialManager implements ICacheWordSubscriber {
         } catch (GeneralSecurityException e) {
             Log.e(LOG, "invalid password or secrets has been tampered with");
             e.printStackTrace();
+        } catch(NullPointerException e) {
+        	Logger.e(LOG, e);
         }
 		
 		return false;
