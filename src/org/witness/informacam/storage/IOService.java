@@ -3,6 +3,7 @@ package org.witness.informacam.storage;
 import info.guardianproject.iocipher.VirtualFileSystem;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -531,6 +532,10 @@ public class IOService {
 		
 		return false;
 	}
+	
+	public boolean delete(IAsset asset) {
+		return delete(asset.path, asset.source);
+	}
 
 	public boolean delete(String pathToFile, int source) {
 		// TODO: MAKE SURE FILE IS OBLITERATED!
@@ -539,15 +544,25 @@ public class IOService {
 		case Storage.Type.INTERNAL_STORAGE:
 			return mContext.deleteFile(pathToFile);
 		case Storage.Type.IOCIPHER:
-			info.guardianproject.iocipher.File file = new info.guardianproject.iocipher.File(pathToFile);
-			if(file.isDirectory()) {
-				for(info.guardianproject.iocipher.File f : file.listFiles()) {
+			info.guardianproject.iocipher.File file_ioc = new info.guardianproject.iocipher.File(pathToFile);
+			if(file_ioc.isDirectory()) {
+				for(info.guardianproject.iocipher.File f : file_ioc.listFiles()) {
 					f.delete();
 				}
 			}
-			return file.delete();
+			
+			return file_ioc.delete();
 		case Storage.Type.CONTENT_RESOLVER:
 			return mContext.getContentResolver().delete(Uri.parse(pathToFile), null, null) > 0 ? true : false;
+		case Storage.Type.FILE_SYSTEM:
+			java.io.File file_jif = new java.io.File(pathToFile);
+			if(file_jif.isDirectory()) {
+				for(java.io.File f : file_jif.listFiles()) {
+					f.delete();
+				}
+			}
+			
+			return file_jif.delete();
 		default:
 			return false;
 		}

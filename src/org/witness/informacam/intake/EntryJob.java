@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.json.JSONException;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntakeData;
@@ -326,14 +327,16 @@ public class EntryJob extends BackgroundTask {
 
 	protected void commit() {
 		//XXX: get preference here, save and delete original if encryptOriginals
-		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {			
+		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
+			Logger.d(LOG, "COPY AND DELETE...");
+			IAsset publicAsset = new IAsset(entry.fileAsset);
 			try {
 				entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash);
+				informaCam.ioService.delete(publicAsset);
+				informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
 			} catch (IOException e) {
 				Logger.e(LOG, e);
 			}
 		}
-		
-		
 	}
 }
