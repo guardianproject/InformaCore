@@ -77,8 +77,6 @@ public class ImageConstructor {
 	public void finish(boolean intentedForIOCipher) {
 		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
 		
-		android.os.Debug.waitForDebugger();
-		
 		int storageType = Storage.Type.FILE_SYSTEM;
 		
 		// if this was in encrypted space, delete temp files

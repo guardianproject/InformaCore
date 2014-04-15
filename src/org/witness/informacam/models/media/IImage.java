@@ -31,9 +31,6 @@ public class IImage extends IMedia {
 	public boolean analyze() throws IOException {
 		super.analyze();
 		
-		if (Debug.WAIT_FOR_DEBUGGER)
-			android.os.Debug.waitForDebugger();
-		
 		InformaCam informaCam = InformaCam.getInstance();
 
 		InputStream isImage = informaCam.ioService.getStream(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source);

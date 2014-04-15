@@ -476,8 +476,6 @@ public class Transport extends IntentService {
 	
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Logger.d(LOG, "onHandleIntent called");
-		android.os.Debug.waitForDebugger();
 		
 		transportStub = (ITransportStub) intent.getSerializableExtra(Models.ITransportStub.TAG);
 		Log.d(LOG, "TRANSPORT:\n" + transportStub.asJson().toString()); 
