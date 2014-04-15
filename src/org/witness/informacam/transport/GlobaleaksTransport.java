@@ -51,6 +51,9 @@ public class GlobaleaksTransport extends Transport {
 						PendingIntent.FLAG_UPDATE_CURRENT
 						);
 
+		//set reponame to org name
+		repoName = transportStub.organization.organizationName;
+		
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
 		.setContentText(getString(R.string.upload_in_progress) + ": " + transportStub.organization.organizationName)

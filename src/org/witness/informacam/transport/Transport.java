@@ -63,7 +63,7 @@ public class Transport extends IntentService {
 		super(name);
 		
 		this.repoName = name;
-		Logger.d(LOG, this.repoName);
+	//	Logger.d(LOG, this.repoName);
 		informaCam = InformaCam.getInstance();
 	}
 	
