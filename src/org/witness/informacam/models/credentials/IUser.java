@@ -1,12 +1,10 @@
 package org.witness.informacam.models.credentials;
 
 import java.io.Serializable;
-import java.util.Iterator;
 
 import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
-import org.witness.informacam.utils.Constants.Logger;
 
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -27,7 +25,6 @@ public class IUser extends Model implements Serializable {
 	public String pgpKeyFingerprint = null;
 	
 	public boolean isInOfflineMode = false;
-	//public IPreferences preferences = null; 
 	
 	private SharedPreferences sp = null;
 	

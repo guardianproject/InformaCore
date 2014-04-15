@@ -1,5 +1,9 @@
 package org.witness.informacam;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models.IUser;
 
@@ -26,6 +30,17 @@ public class Debug {
 		
 		//informaCam.mediaManifest.listMedia.clear();
 		//informaCam.mediaManifest.save();
+	}
+	
+	public static void testFFmpeg() {
+		try {
+			VideoConstructor vc = new VideoConstructor(InformaCam.getInstance());
+			vc.testFFmpeg();
+		} catch (FileNotFoundException e) {
+			Logger.e(LOG, e);
+		} catch (IOException e) {
+			Logger.e(LOG, e);
+		}
 	}
 	
 	public static void fix_default_asset_encryption() {

@@ -298,7 +298,6 @@ public class EntryJob extends BackgroundTask {
 
 		// Make folder for assets according to preferences
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
-			
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(entry.originalHash);
 				try {
@@ -331,9 +330,10 @@ public class EntryJob extends BackgroundTask {
 			Logger.d(LOG, "COPY AND DELETE...");
 			IAsset publicAsset = new IAsset(entry.fileAsset);
 			try {
-				entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash);
-				informaCam.ioService.delete(publicAsset);
-				informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
+				if(entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash)) {
+					Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
+					informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
+				}
 			} catch (IOException e) {
 				Logger.e(LOG, e);
 			}
