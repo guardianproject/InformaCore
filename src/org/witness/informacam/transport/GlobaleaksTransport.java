@@ -51,7 +51,9 @@ public class GlobaleaksTransport extends Transport {
 						PendingIntent.FLAG_UPDATE_CURRENT
 						);
 
-		NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		//set reponame to org name
+		repoName = transportStub.organization.organizationName;
+		
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
 		.setContentText(getString(R.string.upload_in_progress) + ": " + transportStub.organization.organizationName)
@@ -67,113 +69,120 @@ public class GlobaleaksTransport extends Transport {
 
 //		transportStub.asset.key = "files";	// (?)
 
-		Logger.d(LOG, submission.asJson().toString());
+		JSONObject subResponse = null;
 
-		// init submission
-		JSONObject subResponse = (JSONObject) doPost(submission, repository.asset_root + "/submission");
-
-		if(subResponse == null) {
-			resend();
-		} else {
-			try {
-				submission.inflate(subResponse);
-
-				mBuilder.setProgress(100, 30, false);
-				// Displays the progress bar for the first time.
+		int numTries = 0;
+		
+		while ((subResponse == null) && numTries++ < Models.ITransportStub.MAX_TRIES)
+		{
+			try
+			{
+				// init submission
+				subResponse = (JSONObject) doPost(submission, repository.asset_root + "/submission");
+		
+			}
+			catch (IOException e)
+			{
+				mBuilder.setTicker(getString(R.string.network_error_restarting_upload_));
 				mNotifyManager.notify(0, mBuilder.build());
+				Logger.e(LOG,e);
+			}
+		}
+			
+		if (subResponse == null)
+		{
+			Logger.d(LOG, "unable to complete upload after multiple tries");
+			return false;
+		}
+		
+		submission.inflate(subResponse);
 
-				if(submission.submission_gus != null) {
-					if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
-						submission.finalize = true;
-						try {
-							submission.wb_fields.put(SHORT_TITLE, String.format(DEFAULT_SHORT_TITLE, informaCam.user.alias));
-							submission.wb_fields.put(FULL_DESCRIPTION, String.format(DEFAULT_FULL_DESCRIPTION, informaCam.user.pgpKeyFingerprint));
-						} catch (JSONException e) {
-							Logger.e(LOG, e);
+		if(submission.submission_gus != null) {
+			
+			
+			if(doPost(transportStub.asset, repository.asset_root + "/submission/" + submission.submission_gus + "/file") != null) {
+				submission.finalize = true;
+				try {
+					submission.wb_fields.put(SHORT_TITLE, String.format(DEFAULT_SHORT_TITLE, informaCam.user.alias));
+					submission.wb_fields.put(FULL_DESCRIPTION, String.format(DEFAULT_FULL_DESCRIPTION, informaCam.user.pgpKeyFingerprint));
+				} catch (JSONException e) {
+					Logger.e(LOG, e);
+				}
+
+				JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
+				if(receivers != null) {
+					if(receivers.length() > 0) {
+						submission.receivers = new ArrayList<String>();
+
+						for(int r=0; r<receivers.length(); r++) {
+							try {
+								JSONObject receiver = receivers.getJSONObject(r);
+								submission.receivers.add(receiver.getString(GLSubmission.RECEIVER_GUS));
+							} catch (JSONException e) {
+								Logger.e(LOG, e);
+							}
 						}
+					}
+				} 
 
-						mBuilder.setProgress(100, 60, false);
+			//	Logger.d(LOG, "ABOUT TO PUT SUBMISSION:\n" + submission.asJson().toString());
+				/*
+				 * {
+				 * 		"files":[],
+				 * 		"wb_fields":{
+				 * 			"Short title":"InformaCam submission from mobile client jetta pre-14"
+				 * 		},
+				 * 		"submission_gus":"94c74825-acaa-426a-b2e9-b9ac3c18caff",
+				 * 		"receipt":"",
+				 * 		"mark":"submission",
+				 * 		"download_limit":"3",		#SHOULD BE INT!
+				 * 		"context_gus":"19aae9c8-93eb-44ce-9652-46c73a541f83",
+				 * 		"access_limit":"50",		#SHOULD BE INT!
+				 * 		"escalation_threshold":"0",
+				 * 		"receivers":[
+				 * 			"5bf0f9de-e64b-4a6e-901c-104009501a7f",
+				 * 			"070d828f-c690-4006-89c9-8e2b1cb7c97c",
+				 * 			"7bdf2f1e-9b53-4f56-a099-a748cdb78b4f",
+				 * 			"0d11e41f-7bb5-4eaf-a735-258b680b1e8f"
+				 * 		],
+				 * 		"id":"94c74825-acaa-426a-b2e9-b9ac3c18caff",
+				 * 		"creation_date":"2013-08-20T14:56:17.053271",
+				 * 		"pertinence":"0",
+				 * 		"expiration_date":"2013-09-04T14:56:17.053228",
+				 * 		"finalize":true
+				 * }
+				 */
+
+				try {
+					JSONObject submissionResult = (JSONObject) doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
+					if(submissionResult != null) {
+						submission.inflate(submissionResult);
+				//		Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());
+
+						mBuilder
+							.setContentText("Successful upload to: " + repository.asset_root)
+							.setTicker("Successful upload to: " + repository.asset_root);
+						mBuilder.setAutoCancel(true);
+						mBuilder.setProgress(0, 0, false);
 						// Displays the progress bar for the first time.
 						mNotifyManager.notify(0, mBuilder.build());
 
-						JSONArray receivers = (JSONArray) doGet(repository.asset_root + "/receivers");
-						if(receivers != null) {
-							if(receivers.length() > 0) {
-								submission.receivers = new ArrayList<String>();
-
-								for(int r=0; r<receivers.length(); r++) {
-									try {
-										JSONObject receiver = receivers.getJSONObject(r);
-										submission.receivers.add(receiver.getString(GLSubmission.RECEIVER_GUS));
-									} catch (JSONException e) {
-										Logger.e(LOG, e);
-									}
-								}
-							}
-						} else {
-							resend();
-						}
-
-						Logger.d(LOG, "ABOUT TO PUT SUBMISSION:\n" + submission.asJson().toString());
-						/*
-						 * {
-						 * 		"files":[],
-						 * 		"wb_fields":{
-						 * 			"Short title":"InformaCam submission from mobile client jetta pre-14"
-						 * 		},
-						 * 		"submission_gus":"94c74825-acaa-426a-b2e9-b9ac3c18caff",
-						 * 		"receipt":"",
-						 * 		"mark":"submission",
-						 * 		"download_limit":"3",		#SHOULD BE INT!
-						 * 		"context_gus":"19aae9c8-93eb-44ce-9652-46c73a541f83",
-						 * 		"access_limit":"50",		#SHOULD BE INT!
-						 * 		"escalation_threshold":"0",
-						 * 		"receivers":[
-						 * 			"5bf0f9de-e64b-4a6e-901c-104009501a7f",
-						 * 			"070d828f-c690-4006-89c9-8e2b1cb7c97c",
-						 * 			"7bdf2f1e-9b53-4f56-a099-a748cdb78b4f",
-						 * 			"0d11e41f-7bb5-4eaf-a735-258b680b1e8f"
-						 * 		],
-						 * 		"id":"94c74825-acaa-426a-b2e9-b9ac3c18caff",
-						 * 		"creation_date":"2013-08-20T14:56:17.053271",
-						 * 		"pertinence":"0",
-						 * 		"expiration_date":"2013-09-04T14:56:17.053228",
-						 * 		"finalize":true
-						 * }
-						 */
-
-						try {
-							JSONObject submissionResult = (JSONObject) doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
-							if(submissionResult != null) {
-								submission.inflate(submissionResult);
-								Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());
-
-								mBuilder
-									.setContentText("Successful upload to: " + repository.asset_root)
-									.setTicker("Successful upload to: " + repository.asset_root);
-								mBuilder.setAutoCancel(true);
-								mBuilder.setProgress(0, 0, false);
-								// Displays the progress bar for the first time.
-								mNotifyManager.notify(0, mBuilder.build());
-
-							}
-						} catch(Exception e) {
-							Logger.e(LOG, e);
-						}
-
-						finishSuccessfully();
-					} else {
-
-						resend();
-
 					}
-
+				} catch(Exception e) {
+					Logger.e(LOG, e);
 				}
 
-			} catch(NullPointerException e) {
-				Logger.e(LOG, e);
+				finishSuccessfully();
+			} else {
+
+				finishUnsuccessfully();
+				
+				return false;
 			}
+
 		}
+	
+			
 
 		return true;
 	}
