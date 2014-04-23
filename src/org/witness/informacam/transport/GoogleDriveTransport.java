@@ -8,7 +8,9 @@ import java.net.HttpURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.Model;
+import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
@@ -29,6 +31,8 @@ public class GoogleDriveTransport extends Transport {
 	GDSubmissionPermission permission;
 	String fileId = null;
 	AuthToken authToken = null;
+	
+	int auth_attempts = 0;
 
 	public GoogleDriveTransport() {
 		super(Models.ITransportStub.GoogleDrive.TAG);
@@ -40,9 +44,9 @@ public class GoogleDriveTransport extends Transport {
 		//the service account permission is revoked (on your google account "security"
 		//settings page) and then uncomment the following lines to remove the local
 		//cached token.
-		//authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
-		//if(authToken.token != null)
-		//	GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
+		authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
+		if(authToken.token != null)
+			GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
 
 		// authenticate google drive
 		authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
@@ -87,14 +91,26 @@ public class GoogleDriveTransport extends Transport {
 			} catch (Exception e) {
 				Logger.e(LOG, e);
 				
-				finishUnsuccessfully();
+				if(auth_attempts >= 10) {
+					finishUnsuccessfully();
 				
-				return false;
+					return false;
+				}
+				
+				return init();
 			}
 		
 			
 		} else {
 			Logger.d(LOG, "AUTH TOKEN NULL-- WHAT TO DO?");
+			GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
+			auth_attempts++;
+			
+			if(auth_attempts >= 10) {
+				return false;
+			}
+			
+			return init();
 		}
 		return true;
 	}
@@ -127,15 +143,20 @@ public class GoogleDriveTransport extends Transport {
 	}
 
 	public static class GoogleDriveEventBroadcaster extends BroadcastReceiver {
-		
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			
 			Logger.d(LOG, intent.getAction());
 			Bundle b = intent.getExtras();
 			if (b != null)
 			{
 				for(String k : b.keySet()) {
 					Logger.d(LOG, k);
+					if(k.equals(Actions.USER_ACCEPT_ACTION)) {
+						for(IOrganization organization : InformaCam.getInstance().installedOrganizations.organizations) {
+							InformaCam.getInstance().resendCredentials(organization);
+						}
+					}
 				}
 			}
 
@@ -189,6 +210,7 @@ public class GoogleDriveTransport extends Transport {
 		public AuthToken(Account account) {
 			this.account = account;
 			try {
+				Logger.d(LOG, "THIS GOOGLE ACCT: " + this.account.name);
 				this.token = GoogleAuthUtil.getTokenWithNotification(informaCam, this.account.name, Models.ITransportStub.GoogleDrive.SCOPE, null, userAcceptCallback);
 			} catch (UserRecoverableNotifiedException e) {
 				Logger.d(LOG, "here we must wait for user to allow us access.");

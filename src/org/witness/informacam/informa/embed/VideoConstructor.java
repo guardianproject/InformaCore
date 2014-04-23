@@ -145,6 +145,22 @@ public class VideoConstructor {
 	String newHash = null;
 	
 	
+	public void testFFmpeg() {
+		execProcess(new String[] {ffmpegBinPath, "-version"}, new ShellUtils.ShellCallback () {
+
+			@Override
+			public void shellOut(String shellLine) {
+				Logger.d(LOG, shellLine);
+				
+			}
+
+			@Override
+			public void processComplete(int exitValue) {
+				Logger.d(LOG, "DONE WITH: " + exitValue);
+			}
+		});
+	}
+	
 	public String hashVideo(String pathToMedia, int fileType, String extension) {
 		/**
 		 * Hashes the video frames 
@@ -175,7 +191,10 @@ public class VideoConstructor {
 			String[] cmdHash = new String[] {
 					ffmpegBinPath, "-i", tmpMedia.getCanonicalPath(),
 					"-vcodec", "copy", "-an", "-f", "md5", "-"
-			};				
+			};
+			
+			Logger.d(LOG, "ALSO, Storage.EXTERNAL_DIR: " + Storage.EXTERNAL_DIR);
+			Logger.d(LOG, "HASING VIDEO: " + tmpMedia.getAbsolutePath() + " (cannonical: " + tmpMedia.getCanonicalPath() + ")");
 			
 			execProcess(cmdHash, new ShellUtils.ShellCallback () {
 
