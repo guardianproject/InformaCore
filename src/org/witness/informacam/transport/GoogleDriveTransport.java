@@ -44,9 +44,9 @@ public class GoogleDriveTransport extends Transport {
 		//the service account permission is revoked (on your google account "security"
 		//settings page) and then uncomment the following lines to remove the local
 		//cached token.
-		authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
-		if(authToken.token != null)
-			GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
+		//authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
+		//if(authToken.token != null)
+		//	GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
 
 		// authenticate google drive
 		authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
