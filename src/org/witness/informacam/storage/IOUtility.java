@@ -54,7 +54,9 @@ public class IOUtility {
 	private final static String LOG = App.Storage.LOG;
 	
 	public static String buildPublicPath(String[] segments) {
-		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, buildPath(segments)}, "/");
+		Logger.d(LOG, Storage.EXTERNAL_DIR);
+		Logger.d(LOG, buildPath(segments));
+		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, buildPath(segments)}, "");
 	}
 	
 	public static String buildPath(String[] segments) {

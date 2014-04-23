@@ -316,7 +316,6 @@ public class InformaCam extends Application {
 		 * i.e. Debug.testUser_1();
 		 */
 		//Debug.fix_default_asset_encryption();
-		Debug.testFFmpeg();
 	}
 	
 	private void setModels() {

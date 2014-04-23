@@ -32,6 +32,12 @@ public class Debug {
 		//informaCam.mediaManifest.save();
 	}
 	
+	public static void googledriveTest() {
+		InformaCam informaCam = InformaCam.getInstance();
+		
+		informaCam.resendCredentials(informaCam.installedOrganizations.organizations.get(0));
+	}
+	
 	public static void testFFmpeg() {
 		try {
 			VideoConstructor vc = new VideoConstructor(InformaCam.getInstance());
