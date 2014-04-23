@@ -20,16 +20,12 @@ public class Debug {
 	
 	public static void testUser_1() {
 		InformaCam informaCam = InformaCam.getInstance();
-		informaCam.user.isInOfflineMode = true;
 		
 		Logger.d(LOG, "TEST USER SETTINGS INABLED:");
 		Logger.d(LOG, informaCam.user.asJson().toString());
 		
 		boolean enc = (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false);
 		Logger.d(LOG, "USER ENC: " + enc);
-		
-		//informaCam.mediaManifest.listMedia.clear();
-		//informaCam.mediaManifest.save();
 	}
 	
 	public static void googledriveTest() {

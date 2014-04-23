@@ -315,7 +315,7 @@ public class InformaCam extends Application {
 		 * this is to set some testing preferences
 		 * i.e. Debug.testUser_1();
 		 */
-		//Debug.fix_default_asset_encryption();
+		Debug.testUser_1();
 	}
 	
 	private void setModels() {

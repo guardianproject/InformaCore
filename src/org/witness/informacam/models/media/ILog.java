@@ -23,6 +23,7 @@ import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
@@ -131,7 +132,17 @@ public class ILog extends IMedia {
 					String version = b.getString(Models.IMedia.VERSION);
 										
 					InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
-					j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
+					try {
+						if(versionBytes.available() > 0) {
+							j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
+						}
+					} catch (IOException e) {
+						Logger.d(LOG, "Skipping this file because no bytes");
+						Logger.e(LOG, e);
+					} catch (NullPointerException e) {
+						Logger.d(LOG, "Skipping this file because no bytes");
+						Logger.e(LOG, e);
+					}
 					
 					mediaHandled++;
 					

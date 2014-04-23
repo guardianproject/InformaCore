@@ -55,8 +55,8 @@ public class IOUtility {
 	
 	public static String buildPublicPath(String[] segments) {
 		Logger.d(LOG, Storage.EXTERNAL_DIR);
-		Logger.d(LOG, buildPath(segments));
-		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, buildPath(segments)}, "");
+		String builtPath = buildPath(segments); 
+		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, builtPath }, builtPath.startsWith("/") ? "" : "/");
 	}
 	
 	public static String buildPath(String[] segments) {
