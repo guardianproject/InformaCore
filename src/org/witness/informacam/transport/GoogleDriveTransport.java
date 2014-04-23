@@ -53,40 +53,46 @@ public class GoogleDriveTransport extends Transport {
 			}
 			
 			// upload to drive, on success: file id is in there
-			mBuilder.setProgress(100, 30, false);
+			mBuilder.setProgress(100, 0, false);
 			mNotifyManager.notify(0, mBuilder.build());
+		
+
+			try {
+				
+				JSONObject subResponse = (JSONObject) doPost(new GDSubmissionMetadata(), transportStub.asset, GoogleDrive.Urls.UPLOAD);
+				if(subResponse != null) {
 			
-			JSONObject subResponse = (JSONObject) doPost(new GDSubmissionMetadata(), transportStub.asset, GoogleDrive.Urls.UPLOAD);
-			if(subResponse == null) {
-				resend();
-			} else {
-				try {
-					fileId = subResponse.getString("id");
-					// share to our google drive person
-					subResponse = (JSONObject) doPost(new GDSubmissionPermission(), String.format(GoogleDrive.Urls.SHARE, fileId));
-					Logger.d(LOG, "CONFIRM:\n" + transportStub.lastResult);
-					mBuilder.setProgress(100, 60, false);
-					mNotifyManager.notify(0, mBuilder.build());
-					
-					if(subResponse == null) {
-						resend();
-					} else {
+						fileId = subResponse.getString("id");
+						// share to our google drive person
+						subResponse = (JSONObject) doPost(new GDSubmissionPermission(), String.format(GoogleDrive.Urls.SHARE, fileId));
 						Logger.d(LOG, "CONFIRM:\n" + transportStub.lastResult);
-						mBuilder
-							.setContentText("Successful upload to: " + repository.asset_root)
-							.setTicker("Successful upload to: " + repository.asset_root);
-						mBuilder.setAutoCancel(true);
-						mBuilder.setProgress(0, 0, false);
+						mBuilder.setProgress(100, 60, false);
 						mNotifyManager.notify(0, mBuilder.build());
-						finishSuccessfully();
-					}
+						
+						if(subResponse != null) {
+						
+							Logger.d(LOG, "CONFIRM:\n" + transportStub.lastResult);
+							mBuilder
+								.setContentText("Successful upload to: " + repository.asset_root)
+								.setTicker("Successful upload to: " + repository.asset_root);
+							mBuilder.setAutoCancel(true);
+							mBuilder.setProgress(0, 0, false);
+							mNotifyManager.notify(0, mBuilder.build());
+							finishSuccessfully();
+						}
 					
-				} catch (JSONException e) {
-					Logger.e(LOG, e);
-					resend();
 				}
 				
+			
+			} catch (Exception e) {
+				Logger.e(LOG, e);
+				
+				finishUnsuccessfully();
+				
+				return false;
 			}
+		
+			
 		} else {
 			Logger.d(LOG, "AUTH TOKEN NULL-- WHAT TO DO?");
 		}

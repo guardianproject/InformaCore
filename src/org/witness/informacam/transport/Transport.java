@@ -4,6 +4,7 @@ import info.guardianproject.onionkit.ui.OrbotHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -62,7 +63,7 @@ public class Transport extends IntentService {
 		super(name);
 		
 		this.repoName = name;
-		Logger.d(LOG, this.repoName);
+	//	Logger.d(LOG, this.repoName);
 		informaCam = InformaCam.getInstance();
 	}
 	
@@ -123,6 +124,16 @@ public class Transport extends IntentService {
 	}
 	
 	protected void finishUnsuccessfully(int transportRequirements) {
+
+		mBuilder
+		.setContentText("FAILED upload to: " + repository.asset_root)
+		.setTicker("FAILED upload to: " + repository.asset_root);
+		mBuilder.setAutoCancel(true);
+		mBuilder.setProgress(0, 0, false);
+		// Displays the progress bar for the first time.
+		mNotifyManager.notify(0, mBuilder.build());
+
+		
 		if(informaCam.getEventListener() != null) {
 			Message message = new Message();
 			Bundle data = new Bundle();
@@ -164,6 +175,7 @@ public class Transport extends IntentService {
 		return -1;
 	}
 	
+	/**
 	protected void resend() {
 		if(transportStub.numTries <= Models.ITransportStub.MAX_TRIES) {
 			Logger.d(LOG, "POST FAILED.  Trying again.");
@@ -172,7 +184,7 @@ public class Transport extends IntentService {
 			finishUnsuccessfully();
 			stopSelf();
 		}
-	}
+	}*/
 	
 	@SuppressLint("DefaultLocale")
 	protected Object doPost(ITransportData fileData, String urlString) {
@@ -184,30 +196,43 @@ public class Transport extends IntentService {
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 		
 		try {
+			InputStream inFile = informaCam.ioService.getStream(fileData.assetPath, fileData.storageType);
+
+            int fixedLength = (int) inFile.available();
+
 			http.setDoOutput(true);
 			http.setRequestMethod("POST");
 			http.setRequestProperty("Content-Type", fileData.mimeType);
 			http.setRequestProperty("Content-Disposition", "attachment; filename=\"" + fileData.assetName + "\"");
-			//http.getOutputStream().write(informaCam.ioService.getBytes(fileData.assetPath, Type.IOCIPHER));
+			http.setRequestProperty("Connection", "Keep-Alive");
+			http.setRequestProperty("Cache-Control", "no-cache");
 			
-			InputStream in = informaCam.ioService.getStream(fileData.assetPath, fileData.storageType);
-			BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
+			http.setFixedLengthStreamingMode(fixedLength);
 			
-			byte[] buffer = new byte[1024];
-			int len;
-			while ((len = in.read(buffer)) != -1) {
-			   out.write(buffer, 0, len);
-			}
-			out.flush();
+			http.setUseCaches(false);
 			
-			in.close();
-			out.close();
-			
-			InputStream is = new BufferedInputStream(http.getInputStream());
 			http.connect();
 			
-			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+			DataOutputStream outNet = new DataOutputStream(http.getOutputStream());
+			
+			int DEFAULT_BUFFER_SIZE = 1024*4;
+			
+			byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+			int count = 0;
+			int n = 0;
+			while (-1 != (n = inFile.read(buffer))) {
+				outNet.write(buffer, 0, n);
+				count += n;
+				updateProgress (count, fixedLength);
+			}
+			
+			inFile.close();
+			outNet.close();
+			
+			BufferedInputStream is = new BufferedInputStream(http.getInputStream());
+			
+			//Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+			//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 			
 			if(http.getResponseCode() > -1) {
 				return(parseResponse(is));
@@ -222,7 +247,18 @@ public class Transport extends IntentService {
 		return null;
 	}
 	
-	protected Object doPost(Model postData, ITransportData fileData, String urlString) {
+	private void updateProgress (int count, int total)
+	{
+		int percentage = (int)(((float)count/(float)total)*100f);
+		
+		mBuilder.setProgress(100, percentage, false);
+		mBuilder.setContentText("Upload in progress to: " + repoName + ' ' + percentage + '%');
+
+		// Displays the progress bar for the first time.
+		mNotifyManager.notify(0, mBuilder.build());
+	}
+	
+	protected Object doPost(Model postData, ITransportData fileData, String urlString) throws IOException {
 		// multipart
 		boolean useTorProxy = false;
 		
@@ -255,51 +291,62 @@ public class Transport extends IntentService {
 		bytesWritten += sb.toString().getBytes().length;
 		contentBuffer.add(sb);
 		
-		try {
-			InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
-			bytesWritten += in.available();
-			
-			http.setDoOutput(true);
-			
-			http.setRequestMethod("POST");
-			http.setRequestProperty("Content-Type", "multipart/related; boundary=\"" + boundary + "\"");
-			http.setRequestProperty("Content-Length", Long.toString(bytesWritten));
-			
-			BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
-			out.write(contentBuffer.get(0).toString().getBytes());
-			Logger.d(LOG, contentBuffer.get(0).toString());
-			
-			byte[] buffer = new byte[1024];
-			int len;
-			while ((len = in.read(buffer)) != -1) {
-			   out.write(buffer, 0, len);
-			}
-			in.close();
-			Logger.d(LOG, "[... data ...]");
-			
-			out.write(contentBuffer.get(1).toString().getBytes());
-			Logger.d(LOG, contentBuffer.get(1).toString());
-			
-			out.flush();
-			out.close();
-			
-			InputStream is = new BufferedInputStream(http.getInputStream());
-			http.connect();
-			
-			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
-			
-			if(http.getResponseCode() > -1) {
-				return(parseResponse(is));
-			}
-		} catch (IOException e) {
-			Logger.e(LOG, e);
+		InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
+		bytesWritten += in.available();
+		
+		http.setDoOutput(true);
+		
+		http.setRequestMethod("POST");
+		http.setRequestProperty("Content-Type", "multipart/related; boundary=\"" + boundary + "\"");
+		http.setRequestProperty("Content-Length", Long.toString(bytesWritten));
+		
+		http.setRequestProperty("Connection", "Keep-Alive");
+		http.setRequestProperty("Cache-Control", "no-cache");
+
+		int fixedLength = (int)bytesWritten;
+		
+		http.setFixedLengthStreamingMode((int)bytesWritten);
+		http.setUseCaches(false);
+		
+		http.connect();
+		
+		BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
+		out.write(contentBuffer.get(0).toString().getBytes());
+		//Logger.d(LOG, contentBuffer.get(0).toString());
+		
+		int DEFAULT_BUFFER_SIZE = 1024*4;
+		
+		byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+		int count = 0;
+		int n = 0;
+		while (-1 != (n = in.read(buffer))) {
+			out.write(buffer, 0, n);
+			count += n;
+			updateProgress (count, fixedLength);
+		}
+		
+		in.close();
+		//Logger.d(LOG, "[... data ...]");
+		
+		out.write(contentBuffer.get(1).toString().getBytes());
+		//Logger.d(LOG, contentBuffer.get(1).toString());
+		
+		out.flush();
+		out.close();
+		
+		InputStream is = new BufferedInputStream(http.getInputStream());
+		
+		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+		//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		
+		if(http.getResponseCode() > -1) {
+			return(parseResponse(is));
 		}
 		
 		return null;
 	}
 	
-	protected Object doPost(Model postData, String urlString) {
+	protected Object doPost(Model postData, String urlString) throws IOException {
 		
 		boolean useTorProxy = false;
 		
@@ -308,28 +355,23 @@ public class Transport extends IntentService {
 				
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 			
-		try {
-			http.setDoOutput(true);
-			http.setRequestMethod("POST");
-			http.setRequestProperty("Content-Type", MimeType.JSON);
-			http.getOutputStream().write(postData.asJson().toString().getBytes());
-			
-			InputStream is = new BufferedInputStream(http.getInputStream());
-			http.connect();
-			
-			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
-			
-			if(http.getResponseCode() > -1) {
-				return(parseResponse(is));
-			}
-			
-		} catch (ProtocolException e) {
-			Logger.e(LOG, e);
-		} catch (IOException e) {
-			Logger.e(LOG, e);
-		}
+		http.setDoOutput(true);
+		http.setRequestMethod("POST");
+		http.setRequestProperty("Content-Type", MimeType.JSON);
 		
+		http.connect();
+		
+		http.getOutputStream().write(postData.asJson().toString().getBytes());
+		
+		InputStream is = new BufferedInputStream(http.getInputStream());
+		
+		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+		//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		
+		if(http.getResponseCode() > -1) {
+			return(parseResponse(is));
+		}
+	
 		return null;
 	}
 	
@@ -351,7 +393,7 @@ public class Transport extends IntentService {
 			http.connect();
 			
 			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+			//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 			
 			if(http.getResponseCode() > -1) {
 				InputStream is = new BufferedInputStream(http.getInputStream());
@@ -404,7 +446,7 @@ public class Transport extends IntentService {
 			http.connect();
 			
 			Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-			Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		//	Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 			
 			if(http.getResponseCode() > -1) {
 				return(parseResponse(is));
@@ -476,8 +518,6 @@ public class Transport extends IntentService {
 	
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Logger.d(LOG, "onHandleIntent called");
-		android.os.Debug.waitForDebugger();
 		
 		transportStub = (ITransportStub) intent.getSerializableExtra(Models.ITransportStub.TAG);
 		Log.d(LOG, "TRANSPORT:\n" + transportStub.asJson().toString()); 
@@ -488,4 +528,5 @@ public class Transport extends IntentService {
 			init();
 		}
 	}
+
 }

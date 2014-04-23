@@ -13,4 +13,4 @@
 	url = https://github.com/guardianproject/cacheword.git
 [submodule "external/OnionKit"]
 	path = external/OnionKit
-	url = git@github.com:guardianproject/NetCipher.git
+	url = https://github.com/guardianproject/NetCipher.git
