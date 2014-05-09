@@ -133,7 +133,7 @@ public class ILog extends IMedia {
 										
 					InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
 					try {
-						if(versionBytes.available() > 0) {
+						if(versionBytes != null && versionBytes.available() > 0) {
 							j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
 						}
 					} catch (IOException e) {
