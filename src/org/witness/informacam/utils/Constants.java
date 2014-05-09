@@ -17,6 +17,8 @@ import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
 
+import com.google.android.gms.common.Scopes;
+
 public class Constants {
 	
 	public interface IRegionDisplayListener {
@@ -624,6 +626,7 @@ public class Constants {
 				public class Urls {
 					public final static String UPLOAD = "https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart";
 					public final static String SHARE = "https://www.googleapis.com/drive/v2/files/%s/permissions";
+					
 				}
 				
 				public class Permissions {
