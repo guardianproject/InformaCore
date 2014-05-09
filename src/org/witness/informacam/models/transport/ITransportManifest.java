@@ -71,12 +71,15 @@ public class ITransportManifest extends Model implements Serializable {
 			}
 		});
 		
-		try {
-			return transports_.iterator().next();
-		} catch(NullPointerException e) {
-			Logger.e(LOG, e);
-		} catch(NoSuchElementException e) {
-			Logger.e(LOG, e);
+		if (transports_.iterator().hasNext())
+		{
+			try {
+				return transports_.iterator().next();
+			} catch(NullPointerException e) {
+				Logger.e(LOG, e);
+			} catch(NoSuchElementException e) {
+				Logger.e(LOG, e);
+			}
 		}
 		
 		return null;
