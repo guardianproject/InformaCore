@@ -402,55 +402,60 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 		
 		if(associatedCaches != null && associatedCaches.size() > 0) {
-			int progress = 0;
-			int progressInterval = (int) (40/associatedCaches.size());
 			
-			InformaCam informaCam = InformaCam.getInstance();
-			data.sensorCapture = new ArrayList<ISensorCapture>();
-
-			for(String ac : associatedCaches) {
-				try {
-					// get the data and loop through capture types
-					byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
-					
-					if (c == null)
-					{
-						Log.d(LOG,"cache was null: " + ac);
-						continue;
-					}
-					JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
-
-					for(int i=0; i<cache.length(); i++) {
-						JSONObject entry = cache.getJSONObject(i);
-						long ts = Long.parseLong((String) entry.keys().next());
-
-						JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
+			synchronized(associatedCaches)
+			{
+			
+				int progress = 0;
+				int progressInterval = (int) (40/associatedCaches.size());
+				
+				InformaCam informaCam = InformaCam.getInstance();
+				data.sensorCapture = new ArrayList<ISensorCapture>();
+	
+				for(String ac : associatedCaches) {
+					try {
+						// get the data and loop through capture types
+						byte[] c = informaCam.ioService.getBytes(ac, Type.IOCIPHER);
 						
-						if(captureEvent.has(CaptureEvent.Keys.TYPE)) {
-							JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
-
-							for(int ct=0; ct<captureTypes.length(); ct++) {
-								switch((Integer) captureTypes.get(ct)) {
-								case CaptureEvent.SENSOR_PLAYBACK:
-									data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
-									break;
-								case CaptureEvent.REGION_GENERATED:
-									Logger.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
-									break;
-								}
-							}
-						} else {
-							data.sensorCapture.add(new ISensorCapture(ts, captureEvent));
+						if (c == null)
+						{
+							Log.d(LOG,"cache was null: " + ac);
+							continue;
 						}
-					}
-
-					c = null;
-					
-					progress += progressInterval;
-					sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-				} catch (JSONException e) {
-					Logger.e(LOG, e);
-				}				
+						JSONArray cache = ((JSONObject) new JSONTokener(new String(c)).nextValue()).getJSONArray(Models.LogCache.CACHE);
+	
+						for(int i=0; i<cache.length(); i++) {
+							JSONObject entry = cache.getJSONObject(i);
+							long ts = Long.parseLong((String) entry.keys().next());
+	
+							JSONObject captureEvent = entry.getJSONObject(String.valueOf(ts));
+							
+							if(captureEvent.has(CaptureEvent.Keys.TYPE)) {
+								JSONArray captureTypes = captureEvent.getJSONArray(CaptureEvent.Keys.TYPE);
+	
+								for(int ct=0; ct<captureTypes.length(); ct++) {
+									switch((Integer) captureTypes.get(ct)) {
+									case CaptureEvent.SENSOR_PLAYBACK:
+										data.sensorCapture.add(new ISensorCapture(ts, captureEvent));							
+										break;
+									case CaptureEvent.REGION_GENERATED:
+										Logger.d(LOG, "might want to reexamine this logpack:\n" + captureEvent.toString());
+										break;
+									}
+								}
+							} else {
+								data.sensorCapture.add(new ISensorCapture(ts, captureEvent));
+							}
+						}
+	
+						c = null;
+						
+						progress += progressInterval;
+						sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+					} catch (JSONException e) {
+						Logger.e(LOG, e);
+					}				
+				}
 			}
 		}
 	}
@@ -519,13 +524,13 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
 			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
 			
-			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
+			byte[] j3mBytes = j3mObject.toString().getBytes();
+			
+			byte[] sig = informaCam.signatureService.signData(j3mBytes);
 			
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-			
-			byte[] j3mBytes = j3mObject.toString().getBytes();
 			
 			if(!debugMode) {
 				// gzip *FIRST
