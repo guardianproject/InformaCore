@@ -291,7 +291,7 @@ public class Transport extends IntentService {
 		bytesWritten += sb.toString().getBytes().length;
 		contentBuffer.add(sb);
 		
-		InputStream in = informaCam.ioService.getStream(fileData.assetPath, Type.IOCIPHER);
+		InputStream in = informaCam.ioService.getStream(fileData.assetPath, fileData.storageType);
 		bytesWritten += in.available();
 		
 		http.setDoOutput(true);
@@ -330,21 +330,18 @@ public class Transport extends IntentService {
 		
 		out.write(contentBuffer.get(1).toString().getBytes());
 		//Logger.d(LOG, contentBuffer.get(1).toString());
+		
 		out.flush();
-		
-		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-		Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
-		
-		if(http.getResponseCode() > -1) {
-
-			InputStream is = new BufferedInputStream(http.getInputStream());
-			
-			return(parseResponse(is));
-		}
-
-
 		out.close();
 		
+		InputStream is = new BufferedInputStream(http.getInputStream());
+		
+		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+		//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		
+		if(http.getResponseCode() > -1) {
+			return(parseResponse(is));
+		}
 		
 		return null;
 	}

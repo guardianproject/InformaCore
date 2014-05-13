@@ -1,11 +1,9 @@
 package org.witness.informacam.transport;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
-import java.util.Locale;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,18 +16,16 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.ITransportStub.GoogleDrive;
 
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.UserRecoverableNotifiedException;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-
-import com.google.android.gms.auth.GoogleAuthUtil;
 
 public class GoogleDriveTransport extends Transport {
 	GDSubmissionPermission permission;
@@ -37,8 +33,6 @@ public class GoogleDriveTransport extends Transport {
 	AuthToken authToken = null;
 	
 	int auth_attempts = 0;
-
-	private final static String SIMPLE_API_KEY = "AIzaSyDjCiTp3cof1vqTdurVWN4XVncWSn-dm-Q"; //making this loaded from assets file at some point
 
 	public GoogleDriveTransport() {
 		super(Models.ITransportStub.GoogleDrive.TAG);
@@ -55,28 +49,16 @@ public class GoogleDriveTransport extends Transport {
 		//	GoogleAuthUtil.invalidateToken(getApplicationContext(), authToken.token);
 
 		// authenticate google drive
-		
-		AccountManager am =AccountManager.get(informaCam);
-		Account[] accounts = am.getAccountsByType("com.google");
-		
-		if (accounts == null || accounts.length == 0)
-		{
-			Logger.d(LOG,"No Google Accounts configured on the device");
-			finishUnsuccessfully();
-			
-			return false;
-		}
-		
-		Logger.d(LOG, "Retrieved google accounts from device; found " + accounts.length);
-		
-		Logger.d(LOG, "Using account: " + accounts[0].name);
-		
-		authToken = new AuthToken(am,accounts[0]);
+		return authenticateAndPost();
+	}
+	
+	private boolean authenticateAndPost() {
+		authToken = new AuthToken(AccountManager.get(informaCam).getAccounts()[0]);
 		if(authToken.token != null) {
 			// TODO: if user uses tor
 			if(!super.init(false)) {
 				return false;
-			}			
+			}
 			
 			// upload to drive, on success: file id is in there
 			mBuilder.setProgress(100, 0, false);
@@ -105,20 +87,20 @@ public class GoogleDriveTransport extends Transport {
 							mBuilder.setProgress(0, 0, false);
 							mNotifyManager.notify(0, mBuilder.build());
 							finishSuccessfully();
-						}
-					
+						}	
 				}
-				
 			
 			} catch (Exception e) {
 				Logger.e(LOG, e);
 				
+				auth_attempts++;
+				if(auth_attempts >= 10) {
+					finishUnsuccessfully();
 				
-				finishUnsuccessfully();
-			
-				return false;
+					return false;
+				}
 				
-				
+				return authenticateAndPost();
 			}
 		
 			
@@ -131,7 +113,7 @@ public class GoogleDriveTransport extends Transport {
 				return false;
 			}
 			
-			return init();
+			return authenticateAndPost();
 		}
 		return true;
 	}
@@ -157,30 +139,17 @@ public class GoogleDriveTransport extends Transport {
 
 	@Override
 	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
-		
-		StringBuilder sbUrl = new StringBuilder();
-		sbUrl.append(urlString);
-		
-		/*
-		if (urlString.contains("?"))
-			sbUrl.append("&");
-		else
-			sbUrl.append("?");
-	
-		sbUrl.append("key=");
-		sbUrl.append(apiKey);
-		*/
-		
-		HttpURLConnection http = super.buildConnection(sbUrl.toString(), useTorProxy);
-		http.setRequestProperty("Authorization", "Bearer " + authToken.token);		
-		http.setRequestProperty("key", SIMPLE_API_KEY);
-		
-		Logger.d(LOG, "Authenticating Google Access with token: " + authToken.token);
+		HttpURLConnection http = super.buildConnection(urlString, useTorProxy);
+		http.setRequestProperty("Authorization", "Bearer " + authToken.token);
+
 		return http;
-		
 	}
 
 	public static class GoogleDriveEventBroadcaster extends BroadcastReceiver {
+		public GoogleDriveEventBroadcaster() {
+			super();
+		}
+		
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			
@@ -245,56 +214,20 @@ public class GoogleDriveTransport extends Transport {
 
 		public Intent userAcceptCallback = new Intent().setAction(Actions.USER_ACCEPT_ACTION);
 
-		public AuthToken(AccountManager am, Account account) {
+		public AuthToken(Account account) {
 			this.account = account;
-			
-			AccountManagerFuture<Bundle> response = am.getAuthToken(account, Models.ITransportStub.GoogleDrive.SCOPE, true, new AccountManagerCallback<Bundle> () {
-
-				@Override
-				public void run(AccountManagerFuture<Bundle> result) {
-		            try {
-						String token = result.getResult().getString(AccountManager.KEY_AUTHTOKEN);
-		            	
-					} catch (OperationCanceledException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (AuthenticatorException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
-				}
-				
-				
-			}, null);
-			
-			Bundle b;
 			try {
-				b = response.getResult();
-				token = b.getString(AccountManager.KEY_AUTHTOKEN);
-				
-				if (token != null)
-				{
-					am.invalidateAuthToken(Models.ITransportStub.GoogleDrive.SCOPE, token);
-					response = am.getAuthToken(account, Models.ITransportStub.GoogleDrive.SCOPE, false, null, null);
-				}
-				
-			} catch (OperationCanceledException e) {
-				
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (AuthenticatorException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Logger.d(LOG, "THIS GOOGLE ACCT: " + this.account.name);
+				this.token = GoogleAuthUtil.getTokenWithNotification(informaCam, this.account.name, Models.ITransportStub.GoogleDrive.SCOPE, null, userAcceptCallback);
+			} catch (UserRecoverableNotifiedException e) {
+				Logger.d(LOG, "here we must wait for user to allow us access.");
+				Logger.e(LOG, e);
+				this.token = null;
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			
+				Logger.e(LOG, e);
+			} catch (GoogleAuthException e) {
+				Logger.e(LOG, e);
+			}			
 		}
 	}
 }
