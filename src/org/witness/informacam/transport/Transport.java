@@ -330,18 +330,21 @@ public class Transport extends IntentService {
 		
 		out.write(contentBuffer.get(1).toString().getBytes());
 		//Logger.d(LOG, contentBuffer.get(1).toString());
-		
 		out.flush();
-		out.close();
-		
-		InputStream is = new BufferedInputStream(http.getInputStream());
 		
 		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-		//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 		
 		if(http.getResponseCode() > -1) {
+
+			InputStream is = new BufferedInputStream(http.getInputStream());
+			
 			return(parseResponse(is));
 		}
+
+
+		out.close();
+		
 		
 		return null;
 	}
