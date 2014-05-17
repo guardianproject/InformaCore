@@ -88,7 +88,7 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 		} else {
 			
 			if (mLocationClient.isConnected())
-			{
+			{				
 				mLastLocation = mLocationClient.getLastLocation();
 			
 				if (mLastLocation != null)
