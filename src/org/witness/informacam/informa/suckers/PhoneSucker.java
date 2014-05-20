@@ -67,7 +67,6 @@ public class PhoneSucker extends SensorLogger {
 			
 		}
 		
-		// TODO: if bluetooth is off, turn it on... (be sure to turn off when finished)
 		setTask(new TimerTask() {
 			
 			@Override
@@ -81,7 +80,6 @@ public class PhoneSucker extends SensorLogger {
 							logPack.put(Phone.Keys.LAC, getLAC());
 							logPack.put(Phone.Keys.MCC, getNetworkOperator());
 							sendToBuffer(logPack);
-							
 							
 						}
 						
@@ -178,7 +176,7 @@ public class PhoneSucker extends SensorLogger {
 	public ILogPack forceReturn() throws JSONException {
 		// TODO: anonymize this value
 		ILogPack fr = new ILogPack();
-		if(ba != null) {
+		if(ba != null && hasBluetooth) {
 			fr.put(Phone.Keys.BLUETOOTH_DEVICE_ADDRESS, ba.getAddress());
 			fr.put(Phone.Keys.BLUETOOTH_DEVICE_NAME, ba.getName());
 		}
@@ -206,7 +204,9 @@ public class PhoneSucker extends SensorLogger {
 		setIsRunning(false);
 		if(hasBluetooth && ba.isDiscovering()) {
 			ba.cancelDiscovery();
-			ba.disable();
+			
+			//ba.disable(); //leave bluetooth on
+			
 		}
 		
 		/*

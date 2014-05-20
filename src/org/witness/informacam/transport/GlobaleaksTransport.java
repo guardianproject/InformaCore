@@ -55,8 +55,8 @@ public class GlobaleaksTransport extends Transport {
 		repoName = transportStub.organization.organizationName;
 		
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
-		mBuilder.setContentTitle(getString(R.string.app_name) + " Upload")
-		.setContentText(getString(R.string.upload_in_progress) + ": " + transportStub.organization.organizationName)
+		mBuilder.setContentTitle(getString(R.string.app_name) + ' ' + getString(R.string.upload))
+		.setContentText(getString(R.string.upload_in_progress) + ' ' + transportStub.organization.organizationName)
 		.setTicker(getString(R.string.upload_in_progress))
 		.setSmallIcon(android.R.drawable.ic_menu_upload)
 		.setContentIntent(resultPendingIntent);
@@ -159,9 +159,10 @@ public class GlobaleaksTransport extends Transport {
 						submission.inflate(submissionResult);
 				//		Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());
 
+						
 						mBuilder
-							.setContentText("Successful upload to: " + repository.asset_root)
-							.setTicker("Successful upload to: " + repository.asset_root);
+							.setContentText(getString(R.string.successful_upload_to_) + transportStub.organization.organizationName)
+							.setTicker(getString(R.string.successful_upload_to_) + transportStub.organization.organizationName);
 						mBuilder.setAutoCancel(true);
 						mBuilder.setProgress(0, 0, false);
 						// Displays the progress bar for the first time.

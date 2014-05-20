@@ -370,21 +370,17 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		boolean prefGpsEnableHires = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean("prefGpsEnableHires",false);
 		boolean hasPlayServices = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext()) == ConnectionResult.SUCCESS;
-		boolean isAirplane = isAirplaneModeOn (this);
+	
+		if (prefGpsEnableHires || (!hasPlayServices))
+			_geo = new GeoHiResSucker(this);
+		else	
+			_geo = new GeoFusedSucker(this);
 		
-		if (!isAirplane)
-		{
-			if (prefGpsEnableHires || (!hasPlayServices))
-				_geo = new GeoHiResSucker(this);
-			else	
-				_geo = new GeoFusedSucker(this);
-			
-			_geo.setSuckerCacheListener(this);
-			
-			_phone = new PhoneSucker(this);
-			_phone.setSuckerCacheListener(this);
-		}
+		_geo.setSuckerCacheListener(this);
 		
+		_phone = new PhoneSucker(this);
+		_phone.setSuckerCacheListener(this);
+	
 		_acc = new AccelerometerSucker(this);
 		_acc.setSuckerCacheListener(this);
 		
