@@ -469,6 +469,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public boolean export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
+		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
@@ -523,14 +524,13 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
 			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
 			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			
-			byte[] j3mBytes = j3mObject.toString().getBytes();
-			
-			byte[] sig = informaCam.signatureService.signData(j3mBytes);
+
+			byte[] sig = informaCam.signatureService.signData(j3m.toString().getBytes());
 			
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
-			
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+			
+			byte[] j3mBytes = j3mObject.toString().getBytes();
 			
 			if(!debugMode) {
 				// gzip *FIRST
