@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimerTask;
 
+import org.json.JSONException;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -21,7 +22,8 @@ import android.util.Log;
 public class GeoHiResSucker extends GeoSucker implements LocationListener {
 	LocationManager lm;
 	Criteria criteria;
-	long currentNmeaTime = 0L;
+	long lastNmeaTime = 0L;
+	String lastNmeaMessage = null;
 	private Location mLastLocation = null;
 	
 	private final static String LOG = Suckers.LOG;
@@ -47,17 +49,21 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 				
 		lm.addNmeaListener(new NmeaListener() {
 
+			/**
+			 * Used for receiving NMEA sentences from the GPS. NMEA 0183 is a standard for communicating with marine electronic devices and is a common method for receiving data from a GPS, typically over a serial port. See NMEA 0183 for more details. You can implement this interface and call addNmeaListener(GpsStatus.NmeaListener) to receive NMEA data from the GPS engine.
+			 */
 			@Override
 			public void onNmeaReceived(long timestamp, String nmea) {
-				//Log.d(Time.LOG, "but nmea says: timestamp: " + timestamp + "\n(" + nmea + ")");
-				currentNmeaTime = timestamp;
+			
+				lastNmeaTime = timestamp;
+				lastNmeaMessage = nmea;
 			}
 			
 		});
 		
 		criteria = new Criteria();
-		criteria.setAccuracy(Criteria.ACCURACY_MEDIUM);
-		criteria.setPowerRequirement(Criteria.POWER_LOW);
+		criteria.setAccuracy(Criteria.ACCURACY_HIGH);
+		criteria.setPowerRequirement(Criteria.POWER_HIGH);
 		
 		setTask(new TimerTask() {
 
@@ -78,13 +84,51 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 		getTimer().schedule(getTask(), 0, Geo.LOG_RATE);
 	}
 	
+	
 	public ILogPack forceReturn() {
+		
 		double[] loc = updateLocation();
-		return new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		if(loc == null) {
+			Log.d(LOG, "location was null");
+			loc = new double[] {0d, 0d};
+		}
+		
+		ILogPack iLogPack = new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		
+		if (mLastLocation != null){
+			try {
+				
+				if (mLastLocation.hasAccuracy())			
+						iLogPack.put(Geo.Keys.GPS_ACCURACY, mLastLocation.getAccuracy()+"");
+				
+				if (mLastLocation.hasAltitude())			
+					iLogPack.put(Geo.Keys.GPS_ALTITUDE, mLastLocation.getAltitude()+"");
+			
+				if (mLastLocation.hasSpeed())			
+					iLogPack.put(Geo.Keys.GPS_SPEED, mLastLocation.getSpeed()+"");
+			
+				if (mLastLocation.hasBearing())			
+					iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
+				
+				if (lastNmeaTime != 0L)				
+					iLogPack.put(Geo.Keys.NMEA_TIME, lastNmeaTime);
+				
+				if (lastNmeaMessage != null)
+					iLogPack.put(Geo.Keys.NMEA_MESSAGE, lastNmeaMessage);				
+				
+			} catch (JSONException e) {
+				Log.d(LOG,"json exception in location data",e);
+			}
+			
+		}
+		
+		
+		
+		return iLogPack;
 	}
 	
 	public long getTime() {
-		return currentNmeaTime;
+		return lastNmeaTime;
 	}
 	
 	public double[] updateLocation() {
@@ -109,6 +153,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 				location = new double[] {l.getLatitude(), l.getLongitude()};
 				Logger.d(LOG, String.format("new location: %f, %f", location[0], location[1]));
 
+				
 				if(Arrays.equals(location, isNull)) {
 					continue;
 				} else {
@@ -138,7 +183,6 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 
 	@Override
 	public void onLocationChanged(Location location) {
-		currentNmeaTime = location.getTime();
 		
 		mLastLocation = location;
 		

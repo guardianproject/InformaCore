@@ -29,6 +29,8 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 	private LocationRequest mLocationRequest;
 	private Location mLastLocation = null;
 	
+	private int mLocationPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;
+	
 	@SuppressWarnings("unchecked")
 	public GeoFusedSucker(Context context) {
 		super(context);
@@ -37,6 +39,11 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 		mLocationClient = new LocationClient(context, this, this);
 		mLocationClient.connect();
 		
+	}
+	
+	public void setLocationPriority (int newPriority)
+	{
+		mLocationPriority = newPriority;
 	}
 	
 	public ILogPack forceReturn() {
@@ -62,11 +69,10 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 				iLogPack.put(Geo.Keys.GPS_SPEED, mLastLocation.getSpeed()+"");
 		
 			if (mLastLocation.hasBearing())			
-				iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");		
+				iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
 			
 			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Log.d(LOG,"json exception in location data",e);
 			}
 			
 		}
@@ -116,11 +122,11 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 
 	@Override
 	public void onConnected(Bundle arg0) {
-		
 
 		mLocationRequest = LocationRequest.create();
 
 		mLocationRequest.setInterval(Geo.LOG_RATE);
+		mLocationRequest.setPriority(mLocationPriority);
 
 		mLocationClient.requestLocationUpdates(mLocationRequest, this);
 		

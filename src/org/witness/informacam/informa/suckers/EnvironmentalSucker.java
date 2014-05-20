@@ -1,9 +1,20 @@
 package org.witness.informacam.informa.suckers;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.List;
 import java.util.TimerTask;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.json.JSONException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -124,7 +135,12 @@ TYPE_TEMPERATURE	event.values[0]	°C	Device temperature.1
 						break;
 					case Sensor.TYPE_PRESSURE:
 						sVals.put(Environment.Keys.PRESSURE_MBAR, event.values[0]);
-						sVals.put(Environment.Keys.PRESSURE_ALTITUDE, SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, event.values[0]));
+						
+						//TODO we need to get real local sea level pressure here from a dynamic source
+						//as the default value doesn't cut it
+						float altitudeFromPressure = SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, event.values[0]);						
+						sVals.put(Environment.Keys.PRESSURE_ALTITUDE, altitudeFromPressure);
+						
 						currentPressure = sVals;
 						break;
 					case Sensor.TYPE_LIGHT:
@@ -144,4 +160,7 @@ TYPE_TEMPERATURE	event.values[0]	°C	Device temperature.1
 		sm.unregisterListener(this);
 		Log.d(LOG, "shutting down EnviroSucker...");
 	}
+	
+	
+	
 }
