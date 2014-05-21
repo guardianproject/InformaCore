@@ -1,6 +1,7 @@
 package org.witness.informacam.informa;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -357,6 +358,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	@SuppressWarnings("unchecked")
 	public void startAllSuckers() {
+		
 		if(suckersActive) {
 			return;
 		}
@@ -386,6 +388,17 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		_env = new EnvironmentalSucker(this);
 		_env.setSuckerCacheListener(this);
+		
+		try {
+			
+			double[] dLoc = ((GeoSucker) _geo).updateLocation();
+			((EnvironmentalSucker)_env).updateSeaLevelPressure(dLoc[0], dLoc[1]);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		
 		suckersActive = true;
 	}

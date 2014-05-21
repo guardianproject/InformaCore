@@ -313,6 +313,7 @@ public class Constants {
 				public static final String PITCH_CORRECTED = "pitchCorrected";
 				public static final String ROLL_CORRECTED = "rollCorrected";
 				public static final String AZIMUTH_CORRECTED = "azimuthCorrected";
+				public static final String BEARING_DEGREES = "bearingDegrees";
 			}
 		}
 		
@@ -339,7 +340,7 @@ public class Constants {
 		}
 
 		public final static class Geo {
-			public final static long LOG_RATE = 1000L;
+			public final static long LOG_RATE = 5000L;
 
 			public final static class Keys {
 				public static final String GPS_COORDS = "gps_coords";
@@ -347,6 +348,8 @@ public class Constants {
 				public static final String GPS_ALTITUDE = "gps_altitude";
 				public static final String GPS_SPEED = "gps_speed";
 				public static final String GPS_ACCURACY = "gps_accuracy";
+				public static final String NMEA_TIME = "nmeatime";
+				public static final String NMEA_MESSAGE = "nmeamessage";
 			}
 		}
 	}

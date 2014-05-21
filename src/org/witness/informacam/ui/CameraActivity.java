@@ -48,9 +48,6 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		setContentView(R.layout.activity_camera_waiter);
 		
-        int screenRotation = getWindowManager().getDefaultDisplay().getRotation();
-        AccelerometerSucker.setScreenRotation(screenRotation);
-		
 		informaCam = (InformaCam)getApplication();		
 		
 		h.post(new Runnable() {
@@ -62,7 +59,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		if(getIntent().hasExtra(Codes.Extras.MEDIA_PARENT)) {
 			parentId = getIntent().getStringExtra(Codes.Extras.MEDIA_PARENT);
-			Logger.d(LOG, "TO PARENT " + parentId);
+			//Logger.d(LOG, "TO PARENT " + parentId);
 		}
 
 		try {
@@ -172,9 +169,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
-		Logger.d(LOG, "COMING BACK FROM ON-BOARD CAMERA");
 		if(controlsInforma) {
-			Logger.d(LOG, "ALSO, I CONTROL INFORMA");
 			
 			informaCam.ioService.stopDCIMObserver();
 			informaCam.stopInforma();
@@ -228,18 +223,14 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onUpdate(Message message) {
-		Log.d(LOG, "I RECEIVED A MESSAGE (I SHOULDN'T THOUGH)");
+		//Log.d(LOG, "I RECEIVED A MESSAGE (I SHOULDN'T THOUGH)");
 		
 	}
 
 
-	   @Override
-       public void onConfigurationChanged(Configuration newConfig) {
-               super.onConfigurationChanged(newConfig);
+   @Override
+   public void onConfigurationChanged(Configuration newConfig) {
+           super.onConfigurationChanged(newConfig);
 
-               int screenRotation = getWindowManager().getDefaultDisplay().getRotation();
-               AccelerometerSucker.setScreenRotation(screenRotation);
-
-               
-       }
+   }
 }
