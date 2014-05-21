@@ -62,8 +62,21 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 		});
 		
 		criteria = new Criteria();
-		criteria.setAccuracy(Criteria.ACCURACY_HIGH);
-		criteria.setPowerRequirement(Criteria.POWER_HIGH);
+		
+		try
+		{
+			criteria.setAccuracy(Criteria.ACCURACY_HIGH);
+		}
+		catch (IllegalArgumentException iae){}
+	
+		try
+		{
+			criteria.setPowerRequirement(Criteria.POWER_HIGH);
+		}
+		catch (IllegalArgumentException iae){}
+	
+	
+		
 		
 		setTask(new TimerTask() {
 
