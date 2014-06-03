@@ -26,7 +26,8 @@ public class ITransportStub extends Model implements Serializable {
 	public INotification associatedNotification = null;
 	public IOrganization organization = null;
 	public ITransportData asset = null;
-		
+	
+	public int callbackCode = 0;
 	public int resultCode = Models.ITransportStub.ResultCodes.FAIL;
 	
 	public ITransportStub() {

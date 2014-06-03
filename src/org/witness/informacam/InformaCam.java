@@ -763,7 +763,10 @@ public class InformaCam extends Application {
 		addNotification(notification, null);
 		
 		ITransportStub transportStub = new ITransportStub(organization, notification);
+		
 		transportStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP, Type.IOCIPHER);
+		transportStub.callbackCode = Models.ITransportStub.CallbackCodes.UPDATE_ORGANIZATION_HAS_KEY;
+		
 		TransportUtility.initTransport(transportStub);
 	}
 	

@@ -940,8 +940,23 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	@Override
-	public void onMediaReadyForTransport(ITransportStub transportStub) {
+	public void onMediaReadyForTransport(final ITransportStub transportStub) {
+		if(!transportStub.organization.keyReceived) {
+			InformaCam informaCam = InformaCam.getInstance();
+			
+			INotification notification = new INotification(informaCam.getString(R.string.key_sent), informaCam.getString(R.string.you_have_sent_your_credentials_to_x, transportStub.organization.organizationName), Models.INotification.Type.NEW_KEY);
+			notification.taskComplete = false;
+			informaCam.addNotification(notification, null);
+			
+			ITransportStub credentialStub = new ITransportStub(transportStub.organization, notification);
+			credentialStub.setAsset(Models.IUser.PUBLIC_CREDENTIALS, Models.IUser.PUBLIC_CREDENTIALS, MimeType.ZIP, Type.IOCIPHER);
+			credentialStub.callbackCode = Models.ITransportStub.CallbackCodes.UPDATE_ORGANIZATION_HAS_KEY;
+			
+			TransportUtility.initTransport(credentialStub);
+		}
+		
 		TransportUtility.initTransport(transportStub);
+		
 	}
 	
 	@Override

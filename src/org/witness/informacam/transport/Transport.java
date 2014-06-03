@@ -29,7 +29,6 @@ import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.transport.ITransportData;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
@@ -115,6 +114,17 @@ public class Transport extends IntentService {
 			informaCam.updateNotification(transportStub.associatedNotification, informaCam.h);
 		}
 		
+		switch(transportStub.callbackCode) {
+		
+		case Models.ITransportStub.CallbackCodes.UPDATE_ORGANIZATION_HAS_KEY:
+			Logger.d(LOG, "ALSO MARKING KEY AS RECEIVED");
+			
+			transportStub.organization.keyReceived = true;
+			transportStub.organization.save();
+			
+			break;
+		}
+		
 		stopSelf();
 		
 	}
@@ -156,9 +166,7 @@ public class Transport extends IntentService {
 			transportStub.associatedNotification.save();
 			
 			informaCam.transportManifest.add(transportStub);
-		}
-		
-		
+		}		
 	}
 	
 	public int checkTransportRequirements () {

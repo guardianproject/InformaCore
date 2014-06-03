@@ -615,6 +615,10 @@ public class Constants {
 				public final static int OK = 200;
 			}
 			
+			public class CallbackCodes {
+				public final static int UPDATE_ORGANIZATION_HAS_KEY = 100;
+			}
+			
 			public class Globaleaks {
 				public final static String TAG = RepositorySources.GLOBALEAKS;
 			}

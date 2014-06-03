@@ -1,11 +1,9 @@
 package org.witness.informacam.transport;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
-import java.util.Locale;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -245,6 +243,7 @@ public class GoogleDriveTransport extends Transport {
 
 		public Intent userAcceptCallback = new Intent().setAction(Actions.USER_ACCEPT_ACTION);
 
+		@SuppressWarnings("deprecation")
 		public AuthToken(AccountManager am, Account account) {
 			this.account = account;
 			

@@ -262,6 +262,8 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 					
 					ITransportStub transportStub = new ITransportStub(organization, notification);
 					transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP, Storage.Type.IOCIPHER);
+					transportStub.callbackCode = Models.ITransportStub.CallbackCodes.UPDATE_ORGANIZATION_HAS_KEY;
+					
 					TransportUtility.initTransport(transportStub);
 				}
 			}
