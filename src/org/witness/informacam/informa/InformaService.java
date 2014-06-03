@@ -320,7 +320,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 									
 					suckerCache.timeOffset = realStartTime;
 					suckerCache.cache = cacheArray;
-	
+					
+					// TODO: XXX: collision errors (ConcurrentModificationException)
 					informaCam.ioService.saveBlob(suckerCache.asJson().toString().getBytes(), cacheFile);
 	
 					if(associatedMedia != null) {

@@ -41,13 +41,12 @@ public class VideoConstructor {
 	private final static String LOG = Ffmpeg.LOG;
 
 	public VideoConstructor(Context context) throws FileNotFoundException, IOException {
-		
-		File fileDirTmp = context.getCacheDir();
-		
 		fileBinDir = context.getDir("bin",Context.MODE_PRIVATE);
-		ffmpegCtrl = new FfmpegController(context, fileDirTmp);
-		ffmpegBinPath = new File(fileBinDir,"ffmpeg").getCanonicalPath();
-
+		
+		File ffmpegAppRoot = new File(fileBinDir,"ffmpeg");
+		
+		ffmpegCtrl = new FfmpegController(context.getCacheDir(), ffmpegAppRoot);
+		ffmpegBinPath = ffmpegAppRoot.getCanonicalPath();
 	}
 	
 	public VideoConstructor(InformaCam informaCam, IMedia media, IAsset destinationAsset, ITransportStub connection) throws IOException {
