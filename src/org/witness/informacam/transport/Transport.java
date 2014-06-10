@@ -134,15 +134,15 @@ public class Transport extends IntentService {
 	}
 	
 	protected void finishUnsuccessfully(int transportRequirements) {
-
-		mBuilder
-		.setContentText("FAILED upload to: " + repository.asset_root)
-		.setTicker("FAILED upload to: " + repository.asset_root);
-		mBuilder.setAutoCancel(true);
-		mBuilder.setProgress(0, 0, false);
-		// Displays the progress bar for the first time.
-		mNotifyManager.notify(0, mBuilder.build());
-
+		if(mBuilder != null) {
+			mBuilder
+			.setContentText("FAILED upload to: " + repository.asset_root)
+			.setTicker("FAILED upload to: " + repository.asset_root);
+			mBuilder.setAutoCancel(true);
+			mBuilder.setProgress(0, 0, false);
+			// Displays the progress bar for the first time.
+			mNotifyManager.notify(0, mBuilder.build());
+		}
 		
 		if(informaCam.getEventListener() != null) {
 			Message message = new Message();
