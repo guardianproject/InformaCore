@@ -739,7 +739,8 @@ public class Constants {
 			public static final String ROOT = "informaCamIOCipher";
 			public static final String IOCIPHER = "ic_data.db";
 			public static final String DUMP = "informaCam";
-			public static final String EXTERNAL_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/InformaCam";
+			public static final String EXTERNAL_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/.InformaCam";
+			public static final String EXTERNAL_DIR_V1 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/InformaCam";
 			public static final String FORM_ROOT = "forms";
 			public static final String ORGS_ROOT = "organizations";
 			public static final String LOG_DUMP = "iLogs";

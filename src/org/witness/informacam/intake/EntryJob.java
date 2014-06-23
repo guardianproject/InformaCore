@@ -325,18 +325,29 @@ public class EntryJob extends BackgroundTask {
 	}	
 
 	protected void commit() {
-		//XXX: get preference here, save and delete original if encryptOriginals
+		// XXX: move to either IOC or .InformaCam
+		Logger.d(LOG, "COPY AND DELETE...");
+		IAsset publicAsset = new IAsset(entry.fileAsset);
+		boolean delete_success = false;
+		
 		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
-			Logger.d(LOG, "COPY AND DELETE...");
-			IAsset publicAsset = new IAsset(entry.fileAsset);
 			try {
-				if(entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash)) {
-					Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
-					informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
-				}
+				delete_success = entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash); 
 			} catch (IOException e) {
 				Logger.e(LOG, e);
 			}
+		} else {
+			try {
+				delete_success = entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.FILE_SYSTEM, entry.originalHash);
+			} catch(IOException e) {
+				Logger.e(LOG, e);
+			}
+			
+		}
+		
+		if(delete_success) {
+			Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
+			informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
 		}
 	}
 }

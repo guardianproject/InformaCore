@@ -315,7 +315,7 @@ public class InformaCam extends Application {
 		 * this is to set some testing preferences
 		 * i.e. Debug.testUser_1();
 		 */
-		Debug.testUser_1();
+		Debug.fix_ic_public_folder();
 	}
 	
 	private void setModels() {
