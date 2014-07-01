@@ -35,6 +35,7 @@ import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers;
+import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.MediaHasher;
@@ -393,11 +394,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 		try {
 			
 			double[] dLoc = ((GeoSucker) _geo).updateLocation();
-			((EnvironmentalSucker)_env).updateSeaLevelPressure(dLoc[0], dLoc[1]);
+			if (dLoc != null)
+				((EnvironmentalSucker)_env).updateSeaLevelPressure(dLoc[0], dLoc[1]);
 			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Log.d(Informa.LOG,"error updating sea level pressure",e);
 		}
 		
 		
