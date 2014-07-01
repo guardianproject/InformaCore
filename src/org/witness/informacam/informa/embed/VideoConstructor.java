@@ -42,11 +42,10 @@ public class VideoConstructor {
 
 	public VideoConstructor(Context context) throws FileNotFoundException, IOException {
 		fileBinDir = context.getDir("bin",Context.MODE_PRIVATE);
+		File filesDir = context.getFilesDir();
 		
-		File ffmpegAppRoot = new File(fileBinDir,"ffmpeg");
-		
-		ffmpegCtrl = new FfmpegController(context.getCacheDir(), ffmpegAppRoot);
-		ffmpegBinPath = ffmpegAppRoot.getCanonicalPath();
+		ffmpegCtrl = new FfmpegController(context, context.getCacheDir());
+		ffmpegBinPath = ffmpegCtrl.getBinaryPath();
 	}
 	
 	public VideoConstructor(InformaCam informaCam, IMedia media, IAsset destinationAsset, ITransportStub connection) throws IOException {
