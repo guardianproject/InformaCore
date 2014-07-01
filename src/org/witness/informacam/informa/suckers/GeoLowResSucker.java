@@ -2,6 +2,7 @@ package org.witness.informacam.informa.suckers;
 
 import java.util.TimerTask;
 
+import org.json.JSONException;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
@@ -16,10 +17,11 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class GeoLowResSucker extends GeoSucker implements LocationListener {
+	
 	LocationManager lm;
 	Criteria criteria;
-	long currentNmeaTime;
 	
+	private Location mLastLocation = null;
 	private String mBestProvider = null;
 	
 	private final static String LOG = Suckers.LOG;
@@ -33,31 +35,7 @@ public class GeoLowResSucker extends GeoSucker implements LocationListener {
 		setSucker(this);
 		
 		lm = (LocationManager) context.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-		
-		
-		/*
-		if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
-		} else {
-			Log.d(LOG, "NETWORK PROVIDER is unavailable");
-		}
-		
-		if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-		} else {
-			Log.d(LOG, "GPS PROVIDER is unavailable");
-		}*/
-				
-		lm.addNmeaListener(new NmeaListener() {
-
-			@Override
-			public void onNmeaReceived(long timestamp, String nmea) {
-				//Log.d(LOG, "but nmea says: timestamp: " + timestamp + "\n(" + nmea + ")");
-				currentNmeaTime = timestamp;
-			}
 			
-		});
-		
 		criteria = new Criteria();
 		criteria.setAccuracy(Criteria.ACCURACY_LOW);
 		criteria.setPowerRequirement(Criteria.POWER_LOW);
@@ -86,27 +64,56 @@ public class GeoLowResSucker extends GeoSucker implements LocationListener {
 	}
 	
 	public ILogPack forceReturn() {
+		
 		double[] loc = updateLocation();
-		if(loc == null) {
-			Log.d(LOG, "location was null");
+		if(loc == null) {			
 			loc = new double[] {0d, 0d};
 		}
 		
-		return new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		ILogPack iLogPack = new ILogPack(Geo.Keys.GPS_COORDS, "[" + loc[0] + "," + loc[1] + "]");
+		
+		if (mLastLocation != null){
+			try {
+				
+				if (mLastLocation.hasAccuracy())			
+						iLogPack.put(Geo.Keys.GPS_ACCURACY, mLastLocation.getAccuracy()+"");
+				
+				if (mLastLocation.hasAltitude())			
+					iLogPack.put(Geo.Keys.GPS_ALTITUDE, mLastLocation.getAltitude()+"");
+			
+				if (mLastLocation.hasSpeed())			
+					iLogPack.put(Geo.Keys.GPS_SPEED, mLastLocation.getSpeed()+"");
+			
+				if (mLastLocation.hasBearing())			
+					iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
+				
+			} catch (JSONException e) {
+				Log.d(LOG,"json exception in location data",e);
+			}
+			
+		}
+		
+		
+		
+		return iLogPack;
 	}
 	
 	public long getTime() {
-		return currentNmeaTime;
+		if (mLastLocation != null)
+			return mLastLocation.getTime();
+		else
+			return 0;
 	}
 	
 	public double[] updateLocation() {
 		try {
 			
-			Location l = lm.getLastKnownLocation(mBestProvider);
+			mLastLocation = lm.getLastKnownLocation(mBestProvider);
 			
-			if (l != null) {
+			if (
+			mLastLocation != null) {
 				//Log.d(LOG, "lat/lng: " + l.getLatitude() + ", " + l.getLongitude());
-				return new double[] {l.getLatitude(),l.getLongitude()};
+				return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
 			} else {
 				return null;
 			}
@@ -130,7 +137,11 @@ public class GeoLowResSucker extends GeoSucker implements LocationListener {
 	}
 
 	@Override
-	public void onLocationChanged(Location location) {}
+	public void onLocationChanged(Location location) {
+		
+		mLastLocation = location;
+		
+	}
 
 	@Override
 	public void onProviderDisabled(String provider) {}

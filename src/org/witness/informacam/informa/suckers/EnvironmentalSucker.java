@@ -6,6 +6,7 @@ import java.util.TimerTask;
 import org.json.JSONException;
 import org.witness.informacam.informa.SensorLogger;
 import org.witness.informacam.models.j3m.ILogPack;
+import org.witness.informacam.models.utils.PressureServiceUpdater;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Environment;
 
@@ -14,13 +15,17 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.util.Log;
 
 @SuppressWarnings("rawtypes")
 public class EnvironmentalSucker extends SensorLogger implements SensorEventListener {
+	
 	SensorManager sm;
 	List<Sensor> availableSensors;
 	org.witness.informacam.models.j3m.ILogPack currentAmbientTemp, currentDeviceTemp, currentHumidity, currentPressure, currentLight;
+	
+	float mPressureSeaLevel = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
 	
 	private final static String LOG = Suckers.LOG;
 			
@@ -124,7 +129,12 @@ TYPE_TEMPERATURE	event.values[0]	°C	Device temperature.1
 						break;
 					case Sensor.TYPE_PRESSURE:
 						sVals.put(Environment.Keys.PRESSURE_MBAR, event.values[0]);
-						sVals.put(Environment.Keys.PRESSURE_ALTITUDE, SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, event.values[0]));
+						
+						//TODO we need to get real local sea level pressure here from a dynamic source
+						//as the default value doesn't cut it
+						float altitudeFromPressure = SensorManager.getAltitude(mPressureSeaLevel, event.values[0]);						
+						sVals.put(Environment.Keys.PRESSURE_ALTITUDE, altitudeFromPressure);
+						
 						currentPressure = sVals;
 						break;
 					case Sensor.TYPE_LIGHT:
@@ -144,4 +154,36 @@ TYPE_TEMPERATURE	event.values[0]	°C	Device temperature.1
 		sm.unregisterListener(this);
 		Log.d(LOG, "shutting down EnviroSucker...");
 	}
+	
+	public void updateSeaLevelPressure (final double latitude, final double longitude)
+	{
+		
+		new AsyncTask<Double, Void, Float>() {
+	        @Override
+	        protected Float doInBackground(Double... params) {
+	           
+	    		return PressureServiceUpdater.GetRefPressure(params[0],params[1]);
+
+	        }
+
+	        @Override
+	        protected void onPostExecute(Float result) {
+	        	
+	        	mPressureSeaLevel = result.floatValue();
+	        	Log.d("Pressure","got updated sea level pressure: " + mPressureSeaLevel);
+	        }
+
+	        @Override
+	        protected void onPreExecute() {
+	        }
+
+	        @Override
+	        protected void onProgressUpdate(Void... values) {
+	        	
+	        	
+	        }
+	    }.execute(latitude, longitude);
+	}
+	
+	
 }
