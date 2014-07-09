@@ -84,14 +84,16 @@
             android:id="@+id/wizard_sub_fragments_root"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/wizard_sub_fragments_progress"
+            android:layout_above="@+id/wizard_sub_fragments_progress_container"
             android:layout_below="@+id/wizard_sub_fragments_title"
             android:layout_marginTop="30dip" />
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="30dip"
-            android:layout_alignParentBottom="true" >
+            android:layout_alignParentBottom="true"
+             android:id="@+id/wizard_sub_fragments_progress_container"
+             >
 
             <LinearLayout
                 android:id="@+id/wizard_sub_fragments_progress"
