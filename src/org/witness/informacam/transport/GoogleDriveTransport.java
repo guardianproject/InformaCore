@@ -154,7 +154,7 @@ public class GoogleDriveTransport extends Transport {
 	}
 
 	@Override
-	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
+	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) throws IOException {
 		
 		StringBuilder sbUrl = new StringBuilder();
 		sbUrl.append(urlString);
