@@ -36,7 +36,7 @@ public class GlobaleaksTransport extends Transport {
 	}
 
 	@Override
-	protected boolean init() {
+	protected boolean init() throws IOException {
 		if(!super.init()) {
 			return false;
 		}
@@ -51,9 +51,6 @@ public class GlobaleaksTransport extends Transport {
 						PendingIntent.FLAG_UPDATE_CURRENT
 						);
 
-		//set reponame to org name
-		repoName = transportStub.organization.organizationName;
-		
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle(getString(R.string.app_name) + ' ' + getString(R.string.upload))
 		.setContentText(getString(R.string.upload_in_progress) + ' ' + transportStub.organization.organizationName)
@@ -189,7 +186,7 @@ public class GlobaleaksTransport extends Transport {
 	}
 
 	@Override
-	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) {
+	protected HttpURLConnection buildConnection(String urlString, boolean useTorProxy) throws IOException {
 		HttpURLConnection http = super.buildConnection(urlString, useTorProxy);
 		http.setRequestProperty("X-XSRF-TOKEN", "antani");
 		http.setRequestProperty("Cookie", "XSRF-TOKEN=antani;");
