@@ -26,6 +26,7 @@ import org.witness.informacam.utils.Constants.Models;
 import android.content.ComponentName;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 
@@ -487,7 +488,14 @@ public class IOService {
 
 	public boolean initIOCipher(String authToken) {
 		try {
-			java.io.File storageRoot = new java.io.File(mContext.getExternalFilesDir(Storage.ROOT).getAbsolutePath(), Storage.IOCIPHER);
+			java.io.File fileExternal = mContext.getExternalFilesDir(Storage.ROOT);
+			if (fileExternal == null)
+			{
+				fileExternal = mContext.getFilesDir();
+				
+			}
+			
+			java.io.File storageRoot = new java.io.File(fileExternal.getAbsolutePath(), Storage.IOCIPHER);
 			vfs = new VirtualFileSystem(storageRoot);
 			vfs.mount(authToken);
 			
