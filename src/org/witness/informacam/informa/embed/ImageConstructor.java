@@ -2,6 +2,7 @@ package org.witness.informacam.informa.embed;
 
 import java.io.IOException;
 
+import org.apache.commons.io.IOUtils;
 import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IAsset;
@@ -59,10 +60,18 @@ public class ImageConstructor {
 			this.destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
 			intendedForIOCipher = true;
 		}
+		else if (sourceAsset.source == Type.FILE_SYSTEM)
+		{
+			java.io.File fileDest = new java.io.File(destinationAsset.path);
+			fileDest.delete();			
+			IOUtils.copy(new java.io.FileInputStream(sourceAsset.path),new java.io.FileOutputStream(fileDest));
+			intendedForIOCipher = false;
+		}
 
-		byte[] metadata = informaCam.ioService.getBytes(this.media.getAsset(Models.IMedia.Assets.J3M));
+		String metadata = new String(informaCam.ioService.getBytes(this.media.getAsset(Models.IMedia.Assets.J3M)));
+		
 		try {
-			int c = constructImage(sourceAsset.path, this.destinationAsset.path, new String(metadata), metadata.length);			
+			int c = constructImage(sourceAsset.path, this.destinationAsset.path, metadata, metadata.length());			
 			
 			if(c > 0) {
 				finish(intendedForIOCipher);
@@ -74,7 +83,7 @@ public class ImageConstructor {
 		}
 	}
 
-	public void finish(boolean intentedForIOCipher) {
+	public IAsset finish(boolean intentedForIOCipher) {
 		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
 		
 		int storageType = Storage.Type.FILE_SYSTEM;
@@ -98,5 +107,7 @@ public class ImageConstructor {
 		}
 		
 		((MetadataEmbededListener) media).onMetadataEmbeded(destinationAsset);
+		
+		return destinationAsset;
 	}
 }

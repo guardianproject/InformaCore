@@ -1,13 +1,16 @@
 package org.witness.informacam.models.media;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,8 +43,8 @@ import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
+import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.MediaHasher;
 
@@ -52,6 +55,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
+import android.util.Base64OutputStream;
 import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
@@ -76,7 +80,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	public CharSequence detailsAsText = null;
 
-	protected Handler responseHandler;
+//	protected Handler responseHandler;
 	protected boolean debugMode = false;
 	
 	private Bitmap mThumbnail = null;
@@ -460,21 +464,20 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 
-	public boolean export(Context context, Handler h) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h) throws FileNotFoundException {
 		return export(context, h, null, true);
 	}
 
-	public boolean export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
 		return export(context, h, organization, false);
 	}
 
-	public boolean export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
 		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
+	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
-		responseHandler = h;
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -531,22 +534,38 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
 			byte[] j3mBytes = j3mObject.toString().getBytes();
+
+			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
 			
 			if(!debugMode) {
 				// gzip *FIRST
 				j3mBytes = IOUtility.gzipBytes(j3mBytes);
-
-				// maybe encrypt
-				if(organization != null) {
-					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
-				}
 				
-				// base64
-				j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
+				
+				OutputStream os = null;
+				
+				if (j3mAsset.source == Type.FILE_SYSTEM)
+					os = new java.io.FileOutputStream(j3mAsset.path);
+				else if (j3mAsset.source == Type.IOCIPHER)
+					os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
+				
+				os = new Base64OutputStream(os, Base64.DEFAULT);
+				ByteArrayInputStream is = new ByteArrayInputStream(j3mBytes);
+				
+				// encrypt if the organization is not null
+				if(organization != null)
+				{					
+					EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
+				}
+				else
+				{				
+					IOUtils.copy(is, os);
+				}	
+				
+				os.flush();
+				os.close();
 			}
 
-			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
-			informaCam.ioService.saveBlob(j3mBytes, j3mAsset);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -568,7 +587,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 				if(organization != null) {
 					notification.taskComplete = false;
-					informaCam.addNotification(notification, responseHandler);
+					informaCam.addNotification(notification, h);
 					
 					submission = new ITransportStub(organization, notification);
 				}
@@ -594,22 +613,24 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				submission.setAsset(exportAsset, dcimEntry.mediaType, exportDestination);
 			}
 			
-			informaCam.addNotification(notification, responseHandler);			
+			informaCam.addNotification(notification, h);			
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
+			return exportAsset;
+			
 		} catch (JSONException e) {
 			Logger.e(LOG, e);
-			return false;
+			
 		} catch (ConcurrentModificationException e) {
 			Logger.e(LOG, e);
-			return false;
-		} catch (IOException e) {
+			
+		} catch (Exception e) {
 			Logger.e(LOG, e);
-			return false;
+			
 		}
 		
-		return true;
+		return null;
 	}
 	
 	private void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
@@ -658,7 +679,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
-		responseHandler = h;
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -749,7 +769,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 				if(organization != null) {
 					notification.taskComplete = false;
-					informaCam.addNotification(notification, responseHandler);
+					informaCam.addNotification(notification, h);
 					
 					submission = new ITransportStub(organization, notification);
 					submission.setAsset(j3mAsset, dcimEntry.mediaType, Storage.Type.IOCIPHER);
@@ -767,7 +787,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			Logger.e(LOG, e);
 			return false;
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			Logger.e(LOG, e);
 			return false;
 		}
@@ -775,13 +795,12 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public String buildJ3M(Context context, boolean signData, Handler h) throws FileNotFoundException {
+	public String buildJ3M(Context context, boolean signData) throws FileNotFoundException {
 		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
-		responseHandler = h;
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -840,7 +859,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		} catch (JSONException e) {
 			Logger.e(LOG, e);
 			
-		} catch (ConcurrentModificationException e) {
+		} catch (Exception e) {
 			Logger.e(LOG, e);
 			
 		}
@@ -912,9 +931,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		Message msg = new Message();
 		msg.setData(b);
 
-		if(h == null) {
-			responseHandler.sendMessage(msg);
-		} else {
+		if(h != null) {
 			h.sendMessage(msg);
 		}
 	}
@@ -925,9 +942,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		Message msg = new Message();
 		msg.setData(b);
 
-		if(h == null) {
-			responseHandler.sendMessage(msg);
-		} else {
+		if(h != null) {
 			h.sendMessage(msg);
 		}
 	}

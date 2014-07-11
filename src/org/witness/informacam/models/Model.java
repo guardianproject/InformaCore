@@ -263,21 +263,26 @@ public class Model extends JSONObject {
 				}
 
 				if(f.getType() == List.class) {
-					JSONArray subValue = new JSONArray();
 					
-					Iterator it = ((List<?>) value).iterator();
-					
-					while (it.hasNext()){
-						Object v = it.next();
+					synchronized (value)
+					{
+						JSONArray subValue = new JSONArray();
 						
-						if(v instanceof Model) {
-							subValue.put(((Model) v).asJson());
-						} else {
-							subValue.put(v);
+						Iterator it = ((List<?>) value).iterator();
+						
+						while (it.hasNext()){
+							Object v = it.next();
+							
+							if(v instanceof Model) {
+								subValue.put(((Model) v).asJson());
+							} else {
+								subValue.put(v);
+							}
 						}
-					}
 
-					json.put(f.getName(), subValue);
+						json.put(f.getName(), subValue);
+					
+					}
 				} else if(f.getType() == byte[].class) {
 					json.put(f.getName(), new String((byte[]) value));
 				} else if(f.getType() == float[].class) {

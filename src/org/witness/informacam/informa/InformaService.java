@@ -129,7 +129,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			cacheRoot.mkdir();
 		}
 
-		startAllSuckers();
+		//startAllSuckers();
 		
 		informaService = InformaService.this;
 		sendBroadcast(new Intent()
@@ -615,21 +615,21 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void onUpdate(long timestamp, ILogPack ILogPack) {
+	public void onUpdate(long timestamp, ILogPack iLogPack) {
 		try {
 			ILogPack lp = cache.getIfPresent(timestamp);
 			if(lp != null) {
-				synchronized(lp) //lock access to lp so it is not modified
+				synchronized(iLogPack) //lock access to lp so it is not modified
 				{
 					Iterator<String> lIt = lp.keys();
 					while(lIt.hasNext()) {
 						String key = lIt.next();
-						ILogPack.put(key, lp.get(key));	
+						iLogPack.put(key, lp.get(key));	
 					}
 				}
 			}
 
-			cache.put(timestamp, ILogPack);
+			cache.put(timestamp, iLogPack);
 		} catch(JSONException e) {}
 	}
 

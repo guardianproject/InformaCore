@@ -4,6 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 
 import org.spongycastle.jce.provider.BouncyCastleProvider;
@@ -103,9 +106,14 @@ public class SignatureService {
 	
 	}
 	
-	public byte[] signData(final byte[] data) {
+	public void signData(InputStream is, OutputStream os) throws NoSuchAlgorithmException, SignatureException, PGPException, IOException {
+		KeyUtility.applySignature(is, os, secretKey, publicKey, privateKey);		
+	}
+	
+	public byte[] signData(final byte[] data) throws NoSuchAlgorithmException, SignatureException, PGPException, IOException {
 		return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);		
 	}
+	
 	
 
 }

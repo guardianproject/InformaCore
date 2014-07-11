@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -18,26 +19,46 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.spongycastle.bcpg.*;
-import org.spongycastle.bcpg.sig.KeyFlags;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.openpgp.*;
-import org.spongycastle.util.encoders.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.spongycastle.bcpg.ArmoredOutputStream;
+import org.spongycastle.bcpg.BCPGOutputStream;
+import org.spongycastle.bcpg.CompressionAlgorithmTags;
+import org.spongycastle.bcpg.HashAlgorithmTags;
+import org.spongycastle.bcpg.PublicKeyAlgorithmTags;
+import org.spongycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.spongycastle.bcpg.sig.KeyFlags;
+import org.spongycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.openpgp.PGPCompressedData;
+import org.spongycastle.openpgp.PGPCompressedDataGenerator;
+import org.spongycastle.openpgp.PGPException;
+import org.spongycastle.openpgp.PGPObjectFactory;
+import org.spongycastle.openpgp.PGPPrivateKey;
+import org.spongycastle.openpgp.PGPPublicKey;
+import org.spongycastle.openpgp.PGPPublicKeyRing;
+import org.spongycastle.openpgp.PGPPublicKeyRingCollection;
+import org.spongycastle.openpgp.PGPSecretKey;
+import org.spongycastle.openpgp.PGPSecretKeyRing;
+import org.spongycastle.openpgp.PGPSecretKeyRingCollection;
+import org.spongycastle.openpgp.PGPSignature;
+import org.spongycastle.openpgp.PGPSignatureGenerator;
+import org.spongycastle.openpgp.PGPSignatureList;
+import org.spongycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.spongycastle.openpgp.PGPUtil;
+import org.spongycastle.util.encoders.Hex;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Codes;
-import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Models.IUser;
+import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Models.ICredentials;
+import org.witness.informacam.utils.Constants.Models.IUser;
 
 import android.os.Bundle;
 import android.util.Base64;
@@ -394,50 +415,64 @@ public class KeyUtility {
 	}
 
 	@SuppressWarnings({ "deprecation" })
-	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) {
+	public static byte[] applySignature(byte[] data, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) throws NoSuchAlgorithmException, PGPException, IOException, SignatureException {
 		BouncyCastleProvider bc = new BouncyCastleProvider();
 		Security.addProvider(bc);
 
-		ByteArrayInputStream bais = new ByteArrayInputStream(data);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		
 		OutputStream targetOut = new ArmoredOutputStream(baos);
 		
-		try {
-			PGPSignatureGenerator sGen = new PGPSignatureGenerator(secretKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1, bc);
-			sGen.initSign(PGPSignature.BINARY_DOCUMENT, privateKey);
-			
-			PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedDataGenerator.ZLIB);
-			BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(targetOut));
-			
-			int ch;
-			while((ch = bais.read()) >= 0) {
-				sGen.update((byte) ch);
-			}
-			sGen.generate().encode(bOut);
-			
-			cGen.close();
-			bOut.close();
-			targetOut.close();
-			
-			Log.d(LOG, "NOW VERIFYING...");
-			if(verifySig(baos.toByteArray(), data, secretKey.getPublicKey())) {			
-				return baos.toByteArray();
-			}
-		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (PGPException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(secretKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1, bc);
+		sGen.initSign(PGPSignature.BINARY_DOCUMENT, privateKey);
 		
-		return null;
+		PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedDataGenerator.ZLIB);
+		BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(targetOut));
+		
+		sGen.update(data);
+		
+		//switched to onepass signing for speed
+		//sGen.generate().encode(bOut);
+		sGen.generateOnePassVersion(false).encode(bOut);
+		
+		cGen.close();
+		bOut.close();
+		targetOut.close();
+		
+		byte[] outdata = baos.toByteArray();
+		//TODO let's skip locale verification for now, adds too much time
+		//if(verifySig(outdata, data, secretKey.getPublicKey())) {			
+			return outdata;
+
+	
 	}
+	
+	@SuppressWarnings({ "deprecation" })
+	public static void applySignature(InputStream is, OutputStream os, PGPSecretKey secretKey, PGPPublicKey publicKey, PGPPrivateKey privateKey) throws NoSuchAlgorithmException, PGPException, IOException, SignatureException {
+		BouncyCastleProvider bc = new BouncyCastleProvider();
+		Security.addProvider(bc);
+		
+		OutputStream targetOut = new ArmoredOutputStream(os);
+		
+		PGPSignatureGenerator sGen = new PGPSignatureGenerator(secretKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1, bc);
+		sGen.initSign(PGPSignature.BINARY_DOCUMENT, privateKey);
+		
+		PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedDataGenerator.ZLIB);
+		BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(targetOut));
+		
+		int i = -1;
+		while ((i = is.read())!=-1)
+			sGen.update((byte)i);
+		
+		//switched to onepass signing for speed
+		//sGen.generate().encode(bOut);
+		sGen.generateOnePassVersion(false).encode(bOut);
+		
+		cGen.close();
+		bOut.close();
+		targetOut.close();
+			
+	}
+	
+	
 }

@@ -99,6 +99,50 @@ public class EncryptionUtility {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
+	public final static void encrypt(InputStream is, OutputStream os, byte[] publicKey) throws NoSuchProviderException, PGPException, IOException {
+		
+		BouncyCastleProvider bc = new BouncyCastleProvider();
+		int bufferSize = 1 << 16;
+		
+		Security.addProvider(bc);
+		
+		OutputStream aos = new ArmoredOutputStream(os);
+		
+		PGPEncryptedDataGenerator edg = new PGPEncryptedDataGenerator(PGPEncryptedData.AES_256, true, new SecureRandom(), bc);
+		edg.addMethod(KeyUtility.extractPublicKeyFromBytes(publicKey));
+		OutputStream encOs = edg.open(aos, new byte[bufferSize]);
+		
+		PGPCompressedDataGenerator cdg = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+		OutputStream compOs = cdg.open(encOs);
+		
+		PGPLiteralDataGenerator ldg = new PGPLiteralDataGenerator();
+		OutputStream litOs = ldg.open(compOs, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, new Date(System.currentTimeMillis()), new byte[bufferSize]);
+		
+		byte[] buf = new byte[bufferSize];
+		
+		int len;
+		while((len = is.read(buf)) > 0)
+			litOs.write(buf, 0, len);
+		
+		litOs.flush();
+		litOs.close();
+		ldg.close();
+		
+		compOs.flush();
+		compOs.close();
+		cdg.close();
+		
+		encOs.flush();
+		encOs.close();
+		edg.close();
+		
+		aos.close();
+		
+		is.close();
+			
+	}
+	
 	public static info.guardianproject.iocipher.File decrypt(info.guardianproject.iocipher.File file, info.guardianproject.iocipher.File newFile, ISecretKey secretKey) {
 		try {
 			info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(file);

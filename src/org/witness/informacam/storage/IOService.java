@@ -329,7 +329,7 @@ public class IOService {
 			break;
 		}
 
-		Log.d(LOG, "(" + pathToData + ") bytes here: " + bytes.length);
+	//	Log.d(LOG, "(" + pathToData + ") bytes here: " + bytes.length);
 		return bytes;
 	}
 	

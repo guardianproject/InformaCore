@@ -1,15 +1,22 @@
 package org.witness.informacam.models.media;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
@@ -29,10 +36,10 @@ import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
+import android.util.Base64OutputStream;
 import android.util.Log;
 
 public class ILog extends IMedia {
@@ -44,7 +51,6 @@ public class ILog extends IMedia {
 
 	public List<String> attachedMedia = new ArrayList<String>();
 	
-	private Handler proxyHandler;
 	private Map<String, InputStream> j3mZip;
 	
 	public ILog() {
@@ -68,7 +74,7 @@ public class ILog extends IMedia {
 		inflate(media.asJson());
 	}
 	
-	public java.io.File sealLog(boolean share, IOrganization organization, INotification notification) throws IOException {
+	public java.io.File sealLog(boolean doLocalShare, IOrganization organization, INotification notification) throws IOException, NoSuchProviderException, PGPException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		java.io.File log = null;
@@ -77,16 +83,24 @@ public class ILog extends IMedia {
 		// zip up everything, encrypt if required
 		String logName = ("log_" + System.currentTimeMillis() + ".zip");
 		
-		if(share) {
+		if(doLocalShare) {
+
 			log = new java.io.File(Storage.EXTERNAL_DIR, logName);
 			IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.FILE_SYSTEM);
-			byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.FILE_SYSTEM);
+			
 
 			if(organization != null) {
-				j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+				
+				//we can't read form a file and write to it simultaneously
+				java.io.File logEncrypted = new java.io.File(Storage.EXTERNAL_DIR, logName + ".pgp"); //add pgp encryption extension
+				EncryptionUtility.encrypt(informaCam.ioService.getStream(log.getAbsolutePath(), Type.FILE_SYSTEM), new FileOutputStream(logEncrypted),Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+				
+				log.delete();//delete unecrypted export
+				
+				log = logEncrypted;
+				
 			}
 			
-			informaCam.ioService.saveBlob(j3mBytes, log, true);
 
 
 		} else {
@@ -94,13 +108,24 @@ public class ILog extends IMedia {
 			IOUtility.zipFiles(j3mZip, log.getAbsolutePath(), Type.IOCIPHER);
 
 			if(organization != null) {
-				byte[] j3mBytes = informaCam.ioService.getBytes(log.getAbsolutePath(), Type.IOCIPHER);
+
 				if (!debugMode)
 				{
-					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
-					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
-				}
-				informaCam.ioService.saveBlob(j3mBytes, log);
+					info.guardianproject.iocipher.File logEncrypted = new info.guardianproject.iocipher.File(rootFolder, logName + ".pgp"); //add pgp encryption extension
+					
+					OutputStream os = new info.guardianproject.iocipher.FileOutputStream(logEncrypted.getAbsolutePath());
+					os = new Base64OutputStream(os, Base64.DEFAULT);
+					
+					EncryptionUtility.encrypt(informaCam.ioService.getStream(log.getAbsolutePath(), Type.IOCIPHER), os,Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+
+					os.flush();
+					os.close();
+					
+					log.delete();
+					
+					log = logEncrypted;
+
+				}				
 				
 				ITransportStub submission = new ITransportStub(organization, notification);
 				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG, Storage.Type.IOCIPHER);
@@ -118,73 +143,22 @@ public class ILog extends IMedia {
 	
 	@SuppressLint("HandlerLeak")
 	@Override
-	public boolean export(final Context context, Handler h, final IOrganization organization, final boolean share)
+	public IAsset export(final Context context, Handler h, final IOrganization organization, final boolean share)
 			throws FileNotFoundException {
 		
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		Log.d(LOG, "exporting a log!");
-		proxyHandler = h;
+	//	Log.d(LOG, "exporting a log!");
 		j3mZip = new HashMap<String, InputStream>();
 
 		final INotification notification = new INotification();
 
-		responseHandler = new Handler() {
-			public int mediaHandled = 0;
-			
-			@Override
-			public void handleMessage(Message msg) {
-				Bundle b = msg.getData();
-				
-				if(b.containsKey(Models.IMedia.VERSION)) {
-					InformaCam informaCam = InformaCam.getInstance();
-					String version = b.getString(Models.IMedia.VERSION);
-										
-					InputStream versionBytes = informaCam.ioService.getStream(version, Type.IOCIPHER);
-					try {
-						if(versionBytes != null && versionBytes.available() > 0) {
-							j3mZip.put(version.substring(version.lastIndexOf("/") + 1), versionBytes);
-						}
-					} catch (IOException e) {
-				//		Logger.d(LOG, "Skipping this file because no bytes");
-						Logger.e(LOG, e);
-					} catch (NullPointerException e) {
-					//	Logger.d(LOG, "Skipping this file because no bytes");
-						Logger.e(LOG, e);
-					}
-					
-					mediaHandled++;
-					
-					if(mediaHandled == ILog.this.attachedMedia.size()) {
-						
-						try
-						{
-							java.io.File fileExport = sealLog(share, organization, notification);
-							
-							Message msgExportComplete = new Message();
-							msgExportComplete.what = 999;
-							msgExportComplete.getData().putString("file", fileExport.getAbsolutePath());
-							proxyHandler.sendMessage(msgExportComplete);
-							
-						
-						}
-						catch (IOException ioe)
-						{
-							Log.e(LOG, "unable to sealLog()",ioe);
-						}
-					}
-				}
-			}
-		};
-
 		int progress = 0;
 
-		// its icon will probably be some sort of stock thing
-		
 		// append its data sensory data, form data, etc.
 		mungeData();
 		
-		mungeSensorLogs(proxyHandler);
+		mungeSensorLogs(h);
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 		
@@ -213,7 +187,6 @@ public class ILog extends IMedia {
 			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-		//	Log.d(LOG, "here we have a start at j3m:\n" + j3mObject.toString());
 
 			j3mZip.put("log.j3m", new ByteArrayInputStream(j3mObject.toString().getBytes()));
 
@@ -222,8 +195,8 @@ public class ILog extends IMedia {
 
 			notification.generateId();
 			notification.taskComplete = false;
-			// XXX: maybe proxyHandler?
-			informaCam.addNotification(notification, responseHandler);
+
+			informaCam.addNotification(notification, h);
 
 			if(attachedMedia != null && attachedMedia.size() > 0) {
 				data.attachments = getAttachedMediaIds();
@@ -242,7 +215,19 @@ public class ILog extends IMedia {
 						m.associatedCaches.addAll(associatedCaches);
 					
 					try {
-						m.export(context, responseHandler, null, share);
+						IAsset assetExport = m.export(context, h, organization, share);
+						
+						if (assetExport.source == Type.IOCIPHER)
+						{
+							info.guardianproject.iocipher.File fileMedia = new info.guardianproject.iocipher.File(assetExport.path);
+							j3mZip.put(fileMedia.getName(),new info.guardianproject.iocipher.FileInputStream(fileMedia));
+						}
+						else if (assetExport.source == Type.FILE_SYSTEM)
+						{							
+							File fileMedia = new File(assetExport.path);
+							j3mZip.put(fileMedia.getName(),new FileInputStream(fileMedia));
+						}
+						
 					} catch (FileNotFoundException e) {
 						Logger.e(App.LOG,e);
 					}
@@ -252,22 +237,27 @@ public class ILog extends IMedia {
 					
 				}
 			} 
-			else
+			
+			java.io.File fileExport = sealLog(share, organization, notification);
+			
+			if (share && h != null)
 			{
-				java.io.File fileExport = sealLog(share, organization, notification);
 				Message msgExportComplete = new Message();
 				msgExportComplete.what = 999;
 				msgExportComplete.getData().putString("file", fileExport.getAbsolutePath());
-				proxyHandler.sendMessage(msgExportComplete);
+				
+				if (h != null)
+					h.sendMessage(msgExportComplete);
 			}
-		
 
-
-			return true;
+			IAsset assetExport = new IAsset();
+			assetExport.path = fileExport.getAbsolutePath();
+			assetExport.source = Type.FILE_SYSTEM;
+			return assetExport;
 		
 		} catch(Exception e) {
 			Log.e(LOG, e.toString(),e);
-			return false;
+			return null;
 		}
 		
 
@@ -277,23 +267,4 @@ public class ILog extends IMedia {
 		return attachedMedia;
 	}
 
-	@Override
-	protected void sendMessage(String key, int what) {
-		Bundle b = new Bundle();
-		b.putInt(key, what);
-		Message msg = new Message();
-		msg.setData(b);
-
-		proxyHandler.sendMessage(msg);
-	}
-
-	@Override
-	protected void sendMessage(String key, String what) {
-		Bundle b = new Bundle();
-		b.putString(key, what);
-		Message msg = new Message();
-		msg.setData(b);
-
-		proxyHandler.sendMessage(msg);
-	}
 }

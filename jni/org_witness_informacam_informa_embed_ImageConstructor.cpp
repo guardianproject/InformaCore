@@ -30,7 +30,7 @@ Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage
     std::vector<unsigned char> metadata;
 
     const char* TAG = "INFORMA_JNI";
-    __android_log_write(ANDROID_LOG_DEBUG, TAG, "3. setting metadata");
+    //__android_log_write(ANDROID_LOG_DEBUG, TAG, "3. setting metadata");
 
     try {
 
@@ -38,7 +38,7 @@ Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage
         informaImageFilename = (env)->GetStringUTFChars(jstrInformaImageFilename, NULL);
         metadataObjectString = (env)->GetStringUTFChars(jstrMetadataObjectString, NULL);
 
-        __android_log_write(ANDROID_LOG_DEBUG, TAG, "we have metadata:\n");
+       // __android_log_write(ANDROID_LOG_DEBUG, TAG, "we have metadata:\n");
         //__android_log_write(ANDROID_LOG_DEBUG, TAG, metadataObjectString);
 
         // copy object into metadata vector
@@ -48,7 +48,7 @@ Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage
         }
 
         // set metadata into original
-        __android_log_write(ANDROID_LOG_DEBUG, TAG, "loading original image:\n");
+       // __android_log_write(ANDROID_LOG_DEBUG, TAG, "loading original image:\n");
         __android_log_write(ANDROID_LOG_DEBUG, TAG, originalImageFilename);
 
         bool success = original.LoadFromFile(originalImageFilename, true);
@@ -60,7 +60,7 @@ Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage
             exit(1);
         }
 
-        __android_log_write(ANDROID_LOG_DEBUG, TAG, "saving metadata...");
+     //   __android_log_write(ANDROID_LOG_DEBUG, TAG, "saving metadata...");
         original.SetObscuraMetaData(metadata.size(), &metadata.front());
         original.Save(informaImageFilename);
 
@@ -72,7 +72,7 @@ Java_org_witness_informacam_informa_embed_ImageConstructor_constructImage
         __android_log_write(ANDROID_LOG_ERROR, TAG,error);
     }
 
-    __android_log_write(ANDROID_LOG_DEBUG, TAG,"Finished!");
+   // __android_log_write(ANDROID_LOG_DEBUG, TAG,"Finished!");
     return metadataLength;
 }
 
