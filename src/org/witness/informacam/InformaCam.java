@@ -825,6 +825,7 @@ public class InformaCam extends Application {
 	
 	public void startCron(int minutes) {
 		Log.d(LOG, "START CRON WITH " + minutes);
+		
 		Intent startCron = new Intent(this, Cron.class);
 		cronPI = PendingIntent.getService(this, 0, startCron, 0);
 		

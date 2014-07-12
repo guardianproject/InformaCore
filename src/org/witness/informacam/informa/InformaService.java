@@ -129,8 +129,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 			cacheRoot.mkdir();
 		}
 
-		//startAllSuckers();
-		
 		informaService = InformaService.this;
 		sendBroadcast(new Intent()
 			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)
