@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -431,18 +430,14 @@ public class KeyUtility {
 		
 		sGen.update(data);
 		
-		//switched to onepass signing for speed
-		//sGen.generate().encode(bOut);
-		sGen.generateOnePassVersion(false).encode(bOut);
+		sGen.generate().encode(bOut);
 		
 		cGen.close();
 		bOut.close();
 		targetOut.close();
 		
 		byte[] outdata = baos.toByteArray();
-		//TODO let's skip locale verification for now, adds too much time
-		//if(verifySig(outdata, data, secretKey.getPublicKey())) {			
-			return outdata;
+		return outdata;
 
 	
 	}
@@ -460,13 +455,16 @@ public class KeyUtility {
 		PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedDataGenerator.ZLIB);
 		BCPGOutputStream bOut = new BCPGOutputStream(cGen.open(targetOut));
 		
-		int i = -1;
-		while ((i = is.read())!=-1)
-			sGen.update((byte)i);
+		byte[] buf = new byte[4096];
+		int len;
+		
+		while ((len = is.read(buf)) > 0) {
+		            sGen.update(buf, 0, len);
+	
+		}
 		
 		//switched to onepass signing for speed
-		//sGen.generate().encode(bOut);
-		sGen.generateOnePassVersion(false).encode(bOut);
+		sGen.generate().encode(bOut);
 		
 		cGen.close();
 		bOut.close();
