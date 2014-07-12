@@ -228,7 +228,7 @@ public class Constants {
 	}
 	
 	public final static class Time {
-		public final static String LOG = "**************** InformaCam: TIME ****************";
+		public final static String LOG = " InformaCam: TIME ";
 
 		public final static class DateFormats {
 			public static final String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -243,15 +243,15 @@ public class Constants {
 	}
 	
 	public final static class Forms {
-		public final static String LOG = "**************** InformaCam: Forms ****************";
+		public final static String LOG = "InformaForms";
 	}
 	
 	public final static class Ffmpeg {
-		public final static String LOG = "**************** InformaCam: FFMPEG ****************";
+		public final static String LOG = "InformaFFMPEG";
 	}
 
 	public final static class Suckers {
-		public final static String LOG = "******************** InformaCam : Suckers ********************";
+		public final static String LOG = "InformaSuckers";
 		public static final int GPS_WAIT_MAX = 30;
 		public static final int DEFAULT_CRON_INTERVAL = 45;
 		public static final int DEFAULT_CRON_ACTIVE_INTERVAL = 1;
@@ -299,7 +299,7 @@ public class Constants {
 		}
 
 		public final static class Accelerometer {
-			public final static long LOG_RATE = 500L;
+			public final static long LOG_RATE = 2000L; //let's lower this for now
 			
 			public final static class Keys {
 				public static final String ACC = "acc";
@@ -603,6 +603,8 @@ public class Constants {
 			public class Methods {
 				public final static int GET = 1;
 				public static final int POST = 2;
+				public static final int PUT = 3;
+				
 			}
 			
 			public static final String TAG = "transport_stub";
@@ -611,6 +613,7 @@ public class Constants {
 				public final static String GOOGLE_DRIVE = "google_drive";
 				public final static String GLOBALEAKS = "globaleaks";
 				public final static String APP = "application";
+				public final static String S3 = "s3";
 			}
 			
 			public class ResultCodes {
@@ -624,6 +627,10 @@ public class Constants {
 			
 			public class Globaleaks {
 				public final static String TAG = RepositorySources.GLOBALEAKS;
+			}
+			
+			public class S3 {
+				public final static String TAG = RepositorySources.S3;
 			}
 			
 			public class GoogleDrive {
@@ -682,10 +689,10 @@ public class Constants {
 	}
 
 	public final static class App {
-		public final static String LOG = "******************** InformaCam : MAIN ********************";
+		public final static String LOG = "InformaMain";
 
 		public static final class Camera {
-			public final static String LOG = "******************** InformaCam : CameraActivity ********************";
+			public final static String LOG = "InformaCamera";
 			public final static String TYPE = "cameraType";
 
 			public static final class Type {
@@ -719,7 +726,7 @@ public class Constants {
 		}
 
 		public final static class Transport {
-			public final static String LOG = "******************** InformaCam : Transport ********************";
+			public final static String LOG = "InformaTransport";
 			
 			public final static class Results {
 				public final static String OK_BUT_FAIL = "500: Internal Server Error";
@@ -729,7 +736,7 @@ public class Constants {
 		}
 
 		public final static class Background {
-			public final static String LOG = "******************** InformaCam : BackgroundProcessor ********************";
+			public final static String LOG = "InformaBackground";
 		}
 		
 		public final static class Forms {
@@ -738,7 +745,7 @@ public class Constants {
 		}
 		
 		public final static class Storage {
-			public final static String LOG = "******************** InformaCam : Storage ********************";
+			public final static String LOG = "InformaStorage";
 			public static final String ROOT = "informaCamIOCipher";
 			public static final String IOCIPHER = "ic_data.db";
 			public static final String DUMP = "informaCam";
@@ -775,11 +782,11 @@ public class Constants {
 		}
 
 		public final static class Informa {
-			public final static String LOG = "******************** InformaCam : Informa ********************";
+			public final static String LOG = "InformaCore";
 		}
 
 		public final static class Crypto {
-			public final static String LOG = "******************** InformaCam : Crypto ********************";
+			public final static String LOG = "InformaCrypto";
 			public final static byte[] PASSWORD_SALT = {(byte) 0xA4, (byte) 0x0B, (byte) 0xC8,
 				(byte) 0x34, (byte) 0xD6, (byte) 0x95, (byte) 0xF3, (byte) 0x13};
 			public final static byte[] REGION_SALT = {(byte) 0xC4, (byte) 0xE2, (byte) 0xA4, 
@@ -795,7 +802,7 @@ public class Constants {
 		}
 
 		public final static class ImageCapture {
-			public final static String LOG = "******************** InformaCam : ImageCapture ********************";
+			public final static String LOG = "InformaCapture";
 			public final static int ROUTE = Codes.Routes.IMAGE_CAPTURE;
 		}
 	}
