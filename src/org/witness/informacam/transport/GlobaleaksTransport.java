@@ -15,10 +15,9 @@ import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
-import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 
@@ -151,7 +150,7 @@ public class GlobaleaksTransport extends Transport {
 				 */
 
 				try {
-					JSONObject submissionResult = (JSONObject) doPut(submission, repository.asset_root + "/submission/" + submission.submission_gus);
+					JSONObject submissionResult = (JSONObject) doPut(submission.asJson().toString().getBytes(), repository.asset_root + "/submission/" + submission.submission_gus, MimeType.JSON);
 					if(submissionResult != null) {
 						submission.inflate(submissionResult);
 				//		Logger.d(LOG, "OMG HOORAY:\n" + submission.asJson().toString());

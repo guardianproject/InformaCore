@@ -4,13 +4,12 @@ import info.guardianproject.onionkit.ui.OrbotHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -22,7 +21,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
@@ -381,8 +379,14 @@ public class Transport extends IntentService {
 		return null;
 	}
 	
-	protected Object doPut(Model putData, String urlString) throws IOException {
+	protected Object doPut(byte[] putData, String urlString, String mimeType) throws IOException {
 	
+		ByteArrayInputStream in = new ByteArrayInputStream(putData);
+		return doPut(in, urlString, mimeType);
+	}
+	
+	protected Object doPut(InputStream in, String urlString, String mimeType) throws IOException {
+		
 		boolean useTorProxy = false;
 		
 		if (urlString.toLowerCase().contains(URL_USE_TOR_STRING))
@@ -390,19 +394,39 @@ public class Transport extends IntentService {
 		
 		HttpURLConnection http = buildConnection(urlString, useTorProxy);
 		
-		//http.setDoOutput(true);
 		http.setRequestMethod("PUT");
-		http.setRequestProperty("Content-Type", MimeType.JSON);
-		http.getOutputStream().write(putData.asJson().toString().getBytes());
+		http.setRequestProperty("Content-Type", mimeType);
+		
+		http.setUseCaches(false);
 		
 		http.connect();
 		
-		//Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-		//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		BufferedOutputStream out = new BufferedOutputStream(http.getOutputStream());
+	
+		int DEFAULT_BUFFER_SIZE = 1024*4;
+		
+		byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+		int count = 0;
+		int n = 0;
+		int totalAvail = in.available();
+		
+		while (-1 != (n = in.read(buffer))) {
+			out.write(buffer, 0, n);
+			count += n;
+			updateProgress (count, totalAvail);
+		}
+		
+		in.close();
+		//Logger.d(LOG, "[... data ...]");
+		
+		//Logger.d(LOG, contentBuffer.get(1).toString());
+		out.flush();
+		
+		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
+		Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 		
 		if(http.getResponseCode() > -1) {
 			InputStream is = new BufferedInputStream(http.getInputStream());
-			
 			return(parseResponse(is));
 		}
 			
@@ -469,6 +493,7 @@ public class Transport extends IntentService {
 			}
 			
 			transportStub.lastResult = lastResult.toString();
+			return lastResult.toString();
 		} catch (IOException e) {
 			Logger.e(LOG, e);
 		}
