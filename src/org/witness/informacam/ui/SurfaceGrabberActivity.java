@@ -45,6 +45,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 	private final static String LOG = App.ImageCapture.LOG;
 
+	private int mRotation = 0;
+	
 	@SuppressWarnings("deprecation")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -164,9 +166,9 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 			Camera.Parameters params = camera.getParameters();
 			params.setPictureSize(size.width, size.height);
-			params.setJpegQuality(80);
-			params.setJpegThumbnailQuality(80);
-
+			params.setJpegQuality(100);
+			params.setJpegThumbnailQuality(100);
+			params.setRotation(mRotation); //set rotation to save the picture
 
 			// TODO: set the camera image size that is uniform and small.
 			camera.setParameters(params);
@@ -265,14 +267,15 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	         case Surface.ROTATION_270: degrees = 270; break;
 	     }
 
-	     int result;
+	     int mRotation;
+	     
 	     if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) 
 	     {
-	         result = (cameraInfo.orientation + degrees) % 360;
-	         result = (360 - result) % 360;  // compensate the mirror
+	    	 mRotation = (cameraInfo.orientation + degrees) % 360;
+	    	 mRotation = (360 - mRotation) % 360;  // compensate the mirror
 	     } else {  // back-facing
-	         result = (cameraInfo.orientation - degrees + 360) % 360;
+	    	 mRotation = (cameraInfo.orientation - degrees + 360) % 360;
 	     }
-	     camera.setDisplayOrientation(result);
+	     camera.setDisplayOrientation(mRotation);
 	}
 }
