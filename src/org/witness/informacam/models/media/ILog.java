@@ -2,13 +2,13 @@ package org.witness.informacam.models.media;
 
 import info.guardianproject.iocipher.File;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringBufferInputStream;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +34,6 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
@@ -141,9 +140,8 @@ public class ILog extends IMedia {
 	}
 	
 	
-	@SuppressLint("HandlerLeak")
 	@Override
-	public IAsset export(final Context context, Handler h, final IOrganization organization, final boolean share)
+	public IAsset export(final Context context, Handler h, final IOrganization organization, final boolean isLocalShare, final boolean doSubmission)
 			throws FileNotFoundException {
 		
 		InformaCam informaCam = InformaCam.getInstance();
@@ -188,7 +186,8 @@ public class ILog extends IMedia {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 
-			j3mZip.put("log.j3m", new ByteArrayInputStream(j3mObject.toString().getBytes()));
+			//TODO should this be named something unique instead of just "log"?
+			j3mZip.put("log.j3m", new StringBufferInputStream(j3mObject.toString()));
 
 			progress += 5;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
@@ -203,6 +202,8 @@ public class ILog extends IMedia {
 				
 				int progressIncrement = (int) (50/(attachedMedia.size() * 2));
 	
+				boolean doMediaSubmission = false; //don't submit media individually
+				
 				for(final String s : attachedMedia) {
 					
 					IMedia m = InformaCam.getInstance().mediaManifest.getById(s);
@@ -215,7 +216,7 @@ public class ILog extends IMedia {
 						m.associatedCaches.addAll(associatedCaches);
 					
 					try {
-						IAsset assetExport = m.export(context, h, organization, share);
+						IAsset assetExport = m.export(context, h, organization, isLocalShare, doMediaSubmission);
 						
 						if (assetExport.source == Type.IOCIPHER)
 						{
@@ -238,16 +239,15 @@ public class ILog extends IMedia {
 				}
 			} 
 			
-			java.io.File fileExport = sealLog(share, organization, notification);
+			java.io.File fileExport = sealLog(isLocalShare, organization, notification);
 			
-			if (share && h != null)
+			if (h != null)
 			{
 				Message msgExportComplete = new Message();
 				msgExportComplete.what = 999;
 				msgExportComplete.getData().putString("file", fileExport.getAbsolutePath());
-				
-				if (h != null)
-					h.sendMessage(msgExportComplete);
+				msgExportComplete.getData().putBoolean("localShare", isLocalShare);
+				h.sendMessage(msgExportComplete);
 			}
 
 			IAsset assetExport = new IAsset();

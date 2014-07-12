@@ -3,12 +3,15 @@ package org.witness.informacam.models.media;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringBufferInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
@@ -465,16 +468,16 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IAsset export(Context context, Handler h) throws FileNotFoundException {
-		return export(context, h, null, true);
+		return export(context, h, null, true, false);
 	}
 
 	public IAsset export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
-		return export(context, h, organization, false);
+		return export(context, h, organization, false, true);
 	}
 
-	public IAsset export(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h, IOrganization organization, boolean isLocalShare, boolean doSubmission) throws FileNotFoundException {
 		
-		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		//Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
@@ -533,14 +536,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
-			byte[] j3mBytes = j3mObject.toString().getBytes();
-
 			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
 			
 			if(!debugMode) {
-				// gzip *FIRST
-				j3mBytes = IOUtility.gzipBytes(j3mBytes);
-				
 				
 				OutputStream os = null;
 				
@@ -549,8 +547,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				else if (j3mAsset.source == Type.IOCIPHER)
 					os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
 				
-				os = new Base64OutputStream(os, Base64.DEFAULT);
-				ByteArrayInputStream is = new ByteArrayInputStream(j3mBytes);
+				ByteArrayInputStream is = new ByteArrayInputStream(j3mObject.toString().getBytes());
 				
 				// encrypt if the organization is not null
 				if(organization != null)
@@ -559,7 +556,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				}
 				else
 				{				
-					IOUtils.copy(is, os);
+					IOUtils.copyLarge(is, os);
 				}	
 				
 				os.flush();
@@ -572,23 +569,22 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
 			notification.generateId();
 			notification.mediaId = this._id;
-			
+
 			ITransportStub submission = null;
 			int exportDestination = Type.IOCIPHER;
-			if(share) {
+			if(isLocalShare) {
 				exportDestination = Type.FILE_SYSTEM;
 				notification.type = Models.INotification.Type.SHARED_MEDIA;
 			} else {
+
 				if(!(Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 					exportDestination = Type.FILE_SYSTEM;
 				}
 				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 				
-				
-				if(organization != null) {
+				if(organization != null && doSubmission) {
 					notification.taskComplete = false;
 					informaCam.addNotification(notification, h);
-					
 					submission = new ITransportStub(organization, notification);
 				}
 			}
@@ -675,8 +671,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
-		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
+	//	Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
 		int progress = 0;
@@ -734,10 +730,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
-			byte[] j3mBytes = j3mObject.toString().getBytes();
-
 			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
-			informaCam.ioService.saveBlob(j3mBytes, j3mAsset);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
@@ -746,18 +739,28 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			if(!debugMode) {
 				
-				// maybe encrypt
-				if(organization != null) {
-					
-					// gzip *FIRST
-					j3mBytes = IOUtility.gzipBytes(j3mBytes);
-
-					j3mBytes = EncryptionUtility.encrypt(j3mBytes, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
-
-					// base64
-					j3mBytes = Base64.encode(j3mBytes, Base64.DEFAULT);
-
+				OutputStream os = null;
+				
+				if (j3mAsset.source == Type.FILE_SYSTEM)
+					os = new java.io.FileOutputStream(j3mAsset.path);
+				else if (j3mAsset.source == Type.IOCIPHER)
+					os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
+				
+				//os = new Base64OutputStream(new GZIPOutputStream(os), Base64.DEFAULT);
+				ByteArrayInputStream is = new ByteArrayInputStream(j3mObject.toString().getBytes());
+				
+				// encrypt if the organization is not null
+				if(organization != null)
+				{					
+					EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
 				}
+				else
+				{				
+					IOUtils.copyLarge(is, os);
+				}	
+				
+				os.flush();
+				os.close();
 				
 			}
 			

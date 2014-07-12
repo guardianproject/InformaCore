@@ -84,7 +84,7 @@ public class ImageConstructor {
 	}
 
 	public IAsset finish(boolean intentedForIOCipher) {
-		Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
+		//Log.d(LOG, "FINISHING UP IMAGE CONSTRUCTOR... (destination " + destinationAsset.path + ")");
 		
 		int storageType = Storage.Type.FILE_SYSTEM;
 		
