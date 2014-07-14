@@ -141,7 +141,7 @@ public class ILog extends IMedia {
 	
 	
 	@Override
-	public IAsset export(final Context context, Handler h, final IOrganization organization, final boolean isLocalShare, final boolean doSubmission)
+	public IAsset export(final Context context, Handler h, final IOrganization organization, final boolean includeSensorLogs, final boolean isLocalShare, final boolean doSubmission)
 			throws FileNotFoundException {
 		
 		InformaCam informaCam = InformaCam.getInstance();
@@ -156,7 +156,9 @@ public class ILog extends IMedia {
 		// append its data sensory data, form data, etc.
 		mungeData();
 		
-		mungeSensorLogs(h);
+		if (includeSensorLogs)
+			mungeSensorLogs(h);
+		
 		progress += 5;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 		
@@ -203,6 +205,7 @@ public class ILog extends IMedia {
 				int progressIncrement = (int) (50/(attachedMedia.size() * 2));
 	
 				boolean doMediaSubmission = false; //don't submit media individually
+				boolean includeMediaSensorLogs = false; //we have all the sensor data in the main log
 				
 				for(final String s : attachedMedia) {
 					
@@ -216,7 +219,7 @@ public class ILog extends IMedia {
 						m.associatedCaches.addAll(associatedCaches);
 					
 					try {
-						IAsset assetExport = m.export(context, h, organization, isLocalShare, doMediaSubmission);
+						IAsset assetExport = m.export(context, h, organization, includeMediaSensorLogs, isLocalShare, doMediaSubmission);
 						
 						if (assetExport.source == Type.IOCIPHER)
 						{

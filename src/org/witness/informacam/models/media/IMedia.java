@@ -468,14 +468,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IAsset export(Context context, Handler h) throws FileNotFoundException {
-		return export(context, h, null, true, false);
+		return export(context, h, null, true, true, false);
 	}
 
 	public IAsset export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
-		return export(context, h, organization, false, true);
+		return export(context, h, organization, true, false, true);
 	}
 
-	public IAsset export(Context context, Handler h, IOrganization organization, boolean isLocalShare, boolean doSubmission) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h, IOrganization organization, boolean includeSensorLogs, boolean isLocalShare, boolean doSubmission) throws FileNotFoundException {
 		
 		//Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
@@ -495,7 +495,9 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
-		mungeSensorLogs();
+		if (includeSensorLogs)
+			mungeSensorLogs();
+		
 		progress += 10;
 		sendMessage(Codes.Keys.UI.PROGRESS, progress);
 
