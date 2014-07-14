@@ -55,7 +55,7 @@ public class IForm extends Model implements Serializable {
 		super();
 		
 		this.inflate(model.asJson());
-		Logger.d(LOG, "THIS FORM: " + asJson().toString());
+//		Logger.d(LOG, "THIS FORM: " + asJson().toString());
 		
 		this.a = a;
 		String[] answers = null;
@@ -66,7 +66,7 @@ public class IForm extends Model implements Serializable {
 			int answer = 0;
 			for(QD qd : fw.questions) {
 				answers[answer] = qd.initialValue != null ? qd.initialValue : "";
-				Log.d(LOG, "this has initial value? " + String.valueOf(qd.initialValue));
+			//	Log.d(LOG, "this has initial value? " + String.valueOf(qd.initialValue));
 				answer++;
 			}
 		} catch (FileNotFoundException e) {
@@ -179,9 +179,9 @@ public class IForm extends Model implements Serializable {
 	}
 
 	public QD getQuestionDefByTitleId(String questionId) {
-		Logger.d(LOG, "looking for question id " + questionId + " among " + fw.questions.size() + " forms");
+//		Logger.d(LOG, "looking for question id " + questionId + " among " + fw.questions.size() + " forms");
 		for(QD qd : fw.questions) {
-			Log.d(LOG, "QUESTION DEF ID: " + qd.id);
+	//		Log.d(LOG, "QUESTION DEF ID: " + qd.id);
 			if(qd.id.equals(questionId)) {
 				return qd;
 			}
