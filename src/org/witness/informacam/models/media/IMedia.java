@@ -49,6 +49,8 @@ import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
+import org.witness.informacam.utils.Constants.Suckers.Geo;
+import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
@@ -403,6 +405,30 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		mungeSensorLogs(null);
 	}
 
+	public String getSimpleLocationString ()
+	{
+		
+		if (data == null || data.sensorCapture == null)
+		{
+			mungeSensorLogs ();
+		}
+		
+		for (ISensorCapture sc : data.sensorCapture)
+		{
+			if (sc.sensorPlayback.has(Geo.Keys.GPS_COORDS))
+			{
+				try
+				{
+					return sc.sensorPlayback.getString(Geo.Keys.GPS_COORDS);
+				}
+				catch (Exception e){}
+			}
+		}
+	
+		
+		return null;
+	}
+	
 	protected void mungeSensorLogs(Handler h) {
 		if(data == null) {
 			data = new IData();
