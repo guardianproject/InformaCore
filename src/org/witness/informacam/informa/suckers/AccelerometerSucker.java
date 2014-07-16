@@ -4,8 +4,8 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.TimerTask;
 
-import org.json.JSONException;
 import org.witness.informacam.informa.SensorLogger;
+import org.witness.informacam.json.*;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Accelerometer;
@@ -16,7 +16,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
-import android.view.Surface;
 
 @SuppressWarnings("rawtypes")
 public class AccelerometerSucker extends SensorLogger implements SensorEventListener {

@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.json.JSONException;
-import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONException;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.j3m.IGenealogy;
 import org.witness.informacam.models.j3m.IIntakeData;
@@ -94,7 +93,7 @@ public class EntryJob extends BackgroundTask {
 
 						if(image.analyze()) {
 							image.intakeData = new IIntakeData(image.dcimEntry.timeCaptured, image.dcimEntry.timezone, timeOffset, ArrayUtils.toString(image.genealogy.hashes), image.dcimEntry.cameraComponent);
-							Logger.d(LOG, image.intakeData.asJson().toString());
+							//Logger.d(LOG, image.intakeData.asJson().toString());
 							
 							informaCam.mediaManifest.addMediaItem(image);
 							isFinishedProcessing = true;
@@ -106,7 +105,7 @@ public class EntryJob extends BackgroundTask {
 
 						if(video.analyze()) {
 							video.intakeData = new IIntakeData(video.dcimEntry.timeCaptured, video.dcimEntry.timezone, timeOffset, ArrayUtils.toString(video.genealogy.hashes), video.dcimEntry.cameraComponent);
-							Logger.d(LOG, video.intakeData.asJson().toString());
+							//Logger.d(LOG, video.intakeData.asJson().toString());
 
 							informaCam.mediaManifest.addMediaItem(video);
 							isFinishedProcessing = true;
@@ -186,7 +185,7 @@ public class EntryJob extends BackgroundTask {
 				entry.exif.orientation = ExifInterface.ORIENTATION_NORMAL;
 			}
 
-			Logger.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
+			//Logger.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
 			mmr.release();
 		}
 	}
@@ -294,7 +293,7 @@ public class EntryJob extends BackgroundTask {
 			entry.uri = IOUtility.getUriFromFile(informaCam, Uri.parse(entry.authority), file).toString();
 		}
 
-		Logger.d(LOG, "analyzing: " + entry.asJson().toString());
+		//Logger.d(LOG, "analyzing: " + entry.asJson().toString());
 
 		// Make folder for assets according to preferences
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
@@ -328,13 +327,14 @@ public class EntryJob extends BackgroundTask {
 		//XXX: get preference here, save and delete original if encryptOriginals
 		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 			Logger.d(LOG, "COPY AND DELETE...");
-			IAsset publicAsset = new IAsset(entry.fileAsset);
-			try {
+			try
+			{
+				IAsset publicAsset = new IAsset(entry.fileAsset);
 				if(entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash)) {
-					Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
+				//	Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
 					informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
 				}
-			} catch (IOException e) {
+			} catch (Exception e) {
 				Logger.e(LOG, e);
 			}
 		}

@@ -1,6 +1,5 @@
 package org.witness.informacam.informa.suckers;
 
-import org.json.JSONException;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
@@ -71,7 +70,7 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 			if (mLastLocation.hasBearing())			
 				iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
 			
-			} catch (JSONException e) {
+			} catch (Exception e) {
 				Log.d(LOG,"json exception in location data",e);
 			}
 			

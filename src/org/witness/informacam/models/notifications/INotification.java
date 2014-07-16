@@ -5,9 +5,9 @@ import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.transport.ITransportStub;
@@ -88,7 +88,7 @@ public class INotification extends Model implements Serializable {
 		this._id = String.valueOf(timestamp);
 	}
 	
-	public void retry() {
+	public void retry() throws InstantiationException, IllegalAccessException {
 		if(!canRetry) {
 			return;
 		}
@@ -103,7 +103,7 @@ public class INotification extends Model implements Serializable {
 		
 	}
 
-	public void save() {
+	public void save() throws InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.notificationsManifest.getById(this._id).inflate(this);
 		informaCam.notificationsManifest.save();

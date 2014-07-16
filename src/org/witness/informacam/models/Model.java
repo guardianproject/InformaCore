@@ -11,19 +11,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
+import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.utils.Constants.App;
+
 import android.util.Log;
 
 public class Model extends JSONObject {
 	public final static String LOG = App.LOG;
 	Field[] fields;
 
-	public void inflate(byte[] jsonStringBytes) {
+	public void inflate(byte[] jsonStringBytes) throws InstantiationException, IllegalAccessException {
 		try {
 			if(jsonStringBytes != null) {
 				inflate((JSONObject) new JSONTokener(new String(jsonStringBytes)).nextValue());
@@ -110,17 +111,15 @@ public class Model extends JSONObject {
 		return recast;
 	}
 	
-	public void inflate(Model model) {
+	public void inflate(Model model) throws InstantiationException, IllegalAccessException {
 		inflate(model.asJson());
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void inflate(JSONObject values) {
+	public void inflate(JSONObject values) throws InstantiationException, IllegalAccessException {
 		fields = this.getClass().getFields();
-		//Log.d(LOG, "MODEL:\n" + values.toString());
-
 		for(Field f : fields) {
-			try {
+			
 				f.setAccessible(true);
 				if(values.has(f.getName())) {
 					boolean isModel = false;
@@ -158,9 +157,10 @@ public class Model extends JSONObject {
 					} else if(f.getType() == byte[].class) { 
 						f.set(this, values.getString(f.getName()).getBytes());
 					} else if(f.getType() == float[].class) {
-						f.set(this, parseJSONAsFloatArray(values.getString(f.getName())));
+						//f.set(this, parseJSONAsFloatArray(values.getString(f.getName())));
+						f.set(this, parseJSONAsFloatArray(values.getJSONArray(f.getName()).toString()));
 					} else if(f.getType() == int[].class) {
-						f.set(this, parseJSONAsIntArray(values.getString(f.getName())));
+						f.set(this, parseJSONAsIntArray(values.getJSONArray(f.getName()).toString()));
 					} else if(isModel) {						
 						Class clz = (Class<?>) f.getType();
 						// if clz has less fields than the json object, this could be a subclass
@@ -176,19 +176,7 @@ public class Model extends JSONObject {
 						f.set(this, values.get(f.getName()));
 					}
 				}
-			} catch (IllegalArgumentException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			} catch (InstantiationException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+		
 		}
 	}
 	

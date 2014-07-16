@@ -4,8 +4,8 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.media.IRegion;
@@ -32,11 +32,12 @@ public class IRegionData extends Model {
 			if(values.has(Models.IRegion.INDEX)) {
 				values = values.put(Models.IRegion.INDEX, Integer.toString(values.getInt(Models.IRegion.INDEX)));
 			}
-		} catch (JSONException e) {
+		
+		
+			super.inflate(values);
+		} catch (Exception e) {
 			Logger.e(LOG, e);
 		}
-		
-		super.inflate(values);
 	}
 	
 	@Override

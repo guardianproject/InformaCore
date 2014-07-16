@@ -25,18 +25,18 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.utils.Constants.App;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Logger;
 import org.xml.sax.SAXException;
 
 import android.content.ContentResolver;

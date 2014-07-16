@@ -28,7 +28,7 @@ public class IExif extends Model implements Serializable {
 		super();
 	}
 	
-	public IExif(IExif exif) {
+	public IExif(IExif exif) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(exif);
 	}

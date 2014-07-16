@@ -15,15 +15,15 @@ import java.util.List;
 import java.util.Vector;
 
 import org.spongycastle.openpgp.PGPException;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.crypto.CredentialManager;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.crypto.SignatureService;
 import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
+import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
@@ -48,13 +48,13 @@ import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
-import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.ListAdapterListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
+import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 import org.witness.informacam.utils.InnerBroadcaster;
@@ -248,7 +248,7 @@ public class InformaCam extends Application {
 			Logger.d(LOG, "CONSIDERED HANDLED:\n" + e.toString());
 			startCode = INIT;
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Logger.e(LOG, e);
 			startCode = INIT;
 		}
@@ -490,7 +490,7 @@ public class InformaCam extends Application {
 				model.inflate(bytes);
 			}
 
-		} catch(NullPointerException e) {
+		} catch(Exception e) {
 			Logger.e(LOG, e);
 		}
 
@@ -524,7 +524,7 @@ public class InformaCam extends Application {
 			mEventListener.onUpdate(message);
 	}
 
-	public void updateNotification(INotification notification, Handler callback) {
+	public void updateNotification(INotification notification, Handler callback) throws InstantiationException, IllegalAccessException {
 		notificationsManifest.getById(notification._id).inflate(notification.asJson());
 		saveState(notificationsManifest);
 		
@@ -595,15 +595,13 @@ public class InformaCam extends Application {
 					ByteArrayOutputStream baos = IOUtility.unGZipBytes(Base64.decode(forms.getString(f).getBytes(), Base64.DEFAULT));
 					IForm form = FormUtility.importAndParse(new ByteArrayInputStream(baos.toByteArray()));
 					if(form != null) {
-						Logger.d(LOG, String.format("adding form\n%s", form.asJson().toString()));
+				//		Logger.d(LOG, String.format("adding form\n%s", form.asJson().toString()));
 						forms.put(f, form.asJson());
-					} else {
-						Logger.d(LOG, String.format("form %d was null!?", f));
-					}
+					} 
 					baos.close();
 				} catch (JSONException e) {
 					Logger.e(LOG, e);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					Logger.e(LOG, e);
 				}
 			}
@@ -644,11 +642,11 @@ public class InformaCam extends Application {
 			}
 			
 			organization = new IOrganization(ictd);
-			Logger.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());
+		//	Logger.d(LOG, "HERE IS NEW ORG:\n" + organization.asJson().toString());
 		} catch(JSONException e) {
 			Logger.e(LOG, e);
 			return null;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Logger.e(LOG, e);
 		}
 		
@@ -716,7 +714,7 @@ public class InformaCam extends Application {
 		return Intent.createChooser(intent, getString(R.string.send));
 	}
 	
-	public void importAsset(String assetPath, String destinationPath, int assetSource, int destinationSource, Model model) {
+	public void importAsset(String assetPath, String destinationPath, int assetSource, int destinationSource, Model model) throws InstantiationException, IllegalAccessException {
 		byte[] data = ioService.getBytes(assetPath, assetSource);
 		if(!Arrays.equals(data, new byte[0])) {
 			if(model != null) {

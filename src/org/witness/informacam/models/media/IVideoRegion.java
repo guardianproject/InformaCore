@@ -27,7 +27,7 @@ public class IVideoRegion extends IRegion {
 		super();
 	}
 	
-	public IVideoRegion(IRegion region) {
+	public IVideoRegion(IRegion region) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(region);
 	}
@@ -118,7 +118,7 @@ public class IVideoRegion extends IRegion {
 				{
 					Log.d(LOG, "lower end size: " + lowerEnd.size());
 					lower = Iterables.getLast(lowerEnd);
-					Log.d(LOG, "LOWER:\n" + lower.asJson().toString());
+				//	Log.d(LOG, "LOWER:\n" + lower.asJson().toString());
 				}
 				catch (NoSuchElementException e)
 				{

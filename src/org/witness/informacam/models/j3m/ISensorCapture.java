@@ -3,13 +3,13 @@ package org.witness.informacam.models.j3m;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Logger;
-import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
+import org.witness.informacam.utils.MediaHasher;
 
 public class ISensorCapture extends Model {
 	public long timestamp = 0L;

@@ -2,8 +2,8 @@ package org.witness.informacam.models.credentials;
 
 import java.io.Serializable;
 
-import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 
 import android.content.SharedPreferences;
@@ -32,7 +32,7 @@ public class IUser extends Model implements Serializable {
 		super();
 	}
 	
-	public IUser(JSONObject user) {
+	public IUser(JSONObject user) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(user);
 	}

@@ -33,7 +33,7 @@ public class IDCIMEntry extends Model implements Serializable {
 		super();
 	}
 	
-	public IDCIMEntry(Object dcimEntry) {
+	public IDCIMEntry(Object dcimEntry) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(((Model) dcimEntry).asJson());
 	}

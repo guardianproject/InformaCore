@@ -2,13 +2,11 @@ package org.witness.informacam.ui.adapters;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.witness.informacam.R;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.App;
 
 import android.app.Activity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -69,12 +67,9 @@ public class OrganizationAdapter extends BaseAdapter {
 			@Override
 			public void onClick(View v) {
 				if(((CheckBox) v).isChecked()) {
-					try {
+					
 						organizations.get(position).put("isSelected", ((CheckBox) v).isChecked());
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					}
+					
 				}
 				
 			}

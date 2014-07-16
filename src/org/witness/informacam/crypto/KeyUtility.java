@@ -18,10 +18,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.spongycastle.bcpg.ArmoredOutputStream;
 import org.spongycastle.bcpg.BCPGOutputStream;
 import org.spongycastle.bcpg.CompressionAlgorithmTags;
@@ -48,6 +44,10 @@ import org.spongycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.spongycastle.openpgp.PGPUtil;
 import org.spongycastle.util.encoders.Hex;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
+import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
 import org.witness.informacam.storage.IOUtility;
@@ -145,7 +145,8 @@ public class KeyUtility {
 		informaCam.update(data);
 
 		try {
-			byte[] baseImageBytes = informaCam.ioService.getBytes(informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE).getString(0), Storage.Type.INTERNAL_STORAGE);
+			String basePath = informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE).getString(0);
+			byte[] baseImageBytes = informaCam.ioService.getBytes(basePath, Storage.Type.INTERNAL_STORAGE);
 
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);

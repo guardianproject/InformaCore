@@ -1,6 +1,7 @@
 package org.witness.informacam.models.media;
 
 import info.guardianproject.iocipher.File;
+import info.guardianproject.iocipher.FileWriter;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -8,18 +9,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringBufferInputStream;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONObject;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.j3m.IDCIMEntry;
 import org.witness.informacam.models.notifications.INotification;
 import org.witness.informacam.models.organizations.IOrganization;
@@ -68,12 +69,13 @@ public class ILog extends IMedia {
 		this.rootFolder = rootFolder.getAbsolutePath();
 	}
 
-	public ILog(IMedia media) {
+	public ILog(IMedia media) throws InstantiationException, IllegalAccessException {
 		super();
+		
 		inflate(media.asJson());
 	}
 	
-	public java.io.File sealLog(boolean doLocalShare, IOrganization organization, INotification notification) throws IOException, NoSuchProviderException, PGPException {
+	public java.io.File sealLog(boolean doLocalShare, IOrganization organization, INotification notification) throws IOException, NoSuchProviderException, PGPException, InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();
 		
 		java.io.File log = null;
@@ -142,11 +144,10 @@ public class ILog extends IMedia {
 	
 	@Override
 	public IAsset export(final Context context, Handler h, final IOrganization organization, final boolean includeSensorLogs, final boolean isLocalShare, final boolean doSubmission)
-			throws FileNotFoundException {
+			throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		
 		InformaCam informaCam = InformaCam.getInstance();
 		
-	//	Log.d(LOG, "exporting a log!");
 		j3mZip = new HashMap<String, InputStream>();
 
 		final INotification notification = new INotification();
@@ -185,11 +186,26 @@ public class ILog extends IMedia {
 			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
 			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
 			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(informaCam.signatureService.signData(j3m.toString().getBytes())));
+			
+			info.guardianproject.iocipher.File fileTmp = new info.guardianproject.iocipher.File("tmp-export");
+			info.guardianproject.iocipher.FileWriter fwTmp = new info.guardianproject.iocipher.FileWriter(fileTmp);
+			j3m.write(fwTmp);
+			fwTmp.flush();
+			fwTmp.close();
+			
+			ByteArrayOutputStream bSig = new ByteArrayOutputStream();
+			informaCam.signatureService.signData(new info.guardianproject.iocipher.FileInputStream(fileTmp),bSig);
+			fileTmp.delete();
+			
+			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(bSig.toByteArray()));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 
-			//TODO should this be named something unique instead of just "log"?
-			j3mZip.put("log.j3m", new StringBufferInputStream(j3mObject.toString()));
+			fwTmp = new info.guardianproject.iocipher.FileWriter(fileTmp);
+			j3mObject.write(fwTmp);
+			fwTmp.flush();
+			fwTmp.close();
+			
+			j3mZip.put("log.j3m", new info.guardianproject.iocipher.FileInputStream(fileTmp));
 
 			progress += 5;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress);

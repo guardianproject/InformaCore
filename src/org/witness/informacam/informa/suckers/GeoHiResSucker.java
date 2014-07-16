@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimerTask;
 
-import org.json.JSONException;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -129,7 +128,7 @@ public class GeoHiResSucker extends GeoSucker implements LocationListener {
 				if (lastNmeaMessage != null)
 					iLogPack.put(Geo.Keys.NMEA_MESSAGE, lastNmeaMessage);				
 				
-			} catch (JSONException e) {
+			} catch (Exception e) {
 				Log.d(LOG,"json exception in location data",e);
 			}
 			

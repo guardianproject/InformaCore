@@ -22,12 +22,12 @@ public class ITransportManifest extends Model implements Serializable {
 		super();
 	}
 	
-	public ITransportManifest(ITransportManifest transportManifest) {
+	public ITransportManifest(ITransportManifest transportManifest) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(transportManifest);
 	}
 	
-	public void add(ITransportStub transportStub) {
+	public void add(ITransportStub transportStub) throws InstantiationException, IllegalAccessException {
 		if(getById(transportStub.id) == null) {
 			transports.add(transportStub);
 		} else {

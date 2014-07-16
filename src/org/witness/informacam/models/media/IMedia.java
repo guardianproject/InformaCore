@@ -3,27 +3,24 @@ package org.witness.informacam.models.media;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringBufferInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
-import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
+import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.j3m.IDCIMEntry;
@@ -50,7 +47,6 @@ import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
-import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
@@ -60,7 +56,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
-import android.util.Base64OutputStream;
 import android.util.Log;
 
 public class IMedia extends Model implements MetadataEmbededListener {
@@ -111,7 +106,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return InformaCam.getInstance().mediaManifest.removeMediaItem(this);
 	}
 	
-	public IForm attachForm(Activity a, IForm form) {
+	public IForm attachForm(Activity a, IForm form) throws InstantiationException, IllegalAccessException {
 		IRegion region = addRegion(a, null);
 		
 		form = new IForm(form, a);		
@@ -119,7 +114,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return region.addForm(form);
 	}
 	
-	public List<IForm> getForms(Activity a) {
+	public List<IForm> getForms(Activity a) throws InstantiationException, IllegalAccessException {
 		IRegion region = getTopLevelRegion();
 		List<IForm> forms = new ArrayList<IForm>();
 		if (region != null)	{
@@ -131,7 +126,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return forms;
 	}
 	
-	public IForm getForm(Activity a) {
+	public IForm getForm(Activity a) throws InstantiationException, IllegalAccessException {
 		IRegion region = getTopLevelRegion();
 		
 		IForm form = region.associatedForms.get(0);
@@ -140,7 +135,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return new IForm(form, a, answerBytes);
 	}
 	
-	public IRegion getTopLevelRegion() {
+	public IRegion getTopLevelRegion() throws InstantiationException, IllegalAccessException {
 		return getRegionAtRect();
 	}
 	
@@ -156,20 +151,20 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return innerLevelFormRegions;
 	}
 
-	public IRegion getRegionAtRect() {
+	public IRegion getRegionAtRect() throws InstantiationException, IllegalAccessException {
 		return getRegionAtRect(0, 0, 0, 0, -1, false);
 	}
 
-	public IRegion getRegionAtRect(IRegionDisplay regionDisplay) {
+	public IRegion getRegionAtRect(IRegionDisplay regionDisplay) throws InstantiationException, IllegalAccessException {
 		return getRegionAtRect(regionDisplay, 0);
 	}
 
-	public IRegion getRegionAtRect(IRegionDisplay regionDisplay, long timestamp) {
+	public IRegion getRegionAtRect(IRegionDisplay regionDisplay, long timestamp) throws InstantiationException, IllegalAccessException {
 		IRegionBounds bounds = regionDisplay.bounds;
 		return getRegionAtRect(bounds.displayTop, bounds.displayLeft, bounds.displayWidth, bounds.displayHeight, timestamp, false);
 	}
 
-	public IRegion getRegionAtRect(int top, int left, int width, int height, long timestamp, boolean byRealHeight) {
+	public IRegion getRegionAtRect(int top, int left, int width, int height, long timestamp, boolean byRealHeight) throws InstantiationException, IllegalAccessException {
 		if(associatedRegions != null) {
 			for(IRegion region : associatedRegions) {
 				IRegionBounds bounds = null;
@@ -258,7 +253,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return regionsWithForms;
 	}
 
-	public void save() {		
+	public void save() throws InstantiationException, IllegalAccessException {		
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.mediaManifest.getById(_id).inflate(asJson());
 		informaCam.saveState(informaCam.mediaManifest);
@@ -270,7 +265,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public IRegion addRegion(Activity activity, IRegionDisplayListener listener) {
+	public IRegion addRegion(Activity activity, IRegionDisplayListener listener) throws InstantiationException, IllegalAccessException {
 		try {
 			return addRegion(activity, 0, 0, 0, 0, listener);
 		} catch (JSONException e) {
@@ -280,11 +275,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return null;
 	}
 
-	public IRegion addRegion(Activity activity, int top, int left, int width, int height, IRegionDisplayListener listener) throws JSONException {
+	public IRegion addRegion(Activity activity, int top, int left, int width, int height, IRegionDisplayListener listener) throws JSONException, InstantiationException, IllegalAccessException {
 		return addRegion(activity, top, left, width, height, -1L, -1L, listener);
 	}
 
-	public IRegion addRegion(Activity activity, int top, int left, int width, int height, long startTime, long endTime, IRegionDisplayListener listener) throws JSONException {
+	public IRegion addRegion(Activity activity, int top, int left, int width, int height, long startTime, long endTime, IRegionDisplayListener listener) throws JSONException, InstantiationException, IllegalAccessException {
 		if(associatedRegions == null) {
 			Logger.d(LOG, "initing associatedRegions");
 			associatedRegions = new ArrayList<IRegion>();
@@ -330,7 +325,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			assignInnerLevelRegionIndexes();
 		}
 		
-		Logger.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
+		//Logger.d(LOG, "added region " + region.asJson().toString() + "\nassociatedRegions size: " + associatedRegions.size());
 
 		return region;
 	}
@@ -372,7 +367,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	@SuppressWarnings("unused")
-	protected void mungeData() throws FileNotFoundException {
+	protected void mungeData() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		if(data == null) {
 			data = new IData();
 		}
@@ -493,15 +488,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 
-	public IAsset export(Context context, Handler h) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		return export(context, h, null, true, true, false);
 	}
 
-	public IAsset export(Context context, Handler h, IOrganization organization) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h, IOrganization organization) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		return export(context, h, organization, true, false, true);
 	}
 
-	public IAsset export(Context context, Handler h, IOrganization organization, boolean includeSensorLogs, boolean isLocalShare, boolean doSubmission) throws FileNotFoundException {
+	public IAsset export(Context context, Handler h, IOrganization organization, boolean includeSensorLogs, boolean isLocalShare, boolean doSubmission) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		
 		//Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
@@ -630,7 +625,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
 			}
 			
-			Logger.d(LOG, "EXPORT ASSET SETTINGS: " + exportAsset.asJson().toString());
+			//Logger.d(LOG, "EXPORT ASSET SETTINGS: " + exportAsset.asJson().toString());
 			constructExport(exportAsset, submission);
 			
 			if(submission != null) {
@@ -698,7 +693,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return null;
 	}
 
-	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException {
+	public boolean exportJ3M(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 	//	Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
@@ -826,10 +821,10 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public String buildJ3M(Context context, boolean signData) throws FileNotFoundException {
+	public String buildJ3M(Context context, boolean signData) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		
 		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-		Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
+	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
 		int progress = 0;
@@ -906,7 +901,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				details.append(this.alias);
 			}
 			details.append(this._id);
-			Logger.d(LOG, this.asJson().toString());
+			//Logger.d(LOG, this.asJson().toString());
 
 			break;
 		}
@@ -978,7 +973,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 	
-	protected void reset() {
+	protected void reset() throws InstantiationException, IllegalAccessException {
 		data.userAppendedData = null;
 		data.sensorCapture = null;
 		
@@ -1007,8 +1002,16 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	@Override
 	public void onMetadataEmbeded(IAsset version) {
-		reset();
-		sendMessage(Models.IMedia.VERSION, version.path);
+		try
+		{
+			reset();
+			sendMessage(Models.IMedia.VERSION, version.path);
+		}
+		catch (Exception e)
+		{
+			Logger.d(LOG,"unable to process IAsset: " + version.name);
+			Logger.e(LOG,e);
+		}
 	}
 	
 	public IAsset addAsset(String name) {

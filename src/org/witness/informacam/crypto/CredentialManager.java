@@ -148,17 +148,25 @@ public class CredentialManager implements ICacheWordSubscriber {
 		boolean hasIOCipher = !initIOCipher;
 		
 		if(initIOCipher) {
-			ICredentials credentials = new ICredentials();
-			credentials.inflate(informaCam.ioService.getBytes(Models.IUser.CREDENTIALS, Type.INTERNAL_STORAGE));
-			
-			SecretKey key = ((PassphraseSecrets) cacheWord.getCachedSecrets()).getSecretKey();
-			byte[] authTokenBytes = AesUtility.DecryptWithKey(key, credentials.iv.getBytes(), credentials.passwordBlock.getBytes());
-			String authToken = new String(authTokenBytes, Wiper.Utf8CharSet);
-			
-			if(authToken != null && informaCam.ioService.initIOCipher(authToken)) {
-				hasIOCipher = true;
-			} else {
-				Log.e(LOG, "COULD NOT FULLY OPEN IOCIPHER AND GET CREDENTIALS AND STUFF");
+			try
+			{
+				ICredentials credentials = new ICredentials();
+				credentials.inflate(informaCam.ioService.getBytes(Models.IUser.CREDENTIALS, Type.INTERNAL_STORAGE));
+				
+				SecretKey key = ((PassphraseSecrets) cacheWord.getCachedSecrets()).getSecretKey();
+				byte[] authTokenBytes = AesUtility.DecryptWithKey(key, credentials.iv.getBytes(), credentials.passwordBlock.getBytes());
+				String authToken = new String(authTokenBytes, Wiper.Utf8CharSet);
+				
+				if(authToken != null && informaCam.ioService.initIOCipher(authToken)) {
+					hasIOCipher = true;
+				} else {
+					Log.e(LOG, "COULD NOT FULLY OPEN IOCIPHER AND GET CREDENTIALS AND STUFF");
+				}
+			}
+			catch (Exception e)
+			{
+				Log.e(LOG, "COULD NOT FULLY OPEN IOCIPHER AND GET CREDENTIALS AND STUFF",e);
+
 			}
 		}
 		
@@ -171,7 +179,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 				this.status = Codes.Status.UNLOCKED;
 				update(Codes.Messages.Home.INIT);
 			}
-			catch (PGPException pge)
+			catch (Exception pge)
 			{
 				throw new RuntimeException("Could not initialize pgp secret key",pge);
 			}

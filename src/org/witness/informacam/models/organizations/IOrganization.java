@@ -3,9 +3,9 @@ package org.witness.informacam.models.organizations;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.json.JSONObject;
+ 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 
@@ -24,12 +24,12 @@ public class IOrganization extends Model implements Serializable {
 		super();
 	}
 	
-	public IOrganization(JSONObject organization) {
+	public IOrganization(JSONObject organization) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(organization);
 	}
 	
-	public void save() {
+	public void save() throws InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.installedOrganizations.getByFingerprint(organizationFingerprint).inflate(this);
 		informaCam.installedOrganizations.save();

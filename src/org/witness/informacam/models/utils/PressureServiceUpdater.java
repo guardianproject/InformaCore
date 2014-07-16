@@ -7,7 +7,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Locale;
 
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONObject;
 
 import android.hardware.SensorManager;
 import android.util.Log;

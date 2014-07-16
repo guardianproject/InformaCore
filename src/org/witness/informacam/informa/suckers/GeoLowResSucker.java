@@ -2,14 +2,12 @@ package org.witness.informacam.informa.suckers;
 
 import java.util.TimerTask;
 
-import org.json.JSONException;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Suckers;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
 
 import android.content.Context;
 import android.location.Criteria;
-import android.location.GpsStatus.NmeaListener;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -87,7 +85,7 @@ public class GeoLowResSucker extends GeoSucker implements LocationListener {
 				if (mLastLocation.hasBearing())			
 					iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
 				
-			} catch (JSONException e) {
+			} catch (Exception e) {
 				Log.d(LOG,"json exception in location data",e);
 			}
 			

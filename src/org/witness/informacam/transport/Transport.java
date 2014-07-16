@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.models.Model;
@@ -42,7 +41,6 @@ import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-@SuppressLint("DefaultLocale")
 public class Transport extends IntentService {
 	
 	ITransportStub transportStub;
@@ -52,8 +50,9 @@ public class Transport extends IntentService {
 	InformaCam informaCam;
 	protected NotificationCompat.Builder mBuilder;
 	protected NotificationManager mNotifyManager;
+	public final static int NOTIFY_ID = 7777;
 	
-	protected final static String LOG = "************************** TRANSPORT **************************";
+	protected final static String LOG = "InformaTRANSPORT";
 	
 	private final static String URL_USE_TOR_STRING = ".onion"; //if you see this in the url string, use the local Tor proxy
 	
@@ -61,7 +60,7 @@ public class Transport extends IntentService {
 		super(name);
 		
 		this.repoName = name;
-	//	Logger.d(LOG, this.repoName);
+		
 		informaCam = InformaCam.getInstance();
 	}
 	
@@ -98,14 +97,14 @@ public class Transport extends IntentService {
 			.setSmallIcon(android.R.drawable.ic_menu_upload);
 		mBuilder.setProgress(100, 0, false);
 		// Displays the progress bar for the first time.
-		mNotifyManager.notify(0, mBuilder.build());
+		mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 		
 		return true;
 	}
 	
 	protected void send() {}
 	
-	protected void finishSuccessfully() {
+	protected void finishSuccessfully() throws InstantiationException, IllegalAccessException {
 		transportStub.resultCode = Models.ITransportStub.ResultCodes.OK;
 		
 		if(transportStub.associatedNotification != null) {
@@ -140,7 +139,7 @@ public class Transport extends IntentService {
 			mBuilder.setAutoCancel(true);
 			mBuilder.setProgress(0, 0, false);
 			// Displays the progress bar for the first time.
-			mNotifyManager.notify(0, mBuilder.build());
+			mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 		}
 		
 		if(informaCam.getEventListener() != null) {
@@ -162,9 +161,16 @@ public class Transport extends IntentService {
 		
 		if(transportStub.associatedNotification != null) {
 			transportStub.associatedNotification.canRetry = true;
-			transportStub.associatedNotification.save();
+			try
+			{
+				transportStub.associatedNotification.save();
 			
-			informaCam.transportManifest.add(transportStub);
+				informaCam.transportManifest.add(transportStub);
+			}
+			catch (Exception e)
+			{
+				Logger.e(LOG, e);
+			}
 		}		
 	}
 	
@@ -256,7 +262,7 @@ public class Transport extends IntentService {
 		mBuilder.setContentText("Upload in progress to: " + repoName + ' ' + percentage + '%');
 
 		// Displays the progress bar for the first time.
-		mNotifyManager.notify(0, mBuilder.build());
+		mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 	}
 	
 	protected Object doPost(Model postData, ITransportData fileData, String urlString) throws IOException {
@@ -444,12 +450,8 @@ public class Transport extends IntentService {
 			Iterator<String> it = getData.asJson().keys();
 			while(it.hasNext()) {
 				String key = it.next();
-				try {
-					// XXX: *IF* value is not nothing.
-					nameValuePair.add(new BasicNameValuePair(key, String.valueOf(getData.asJson().get(key))));
-				} catch (JSONException e) {
-					Logger.e(LOG, e);
-				}
+				nameValuePair.add(new BasicNameValuePair(key, String.valueOf(getData.asJson().get(key))));
+				
 			}
 			urlString += ("?" + URLEncodedUtils.format(nameValuePair, "utf_8"));
 		}

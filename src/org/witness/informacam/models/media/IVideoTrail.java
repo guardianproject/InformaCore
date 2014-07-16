@@ -1,7 +1,7 @@
 package org.witness.informacam.models.media;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Models;
 

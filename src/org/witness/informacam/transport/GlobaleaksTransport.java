@@ -7,11 +7,11 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.R;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
+import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
@@ -58,7 +58,7 @@ public class GlobaleaksTransport extends Transport {
 		.setContentIntent(resultPendingIntent);
 		mBuilder.setProgress(100, 0, false);
 		// Displays the progress bar for the first time.
-		mNotifyManager.notify(0, mBuilder.build());
+		mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 
 		submission = new GLSubmission();
 		submission.context_gus = repository.asset_id;
@@ -80,7 +80,7 @@ public class GlobaleaksTransport extends Transport {
 			catch (IOException e)
 			{
 				mBuilder.setTicker(getString(R.string.network_error_restarting_upload_));
-				mNotifyManager.notify(0, mBuilder.build());
+				mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 				Logger.e(LOG,e);
 			}
 		}
@@ -91,8 +91,18 @@ public class GlobaleaksTransport extends Transport {
 			return false;
 		}
 		
-		submission.inflate(subResponse);
-
+		try
+		{
+			submission.inflate(subResponse);
+		}
+		catch (Exception e)
+		{
+			Logger.e(LOG,e);
+			finishUnsuccessfully();
+			
+			return false;
+		}
+		
 		if(submission.submission_gus != null) {
 			
 			
@@ -162,14 +172,16 @@ public class GlobaleaksTransport extends Transport {
 						mBuilder.setAutoCancel(true);
 						mBuilder.setProgress(0, 0, false);
 						// Displays the progress bar for the first time.
-						mNotifyManager.notify(0, mBuilder.build());
+						mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 
 					}
+				
+
+					finishSuccessfully();
+				
 				} catch(Exception e) {
 					Logger.e(LOG, e);
 				}
-
-				finishSuccessfully();
 			} else {
 
 				finishUnsuccessfully();
@@ -248,13 +260,13 @@ public class GlobaleaksTransport extends Transport {
 			super();
 		}
 
-		public GLSubmission(GLSubmission submission) {
+		public GLSubmission(GLSubmission submission) throws InstantiationException, IllegalAccessException {
 			super();
 			inflate(submission);
 		}
 
 		@Override
-		public void inflate(JSONObject values) {
+		public void inflate(JSONObject values) throws InstantiationException, IllegalAccessException {
 			try {
 				if(values.has(DOWNLOAD_LIMIT)) {
 					values = values.put(DOWNLOAD_LIMIT, Integer.toString(values.getInt(DOWNLOAD_LIMIT)));

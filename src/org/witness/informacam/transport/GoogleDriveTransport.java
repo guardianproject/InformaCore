@@ -5,10 +5,10 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
+import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IOrganization;
 import org.witness.informacam.utils.Constants.Actions;
@@ -78,7 +78,7 @@ public class GoogleDriveTransport extends Transport {
 			
 			// upload to drive, on success: file id is in there
 			mBuilder.setProgress(100, 0, false);
-			mNotifyManager.notify(0, mBuilder.build());
+			mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 		
 
 			try {
@@ -91,7 +91,7 @@ public class GoogleDriveTransport extends Transport {
 						subResponse = (JSONObject) doPost(new GDSubmissionPermission(), String.format(GoogleDrive.Urls.SHARE, fileId));
 						Logger.d(LOG, "CONFIRM:\n" + transportStub.lastResult);
 						mBuilder.setProgress(100, 60, false);
-						mNotifyManager.notify(0, mBuilder.build());
+						mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 						
 						if(subResponse != null) {
 						
@@ -101,7 +101,7 @@ public class GoogleDriveTransport extends Transport {
 								.setTicker("Successful upload to: " + repository.asset_root);
 							mBuilder.setAutoCancel(true);
 							mBuilder.setProgress(0, 0, false);
-							mNotifyManager.notify(0, mBuilder.build());
+							mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 							finishSuccessfully();
 						}
 					
@@ -211,7 +211,7 @@ public class GoogleDriveTransport extends Transport {
 			title = GoogleDriveTransport.this.transportStub.asset.assetName;
 		}
 
-		public GDSubmissionMetadata(GDSubmissionMetadata metadata) {
+		public GDSubmissionMetadata(GDSubmissionMetadata metadata) throws InstantiationException, IllegalAccessException {
 			super();
 			inflate(metadata);
 		}
@@ -231,7 +231,7 @@ public class GoogleDriveTransport extends Transport {
 			value = GoogleDriveTransport.this.transportStub.getRepository(Models.ITransportStub.GoogleDrive.TAG).asset_id;
 		}
 
-		public GDSubmissionPermission(GDSubmissionPermission permission) {
+		public GDSubmissionPermission(GDSubmissionPermission permission) throws InstantiationException, IllegalAccessException {
 			super();
 			inflate(permission);
 		}

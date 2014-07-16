@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 
-import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.notifications.INotification;
@@ -53,12 +53,12 @@ public class ITransportStub extends Model implements Serializable {
 		}
 	}
 	
-	public ITransportStub(JSONObject transportStub) {
+	public ITransportStub(JSONObject transportStub) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(transportStub);
 	}
 	
-	public ITransportStub(ITransportStub transportStub) {
+	public ITransportStub(ITransportStub transportStub) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(transportStub.asJson());
 	}
@@ -113,7 +113,7 @@ public class ITransportStub extends Model implements Serializable {
 		return null;
 	}
 	
-	public void save() {
+	public void save() throws InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();
 		ITransportStub transport = informaCam.transportManifest.getById(id);
 		

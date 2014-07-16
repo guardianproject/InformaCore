@@ -31,7 +31,7 @@ public class IRegion extends Model {
 		super();
 	}
 
-	public IRegion(IRegion region) {
+	public IRegion(IRegion region) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(region.asJson());
 	}
@@ -76,8 +76,8 @@ public class IRegion extends Model {
 	public IForm addForm(IForm form) {
 		form.id = IForm.appendId();
 		associatedForms.add(form);
-		Logger.d(LOG, "NEW FORM:\n" + form.asJson().toString());
-		Logger.d(LOG, "This region:\n" + this.asJson().toString());
+	//	Logger.d(LOG, "NEW FORM:\n" + form.asJson().toString());
+	//	Logger.d(LOG, "This region:\n" + this.asJson().toString());
 		
 		return form;
 	}

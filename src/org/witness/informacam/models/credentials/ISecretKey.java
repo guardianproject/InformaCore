@@ -2,7 +2,7 @@ package org.witness.informacam.models.credentials;
 
 import java.io.Serializable;
 
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 
 @SuppressWarnings("serial")
@@ -15,12 +15,12 @@ public class ISecretKey extends Model implements Serializable {
 		super();
 	}
 	
-	public ISecretKey(ISecretKey secretKey) {
+	public ISecretKey(ISecretKey secretKey) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(secretKey.asJson());
 	}
 	
-	public ISecretKey(JSONObject secretKey) {
+	public ISecretKey(JSONObject secretKey) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(secretKey);
 	}

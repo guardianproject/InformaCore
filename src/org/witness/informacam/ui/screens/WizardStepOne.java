@@ -1,12 +1,10 @@
 package org.witness.informacam.ui.screens;
 
-import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.ui.WizardActivity;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Models.IUser;
-
-import org.witness.informacam.ui.WizardActivity;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -39,13 +37,9 @@ public class WizardStepOne extends Fragment {
 	
 	private void checkAlias(String s) {
 		if(s.length() >= 2) {
-			try {
 				informaCam.user.put(IUser.ALIAS, s);
 				allIn[0] = 1;
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
-			}
+			
 		} else {
 			allIn[0] = 0;
 		}
@@ -70,7 +64,7 @@ public class WizardStepOne extends Fragment {
 				allIn[1] = 0;
 				
 			}
-		} catch(JSONException e) {
+		} catch(Exception e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 			
@@ -178,12 +172,7 @@ public class WizardStepOne extends Fragment {
 			}
 		}
 		
-		try {
-			informaCam.user.put(IUser.EMAIL, email.getText().toString());
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
+		informaCam.user.put(IUser.EMAIL, email.getText().toString());
 		
 		handler.postDelayed(new Runnable() {
 			@Override

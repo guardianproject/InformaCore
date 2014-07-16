@@ -1,13 +1,13 @@
 package org.witness.informacam.models.j3m;
 
+import info.guardianproject.odkparser.utils.Model;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import info.guardianproject.odkparser.utils.Model;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 
 import android.util.Log;
 

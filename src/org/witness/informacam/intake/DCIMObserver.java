@@ -248,7 +248,15 @@ public class DCIMObserver {
 				isThumbnail = true;
 			}
 
-			dcimDescriptor.addEntry(authority, isThumbnail);
+			try
+			{
+				dcimDescriptor.addEntry(authority, isThumbnail);
+			}
+			catch (Exception e)
+			{
+				//Logger.d(LOG,"unable to add thumbnail");
+				Logger.e(LOG, e);
+			}
 		}
 
 		@Override

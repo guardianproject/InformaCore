@@ -2,10 +2,10 @@ package org.witness.informacam.informa.suckers;
 
 import java.util.TimerTask;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.informa.SensorLogger;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Suckers;
@@ -172,7 +172,7 @@ public class PhoneSucker extends SensorLogger {
 		
 		return wifi;
 	}
-	
+		
 	public ILogPack forceReturn() throws JSONException {
 		// TODO: anonymize this value
 		ILogPack fr = new ILogPack();

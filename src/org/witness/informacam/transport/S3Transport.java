@@ -2,16 +2,9 @@ package org.witness.informacam.transport;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.R;
-import org.witness.informacam.transport.GlobaleaksTransport.GLSubmission;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
-import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -48,7 +41,7 @@ public class S3Transport extends Transport {
 		.setContentIntent(resultPendingIntent);
 		mBuilder.setProgress(100, 0, false);
 		// Displays the progress bar for the first time.
-		mNotifyManager.notify(0, mBuilder.build());
+		mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 
 		InputStream in = informaCam.ioService.getStream(transportStub.asset.assetPath, transportStub.asset.storageType);
 		
@@ -60,7 +53,7 @@ public class S3Transport extends Transport {
 
 			finishSuccessfully();
 		}
-		catch (IOException ioe)
+		catch (Exception ioe)
 		{
 			finishUnsuccessfully();
 			
@@ -72,7 +65,7 @@ public class S3Transport extends Transport {
 		mBuilder.setAutoCancel(true);
 		mBuilder.setProgress(0, 0, false);
 		// Displays the progress bar for the first time.
-		mNotifyManager.notify(0, mBuilder.build());
+		mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 
 				
 			

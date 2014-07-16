@@ -197,8 +197,15 @@ public class IInstalledOrganizations extends Model {
 				@Override
 				public void onClick(View v) {
 					if(v == ok) {
-						possibleDuplicate.inflate(organization);
-						save();
+						try
+						{
+							possibleDuplicate.inflate(organization);
+							save();
+						}
+						catch (Exception e)
+						{
+							Logger.e(LOG, e);
+						}
 					}
 					
 					cancel();

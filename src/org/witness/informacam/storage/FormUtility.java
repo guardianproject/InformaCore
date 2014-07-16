@@ -14,10 +14,10 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.models.forms.IInstalledForms;
 import org.witness.informacam.utils.Constants.App.Storage;
-import org.witness.informacam.utils.Constants.Forms;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
+import org.witness.informacam.utils.Constants.Forms;
 import org.witness.informacam.utils.Constants.IManifest;
+import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.MediaHasher;
 
 import android.app.Activity;
@@ -26,24 +26,19 @@ import android.util.Log;
 public class FormUtility {
 	public final static String LOG = Forms.LOG;
 		
-	public static List<IForm> getAvailableForms() {
+	public static List<IForm> getAvailableForms() throws InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();
 		IInstalledForms installedForms = new IInstalledForms();
-
-		try {
-			installedForms.inflate(informaCam.ioService.getBytes(IManifest.FORMS, Type.IOCIPHER));
-		} catch(NullPointerException e) {
-			installedForms.installedForms = new ArrayList<IForm>();
-		}
+		installedForms.inflate(informaCam.ioService.getBytes(IManifest.FORMS, Type.IOCIPHER));
 
 		return installedForms.installedForms;
 	}
 
-	public static boolean installIncludedForms(Activity a) {
+	public static boolean installIncludedForms(Activity a) throws InstantiationException, IllegalAccessException {
 		return installIncludedForms(a, IManifest.FORMS);
 	}
 
-	public static boolean installIncludedForms(Activity a, String formRoot) {
+	public static boolean installIncludedForms(Activity a, String formRoot) throws InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();		
 		try {
 			if(a.getAssets().list(formRoot).length > 0) {
@@ -64,7 +59,7 @@ public class FormUtility {
 		return false;
 	}
 
-	public static IForm importAndParse(InputStream xml_stream) {
+	public static IForm importAndParse(InputStream xml_stream) throws InstantiationException, IllegalAccessException {
 		InformaCam informaCam = InformaCam.getInstance();
 
 		info.guardianproject.iocipher.File formRoot = new info.guardianproject.iocipher.File(Storage.FORM_ROOT);
@@ -77,11 +72,7 @@ public class FormUtility {
 		boolean hasFormDef = false;
 
 		IInstalledForms installedForms = new IInstalledForms();
-		try {
-			installedForms.inflate(informaCam.ioService.getBytes(IManifest.FORMS, Type.IOCIPHER));
-		} catch(NullPointerException e) {
-			Log.d(LOG, "actually, we must init this form manifest.");
-		}
+		installedForms.inflate(informaCam.ioService.getBytes(IManifest.FORMS, Type.IOCIPHER));
 		
 		if(installedForms.installedForms == null) {
 			installedForms.installedForms = new ArrayList<IForm>();
@@ -146,7 +137,7 @@ public class FormUtility {
 	public static IForm importAndParse(Activity a, java.io.File xml) {
 		try {
 			return importAndParse(new java.io.FileInputStream(xml));
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 			return null;

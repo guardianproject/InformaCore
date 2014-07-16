@@ -22,7 +22,7 @@ public class IImage extends IMedia {
 		super();
 	}
 	
-	public IImage(IMedia media) {
+	public IImage(IMedia media) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(media.asJson());
 	}

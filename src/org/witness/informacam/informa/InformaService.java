@@ -1,7 +1,6 @@
 package org.witness.informacam.informa;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,9 +10,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
@@ -23,6 +19,9 @@ import org.witness.informacam.informa.suckers.GeoFusedSucker;
 import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
+import org.witness.informacam.json.JSONArray;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.j3m.ILocation;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.j3m.ISuckerCache;
@@ -30,12 +29,12 @@ import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.SuckerCacheListener;
 import org.witness.informacam.utils.Constants.Suckers;
-import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.MediaHasher;
@@ -218,12 +217,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 				
 				if (_phone != null)
 				{
-					try {
-						onUpdate(((PhoneSucker) _phone).forceReturn());
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString());
-						e.printStackTrace();
-					}
+					
+					onUpdate(((PhoneSucker) _phone).forceReturn());
+					
 				}
 				
 				if (informaCam != null)
@@ -334,8 +330,16 @@ public class InformaService extends Service implements SuckerCacheListener {
 							media.associatedCaches.add(cacheFile.getAbsolutePath());
 						}
 	
-						Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
-						media.save();
+						try
+						{
+				//		Logger.d(LOG, "OK-- I am about to save the cache reference.  is this still correct?\n" + media.asJson().toString());
+							media.save();
+						}
+						catch (Exception e)
+						{
+							Logger.e(LOG, e);
+							return;
+						}
 					}
 					
 					if(m != null) {
@@ -527,9 +531,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 		} catch(NullPointerException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+		} catch (Exception e) {
+			Log.e(LOG, e.toString(),e);
 		}
 
 		return false;
@@ -544,9 +547,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 			ILogPack regionLocationData = ((GeoSucker) _geo).forceReturn();
 			try {
 				ILogPack.put(CaptureEvent.Keys.REGION_LOCATION_DATA, regionLocationData);
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+			} catch (Exception e) {
+				Log.e(LOG, e.toString(),e);
 			}
 		}
 		
@@ -555,9 +557,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 			String key = rIt.next();
 			try {
 				ILogPack.put(key, region.asJson().get(key));
-			} catch (JSONException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+			} catch (Exception e) {
+				Log.e(LOG, e.toString(),e);
 			}
 		}
 
@@ -575,11 +576,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 				ILogPack.put(key, region.asJson().get(key));
 			}
 		} catch(JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
+			Log.e(LOG, e.toString(),e);
 		} catch(NullPointerException e) {
-			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());
-			e.printStackTrace();
+			Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString(),e);
 			
 			addRegion(region);
 		}

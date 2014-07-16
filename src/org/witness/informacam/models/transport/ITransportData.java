@@ -18,7 +18,7 @@ public class ITransportData extends Model implements Serializable {
 		super();
 	}
 	
-	public ITransportData(ITransportData transportData) {
+	public ITransportData(ITransportData transportData) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(transportData);
 	}

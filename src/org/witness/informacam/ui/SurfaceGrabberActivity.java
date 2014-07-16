@@ -5,10 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.json.JSONArray;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IUser;
@@ -211,16 +210,13 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 						ja.put(bi);
 					}
 					
-					try {
-						informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, ja);
-						informaCam.user.hasBaseImage = true;
-						
-						setResult(Activity.RESULT_OK);
-						finish();
-						return;
-					} catch (JSONException e) {
-						Log.e(LOG, e.toString(),e);
-					}
+					informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, ja);
+					informaCam.user.hasBaseImage = true;
+					
+					setResult(Activity.RESULT_OK);
+					finish();
+					return;
+					
 				}
 			}
 			

@@ -45,7 +45,7 @@ public class IDCIMDescriptor extends Model {
 		return new IDCIMSerializable(shortDescription);
 	}
 
-	public void addEntry(Uri authority, boolean isThumbnail) {
+	public void addEntry(Uri authority, boolean isThumbnail) throws InstantiationException, IllegalAccessException {
 		final IDCIMEntry entry = new IDCIMEntry();
 		entry.authority = authority.toString();
 		
@@ -66,7 +66,7 @@ public class IDCIMDescriptor extends Model {
 			 */
 			for(IDCIMEntry e : this.intakeList) {
 				if(Debug.DEBUG) {
-					Logger.d(LOG, e.asJson().toString());
+				//	Logger.d(LOG, e.asJson().toString());
 				}
 				
 				if(path.equals(e.fileAsset.path)) { 

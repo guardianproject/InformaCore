@@ -14,10 +14,10 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.json.JSONException;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.utils.Constants.App.Crypto;
+import org.witness.informacam.utils.Constants.Codes;
 
 import android.util.Base64;
 import android.util.Log;

@@ -17,7 +17,7 @@ public class IVideo extends IMedia {
 		super();
 	}
 	
-	public IVideo(IMedia media) {
+	public IVideo(IMedia media) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(media.asJson());
 	}

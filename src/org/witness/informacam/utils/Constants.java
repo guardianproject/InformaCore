@@ -67,6 +67,8 @@ public class Constants {
 	public final static class Logger {
 		public Logger() {}
 		
+		public final static boolean DEBUG = false;
+		
 		public static void e(String LOG, ExceptionInInitializerError e) {
 			Log.e(LOG, e.toString(),e);
 			try {
@@ -82,7 +84,8 @@ public class Constants {
 		}
 		
 		public static void d(String LOG, String msg) {
-			Log.d(LOG, msg);
+			if (DEBUG)
+				Log.d(LOG, msg);
 		}
 	}
 

@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Vector;
 
-import org.json.JSONObject;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants;
 import org.witness.informacam.utils.Constants.App.Informa;
@@ -35,11 +35,11 @@ public class IForm extends Model implements Serializable {
 	FormWrapper fw = null;
 	Activity a = null;
 	
-	public static IForm Activate(IForm model, Activity activity, byte[] oldAnswers) {
+	public static IForm Activate(IForm model, Activity activity, byte[] oldAnswers) throws InstantiationException, IllegalAccessException {
 		return new IForm(model, activity, oldAnswers);
 	}
 	
-	public static IForm Activate(IForm model, Activity activity) {
+	public static IForm Activate(IForm model, Activity activity) throws InstantiationException, IllegalAccessException {
 		return new IForm(model, activity);
 	}
 	
@@ -47,11 +47,11 @@ public class IForm extends Model implements Serializable {
 		super();
 	}
 	
-	public IForm(IForm model, Activity a) {
+	public IForm(IForm model, Activity a) throws InstantiationException, IllegalAccessException {
 		this(model, a, null);
 	}
 	
-	public IForm(IForm model, Activity a, byte[] oldAnswers) {
+	public IForm(IForm model, Activity a, byte[] oldAnswers) throws InstantiationException, IllegalAccessException {
 		super();
 		
 		this.inflate(model.asJson());

@@ -1,7 +1,7 @@
 package org.witness.informacam.models.j3m;
 
-import org.json.JSONObject;
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.utils.Constants.Logger;
 
@@ -15,7 +15,7 @@ public class IIntakeData extends Model {
 		super();
 	}
 	
-	public IIntakeData(IIntakeData intakeData) {
+	public IIntakeData(IIntakeData intakeData) throws InstantiationException, IllegalAccessException {
 		super();
 		inflate(intakeData);
 	}
