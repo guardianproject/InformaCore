@@ -464,7 +464,6 @@ public class KeyUtility {
 	
 		}
 		
-		//switched to onepass signing for speed
 		sGen.generate().encode(bOut);
 		
 		cGen.close();
