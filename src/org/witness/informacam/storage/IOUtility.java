@@ -24,6 +24,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -216,16 +217,12 @@ public class IOUtility {
 			while(i.hasNext()) {
 				Entry<String, InputStream> file = i.next();
 				
-				Log.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + file.getValue().available() + ")");
+				Logger.d(LOG, "zipping up: " + file.getKey() + " (bytes: " + file.getValue().available() + ")");
 				
 				ZipEntry ze = new ZipEntry(file.getKey());
 				zos.putNextEntry(ze);
 
-				byte[] buf = new byte[1024];
-				int b;
-				while((b = file.getValue().read(buf)) > 0) {
-					zos.write(buf, 0, b);
-				}
+				IOUtils.copyLarge(file.getValue(), zos);
 				
 				zos.flush();
 			}
