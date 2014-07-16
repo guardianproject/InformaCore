@@ -22,6 +22,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.organizations.IRepository;
 import org.witness.informacam.models.transport.ITransportData;
@@ -34,6 +35,7 @@ import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
 import android.annotation.SuppressLint;
 import android.app.IntentService;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -96,6 +98,12 @@ public class Transport extends IntentService {
 			.setTicker("Upload in progress")
 			.setSmallIcon(android.R.drawable.ic_menu_upload);
 		mBuilder.setProgress(100, 0, false);
+		
+		Intent intent = new Intent (this, InformaService.class);
+		intent.addFlags (Intent.FLAG_ACTIVITY_NEW_TASK);
+		PendingIntent pend = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		mBuilder.setContentIntent(pend);
+		
 		// Displays the progress bar for the first time.
 		mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 		
@@ -244,8 +252,6 @@ public class Transport extends IntentService {
 		
 		BufferedInputStream is = new BufferedInputStream(http.getInputStream());
 		
-		//Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-		//Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 		
 		if(http.getResponseCode() > -1) {
 			return(parseResponse(is));
