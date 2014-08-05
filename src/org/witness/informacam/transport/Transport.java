@@ -84,7 +84,6 @@ public class Transport extends IntentService {
 				finishUnsuccessfully(transportRequirements);
 				// Prompt to start up/install orbot here.
 
-
 				stopSelf();
 				return false;
 			}
@@ -140,46 +139,48 @@ public class Transport extends IntentService {
 	}
 	
 	protected void finishUnsuccessfully(int transportRequirements) {
-		if(mBuilder != null) {
-			mBuilder
-			.setContentText("FAILED upload to: " + repository.asset_root)
-			.setTicker("FAILED upload to: " + repository.asset_root);
-			mBuilder.setAutoCancel(true);
-			mBuilder.setProgress(0, 0, false);
-			// Displays the progress bar for the first time.
-			mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
-		}
-		
-		if(informaCam.getEventListener() != null) {
-			Message message = new Message();
-			Bundle data = new Bundle();
-			
-			if(transportRequirements == -1) {
-				data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Transport.GENERAL_FAILURE);
-				data.putString(Codes.Extras.GENERAL_FAILURE, informaCam.getString(R.string.informacam_could_not_send));
-			} else {
-				data.putInt(Codes.Extras.MESSAGE_CODE, transportRequirements);
+		try
+		{
+			if(mBuilder != null) {
+				mBuilder
+				.setContentText("FAILED upload to: " + repository.asset_root)
+				.setTicker("FAILED upload to: " + repository.asset_root);
+				mBuilder.setAutoCancel(true);
+				mBuilder.setProgress(0, 0, false);
+				// Displays the progress bar for the first time.
+				mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
 			}
 			
-			message.setData(data);
-
-
-			informaCam.getEventListener().onUpdate(message);
-		}
-		
-		if(transportStub.associatedNotification != null) {
-			transportStub.associatedNotification.canRetry = true;
-			try
-			{
+			if(informaCam.getEventListener() != null) {
+				Message message = new Message();
+				Bundle data = new Bundle();
+				
+				if(transportRequirements == -1) {
+					data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.Transport.GENERAL_FAILURE);
+					data.putString(Codes.Extras.GENERAL_FAILURE, informaCam.getString(R.string.informacam_could_not_send));
+				} else {
+					data.putInt(Codes.Extras.MESSAGE_CODE, transportRequirements);
+				}
+				
+				message.setData(data);
+	
+	
+				informaCam.getEventListener().onUpdate(message);
+			}
+			
+			if(transportStub.associatedNotification != null) {
+				transportStub.associatedNotification.canRetry = true;
+				
 				transportStub.associatedNotification.save();
-			
+					
 				informaCam.transportManifest.add(transportStub);
-			}
-			catch (Exception e)
-			{
-				Logger.e(LOG, e);
-			}
-		}		
+				
+			}		
+		}
+		catch (Exception e)
+		{
+			Log.e("Transport Error","problem initing transport",e);
+		}
 	}
 	
 	public int checkTransportRequirements () {
