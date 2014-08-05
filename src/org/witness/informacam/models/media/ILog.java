@@ -161,12 +161,12 @@ public class ILog extends IMedia {
 			mungeSensorLogs(h);
 		
 		progress += 5;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 		
 		mungeGenealogyAndIntent();
 		genealogy.dateCreated = this.startTime;
 		progress += 5;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		notification.label = context.getString(R.string.export);
 		notification.mediaId = this._id;
@@ -176,7 +176,7 @@ public class ILog extends IMedia {
 			notification.content = context.getString(R.string.you_exported_this_x_to_x, "log", organization.organizationName);
 		}
 		progress += 5;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		JSONObject j3mObject = null;
 		try {
@@ -208,7 +208,7 @@ public class ILog extends IMedia {
 			j3mZip.put("log.j3m", new info.guardianproject.iocipher.FileInputStream(fileTmp));
 
 			progress += 5;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 			notification.generateId();
 			notification.taskComplete = false;
@@ -253,7 +253,7 @@ public class ILog extends IMedia {
 					}
 					
 					progress += progressIncrement;
-					sendMessage(Codes.Keys.UI.PROGRESS, progress);
+					sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 					
 				}
 			} 

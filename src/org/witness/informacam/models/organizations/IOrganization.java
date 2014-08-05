@@ -3,7 +3,7 @@ package org.witness.informacam.models.organizations;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
- 
+
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.Model;

@@ -87,6 +87,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	private Bitmap mThumbnail = null;
 	
+	private Handler mHandler = null;
+	
 	public Bitmap getBitmap(IAsset bitmapAsset) {
 		return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source);
 	}
@@ -510,6 +512,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
+		mHandler = h;
+		
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -522,21 +526,21 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 		data.exif = dcimEntry.exif;
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		if (includeSensorLogs)
 			mungeSensorLogs();
 		
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeData();
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeGenealogyAndIntent();
 		progress += 20;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		notification.label = context.getString(R.string.export);
 
@@ -551,7 +555,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			notification.content = context.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
 		}
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		JSONObject j3mObject = null;
 		try {
@@ -604,7 +608,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			}
 
 			progress += 10;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
 			notification.generateId();
@@ -651,7 +655,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			informaCam.addNotification(notification, h);			
 			progress += 10;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 			return exportAsset;
 			
@@ -715,6 +719,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
+		mHandler = h;
+		
 		int progress = 0;
 		InformaCam informaCam = InformaCam.getInstance();
 
@@ -727,19 +733,19 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 		data.exif = dcimEntry.exif;
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeSensorLogs();
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeData();
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeGenealogyAndIntent();
 		progress += 20;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		notification.label = context.getString(R.string.export);
 
@@ -754,7 +760,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			notification.content = context.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
 		}
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		JSONObject j3mObject = null;
 		try {
@@ -772,7 +778,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
 			progress += 10;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 			notification.generateId();
 			notification.mediaId = this._id;
@@ -821,7 +827,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			onMetadataEmbeded(j3mAsset);
 			progress += 10;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress);
+			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		} catch (JSONException e) {
 			Logger.e(LOG, e);
@@ -838,10 +844,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return true;
 	}
 
-	public String buildJ3M(Context context, boolean signData) throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public String buildJ3M(Context context, boolean signData, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		
-		Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
 		System.gc();
 		
 		int progress = 0;
@@ -856,19 +860,19 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 		data.exif = dcimEntry.exif;
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeSensorLogs();
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeData();
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		mungeGenealogyAndIntent();
 		progress += 20;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		/*
 		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
@@ -878,7 +882,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		*/
 		
 		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress);
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		JSONObject j3mObject = null;
 		try {
@@ -959,14 +963,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return seed;
 	}
-	
-	protected void sendMessage(String key, String what) {
-		sendMessage(key, what, null);
-	}
-	
-	protected void sendMessage(String key, int what) {
-		sendMessage(key, what, null);
-	}
 
 	protected void sendMessage(String key, String what, Handler h) {
 		Bundle b = new Bundle();
@@ -1022,7 +1018,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		try
 		{
 			reset();
-			sendMessage(Models.IMedia.VERSION, version.path);
+			sendMessage(Models.IMedia.VERSION, version.path, mHandler);
 		}
 		catch (Exception e)
 		{
