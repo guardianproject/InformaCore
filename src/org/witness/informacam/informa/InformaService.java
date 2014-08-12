@@ -614,6 +614,9 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@Override
 	public void onUpdate(long timestamp, ILogPack iLogPack) {
 		try {
+			if (cache == null)
+				initCache();
+			
 			ILogPack lp = cache.getIfPresent(timestamp);
 			if(lp != null) {
 				synchronized(iLogPack) //lock access to lp so it is not modified
