@@ -638,7 +638,7 @@ public class Constants {
 			
 			public class GoogleDrive {
 				public final static String TAG = RepositorySources.GOOGLE_DRIVE;
-				public static final String SCOPE = "oauth2:https://www.googleapis.com/auth/drive";
+				public static final String SCOPE = "oauth2:https://www.googleapis.com/auth/drive.file";
 				
 				public class Urls {
 					public final static String UPLOAD = "https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart";
