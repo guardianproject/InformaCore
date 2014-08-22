@@ -59,6 +59,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		progress.setText(String.valueOf(baseImages.size()));
 
 		view = (SurfaceView) findViewById(R.id.surface_grabber_holder);
+		view.setOnClickListener(this);
+		
 		holder = view.getHolder();
 		holder.addCallback(this);
 		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);		
@@ -182,7 +184,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 
 	@Override
 	public void onClick(View view) {
-		if(view == button && mPreviewing) {
+		if(mPreviewing) {
 			mPreviewing = false;
 			camera.takePicture(null, null, this);
 		}
