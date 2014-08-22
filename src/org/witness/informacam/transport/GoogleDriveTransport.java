@@ -1,11 +1,13 @@
 package org.witness.informacam.transport;
 
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.json.JSONException;
 import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.json.JSONTokener;
@@ -27,7 +29,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.UserRecoverableNotifiedException;
 
 public class GoogleDriveTransport extends Transport {
 	GDSubmissionPermission permission;
@@ -69,7 +73,23 @@ public class GoogleDriveTransport extends Transport {
 		
 		Logger.d(LOG, "Using account: " + accounts[0].name);
 		
-		authToken = new AuthToken(am,accounts[0]);
+		if (authToken == null)
+			authToken = new AuthToken(am,accounts[0]);
+		
+		try
+		{
+			authToken.doAuth();
+		} catch (Exception e) {
+			Logger.e(LOG, e);
+			
+			auth_attempts++;
+			finishUnsuccessfully();
+		
+			return false;
+			
+			
+		}
+	
 		if(authToken.token != null) {
 			// TODO: if user uses tor
 			if(!super.init(false)) {
@@ -240,19 +260,35 @@ public class GoogleDriveTransport extends Transport {
 	public class AuthToken {
 		public Account account;
 		public String token = null;
-
+		private AccountManager am = null;
 		public Intent userAcceptCallback = new Intent().setAction(Actions.USER_ACCEPT_ACTION);
 
 		@SuppressWarnings("deprecation")
 		public AuthToken(AccountManager am, Account account) {
 			this.account = account;
+			this.am = am;
+		}
+		
+		public void doAuth () throws OperationCanceledException, AuthenticatorException, IOException, UserRecoverableNotifiedException, GoogleAuthException
+		{
+			
+			Bundle bund = new Bundle();
+			token = GoogleAuthUtil.getTokenWithNotification(InformaService.getInstance().getApplicationContext(), account.name, Models.ITransportStub.GoogleDrive.SCOPE,bund);
+			
+			if (bund.containsKey(AccountManager.KEY_AUTHTOKEN))	
+				token = bund.getString(AccountManager.KEY_AUTHTOKEN);
+
+			/**
+			if (token != null)
+				am.invalidateAuthToken(Models.ITransportStub.GoogleDrive.SCOPE, token);
+
 			
 			AccountManagerFuture<Bundle> response = am.getAuthToken(account, Models.ITransportStub.GoogleDrive.SCOPE, true, new AccountManagerCallback<Bundle> () {
 
 				@Override
 				public void run(AccountManagerFuture<Bundle> result) {
 		            try {
-						String token = result.getResult().getString(AccountManager.KEY_AUTHTOKEN);
+						token = result.getResult().getString(AccountManager.KEY_AUTHTOKEN);
 		            	
 					} catch (OperationCanceledException e) {
 						// TODO Auto-generated catch block
@@ -271,28 +307,10 @@ public class GoogleDriveTransport extends Transport {
 			}, null);
 			
 			Bundle b;
-			try {
-				b = response.getResult();
-				token = b.getString(AccountManager.KEY_AUTHTOKEN);
+			b = response.getResult();
+			token = b.getString(AccountManager.KEY_AUTHTOKEN);
 				
-				if (token != null)
-				{
-					am.invalidateAuthToken(Models.ITransportStub.GoogleDrive.SCOPE, token);
-					response = am.getAuthToken(account, Models.ITransportStub.GoogleDrive.SCOPE, false, null, null);
-				}
-				
-			} catch (OperationCanceledException e) {
-				
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (AuthenticatorException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
+						*/
 			
 		}
 	}

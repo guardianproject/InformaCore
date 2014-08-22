@@ -346,10 +346,12 @@ public class Transport extends IntentService {
 		//Logger.d(LOG, contentBuffer.get(1).toString());
 		out.flush();
 		
-		Logger.d(LOG, "RESPONSE CODE: " + http.getResponseCode());
-		Logger.d(LOG, "RESPONSE MSG: " + http.getResponseMessage());
+		Log.i(LOG, "RESPONSE CODE: " + http.getResponseCode());
+		Log.i(LOG, "RESPONSE MSG: " + http.getResponseMessage());
 		
-		if(http.getResponseCode() > -1) {
+		int respCode = http.getResponseCode();
+		
+		if(respCode > -1) {
 
 			InputStream is = new BufferedInputStream(http.getInputStream());
 			
