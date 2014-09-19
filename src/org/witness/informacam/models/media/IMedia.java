@@ -510,7 +510,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		
 		//Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
 	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
-		System.gc();
+	//	System.gc();
 		
 		mHandler = h;
 		

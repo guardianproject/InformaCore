@@ -171,6 +171,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 		if(controlsInforma) {
 			
+			informaCam.informaService.stopAllSuckers();
 			informaCam.ioService.stopDCIMObserver();
 			informaCam.stopInforma();
 			
@@ -201,12 +202,15 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		informaCam.informaService = InformaService.getInstance();
 		
+		informaCam.informaService.startAllSuckers();
+		
 		h.post(new Runnable() {
 			@Override
 			public void run() {
 				informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
 			}
 		});
+		
 		
 		cameraIntent = new Intent(cameraIntentFlag);
 		cameraIntent.setComponent(cameraComponent);
