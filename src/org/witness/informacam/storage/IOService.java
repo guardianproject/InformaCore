@@ -578,7 +578,9 @@ public class IOService {
 	}
 
 	public void unmount() {
-		vfs.unmount();
+		
+		if (vfs != null)
+			vfs.unmount();
 	}
 	
 	public void startDCIMObserver(InformaCamEventListener listener, String parentId, ComponentName cameraComponent) {
