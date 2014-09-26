@@ -2,15 +2,15 @@ package org.witness.informacam.models.j3m;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
-import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.intake.Intake;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.media.IAsset;
-import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
@@ -25,7 +25,7 @@ import android.provider.MediaStore.MediaColumns;
 @SuppressLint("DefaultLocale")
 public class IDCIMDescriptor extends Model {	
 	public List<IDCIMEntry> shortDescription = new ArrayList<IDCIMEntry>();
-	public List<IDCIMEntry> intakeList = new ArrayList<IDCIMEntry>();
+	public Hashtable<String,IDCIMEntry> intakeMasterList = new Hashtable<String,IDCIMEntry>();
 
 	private long startTime = 0L;
 	private long timeOffset = 0L;
@@ -38,7 +38,9 @@ public class IDCIMDescriptor extends Model {
 	public IDCIMDescriptor(String parentId, ComponentName cameraComponent) {
 		startTime = System.currentTimeMillis()/1000;
 		this.parentId = parentId;
-		this.cameraComponent = cameraComponent.getPackageName();
+		
+		if (cameraComponent != null)
+			this.cameraComponent = cameraComponent.getPackageName();
 	}
 
 	public IDCIMSerializable asDescriptor() {
@@ -64,15 +66,14 @@ public class IDCIMDescriptor extends Model {
 			/*
 			 * IF the path is not already in out dcimList
 			 */
-			for(IDCIMEntry e : this.intakeList) {
-				if(Debug.DEBUG) {
-				//	Logger.d(LOG, e.asJson().toString());
-				}
-				
-				if(path.equals(e.fileAsset.path)) { 
-					return;
-				}
+			
+			if (intakeMasterList.containsKey(path))
+			{
+				cursor.close();
+				return;
 			}
+			else
+				intakeMasterList.put(path, entry);
 			
 			entry.fileAsset = new IAsset(path, Storage.Type.FILE_SYSTEM);
 
@@ -96,6 +97,8 @@ public class IDCIMDescriptor extends Model {
 			// String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
 			
 			entry.id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns._ID));
+			cursor.close();
+			
 			if(!isThumbnail) {
 				IDCIMEntry clone = new IDCIMEntry(entry);
 
@@ -103,7 +106,6 @@ public class IDCIMDescriptor extends Model {
 					shortDescription.add(clone);
 				}
 			}
-			cursor.close();
 			
 			entry.exif = new IExif();
 		
@@ -112,7 +114,26 @@ public class IDCIMDescriptor extends Model {
 				entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
 			}
 
+
+			List<IDCIMEntry> intakeList = new ArrayList<IDCIMEntry>();
 			intakeList.add(entry);
+						
+			InformaCam informaCam = InformaCam.getInstance();
+
+			Intent intakeIntent = new Intent(informaCam, Intake.class);
+
+			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
+						
+			List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
+			informaCam.informaService.resetCacheFiles();
+			
+			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
+			if(parentId != null) {
+				intakeIntent.putExtra(Codes.Extras.MEDIA_PARENT, parentId);
+			}
+
+			informaCam.startService(intakeIntent);
 			
 			
 		}
@@ -127,6 +148,7 @@ public class IDCIMDescriptor extends Model {
 
 	public void stopSession() {
 		// start up intake queue
+		/*
 		if(!intakeList.isEmpty()) {
 			InformaCam informaCam = InformaCam.getInstance();
 
@@ -146,7 +168,7 @@ public class IDCIMDescriptor extends Model {
 			Logger.d(LOG, "saved a dcim descriptor");
 		} else {
 			Logger.d(LOG, "there were no entries.");
-		}
+		}*/
 	}
 
 	public static class IDCIMSerializable extends Model implements Serializable {

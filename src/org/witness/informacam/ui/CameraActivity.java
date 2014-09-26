@@ -6,13 +6,11 @@ import java.util.List;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.InformaService;
-import org.witness.informacam.informa.suckers.AccelerometerSucker;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Camera;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 
 import android.app.Activity;
@@ -23,7 +21,9 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.Toast;
 
 public class CameraActivity extends Activity implements InformaCamStatusListener, InformaCamEventListener {
@@ -50,16 +50,11 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		informaCam = (InformaCam)getApplication();		
 		
-		h.post(new Runnable() {
-			@Override
-			public void run() {
-				setContentView(R.layout.activity_camera_waiter);
-			}
-		});
+		setContentView(R.layout.activity_camera_waiter);
+		
 		
 		if(getIntent().hasExtra(Codes.Extras.MEDIA_PARENT)) {
 			parentId = getIntent().getStringExtra(Codes.Extras.MEDIA_PARENT);
-			//Logger.d(LOG, "TO PARENT " + parentId);
 		}
 
 		try {
@@ -84,6 +79,9 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 					case Camera.Type.CAMCORDER:
 						cameraIntentFlag = Camera.Intents.CAMCORDER;
 						break;
+					case Camera.Type.USERCONTROLLED:
+						cameraIntentFlag = null;
+						break;
 					}
 
 				}
@@ -98,32 +96,46 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	}
 
 	private void init() {
-		List<ResolveInfo> resolveInfo = getPackageManager().queryIntentActivities(new Intent(cameraIntentFlag), 0);
-
-		for(ResolveInfo ri : resolveInfo) {
-			String packageName = ri.activityInfo.packageName;
-			String name = ri.activityInfo.name;
-			
-			/*
-			 * TODO: the user's perefered camera app should be a settable preference.
-			 */
-
-			/*
-			if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
+		
+		if (cameraIntentFlag != null)
+		{
+			List<ResolveInfo> resolveInfo = getPackageManager().queryIntentActivities(new Intent(cameraIntentFlag), 0);
+	
+			for(ResolveInfo ri : resolveInfo) {
+				String packageName = ri.activityInfo.packageName;
+				String name = ri.activityInfo.name;
+				
+				/*
+				 * TODO: the user's perefered camera app should be a settable preference.
+				 */
+	
+				/*
+				if(Camera.SUPPORTED.indexOf(packageName) >= 0) {
+					cameraComponent = new ComponentName(packageName, name);
+					break;
+				}
+				*/
+				
 				cameraComponent = new ComponentName(packageName, name);
 				break;
 			}
-			*/
-			
-			cameraComponent = new ComponentName(packageName, name);
-			break;
+	
+			if(resolveInfo.isEmpty() || cameraComponent == null) {
+				Toast.makeText(this, getString(R.string.could_not_find_any_camera_activity), Toast.LENGTH_LONG).show();
+				setResult(Activity.RESULT_CANCELED);
+				finish();
+			} else {
+				if(informaCam.informaService == null) {
+					informaCam.startInforma();
+				} else {
+					controlsInforma = false;
+					onInformaStart(null);
+				}
+			}
 		}
-
-		if(resolveInfo.isEmpty() || cameraComponent == null) {
-			Toast.makeText(this, getString(R.string.could_not_find_any_camera_activity), Toast.LENGTH_LONG).show();
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-		} else {
+		else 			
+		{
+			//this is for when we don't want InformaCam to launch the camera
 			if(informaCam.informaService == null) {
 				informaCam.startInforma();
 			} else {
@@ -153,6 +165,10 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onDestroy() {
+		
+		if (cameraIntentFlag == null) //must be external control
+			onActivityResult(Codes.Routes.IMAGE_CAPTURE,RESULT_OK,null);
+		
 		super.onDestroy();
 
 	}
@@ -169,8 +185,8 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
-		if(controlsInforma) {
-			
+		if(controlsInforma && informaCam.informaService.suckersActive()) {
+						
 			informaCam.informaService.stopAllSuckers();
 			informaCam.ioService.stopDCIMObserver();
 			informaCam.stopInforma();
@@ -200,25 +216,39 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	@Override
 	public void onInformaStart(Intent intent) {
 		
-		informaCam.informaService = InformaService.getInstance();
-		
+		informaCam.informaService = InformaService.getInstance();		
 		informaCam.informaService.startAllSuckers();
+		informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
 		
-		h.post(new Runnable() {
-			@Override
-			public void run() {
-				informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
-			}
-		});
-		
-		
-		cameraIntent = new Intent(cameraIntentFlag);
-		cameraIntent.setComponent(cameraComponent);
-		startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
+		if (cameraIntentFlag != null)
+		{
+			cameraIntent = new Intent(cameraIntentFlag);
+			cameraIntent.setComponent(cameraComponent);
+			startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
+		}
+		else
+		{
+			setContentView(R.layout.activity_informacam_running);
+			Button btnStop = (Button)findViewById(R.id.informacam_button);
+			btnStop.setOnClickListener(new OnClickListener()
+			{
+
+				@Override
+				public void onClick(View arg0) {
+					
+					onActivityResult(Codes.Routes.IMAGE_CAPTURE,RESULT_OK,null);
+				}
+				
+			});
+				
+		}
 	}
 
 	@Override
-	public void onInformaCamStop(Intent intent) {}
+	public void onInformaCamStop(Intent intent) {
+		
+		
+	}
 
 	@Override
 	public void onInformaStop(Intent intent) {

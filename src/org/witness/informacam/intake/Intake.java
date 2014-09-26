@@ -12,9 +12,6 @@ import android.app.IntentService;
 import android.content.Intent;
 
 public class Intake extends IntentService {
-	protected BackgroundProcessor queue;
-	
-	protected final static String LOG = "************************** J3M INTAKE **************************";
 	
 	public Intake() {
 		super(Storage.Intake.TAG);		
@@ -22,12 +19,9 @@ public class Intake extends IntentService {
 	
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Logger.d(LOG, "onHandleIntent called");
-
-		queue = new BackgroundProcessor();
+		
+		BackgroundProcessor queue = new BackgroundProcessor();
 		queue.setOnBatchComplete(new BatchCompleteJob(queue));
-		new Thread(queue).start();
-
 		IDCIMSerializable dcimDescriptor = ((IDCIMSerializable) intent.getSerializableExtra(Codes.Extras.RETURNED_MEDIA));
 		long timeOffset = intent.getLongExtra(Codes.Extras.TIME_OFFSET, 0L);
 		String[] cacheFiles = intent.getStringArrayExtra(Codes.Extras.INFORMA_CACHE);
@@ -44,7 +38,8 @@ public class Intake extends IntentService {
 			}
 		}
 		
-		queue.stop();
+		new Thread(queue).start();
+		//queue.stop();
 	}
 
 }

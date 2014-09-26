@@ -241,9 +241,9 @@ public class WizardActivity extends FragmentActivity implements WizardListener, 
 		{
 			informaCam.initData();
 		}
-		catch (PGPException re)
+		catch (Exception re)
 		{
-			throw new RuntimeException("Could not init PGP data",re);
+			throw new RuntimeException("Could not init data",re);
 		}
 				
 		try {

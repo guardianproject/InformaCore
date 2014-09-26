@@ -40,8 +40,7 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 					}
 				}
 			} catch (InterruptedException e) {
-				Log.e(LOG, e.toString());
-				e.printStackTrace();
+				Log.e(LOG, e.toString(),e);				
 			}
 		}
 	}

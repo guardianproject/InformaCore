@@ -191,8 +191,8 @@ public class VideoConstructor {
 					"-vcodec", "copy", "-an", "-f", "md5", "-"
 			};
 			
-			Logger.d(LOG, "ALSO, Storage.EXTERNAL_DIR: " + Storage.EXTERNAL_DIR);
-			Logger.d(LOG, "HASING VIDEO: " + tmpMedia.getAbsolutePath() + " (cannonical: " + tmpMedia.getCanonicalPath() + ")");
+			//Logger.d(LOG, "ALSO, Storage.EXTERNAL_DIR: " + Storage.EXTERNAL_DIR);
+			//Logger.d(LOG, "HASING VIDEO: " + tmpMedia.getAbsolutePath() + " (cannonical: " + tmpMedia.getCanonicalPath() + ")");
 			
 			execProcess(cmdHash, new ShellUtils.ShellCallback () {
 

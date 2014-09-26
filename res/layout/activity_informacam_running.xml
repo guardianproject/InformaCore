@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/camera_chooser_root_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/black"
+    android:padding="10dp"
+    android:orientation="vertical"
+    android:gravity="center"
+    >
+
+    <TextView
+        android:id="@+id/informacam_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="InformaCam is now active. You may exit to any camera app to shoot photos and video. Return here to finish."
+        android:layout_centerInParent="true"
+        android:textColor="@drawable/white"
+        android:textSize="20dp"
+         />
+    
+    <Button
+        android:id="@+id/informacam_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="FINISH CAPTURE"
+           android:textColor="@drawable/white"
+           android:layout_marginTop="20dp"
+         />
+
+</LinearLayout>

@@ -360,6 +360,11 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 	}
 
+	public boolean suckersActive ()
+	{
+		return suckersActive;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public void startAllSuckers() {
 		
@@ -606,8 +611,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return cacheFile.getAbsolutePath();
 	}
 	
-	public List<String> getCacheFiles() {
+	public List<String> getCacheFiles() {			
 		return cacheFiles;
+	}
+	
+	public void resetCacheFiles ()
+	{
+		String lastCache = cacheFiles.get(cacheFiles.size()-1);
+		cacheFiles = new ArrayList<String>();
+		cacheFiles.add(lastCache);
 	}
 
 	@SuppressWarnings("unchecked")

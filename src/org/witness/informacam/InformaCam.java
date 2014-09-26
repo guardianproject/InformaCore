@@ -287,35 +287,42 @@ public class InformaCam extends Application {
 		sendBroadcast(intent);
 	}
 	
-	public void initData() throws PGPException {
+	public void initData() throws PGPException, IllegalAccessException, InstantiationException, IOException {
 		
-		signatureService.initKey( (ISecretKey) getModel(new ISecretKey()));
+		ISecretKey sKey =  (ISecretKey) getModel(new ISecretKey());
 		
-		mediaManifest = (IMediaManifest) getModel(mediaManifest);
-		if(mediaManifest.getMediaList().size() > 0) {
-			for(IMedia m : mediaManifest.getMediaList()) {
-				m.isNew = false;
+		if (sKey != null)
+		{
+			signatureService.initKey(sKey);
+			
+			mediaManifest = (IMediaManifest) getModel(mediaManifest);
+			if(mediaManifest.getMediaList().size() > 0) {
+				for(IMedia m : mediaManifest.getMediaList()) {
+					m.isNew = false;
+				}
 			}
+			
+			installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);		
+			
+			notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
+			if(notificationsManifest.notifications.size() > 0) {
+				notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
+			
+				saveState(notificationsManifest);
+			}
+			
+			transportManifest = (ITransportManifest) getModel(transportManifest);
+			languageMap = (ILanguageMap) getModel(languageMap);
+			
+			/**
+			 * XXX
+			 * this is to set some testing preferences
+			 * i.e. Debug.testUser_1();
+			 */
+			Debug.testUser_1();
 		}
-		
-		installedOrganizations = (IInstalledOrganizations) getModel(installedOrganizations);		
-		
-		notificationsManifest = (INotificationsManifest) getModel(notificationsManifest);
-		if(notificationsManifest.notifications.size() > 0) {
-			notificationsManifest.sortBy(Models.INotificationManifest.Sort.DATE_DESC);
-		
-			saveState(notificationsManifest);
-		}
-		
-		transportManifest = (ITransportManifest) getModel(transportManifest);
-		languageMap = (ILanguageMap) getModel(languageMap);
-		
-		/**
-		 * XXX
-		 * this is to set some testing preferences
-		 * i.e. Debug.testUser_1();
-		 */
-		Debug.testUser_1();
+		else
+			throw new PGPException("Secret Key is null");
 	}
 	
 	private void setModels() {
@@ -465,34 +472,31 @@ public class InformaCam extends Application {
 		return result;
 	}
 
-	public Model getModel(Model model) {
+	public Model getModel(Model model) throws IOException, IllegalAccessException, InstantiationException {
 		byte[] bytes = null;
-		try {
-			if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
-				bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
-				bytes = ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
-				bytes = ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
-				bytes = ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
-				bytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
-				bytes = ioService.getBytes(IManifest.LANG, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(ITransportManifest.class.getName())) {
-				bytes = ioService.getBytes(IManifest.TRANSPORT, Type.IOCIPHER);
-			} else if(model.getClass().getName().equals(IInstalledForms.class.getName())) {
-				bytes = ioService.getBytes(IManifest.FORMS, Type.IOCIPHER);
-			}
-
-			if(!Arrays.equals(bytes, new byte[0])) {
-				model.inflate(bytes);
-			}
-
-		} catch(Exception e) {
-			Logger.e(LOG, e);
+		
+		if(model.getClass().getName().equals(IInstalledOrganizations.class.getName())) {
+			bytes = ioService.getBytes(IManifest.ORGS, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(IKeyStore.class.getName())) {
+			bytes = ioService.getBytes(IManifest.KEY_STORE_MANIFEST, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(IMediaManifest.class.getName())) {
+			bytes = ioService.getBytes(IManifest.MEDIA, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(ISecretKey.class.getName())) {
+			bytes = ioService.getBytes(Models.IUser.SECRET, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(INotificationsManifest.class.getName())) {
+			bytes = ioService.getBytes(IManifest.NOTIFICATIONS, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(ILanguageMap.class.getName())) {
+			bytes = ioService.getBytes(IManifest.LANG, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(ITransportManifest.class.getName())) {
+			bytes = ioService.getBytes(IManifest.TRANSPORT, Type.IOCIPHER);
+		} else if(model.getClass().getName().equals(IInstalledForms.class.getName())) {
+			bytes = ioService.getBytes(IManifest.FORMS, Type.IOCIPHER);
 		}
+
+		if(!Arrays.equals(bytes, new byte[0])) {
+			model.inflate(bytes);
+		}
+
 
 		return model;
 

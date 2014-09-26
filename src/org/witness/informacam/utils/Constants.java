@@ -701,6 +701,7 @@ public class Constants {
 			public static final class Type {
 				public final static int CAMERA = 500;
 				public final static int CAMCORDER = 501;
+				public final static int USERCONTROLLED = 502;
 			}
 
 			public static final class Intents {

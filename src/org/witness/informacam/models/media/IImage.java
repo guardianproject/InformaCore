@@ -33,15 +33,15 @@ public class IImage extends IMedia {
 		
 		InformaCam informaCam = InformaCam.getInstance();
 
+
+		BitmapFactory.Options opts = new BitmapFactory.Options();	
+		opts.inJustDecodeBounds = true;
+
 		InputStream isImage = informaCam.ioService.getStream(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source);
-
-		BitmapFactory.Options opts = new BitmapFactory.Options();		                            
-		opts.inScaled = false; 		
-		opts.inPurgeable=true;
-
-		Bitmap bitmap_ = BitmapFactory.decodeStream(isImage, null, opts);
-		height = bitmap_.getHeight();
-		width = bitmap_.getWidth();
+		BitmapFactory.decodeStream(isImage, null, opts);
+		height = opts.outHeight;
+		width = opts.outWidth;	
+		isImage.close();
 		
 		// hash
 		if(genealogy == null) {
@@ -52,8 +52,10 @@ public class IImage extends IMedia {
 		
 		try
 		{
-			hash = MediaHasher.getJpegHash(informaCam.ioService.getStream(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source));			
-			Log.d(LOG,"import media hash:" + hash);
+			isImage = informaCam.ioService.getStream(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source);
+			hash = MediaHasher.getJpegHash(isImage);
+			isImage.close();
+			
 		}
 		catch (Exception e)
 		{
@@ -64,7 +66,10 @@ public class IImage extends IMedia {
 		genealogy.hashes.add(hash);
 				
 		// 3. list and preview
-		byte[] listViewBytes = ImageUtility.downsampleImageForListOrPreview(bitmap_);
+		int sampleSize = ImageUtility.calculateInSampleSize(opts, 320, 240);	
+		isImage = informaCam.ioService.getStream(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source);
+		byte[] listViewBytes = ImageUtility.downsampleImage(isImage, sampleSize);
+		isImage.close();
 		
 		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 			info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(dcimEntry.originalHash, "PREVIEW_" + dcimEntry.name);
@@ -91,7 +96,6 @@ public class IImage extends IMedia {
 		}
 		
 		listViewBytes = null;
-		bitmap_.recycle();
 		
 		return true;
 	}

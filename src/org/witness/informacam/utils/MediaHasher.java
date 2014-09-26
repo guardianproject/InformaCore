@@ -18,8 +18,6 @@ import android.graphics.Bitmap;
 
 public class MediaHasher 
 {
-	private final static int BYTE_READ_SIZE = 8192;
-
 	public static String hash (File file, String hashFunction)  throws IOException, NoSuchAlgorithmException
 	{
 		return hash (new FileInputStream(file), hashFunction);
@@ -35,7 +33,8 @@ public class MediaHasher
 		MessageDigest digester;
 		
 		digester = MessageDigest.getInstance(hashFunction); //MD5 or SHA-1
-	
+		int BYTE_READ_SIZE = 1024*64; // 64k chunks
+		
 		  byte[] bytes = new byte[BYTE_READ_SIZE];
 		  int byteCount;
 		  while ((byteCount = is.read(bytes)) > 0) {
@@ -44,14 +43,7 @@ public class MediaHasher
 		  
 		  byte[] messageDigest = digester.digest();
 		  
-		// Create Hex String WTF?!
-		  	/*
-	        StringBuffer hexString = new StringBuffer();
-	        for (int i=0; i<messageDigest.length; i++)
-	            hexString.append(Integer.toHexString(0xFF & messageDigest[i]));
-	        */
-	        
-	        return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
+	      return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
 	
 	}
 	

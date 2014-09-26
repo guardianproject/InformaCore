@@ -9,29 +9,31 @@ import java.util.Vector;
 import org.witness.informacam.Debug;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.j3m.IDCIMDescriptor;
-import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.App.Storage;
+import org.witness.informacam.utils.Constants.Logger;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.database.ContentObserver;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.FileObserver;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
 
-public class DCIMObserver {
+public class DCIMObserver extends BroadcastReceiver {
 	private final static String LOG = Storage.LOG;
 
-	public IDCIMDescriptor dcimDescriptor;
+	public static IDCIMDescriptor dcimDescriptor;
 	public ComponentName cameraComponent;
 	
 	List<ContentObserver> observers;
 	InformaCam informaCam = InformaCam.getInstance();
-	
 
 	Handler h;
 	private Context mContext;
@@ -41,16 +43,21 @@ public class DCIMObserver {
 
 	private boolean debug = false;
 
+	public DCIMObserver () {}
+	
 	public DCIMObserver(Context context, String parentId, ComponentName cameraComponent) {
 
 		mContext = context;
 		this.cameraComponent = cameraComponent;
 
-		List<RunningAppProcessInfo> running = ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
-		for(RunningAppProcessInfo r : running) {
-			if(r.processName.equals(cameraComponent.getPackageName())) {
-				raPID = r.pid;
-				break;
+		if (cameraComponent != null)
+		{
+			List<RunningAppProcessInfo> running = ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
+			for(RunningAppProcessInfo r : running) {
+				if(r.processName.equals(cameraComponent.getPackageName())) {
+					raPID = r.pid;
+					break;
+				}
 			}
 		}
 
@@ -76,12 +83,12 @@ public class DCIMObserver {
 		fileMonitor.start();
 		dcimDescriptor.startSession();
 
-		Log.d(LOG, "DCIM OBSERVER INITED");
+		//Log.d(LOG, "DCIM OBSERVER INITED");
 	}
 
 	public void destroy() {
 		dcimDescriptor.stopSession();
-
+		dcimDescriptor = null;
 
 		for(ContentObserver o : observers) {
 			mContext.getContentResolver().unregisterContentObserver(o);
@@ -234,7 +241,7 @@ public class DCIMObserver {
 				Logger.d(LOG, "AUTHORITY: " + authority.toString());
 				
 				if(uri != null) {
-					Log.d(LOG, "ON CHANGE CALLED (with URI!)");
+					//Log.d(LOG, "ON CHANGE CALLED (with URI!)");
 					Logger.d(LOG, "URI: " + uri.toString());
 				}
 			}
@@ -264,6 +271,28 @@ public class DCIMObserver {
 			return true;
 		}
 
+	}
+	
+	@Override
+	public void onReceive(Context context, Intent intent) {
+
+	    Cursor cursor = context.getContentResolver().query(intent.getData(),      null,null, null, null);
+	    cursor.moveToFirst();
+	    String media_path = cursor.getString(cursor.getColumnIndex("_data"));
+	    cursor.close();
+	    
+	    if (dcimDescriptor != null)
+	    {
+		    try
+			{
+				dcimDescriptor.addEntry(Uri.parse(media_path), false);
+			}
+			catch (Exception e)
+			{
+				//Logger.d(LOG,"unable to add thumbnail");
+				Logger.e(LOG, e);
+			}
+	    }
 	}
 
 }
