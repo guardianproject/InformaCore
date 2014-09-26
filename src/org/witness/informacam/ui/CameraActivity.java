@@ -236,7 +236,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				@Override
 				public void onClick(View arg0) {
 					
-					onActivityResult(Codes.Routes.IMAGE_CAPTURE,RESULT_OK,null);
+					finish();//on destroy will do the rest
 				}
 				
 			});
