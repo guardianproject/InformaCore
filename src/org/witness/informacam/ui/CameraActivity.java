@@ -74,7 +74,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 					int cameraType = getIntent().getIntExtra(Codes.Extras.CAMERA_TYPE, -1);
 					switch(cameraType) {
 					case Camera.Type.CAMERA:
-						cameraIntentFlag = Camera.Intents.CAMERA_SIMPLE;
+						cameraIntentFlag = Camera.Intents.CAMERA;
 						break;
 					case Camera.Type.CAMCORDER:
 						cameraIntentFlag = Camera.Intents.CAMCORDER;
