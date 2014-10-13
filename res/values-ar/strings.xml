@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name">انفورماكام</string>
   <string name="ok">موافق</string>
   <string name="continue_">واصل</string>
   <string name="get_in">تسجيل الدخول</string>
