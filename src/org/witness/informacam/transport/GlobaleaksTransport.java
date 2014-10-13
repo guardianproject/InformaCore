@@ -81,7 +81,7 @@ public class GlobaleaksTransport extends Transport {
 			{
 				mBuilder.setTicker(getString(R.string.network_error_restarting_upload_));
 				mNotifyManager.notify(NOTIFY_ID, mBuilder.build());
-				Logger.e(LOG,e);
+				//Logger.w(LOG,e);
 			}
 		}
 			
