@@ -211,16 +211,14 @@ public class EntryJob extends BackgroundTask {
 			byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
 			
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
-				info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(entry.originalHash, "PREVIEW_" + entry.name);
+				info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(entry.originalHash, entry.name + ".thumb");
 				informaCam.ioService.saveBlob(previewBytes, preview);
 				entry.thumbnail = new IAsset(preview.getAbsolutePath());
 			} else {
-				java.io.File preview = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "PREVIEW_" + entry.name);
-			//	java.io.File list_view = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "LIST_VIEW_" + entry.name);
+				java.io.File preview = new java.io.File(IOUtility.buildPublicPath(new String [] {"thumbnails"}), entry.name + ".thumb");
 				
 				try {
 					informaCam.ioService.saveBlob(previewBytes, preview, true);
-				//	informaCam.ioService.saveBlob(previewBytes, list_view, true);
 				} catch (IOException e) {
 					Logger.e(LOG, e);
 				}
@@ -247,15 +245,14 @@ public class EntryJob extends BackgroundTask {
 		}
 
 		if(b != null) {
-			String tPath = entry.name.substring(entry.name.lastIndexOf("."));
-			String thumbnailFileName = entry.name.replace(tPath, "_thumb.jpg");
+			String thumbnailFileName = entry.name +  ".thumb";
 			
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File thumbnail = new info.guardianproject.iocipher.File(entry.originalHash, thumbnailFileName);
 				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b), thumbnail);
 				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
 			} else {
-				java.io.File thumbnail = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), thumbnailFileName);
+				java.io.File thumbnail = new java.io.File(IOUtility.buildPublicPath(new String [] {"thumbnails"}), thumbnailFileName);
 			
 				try {
 					informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b), thumbnail, true);
@@ -296,7 +293,7 @@ public class EntryJob extends BackgroundTask {
 		// Make folder for assets according to preferences
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
-				info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(entry.originalHash);
+				info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File("thumbnails");
 				try {
 					if(!rootFolder.exists()) {
 						rootFolder.mkdir();
@@ -305,7 +302,8 @@ public class EntryJob extends BackgroundTask {
 					Logger.e(LOG, e);
 				}
 			} else {
-				java.io.File rootFolder = new java.io.File(Storage.EXTERNAL_DIR, entry.originalHash);
+				
+				java.io.File rootFolder = new java.io.File(Storage.EXTERNAL_DIR, "thumbnails");
 				try {
 					if(!rootFolder.exists()) {
 						rootFolder.mkdir();

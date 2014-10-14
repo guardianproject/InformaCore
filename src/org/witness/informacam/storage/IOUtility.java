@@ -55,13 +55,13 @@ public class IOUtility {
 	private final static String LOG = App.Storage.LOG;
 	
 	public static String buildPublicPath(String[] segments) {
-		Logger.d(LOG, Storage.EXTERNAL_DIR);
+		//Logger.d(LOG, Storage.EXTERNAL_DIR);
 		String builtPath = buildPath(segments); 
 		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, builtPath }, builtPath.startsWith("/") ? "" : "/");
 	}
 	
 	public static String buildPath(String[] segments) {
-		Log.d(LOG, StringUtils.join(segments, "/"));
+		//Log.d(LOG, StringUtils.join(segments, "/"));
 		return StringUtils.join(segments, "/");
 	}
 

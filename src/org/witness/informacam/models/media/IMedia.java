@@ -610,7 +610,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
-			String exportFileName = System.currentTimeMillis() + "_" + this.dcimEntry.name;
+			String exportFileName = this.dcimEntry.name;
 			notification.generateId();
 			notification.mediaId = this._id;
 
@@ -646,7 +646,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
 			}
 			
-			//Logger.d(LOG, "EXPORT ASSET SETTINGS: " + exportAsset.asJson().toString());
 			constructExport(exportAsset, submission);
 			
 			if(submission != null) {
@@ -939,7 +938,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		try {
-			info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(dcimEntry.originalHash);
+			info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File(".");
 			this.rootFolder = rootFolder.getAbsolutePath();
 
 			if(!rootFolder.exists()) {
@@ -1033,7 +1032,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		int source = dcimEntry.fileAsset.source;
 		
 		if(source == Type.FILE_SYSTEM) {
-			path = IOUtility.buildPublicPath(new String[] { path });
+			path = IOUtility.buildPublicPath(new String[] { name });
 		}
 		
 		return new IAsset(path, source, name);
@@ -1045,7 +1044,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		int source = dcimEntry.fileAsset.source;
 		
 		if(source == Type.FILE_SYSTEM) {
-			path = IOUtility.buildPublicPath(new String[] { path });
+			path = IOUtility.buildPublicPath(new String[] { name });
 		}
 		
 		if(informaCam.ioService.getBytes(path, source) == null) {
