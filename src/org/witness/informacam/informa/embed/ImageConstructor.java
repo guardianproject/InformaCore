@@ -68,7 +68,7 @@ public class ImageConstructor {
 			intendedForIOCipher = false;
 		}
 
-		String metadata = new String(informaCam.ioService.getBytes(this.media.getAsset(Models.IMedia.Assets.J3M)));
+		String metadata = new String(informaCam.ioService.getBytes(this.media.getAsset(media.dcimEntry.name + ".j3m")));
 		
 		try {
 			int c = constructImage(sourceAsset.path, this.destinationAsset.path, metadata, metadata.length());			

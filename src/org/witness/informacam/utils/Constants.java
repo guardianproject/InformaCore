@@ -491,7 +491,7 @@ public class Constants {
 			}
 			
 			public class Assets {
-				public final static String J3M = "informacam.j3m";
+			//	public final static String J3M = "informacam.j3m";
 			}
 
 			public class j3m {

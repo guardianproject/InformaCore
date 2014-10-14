@@ -56,7 +56,7 @@ public class VideoConstructor {
 		this.connection = connection;
 		
 		sourceAsset = this.media.dcimEntry.fileAsset;
-		metadata = media.getAsset(Models.IMedia.Assets.J3M);
+		metadata = media.getAsset(this.media.dcimEntry.name + ".j3m");
 		
 		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 		if(!publicRoot.exists()) {

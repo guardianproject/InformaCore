@@ -580,7 +580,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(bSig.toByteArray()));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
-			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
+			IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m");
 			
 			if(!debugMode) {
 				
@@ -776,7 +776,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
 			
-			IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
+		//	IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
+			IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m");
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
@@ -1028,7 +1029,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 	
 	public IAsset addAsset(String name) {
-		String path = IOUtility.buildPath(new String[] { rootFolder, Models.IMedia.Assets.J3M });
+		String path = IOUtility.buildPath(new String[] { rootFolder, name });
 		int source = dcimEntry.fileAsset.source;
 		
 		if(source == Type.FILE_SYSTEM) {

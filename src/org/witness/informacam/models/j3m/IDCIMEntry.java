@@ -18,8 +18,6 @@ public class IDCIMEntry extends Model implements Serializable {
 	
 	public IAsset fileAsset = null;
 	public IAsset thumbnail = null;
-	public IAsset preview = null;
-	public IAsset list_view = null;
 	
 	public IExif exif = null;
 	public String cameraComponent = null;

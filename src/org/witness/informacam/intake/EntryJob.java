@@ -204,7 +204,6 @@ public class EntryJob extends BackgroundTask {
 
 			Bitmap b_ = mmr.getFrameAtTime();
 			if(b_ == null) {
-				Logger.d(LOG, "I COULD NOT GET A BITMAP AT ANY FRAME");
 			} else {
 				Logger.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
 			}
@@ -214,20 +213,19 @@ public class EntryJob extends BackgroundTask {
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(entry.originalHash, "PREVIEW_" + entry.name);
 				informaCam.ioService.saveBlob(previewBytes, preview);
-				entry.preview = new IAsset(preview.getAbsolutePath());
+				entry.thumbnail = new IAsset(preview.getAbsolutePath());
 			} else {
 				java.io.File preview = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "PREVIEW_" + entry.name);
-				java.io.File list_view = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "LIST_VIEW_" + entry.name);
+			//	java.io.File list_view = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), "LIST_VIEW_" + entry.name);
 				
 				try {
 					informaCam.ioService.saveBlob(previewBytes, preview, true);
-					informaCam.ioService.saveBlob(previewBytes, list_view, true);
+				//	informaCam.ioService.saveBlob(previewBytes, list_view, true);
 				} catch (IOException e) {
 					Logger.e(LOG, e);
 				}
 				
-				entry.preview = new IAsset(preview.getAbsolutePath());
-				entry.list_view = new IAsset(list_view.getAbsolutePath());
+				entry.thumbnail = new IAsset(preview.getAbsolutePath());
 			}
 
 			previewBytes = null;
@@ -254,20 +252,20 @@ public class EntryJob extends BackgroundTask {
 			
 			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 				info.guardianproject.iocipher.File thumbnail = new info.guardianproject.iocipher.File(entry.originalHash, thumbnailFileName);
-				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, 50), thumbnail);
+				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b), thumbnail);
 				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
 			} else {
 				java.io.File thumbnail = new java.io.File(IOUtility.buildPublicPath(new String [] {entry.originalHash}), thumbnailFileName);
-				Logger.d(LOG, "THUMBNAIL PLACED AT: ");
-				Logger.d(LOG, thumbnail.getAbsolutePath());
+			
 				try {
-					informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b, 50), thumbnail, true);
+					informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b), thumbnail, true);
 				} catch (IOException e) {
-					Logger.d(LOG, "WHAAAT?");
+					//Logger.d(LOG, "WHAAAT?");
 					Logger.e(LOG, e);
 				}
 				
 				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
+				
 			}
 			
 			b.recycle();			

@@ -66,6 +66,7 @@ public class IImage extends IMedia {
 		genealogy.hashes.add(hash);
 				
 		// 3. list and preview
+		/**
 		int sampleSize = ImageUtility.calculateInSampleSize(opts, 320, 240);	
 		isImage = informaCam.ioService.getStream(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source);
 		byte[] listViewBytes = ImageUtility.downsampleImage(isImage, sampleSize);
@@ -96,6 +97,7 @@ public class IImage extends IMedia {
 		}
 		
 		listViewBytes = null;
+		*/
 		
 		return true;
 	}
