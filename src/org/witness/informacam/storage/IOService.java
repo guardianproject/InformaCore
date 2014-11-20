@@ -220,6 +220,7 @@ public class IOService {
 		Object file = null;
 		switch(source) {
 		case Storage.Type.IOCIPHER:
+			
 			file = new info.guardianproject.iocipher.File(pathToData);
 			
 			if(((info.guardianproject.iocipher.File) file).length() > 0) {

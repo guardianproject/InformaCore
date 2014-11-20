@@ -1,7 +1,11 @@
 package org.witness.informacam.ui;
 
+import info.guardianproject.iocipher.File;
+
 import java.util.Iterator;
 import java.util.List;
+
+import javax.xml.transform.Source;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
@@ -9,6 +13,7 @@ import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Camera;
+import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
@@ -18,6 +23,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -33,7 +39,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	private Intent cameraIntent = null;
 	private ComponentName cameraComponent = null;
 	private String cameraIntentFlag = Camera.Intents.CAMERA;
-
+	private int storageType = Storage.Type.FILE_SYSTEM;
 	private boolean controlsInforma = true;
 	private String parentId = null;
 
@@ -75,10 +81,20 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 					switch(cameraType) {
 					case Camera.Type.CAMERA:
 						cameraIntentFlag = Camera.Intents.CAMERA;
+						storageType = Storage.Type.FILE_SYSTEM;
 						break;
 					case Camera.Type.CAMCORDER:
 						cameraIntentFlag = Camera.Intents.CAMCORDER;
+						storageType = Storage.Type.FILE_SYSTEM;
 						break;
+					case Camera.Type.SECURE_CAMERA:
+						cameraIntentFlag = Camera.Intents.SECURE_CAMERA;
+						storageType = Storage.Type.IOCIPHER;
+						break;
+					case Camera.Type.SECURE_CAMCORDER:
+						cameraIntentFlag = Camera.Intents.SECURE_CAMCORDER;
+						storageType = Storage.Type.IOCIPHER;
+						break;						
 					case Camera.Type.USERCONTROLLED:
 						cameraIntentFlag = null;
 						break;
@@ -99,6 +115,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		if (cameraIntentFlag != null)
 		{
+			
 			List<ResolveInfo> resolveInfo = getPackageManager().queryIntentActivities(new Intent(cameraIntentFlag), 0);
 	
 			for(ResolveInfo ri : resolveInfo) {
@@ -120,7 +137,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				break;
 			}
 	
-			if(resolveInfo.isEmpty() || cameraComponent == null) {
+			if(cameraComponent == null) {
 				Toast.makeText(this, getString(R.string.could_not_find_any_camera_activity), Toast.LENGTH_LONG).show();
 				setResult(Activity.RESULT_CANCELED);
 				finish();
@@ -190,6 +207,25 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			informaCam.informaService.stopAllSuckers();
 			informaCam.ioService.stopDCIMObserver();
 			informaCam.stopInforma();
+			
+			if (data != null && data.hasExtra("path"))
+			{
+				//secure cams returned single file
+				String path = data.getStringExtra("path");
+				
+				try {
+					informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
+				} catch (InstantiationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				
+			}
+			
 			
 			IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
 			if(dcimDescriptor.dcimList.size() > 0) {

@@ -257,7 +257,7 @@ public class DCIMObserver extends BroadcastReceiver {
 
 			try
 			{
-				dcimDescriptor.addEntry(authority, isThumbnail);
+				dcimDescriptor.addEntry(authority.toString(), isThumbnail,Storage.Type.FILE_SYSTEM);
 			}
 			catch (Exception e)
 			{
@@ -285,7 +285,7 @@ public class DCIMObserver extends BroadcastReceiver {
 	    {
 		    try
 			{
-				dcimDescriptor.addEntry(Uri.parse(media_path), false);
+				dcimDescriptor.addEntry(media_path, false, Storage.Type.FILE_SYSTEM);
 			}
 			catch (Exception e)
 			{

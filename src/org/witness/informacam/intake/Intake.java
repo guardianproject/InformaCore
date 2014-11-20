@@ -5,11 +5,14 @@ import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.Codes;
+import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Bundle;
+import android.os.Message;
 
 public class Intake extends IntentService {
 	
@@ -34,7 +37,7 @@ public class Intake extends IntentService {
 		for(IDCIMEntry entry : dcimDescriptor.dcimList) {
 			queue.add(new EntryJob(queue, entry, parentId, cacheFiles, timeOffset));
 			if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
-				queue.numProcessing++;
+				//queue.numProcessing++;
 			}
 		}
 		

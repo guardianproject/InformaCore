@@ -5,11 +5,11 @@ import info.guardianproject.cacheword.ICacheWordSubscriber;
 import info.guardianproject.cacheword.PassphraseSecrets;
 import info.guardianproject.cacheword.Wiper;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import javax.crypto.SecretKey;
 
-import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.credentials.ICredentials;
 import org.witness.informacam.utils.Constants.Actions;
@@ -54,7 +54,6 @@ public class CredentialManager implements ICacheWordSubscriber {
         try {
             secrets = PassphraseSecrets.fetchSecrets(context, password.toCharArray());
             cacheWord.setCachedSecrets(secrets);
-            
             
             return true;
         } catch (GeneralSecurityException e) {
@@ -127,12 +126,10 @@ public class CredentialManager implements ICacheWordSubscriber {
 	public void onCacheWordLocked() {
 		Log.d(LOG, "onCacheWordLocked()");
 		
-		/*
 		informaCam.user.isLoggedIn = false;
 		informaCam.user.lastLogOut = System.currentTimeMillis();
 		
 		informaCam.saveState(informaCam.user);
-		*/
 		
 		this.status = Codes.Status.LOCKED;
 		
@@ -183,7 +180,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 			{
 				throw new RuntimeException("Could not initialize pgp secret key",pge);
 			}
-			/*
+			
 			informaCam.user.isLoggedIn = true;
 			informaCam.user.lastLogIn = System.currentTimeMillis();
 			
@@ -198,7 +195,6 @@ public class CredentialManager implements ICacheWordSubscriber {
 			{
 				Log.e(LOG,"iocipher saveState() error",ioe);
 			}
-			*/
 		}
 	}
 }

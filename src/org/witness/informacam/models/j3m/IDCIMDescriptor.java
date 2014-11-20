@@ -47,8 +47,10 @@ public class IDCIMDescriptor extends Model {
 		return new IDCIMSerializable(shortDescription);
 	}
 
-	public void addEntry(Uri authority, boolean isThumbnail) throws InstantiationException, IllegalAccessException {
+	public void addEntry(String path, boolean isThumbnail, int sourceType) throws InstantiationException, IllegalAccessException {
 		final IDCIMEntry entry = new IDCIMEntry();
+		
+		Uri authority = Uri.parse(path);
 		entry.authority = authority.toString();
 		
 		String sortBy = "date_added DESC";
@@ -61,7 +63,7 @@ public class IDCIMDescriptor extends Model {
 		Cursor cursor = InformaCam.getInstance().getContentResolver().query(authority, null, null, null, sortBy);
 
 		if(cursor != null && cursor.moveToFirst()) {
-			String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
+			path = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
 			
 			/*
 			 * IF the path is not already in out dcimList
@@ -75,7 +77,7 @@ public class IDCIMDescriptor extends Model {
 			else
 				intakeMasterList.put(path, entry);
 			
-			entry.fileAsset = new IAsset(path, Storage.Type.FILE_SYSTEM);
+			entry.fileAsset = new IAsset(path, sourceType);
 
 			if(!isThumbnail) {
 				entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
@@ -136,6 +138,75 @@ public class IDCIMDescriptor extends Model {
 			informaCam.startService(intakeIntent);
 			
 			
+		}
+		else
+		{
+			
+			
+			if (intakeMasterList.containsKey(path))
+			{
+				return; //we got it already
+			}
+			else
+				intakeMasterList.put(path, entry);
+			
+			entry.fileAsset = new IAsset(path, sourceType);
+
+			if(!isThumbnail) {
+				entry.timeCaptured = new java.util.Date().getTime();
+				if(entry.timeCaptured < startTime) {
+					Logger.d(LOG, "this media occured too early to count");
+					cursor.close();
+
+					return;
+				}
+
+				entry.mediaType = MimeType.IMAGE;
+				if (path.endsWith("mp4")||path.endsWith("ts"))
+					entry.mediaType = MimeType.VIDEO;
+				
+				entry.cameraComponent = cameraComponent;
+
+				if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
+					entry.mediaType = MimeType.VIDEO;
+				}
+			}
+
+			if(!isThumbnail) {
+				IDCIMEntry clone = new IDCIMEntry(entry);
+
+				if(!shortDescription.contains(clone)) {
+					shortDescription.add(clone);
+				}
+			}
+			
+			entry.exif = new IExif();
+		
+			if (informaCam.informaService != null && informaCam.informaService.getCurrentLocation() != null)
+			{
+				entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
+			}
+
+
+			List<IDCIMEntry> intakeList = new ArrayList<IDCIMEntry>();
+			intakeList.add(entry);
+						
+			InformaCam informaCam = InformaCam.getInstance();
+
+			Intent intakeIntent = new Intent(informaCam, Intake.class);
+
+			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
+						
+			List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
+			informaCam.informaService.resetCacheFiles();
+			
+			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
+			if(parentId != null) {
+				intakeIntent.putExtra(Codes.Extras.MEDIA_PARENT, parentId);
+			}
+
+			informaCam.startService(intakeIntent);
 		}
 	}
 

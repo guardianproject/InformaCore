@@ -45,25 +45,38 @@ public class ImageConstructor {
 		this.connection = connection;
 		
 		sourceAsset = this.media.dcimEntry.fileAsset;		
+		
+		/*
 		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 		if(!publicRoot.exists()) {
 			publicRoot.mkdir();
-		}
+		}*/
 		
 		boolean intendedForIOCipher = false;
+
+		java.io.File fileDest = new java.io.File(destinationAsset.path);
+		if (fileDest.exists())
+			fileDest.delete(); //delete a file if it is there
+		else
+		{
+			fileDest.getParentFile().mkdirs();
+		}
+		
 		if(sourceAsset.source == Type.IOCIPHER) {
 			// If the assets were in IOCIPHER, we have to save them to local storage.
-			sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder);			
+		//	sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, fileDest.getParent());			
 			
 			// this means we also have to save the resulting media to public
 			// (and copy to iocipher later)
-			this.destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
-			intendedForIOCipher = true;
+			//destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, fileDest.getParent(), false);
+			intendedForIOCipher = (destinationAsset.source == Storage.Type.IOCIPHER);
+	
+			//now copy the main image to external
+			IOUtils.copy(new info.guardianproject.iocipher.FileInputStream(sourceAsset.path),new java.io.FileOutputStream(fileDest));
+		
 		}
 		else if (sourceAsset.source == Type.FILE_SYSTEM)
 		{
-			java.io.File fileDest = new java.io.File(destinationAsset.path);
-			fileDest.delete();			
 			IOUtils.copy(new java.io.FileInputStream(sourceAsset.path),new java.io.FileOutputStream(fileDest));
 			intendedForIOCipher = false;
 		}
@@ -71,7 +84,7 @@ public class ImageConstructor {
 		String metadata = new String(informaCam.ioService.getBytes(this.media.getAsset(media.dcimEntry.name + ".j3m")));
 		
 		try {
-			int c = constructImage(sourceAsset.path, this.destinationAsset.path, metadata, metadata.length());			
+			int c = constructImage(destinationAsset.path, destinationAsset.path, metadata, metadata.length());			
 			
 			if(c > 0) {
 				finish(intendedForIOCipher);
@@ -97,8 +110,8 @@ public class ImageConstructor {
 				Logger.e(LOG, e);
 			}
 			
-			java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
-			InformaCam.getInstance().ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
+			//java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
+			//InformaCam.getInstance().ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
 		}
 		
 		if(connection != null) {

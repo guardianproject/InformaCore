@@ -42,9 +42,12 @@ public class IVideo extends IMedia {
 			genealogy = new IGenealogy();
 		}
 		
-		String hash = vc.hashVideo(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source, "mp4");		
 		genealogy.hashes = new ArrayList<String>();
-		genealogy.hashes.add(hash);
+		
+		String hash = vc.hashVideo(dcimEntry.fileAsset.path, dcimEntry.fileAsset.source, "mp4");		
+		
+		if (hash != null)
+			genealogy.hashes.add(hash);
 		
 		// 2. copy over video
 		video = dcimEntry.fileAsset;	
