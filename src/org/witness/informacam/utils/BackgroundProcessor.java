@@ -11,8 +11,8 @@ public class BackgroundProcessor extends LinkedBlockingQueue<BackgroundTask> imp
 	BackgroundTask currentTask = null;
 	BackgroundTask onBatchComplete = null;
 	
-	public int numProcessing = 0;
-	public int numCompleted = 0;
+	public static int numProcessing = 0;
+	public static int numCompleted = 0;
 	
 	private boolean stopped = false;
 	

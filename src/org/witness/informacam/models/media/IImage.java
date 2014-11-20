@@ -48,6 +48,10 @@ public class IImage extends IMedia {
 			genealogy = new IGenealogy();
 		}
 		
+
+		genealogy.hashes = new ArrayList<String>();
+		
+		/*
 		String hash = null;
 		
 		try
@@ -61,9 +65,9 @@ public class IImage extends IMedia {
 		{
 			Log.e(LOG,"error media hash",e);
 		}
-		
-		genealogy.hashes = new ArrayList<String>();
-		genealogy.hashes.add(hash);
+		if (hash != null)
+			genealogy.hashes.add(hash);
+		*/
 		
 		
 		return true;

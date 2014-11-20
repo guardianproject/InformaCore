@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal" >
+    <SurfaceView
+        android:id="@+id/surface_grabber_holder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/surface_grabber_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="10dip"
+        android:layout_marginRight="35dp"
+        android:layout_marginTop="118dp"        
+        android:padding="10dip"
+        android:textSize="30sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:background="#B3000000"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="18dp" >
+
+        <Button
+            android:id="@+id/surface_grabber_button"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:background="@drawable/camera_button_selector" />
+
+    </LinearLayout>
+
+</RelativeLayout>

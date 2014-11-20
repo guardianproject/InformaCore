@@ -110,24 +110,20 @@ public class ILog extends IMedia {
 
 			if(organization != null) {
 
-				if (!debugMode)
-				{
-					info.guardianproject.iocipher.File logEncrypted = new info.guardianproject.iocipher.File(rootFolder, logName + ".pgp"); //add pgp encryption extension
-					
-					OutputStream os = new info.guardianproject.iocipher.FileOutputStream(logEncrypted.getAbsolutePath());
-					os = new Base64OutputStream(os, Base64.DEFAULT);
-					
-					EncryptionUtility.encrypt(informaCam.ioService.getStream(log.getAbsolutePath(), Type.IOCIPHER), os,Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
-
-					os.flush();
-					os.close();
-					
-					log.delete();
-					
-					log = logEncrypted;
-
-				}				
+				info.guardianproject.iocipher.File logEncrypted = new info.guardianproject.iocipher.File(rootFolder, logName + ".pgp"); //add pgp encryption extension
 				
+				OutputStream os = new info.guardianproject.iocipher.FileOutputStream(logEncrypted.getAbsolutePath());
+				os = new Base64OutputStream(os, Base64.DEFAULT);
+				
+				EncryptionUtility.encrypt(informaCam.ioService.getStream(log.getAbsolutePath(), Type.IOCIPHER), os,Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));
+
+				os.flush();
+				os.close();
+				
+				log.delete();
+				
+				log = logEncrypted;
+	
 				ITransportStub submission = new ITransportStub(organization, notification);
 				submission.setAsset(log.getName(), log.getAbsolutePath(), MimeType.LOG, Storage.Type.IOCIPHER);
 				

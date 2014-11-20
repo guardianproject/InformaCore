@@ -1,5 +1,7 @@
 package org.witness.informacam.intake;
 
+import info.guardianproject.informacam.camera.PipeFeeder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +39,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
 public class EntryJob extends BackgroundTask {
@@ -70,6 +73,23 @@ public class EntryJob extends BackgroundTask {
 
 			if(entry != null) {
 				if(!isThumbnail) {
+					
+					backgroundProcessor.numProcessing++;
+					
+					Bundle data = new Bundle();
+					data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);
+					data.putString(Codes.Extras.CONSOLIDATE_MEDIA, entry.originalHash);
+					data.putInt(Codes.Extras.NUM_PROCESSING, backgroundProcessor.numProcessing);
+					data.putInt(Codes.Extras.NUM_COMPLETED, backgroundProcessor.numCompleted);
+
+					Message message = new Message();
+					message.setData(data);
+
+					InformaCamEventListener mListener = informaCam.getEventListener();
+					if (mListener != null) {
+						mListener.onUpdate(message);
+					}
+					
 					IMedia media = new IMedia();
 					media.dcimEntry = entry;
 					media.dcimEntry.timezone = TimeUtility.getTimezone();
@@ -112,21 +132,15 @@ public class EntryJob extends BackgroundTask {
 						}
 					}
 
+					backgroundProcessor.numCompleted++;
+					
 					if(isFinishedProcessing) {
-						backgroundProcessor.numCompleted++;
 						
-						
-						
-						Bundle data = new Bundle();
-						data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.DCIM.ADD);
-						data.putString(Codes.Extras.CONSOLIDATE_MEDIA, entry.originalHash);
 						data.putInt(Codes.Extras.NUM_PROCESSING, backgroundProcessor.numProcessing);
 						data.putInt(Codes.Extras.NUM_COMPLETED, backgroundProcessor.numCompleted);
 
-						Message message = new Message();
 						message.setData(data);
 
-						InformaCamEventListener mListener = informaCam.getEventListener();
 						if (mListener != null) {
 							mListener.onUpdate(message);
 						}
@@ -149,28 +163,61 @@ public class EntryJob extends BackgroundTask {
 
 	private void parseExif() {
 		if(entry.mediaType.equals(MimeType.IMAGE)) {
-			try {
-				ExifInterface ei = new ExifInterface(entry.fileAsset.path);
-
-				entry.exif.aperture = ei.getAttribute(ExifInterface.TAG_APERTURE);
-				entry.exif.timestamp = ei.getAttribute(ExifInterface.TAG_DATETIME);
-				entry.exif.exposure = ei.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
-				entry.exif.flash = ei.getAttributeInt(ExifInterface.TAG_FLASH, -1);
-				entry.exif.focalLength = ei.getAttributeInt(ExifInterface.TAG_FOCAL_LENGTH, -1);
-				entry.exif.iso = ei.getAttribute(ExifInterface.TAG_ISO);
-				entry.exif.make = ei.getAttribute(ExifInterface.TAG_MAKE);
-				entry.exif.model = ei.getAttribute(ExifInterface.TAG_MODEL);
-				entry.exif.orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-				entry.exif.whiteBalance = ei.getAttributeInt(ExifInterface.TAG_WHITE_BALANCE, -1);
-				entry.exif.width = ei.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
-				entry.exif.height = ei.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
-			} catch (IOException e) {
-				Logger.e(LOG, e);
+			
+			if (entry.fileAsset.source == Storage.Type.FILE_SYSTEM)
+			{
+				try {
+					ExifInterface ei = new ExifInterface(entry.fileAsset.path);
+	
+					entry.exif.aperture = ei.getAttribute(ExifInterface.TAG_APERTURE);
+					entry.exif.timestamp = ei.getAttribute(ExifInterface.TAG_DATETIME);
+					entry.exif.exposure = ei.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
+					entry.exif.flash = ei.getAttributeInt(ExifInterface.TAG_FLASH, -1);
+					entry.exif.focalLength = ei.getAttributeInt(ExifInterface.TAG_FOCAL_LENGTH, -1);
+					entry.exif.iso = ei.getAttribute(ExifInterface.TAG_ISO);
+					entry.exif.make = ei.getAttribute(ExifInterface.TAG_MAKE);
+					entry.exif.model = ei.getAttribute(ExifInterface.TAG_MODEL);
+					entry.exif.orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+					entry.exif.whiteBalance = ei.getAttributeInt(ExifInterface.TAG_WHITE_BALANCE, -1);
+					entry.exif.width = ei.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
+					entry.exif.height = ei.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);				
+					
+				} catch (IOException e) {
+					Logger.e(LOG, e);
+				}
 			}
+			else
+			{
+				//need exif reader for encrypted storage
+			}
+			
 		} else if(entry.mediaType.equals(MimeType.VIDEO)) {
+			
 			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-			mmr.setDataSource(entry.fileAsset.path);
 
+			if (entry.fileAsset.source == Storage.Type.FILE_SYSTEM)
+			{
+				mmr.setDataSource(entry.fileAsset.path);
+			}
+			else if (entry.fileAsset.source == Storage.Type.IOCIPHER)
+			{
+				try
+				{
+				   ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
+				   ParcelFileDescriptor.AutoCloseOutputStream acos = new ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]);
+				   
+			       new PipeFeeder(new info.guardianproject.iocipher.FileInputStream(entry.fileAsset.path),acos).start();
+			       
+			       mmr.setDataSource(pipe[0].getFileDescriptor());
+			       
+				}
+				catch (Exception ioe)
+				{
+					Logger.e(LOG, ioe);
+					return;
+				}
+			}
+			
 			entry.exif.duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
 			
 			/*
@@ -187,6 +234,7 @@ public class EntryJob extends BackgroundTask {
 
 			//Logger.d(LOG, "VIDEO EXIF: " + entry.exif.asJson().toString());
 			mmr.release();
+			
 		}
 	}
 
@@ -194,14 +242,35 @@ public class EntryJob extends BackgroundTask {
 		Bitmap b = null;
 
 		if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+			
 			b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 			if(b == null) {
 				b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
 			}
 
 			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-			mmr.setDataSource(entry.fileAsset.path);
-
+			
+			if (entry.fileAsset.source == Storage.Type.FILE_SYSTEM)
+			{
+				mmr.setDataSource(entry.fileAsset.path);
+			}
+			else if (entry.fileAsset.source == Storage.Type.IOCIPHER)
+			{
+				try
+				{
+				   ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
+				   ParcelFileDescriptor.AutoCloseOutputStream acos = new ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]);
+			       new PipeFeeder(new info.guardianproject.iocipher.FileInputStream(entry.fileAsset.path),acos).start();
+			       
+			       mmr.setDataSource(pipe[0].getFileDescriptor());
+				}
+				catch (Exception ioe)
+				{
+					Logger.e(LOG, ioe);
+					return;
+				}
+			}
+			
 			Bitmap b_ = mmr.getFrameAtTime();
 			if(b_ == null) {
 			} else {
@@ -234,6 +303,8 @@ public class EntryJob extends BackgroundTask {
 
 			b_.recycle();
 			mmr.release();
+			
+			
 		} else if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
 			InputStream is = informaCam.ioService.getStream(entry.fileAsset.path, entry.fileAsset.source);
 
@@ -270,8 +341,13 @@ public class EntryJob extends BackgroundTask {
 	}
 
 	private void analyze() throws IOException, NoSuchAlgorithmException, JSONException {
-		java.io.File file = new java.io.File(entry.fileAsset.path);
-
+		java.io.File file = null;
+		
+		if (entry.fileAsset.source == Storage.Type.IOCIPHER)
+			file = new info.guardianproject.iocipher.File(entry.fileAsset.path);
+		else
+			file = new java.io.File(entry.fileAsset.path);
+		
 		if(!entry.isAvailable()) {
 			entry = null;
 			return;
@@ -280,12 +356,26 @@ public class EntryJob extends BackgroundTask {
 		entry.name = file.getName();
 		entry.fileAsset.name = entry.name;
 		entry.size = file.length();
-		entry.timeCaptured = file.lastModified();	// Questionable...?
-
-		entry.originalHash = MediaHasher.hash(file, "SHA-1");
-
+		
+		if (entry.fileAsset.source == Storage.Type.FILE_SYSTEM)
+			entry.timeCaptured = file.lastModified();	// Questionable...?
+		else
+			entry.timeCaptured = new java.util.Date().getTime();
+		
+		if (entry.fileAsset.source == Storage.Type.IOCIPHER)
+			entry.originalHash = MediaHasher.hash(new info.guardianproject.iocipher.FileInputStream((info.guardianproject.iocipher.File) file), "SHA-1");
+		else
+			entry.originalHash = MediaHasher.hash(file, "SHA-1");
+		
 		if(entry.uri == null) {
-			entry.uri = IOUtility.getUriFromFile(informaCam, Uri.parse(entry.authority), file).toString();
+			if (entry.fileAsset.source == Storage.Type.IOCIPHER)
+			{
+				entry.uri = Uri.parse(entry.authority).toString();
+			}
+			else
+			{
+				entry.uri = IOUtility.getUriFromFile(informaCam, Uri.parse(entry.authority), file).toString();
+			}
 		}
 
 		//Logger.d(LOG, "analyzing: " + entry.asJson().toString());
@@ -326,7 +416,7 @@ public class EntryJob extends BackgroundTask {
 			try
 			{
 				IAsset publicAsset = new IAsset(entry.fileAsset);
-				if(entry.fileAsset.copy(Storage.Type.FILE_SYSTEM, Storage.Type.IOCIPHER, entry.originalHash)) {
+				if(entry.fileAsset.copy(entry.fileAsset.source, Storage.Type.IOCIPHER, entry.originalHash)) {
 				//	Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
 					informaCam.ioService.delete(entry.uri, Storage.Type.CONTENT_RESOLVER);
 				}

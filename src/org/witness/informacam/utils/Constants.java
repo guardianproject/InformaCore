@@ -702,11 +702,15 @@ public class Constants {
 				public final static int CAMERA = 500;
 				public final static int CAMCORDER = 501;
 				public final static int USERCONTROLLED = 502;
+				public final static int SECURE_CAMERA = 503;
+				public final static int SECURE_CAMCORDER = 504;
 			}
 
 			public static final class Intents {
 				public final static String CAMERA = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
 				public final static String CAMCORDER = MediaStore.INTENT_ACTION_VIDEO_CAMERA;
+				public final static String SECURE_CAMERA =  "info.guardianproject.action.SECURE_STILL_IMAGE_CAMERA";
+				public final static String SECURE_CAMCORDER =  "info.guardianproject.action.SECURE_VIDEO_CAMERA";
 			//	public final static String CAMERA_SIMPLE = MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
 			}
 
@@ -720,6 +724,7 @@ public class Constants {
 			public final static List<String> SUPPORTED;
 			static {
 				List<String> supported = new Vector<String>();
+				supported.add("org.witness.informacam");
 				supported.add("com.sec.android.app.camera");
 				supported.add("com.android.camera");
 				supported.add("com.google.android.gallery3d");

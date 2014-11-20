@@ -7,12 +7,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.spongycastle.openpgp.PGPException;
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
@@ -82,9 +85,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 	public CharSequence detailsAsText = null;
 
-//	protected Handler responseHandler;
-	protected boolean debugMode = false;
-	
 	private Bitmap mThumbnail = null;
 	
 	private Handler mHandler = null;
@@ -498,19 +498,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 
-	public IAsset export(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public IAsset export(Context context, Handler h) throws InstantiationException, IllegalAccessException, IOException, NoSuchAlgorithmException, SignatureException, NoSuchProviderException, PGPException {
 		return export(context, h, null, true, true, false);
 	}
 
-	public IAsset export(Context context, Handler h, IOrganization organization) throws FileNotFoundException, InstantiationException, IllegalAccessException {
-		return export(context, h, organization, true, false, true);
+	public IAsset export(Context context, Handler h, IOrganization organization) throws InstantiationException, IllegalAccessException, IOException, NoSuchAlgorithmException, SignatureException, NoSuchProviderException, PGPException {
+		return export(context, h, organization, true, (organization != null), true);
 	}
 
-	public IAsset export(Context context, Handler h, IOrganization organization, boolean includeSensorLogs, boolean isLocalShare, boolean doSubmission) throws FileNotFoundException, InstantiationException, IllegalAccessException {
-		
-		//Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
-	//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
-	//	System.gc();
+	public IAsset export(Context context, Handler h, IOrganization organization, boolean includeSensorLogs, boolean isLocalShare, boolean doSubmission) throws InstantiationException, IllegalAccessException, IOException, NoSuchAlgorithmException, SignatureException, PGPException, NoSuchProviderException {
 		
 		mHandler = h;
 		
@@ -558,118 +554,99 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
 		JSONObject j3mObject = null;
-		try {
-			j3mObject = new JSONObject();
-			JSONObject j3m = new JSONObject();
-			
-			j3m.put(Models.IMedia.j3m.DATA, data.asJson());
-			j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
-			j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+		
+		j3mObject = new JSONObject();
+		JSONObject j3m = new JSONObject();
+		
+		j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+		j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+		j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
 
 
-			info.guardianproject.iocipher.File fileTmp = new info.guardianproject.iocipher.File("tmp-export-" + _id);
-			info.guardianproject.iocipher.FileWriter fwTmp = new info.guardianproject.iocipher.FileWriter(fileTmp);
-			j3m.write(fwTmp);
-			fwTmp.flush();
-			fwTmp.close();
+		info.guardianproject.iocipher.File fileTmp = new info.guardianproject.iocipher.File("tmp-export-" + _id);
+		info.guardianproject.iocipher.FileWriter fwTmp = new info.guardianproject.iocipher.FileWriter(fileTmp);
+		j3m.write(fwTmp);
+		fwTmp.flush();
+		fwTmp.close();
+		
+		ByteArrayOutputStream bSig = new ByteArrayOutputStream();
+		informaCam.signatureService.signData(new info.guardianproject.iocipher.FileInputStream(fileTmp),bSig);
+		fileTmp.delete();
+		
+		j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(bSig.toByteArray()));
+		j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+		
+		IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m");
+		
+		OutputStream os = null;
+		
+		if (j3mAsset.source == Type.FILE_SYSTEM)
+			os = new java.io.FileOutputStream(j3mAsset.path);
+		else if (j3mAsset.source == Type.IOCIPHER)
+			os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
+		
+		ByteArrayInputStream is = new ByteArrayInputStream(j3mObject.toString().getBytes());
+		
+		// encrypt if the organization is not null
+		if(organization != null)
+		{					
+			EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
+		}
+		else
+		{				
+			IOUtils.copyLarge(is, os);
+		}	
+		
+		os.flush();
+		os.close();
+	
+
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		String exportFileName = this.dcimEntry.name;
+		notification.generateId();
+		notification.mediaId = this._id;
+
+		ITransportStub submission = null;
+		int exportDestination = Type.FILE_SYSTEM; //all exports are to the file system
+		
+		if(isLocalShare) {
+			notification.type = Models.INotification.Type.SHARED_MEDIA;
+		} else {
+
+			notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 			
-			ByteArrayOutputStream bSig = new ByteArrayOutputStream();
-			informaCam.signatureService.signData(new info.guardianproject.iocipher.FileInputStream(fileTmp),bSig);
-			fileTmp.delete();
-			
-			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(bSig.toByteArray()));
-			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-			
-			IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m");
-			
-			if(!debugMode) {
-				
-				OutputStream os = null;
-				
-				if (j3mAsset.source == Type.FILE_SYSTEM)
-					os = new java.io.FileOutputStream(j3mAsset.path);
-				else if (j3mAsset.source == Type.IOCIPHER)
-					os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
-				
-				ByteArrayInputStream is = new ByteArrayInputStream(j3mObject.toString().getBytes());
-				
-				// encrypt if the organization is not null
-				if(organization != null)
-				{					
-					EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
-				}
-				else
-				{				
-					IOUtils.copyLarge(is, os);
-				}	
-				
-				os.flush();
-				os.close();
+			if(organization != null && doSubmission) {
+				notification.taskComplete = false;
+				informaCam.addNotification(notification, h);
+				submission = new ITransportStub(organization, notification);
 			}
-
-			progress += 10;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-			String exportFileName = this.dcimEntry.name;
-			notification.generateId();
-			notification.mediaId = this._id;
-
-			ITransportStub submission = null;
-			int exportDestination = Type.IOCIPHER;
-			if(isLocalShare) {
-				exportDestination = Type.FILE_SYSTEM;
-				notification.type = Models.INotification.Type.SHARED_MEDIA;
-			} else {
-
-				if(!(Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
-					exportDestination = Type.FILE_SYSTEM;
-				}
-				notification.type = Models.INotification.Type.EXPORTED_MEDIA;
-				
-				if(organization != null && doSubmission) {
-					notification.taskComplete = false;
-					informaCam.addNotification(notification, h);
-					submission = new ITransportStub(organization, notification);
-				}
-			}
-			
-			IAsset exportAsset = new IAsset(exportDestination);
-			exportAsset.name = exportFileName;
-			exportAsset.path = IOUtility.buildPath(new String[] { rootFolder, exportFileName });
-			
-			if(exportDestination == Type.FILE_SYSTEM) {
-				exportAsset.path = IOUtility.buildPublicPath(new String[] { exportAsset.path });
-			}
-			
-			if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
-				exportAsset.name = exportAsset.name.replace(".mp4", ".mkv");
-				exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
-			}
-			
-			constructExport(exportAsset, submission);
-			
-			if(submission != null) {
-				submission.setAsset(exportAsset, dcimEntry.mediaType, exportDestination);
-			}
-			
-			informaCam.addNotification(notification, h);			
-			progress += 10;
-			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-			return exportAsset;
-			
-		} catch (JSONException e) {
-			Logger.e(LOG, e);
-			
-		} catch (ConcurrentModificationException e) {
-			Logger.e(LOG, e);
-			
-		} catch (Exception e) {
-			Logger.e(LOG, e);
-			
 		}
 		
-		return null;
+		IAsset exportAsset = new IAsset(exportDestination);
+		exportAsset.name = exportFileName;
+		exportAsset.source = exportDestination;
+		exportAsset.path = IOUtility.buildPublicPath(new String[] { exportAsset.name });
+		
+		if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+			exportAsset.name = exportAsset.name.replace(".mp4", ".mkv");
+			exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
+		}
+		
+		constructExport(exportAsset, submission);
+		
+		if(submission != null) {
+			submission.setAsset(exportAsset, dcimEntry.mediaType, exportDestination);
+		}
+		
+		informaCam.addNotification(notification, h);			
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		return exportAsset;
+		
+		
 	}
 	
 	private void constructExport(IAsset destinationAsset, ITransportStub submission) throws IOException {
@@ -783,32 +760,28 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			notification.generateId();
 			notification.mediaId = this._id;
 			
-			if(!debugMode) {
-				
-				OutputStream os = null;
-				
-				if (j3mAsset.source == Type.FILE_SYSTEM)
-					os = new java.io.FileOutputStream(j3mAsset.path);
-				else if (j3mAsset.source == Type.IOCIPHER)
-					os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
-				
-				//os = new Base64OutputStream(new GZIPOutputStream(os), Base64.DEFAULT);
-				ByteArrayInputStream is = new ByteArrayInputStream(j3mObject.toString().getBytes());
-				
-				// encrypt if the organization is not null
-				if(organization != null)
-				{					
-					EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
-				}
-				else
-				{				
-					IOUtils.copyLarge(is, os);
-				}	
-				
-				os.flush();
-				os.close();
-				
+			OutputStream os = null;
+			
+			if (j3mAsset.source == Type.FILE_SYSTEM)
+				os = new java.io.FileOutputStream(j3mAsset.path);
+			else if (j3mAsset.source == Type.IOCIPHER)
+				os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
+			
+			//os = new Base64OutputStream(new GZIPOutputStream(os), Base64.DEFAULT);
+			ByteArrayInputStream is = new ByteArrayInputStream(j3mObject.toString().getBytes());
+			
+			// encrypt if the organization is not null
+			if(organization != null)
+			{					
+				EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
 			}
+			else
+			{				
+				IOUtils.copyLarge(is, os);
+			}	
+			
+			os.flush();
+			os.close();
 			
 			ITransportStub submission = null;
 			if(share) {

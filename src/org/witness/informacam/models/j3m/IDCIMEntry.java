@@ -39,9 +39,9 @@ public class IDCIMEntry extends Model implements Serializable {
 	public boolean isAvailable() {
 		boolean isAvailable = false;
 		
-		do {
+	//	do {
 			isAvailable = InformaCam.getInstance().ioService.isAvailable(fileAsset.path, fileAsset.source);
-		} while(!isAvailable);
+		//} while(!isAvailable);
 		
 		return isAvailable;
 	}

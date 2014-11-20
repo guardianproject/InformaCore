@@ -168,62 +168,56 @@ public class VideoConstructor {
 		
 		try
 		{
-			InformaCam informaCam = InformaCam.getInstance();
 			java.io.File tmpMedia = null;
 			
-			if (fileType == Type.IOCIPHER)
-			{
-				tmpMedia = new java.io.File(Storage.EXTERNAL_DIR, System.currentTimeMillis() + "tmp." + extension);		
-				
-				InputStream is = informaCam.ioService.getStream(pathToMedia, Type.IOCIPHER);			
-				java.io.FileOutputStream fos = new java.io.FileOutputStream(tmpMedia);			
-				IOUtils.copy(is,fos);			
-				fos.flush();
-				fos.close();
-			}
-			else if (fileType == Type.FILE_SYSTEM)
+			if (fileType == Type.FILE_SYSTEM)
 			{
 				tmpMedia = new java.io.File(pathToMedia);
-			}
 			
-			String[] cmdHash = new String[] {
-					ffmpegBinPath, "-i", tmpMedia.getCanonicalPath(),
-					"-vcodec", "copy", "-an", "-f", "md5", "-"
-			};
 			
-			//Logger.d(LOG, "ALSO, Storage.EXTERNAL_DIR: " + Storage.EXTERNAL_DIR);
-			//Logger.d(LOG, "HASING VIDEO: " + tmpMedia.getAbsolutePath() + " (cannonical: " + tmpMedia.getCanonicalPath() + ")");
-			
-			execProcess(cmdHash, new ShellUtils.ShellCallback () {
-
-				@Override
-				public void shellOut(String shellLine) {
-					
-					if(shellLine.contains("MD5=")) {
-						String hashLine = shellLine.split("=")[1];
-						newHash = hashLine.split(" ")[0].trim();
+				String[] cmdHash = new String[] {
+						ffmpegBinPath, "-i", tmpMedia.getCanonicalPath(),
+						"-vcodec", "copy", "-an", "-f", "md5", "-"
+				};
+				
+				//Logger.d(LOG, "ALSO, Storage.EXTERNAL_DIR: " + Storage.EXTERNAL_DIR);
+				//Logger.d(LOG, "HASING VIDEO: " + tmpMedia.getAbsolutePath() + " (cannonical: " + tmpMedia.getCanonicalPath() + ")");
+				
+				execProcess(cmdHash, new ShellUtils.ShellCallback () {
+	
+					@Override
+					public void shellOut(String shellLine) {
+						
+						if(shellLine.contains("MD5=")) {
+							String hashLine = shellLine.split("=")[1];
+							newHash = hashLine.split(" ")[0].trim();
+						}
+						
 					}
-					
+	
+					@Override
+					public void processComplete(int exitValue) {
+						
+							if (newHash == null)
+								newHash = "unknown";
+					}
+				});
+				
+				while (newHash == null)
+				{
+					try { Thread.sleep(500); } 
+					catch (Exception e){}
 				}
-
-				@Override
-				public void processComplete(int exitValue) {
-					
-						if (newHash == null)
-							newHash = "unknown";
-				}
-			});
-			
-			while (newHash == null)
-			{
-				try { Thread.sleep(500); } 
-				catch (Exception e){}
+				
+				if (fileType == Type.IOCIPHER)
+					tmpMedia.delete();
+				
+				return newHash;
 			}
-			
-			if (fileType == Type.IOCIPHER)
-				tmpMedia.delete();
-			
-			return newHash;
+			else
+			{
+				return null;
+			}
 			
 		}
 		catch (Exception e)
