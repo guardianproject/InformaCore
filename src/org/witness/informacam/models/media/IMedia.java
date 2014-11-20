@@ -503,7 +503,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	}
 
 	public IAsset export(Context context, Handler h, IOrganization organization) throws InstantiationException, IllegalAccessException, IOException, NoSuchAlgorithmException, SignatureException, NoSuchProviderException, PGPException {
-		return export(context, h, organization, true, (organization != null), true);
+		return export(context, h, organization, true, (organization == null), true);
 	}
 
 	public IAsset export(Context context, Handler h, IOrganization organization, boolean includeSensorLogs, boolean isLocalShare, boolean doSubmission) throws InstantiationException, IllegalAccessException, IOException, NoSuchAlgorithmException, SignatureException, PGPException, NoSuchProviderException {
