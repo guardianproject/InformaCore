@@ -208,20 +208,44 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			informaCam.ioService.stopDCIMObserver();
 			informaCam.stopInforma();
 			
-			if (data != null && data.hasExtra("path"))
+			if (data != null)
 			{
-				//secure cams returned single file
-				String path = data.getStringExtra("path");
-				
-				try {
-					informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
-				} catch (InstantiationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if ( data.hasExtra("path"))
+				{
+					//secure cams returned single file
+					String path = data.getStringExtra("path");
+					
+					try {
+						informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
+					} catch (InstantiationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
+				else if ( data.hasExtra("paths"))
+				{
+					
+					
+					//secure cams returned single file
+					String[] paths = data.getStringArrayExtra("paths");
+					
+					for (String path : paths)
+					{
+						try {
+							informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
+						} catch (InstantiationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IllegalAccessException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+			
 				
 				
 			}

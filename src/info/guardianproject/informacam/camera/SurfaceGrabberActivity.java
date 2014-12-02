@@ -10,6 +10,7 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
@@ -24,19 +25,22 @@ import android.widget.Button;
 import android.widget.TextView;
 
 public class SurfaceGrabberActivity extends Activity implements OnClickListener, SurfaceHolder.Callback, PictureCallback {
+	
 	Button button;
-	TextView progress;
 
-	SurfaceView view;
+	SurfaceView surfaceView;
 	SurfaceHolder holder;
 	Camera camera;
 	CameraInfo cameraInfo;
 	
-	private boolean mPreviewing;
+	boolean mPreviewing;
 
 	private final static String LOG = "Camera";
 
 	private int mRotation = -1;
+	boolean isVideoMode = false;
+	
+	private TextView tvProgress;
 	
 	@SuppressWarnings("deprecation")
 	@Override
@@ -47,17 +51,24 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		button = (Button) findViewById(R.id.surface_grabber_button);
 		button.setOnClickListener(this);
 		
-		/**
-		progress = (TextView) findViewById(R.id.surface_grabber_progress);
-		progress.setText(String.valueOf(baseImages.size()));
-		 */
-		view = (SurfaceView) findViewById(R.id.surface_grabber_holder);
-		holder = view.getHolder();
+		
+		tvProgress = (TextView) findViewById(R.id.surface_grabber_progress);
+		
+		surfaceView = (SurfaceView) findViewById(R.id.surface_grabber_holder);
+		holder = surfaceView.getHolder();
 		holder.addCallback(this);
 		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+		
+		surfaceView.setOnClickListener(this);
 				
 	}
 
+	public void updateText (String text)
+	{
+		tvProgress.setText(text);
+	
+	}
+	
 	protected int getLayout()
 	{
 		return R.layout.camera;
@@ -118,14 +129,17 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 				 params.setPictureFormat(ImageFormat.JPEG);
 					//params.setPictureSize(size.width,size.height);
 					//params.setJpegThumbnailSize(128,128);
-//					params.setPreviewSize(size.width/2,size.height/2); 
+//					params.setPresurfaceViewSize(size.width/2,size.height/2); 
 				 
 				 if (this.getCameraDirection() == CameraInfo.CAMERA_FACING_BACK)
 				 {
 					 params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+					// params.setRecordingHint(isVideoMode);
+					 
+					 
 				 }
 									
-					camera.setParameters(params);
+				camera.setParameters(params);
 
 		    	 return true;
 		     }
@@ -167,8 +181,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		try {
-			
-			
+
+	        
 			camera.setPreviewDisplay(holder);
 			
 		} catch(IOException e) {
@@ -195,7 +209,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 			String pathToData = "";
 			//data, new File(pathToData));
 				
-			view.post(new Runnable()
+			surfaceView.post(new Runnable()
 			{
 				@Override
 				public void run() {

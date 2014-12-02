@@ -24,17 +24,17 @@ public class PipeFeeder extends Thread {
 		int len;
 
 		try {
-			int idx = 0;
+			//int idx = 0;
 			while ((len = in.read(buf)) != -1)
 			{
 				out.write(buf, 0, len);
-				idx += buf.length;
+				//idx += buf.length;
 				//Log.d("video","writing to IOCipher at " + idx);
 			}
 			
 			in.close();
-			out.flush();
-			out.close();
+			//out.flush();
+			//out.close();
 			
 		} catch (IOException e) {
 		//	Log.e("Video", "File transfer failed:", e);
