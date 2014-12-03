@@ -126,9 +126,12 @@ public class IDCIMDescriptor extends Model {
 
 			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
 						
-			List<String> cacheFiles = informaCam.informaService.getCacheFiles();
-			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
-			informaCam.informaService.resetCacheFiles();
+			if (informaCam.informaService != null)
+			{
+				List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+				intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
+				informaCam.informaService.resetCacheFiles();
+			}
 			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
 			if(parentId != null) {
