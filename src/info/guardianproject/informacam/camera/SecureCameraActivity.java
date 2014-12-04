@@ -77,9 +77,18 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 			}
 			else
 			{
-				//take a still picture
-				camera.takePicture(null, null, this);
-				
+				try
+				{
+					//take a still picture
+					camera.takePicture(null, null, this);
+				}
+				catch (RuntimeException re)
+				{
+					releaseMediaRecorder();
+					finish();
+					//something is not working
+					
+				}
 			}
 		}
 		else if (view == this.surfaceView)
