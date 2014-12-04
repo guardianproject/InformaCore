@@ -97,8 +97,6 @@ public class InformaCam extends Application {
 
 	public IOService ioService = null;
 	public SignatureService signatureService = null;
-	public InformaService informaService = null;
-
 	public Handler h = new Handler();
 
 	public List<String> models = new ArrayList<String>();
@@ -141,7 +139,7 @@ public class InformaCam extends Application {
 		processId = android.os.Process.myPid();
 		
 		Logger.d(LOG, "InformaCam service started via intent");
-
+		
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		broadcasters.add(new InnerBroadcaster(new IntentFilter(Actions.ASSOCIATE_SERVICE), processId) {
@@ -158,7 +156,7 @@ public class InformaCam extends Application {
 					
 					switch(serviceCode) {
 					case Codes.Routes.INFORMA_SERVICE:
-						informaService = InformaService.getInstance();
+						
 						break;
 					}
 				} 
@@ -195,7 +193,7 @@ public class InformaCam extends Application {
 				if(intent.getAction().equals(Actions.DISASSOCIATE_SERVICE)) {
 					switch(intent.getIntExtra(Codes.Keys.SERVICE, 0)) {
 					case Codes.Routes.INFORMA_SERVICE:
-						informaService = null;
+						
 						sendBroadcast(new Intent()
 							.setAction(Actions.INFORMA_STOP)
 							.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId));
@@ -211,6 +209,8 @@ public class InformaCam extends Application {
 
 		signatureService = new SignatureService(InformaCam.this);
 		ioService = new IOService(InformaCam.this);
+		
+		startInforma();
 		
 		startup();
 		
@@ -359,9 +359,8 @@ public class InformaCam extends Application {
 			
 		ioService.unmount();
 				
-		if(informaService != null) {
-			stopService(informaServiceIntent);
-		}
+		
+		stopService(informaServiceIntent);
 		
 		Intent intent = new Intent(Actions.INFORMACAM_STOP)
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, processId);
@@ -689,11 +688,11 @@ public class InformaCam extends Application {
 		return null;
 	}
 
-	public void startInforma() {
+	private void startInforma() {
 		startService(informaServiceIntent);
 	}
 
-	public void stopInforma() {
+	private void stopInforma() {
 		stopService(informaServiceIntent);		
 	}
 

@@ -142,23 +142,17 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				setResult(Activity.RESULT_CANCELED);
 				finish();
 			} else {
-				if(informaCam.informaService == null) {
-					informaCam.startInforma();
-				} else {
-					controlsInforma = false;
-					onInformaStart(null);
-				}
+				controlsInforma = false;
+				onInformaStart(null);
+				
 			}
 		}
 		else 			
 		{
 			//this is for when we don't want InformaCam to launch the camera
-			if(informaCam.informaService == null) {
-				informaCam.startInforma();
-			} else {
-				controlsInforma = false;
-				onInformaStart(null);
-			}
+			controlsInforma = false;
+			onInformaStart(null);
+			
 		}
 	}
 
@@ -202,11 +196,10 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
-		if(controlsInforma && informaCam.informaService.suckersActive()) {
+		if(InformaService.getInstance().suckersActive()) {
 						
-			informaCam.informaService.stopAllSuckers();
+			InformaService.getInstance().stopAllSuckers();
 			informaCam.ioService.stopDCIMObserver();
-			informaCam.stopInforma();
 			
 			if (data != null)
 			{
@@ -258,11 +251,13 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			} else {
 				setResult(Activity.RESULT_CANCELED);
 			}
-			finish();
 			
 		} else {
 			onInformaStop(null);
 		}
+		
+
+		finish();
 	}
 
 	@Override
@@ -275,9 +270,8 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 	@Override
 	public void onInformaStart(Intent intent) {
-		
-		informaCam.informaService = InformaService.getInstance();		
-		informaCam.informaService.startAllSuckers();
+			
+		InformaService.getInstance().startAllSuckers();
 		informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
 		
 		if (cameraIntentFlag != null)

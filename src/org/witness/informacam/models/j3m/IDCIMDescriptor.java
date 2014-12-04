@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.intake.Intake;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.media.IAsset;
@@ -111,9 +112,9 @@ public class IDCIMDescriptor extends Model {
 			
 			entry.exif = new IExif();
 		
-			if (informaCam.informaService != null && informaCam.informaService.getCurrentLocation() != null)
+			if (InformaService.getInstance() != null && InformaService.getInstance().getCurrentLocation() != null)
 			{
-				entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
+				entry.exif.location = InformaService.getInstance().getCurrentLocation().geoCoordinates;
 			}
 
 
@@ -126,11 +127,11 @@ public class IDCIMDescriptor extends Model {
 
 			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
 						
-			if (informaCam.informaService != null)
+			if (InformaService.getInstance() != null)
 			{
-				List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+				List<String> cacheFiles = InformaService.getInstance().getCacheFiles();
 				intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));
-				informaCam.informaService.resetCacheFiles();
+				InformaService.getInstance().resetCacheFiles();
 			}
 			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
@@ -185,9 +186,9 @@ public class IDCIMDescriptor extends Model {
 			
 			entry.exif = new IExif();
 		
-			if (informaCam.informaService != null && informaCam.informaService.getCurrentLocation() != null)
+			if (InformaService.getInstance() != null && InformaService.getInstance().getCurrentLocation() != null)
 			{
-				entry.exif.location = informaCam.informaService.getCurrentLocation().geoCoordinates;
+				entry.exif.location = InformaService.getInstance().getCurrentLocation().geoCoordinates;
 			}
 
 
@@ -200,9 +201,9 @@ public class IDCIMDescriptor extends Model {
 
 			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
 						
-			List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+			List<String> cacheFiles = InformaService.getInstance().getCacheFiles();
 			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
-			informaCam.informaService.resetCacheFiles();
+			InformaService.getInstance().resetCacheFiles();
 			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
 			if(parentId != null) {
@@ -215,7 +216,7 @@ public class IDCIMDescriptor extends Model {
 
 	public void startSession() {
 		InformaCam informaCam = InformaCam.getInstance();
-		timeOffset = informaCam.informaService.getTimeOffset();
+		timeOffset = InformaService.getInstance().getTimeOffset();
 		
 		Logger.d(LOG, "starting dcim session");
 	}
@@ -230,7 +231,7 @@ public class IDCIMDescriptor extends Model {
 
 			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
 			
-			List<String> cacheFiles = informaCam.informaService.getCacheFiles();
+			List<String> cacheFiles = InformaService.getInstance().getCacheFiles();
 			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));
 			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);

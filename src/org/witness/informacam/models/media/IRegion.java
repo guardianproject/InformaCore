@@ -6,13 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.Model;
 import org.witness.informacam.models.forms.IForm;
 import org.witness.informacam.ui.editors.IRegionDisplay;
 import org.witness.informacam.utils.Constants;
+import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.MediaHasher;
-import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 
 import android.app.Activity;
 
@@ -123,11 +124,11 @@ public class IRegion extends Model {
 			bounds.calculate(mListener.getSpecs(), a);
 		}
 		
-		informaCam.informaService.updateRegion(this);
+		InformaService.getInstance().updateRegion(this);
 	}
 
 	public void delete(IMedia parent) {
-		InformaCam.getInstance().informaService.removeRegion(this);
+		InformaService.getInstance().removeRegion(this);
 		parent.associatedRegions.remove(this);
 	}
 }

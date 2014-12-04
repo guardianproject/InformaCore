@@ -27,6 +27,7 @@ import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.j3m.ISuckerCache;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
+import org.witness.informacam.ui.AlwaysOnActivity;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Informa;
@@ -39,6 +40,8 @@ import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Phone;
 import org.witness.informacam.utils.MediaHasher;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -51,6 +54,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -62,7 +66,6 @@ import com.google.common.cache.LoadingCache;
 
 public class InformaService extends Service implements SuckerCacheListener {
 	private final IBinder binder = new LocalBinder();
-	private static InformaService informaService;
 	
 	private long startTime = 0L;
 	private long realStartTime = 0L;
@@ -83,7 +86,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private Timer cacheTimer;
 	
 	InformaCam informaCam;
-
+	private static InformaService mInstance;
+	
 	Handler h = new Handler();
 	String associatedMedia = null;
 	
@@ -111,6 +115,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		
+		mInstance = this;
+		
 		if (Debug.WAIT_FOR_DEBUGGER)
 			android.os.Debug.waitForDebugger();
 		
@@ -128,7 +134,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 			cacheRoot.mkdir();
 		}
 
-		informaService = InformaService.this;
 		sendBroadcast(new Intent()
 			.putExtra(Codes.Keys.SERVICE, Codes.Routes.INFORMA_SERVICE)
 			.setAction(Actions.ASSOCIATE_SERVICE)
@@ -137,6 +142,21 @@ public class InformaService extends Service implements SuckerCacheListener {
 		init();
 	}
 	
+	public static InformaService getInstance ()
+	{
+		return mInstance;
+	}
+	
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		
+		
+		return START_STICKY;//super.onStartCommand(intent, flags, startId);
+		
+		
+	}
+
 	/**
 	* Gets the state of Airplane Mode.
 	* 
@@ -410,6 +430,27 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		
 		suckersActive = true;
+		
+		showNotification();
+	}
+	
+	private void showNotification ()
+	{
+
+	    Intent i=new Intent(this, AlwaysOnActivity.class);
+		i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+		PendingIntent pi=PendingIntent.getActivity(this, 0,
+	                        i, 0);
+
+		Notification notification = new NotificationCompat.Builder(this)
+		.setContentTitle(getString(R.string.app_name))		
+		.setSmallIcon(R.drawable.ic_launcher)		
+		.setContentIntent(pi)
+		.setOngoing(true)
+		.build();
+		
+		startForeground(1337,notification);
 	}
 	
 	public void stopAllSuckers() {
@@ -450,6 +491,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 		}
 		
 		suckersActive = false;
+		
+		stopForeground(true);
 	}
 	
 	@Override
@@ -466,9 +509,6 @@ public class InformaService extends Service implements SuckerCacheListener {
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 	}
 
-	public static InformaService getInstance() {
-		return informaService;
-	}
 
 	public List<ILogPack> getAllEventsByType(final int type) throws InterruptedException, ExecutionException, JSONException {
 		Iterator<Entry<Long, ILogPack>> cIt = cache.asMap().entrySet().iterator();
@@ -666,7 +706,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			
-			if (informaService._phone != null)
+			if (_phone != null)
 			{
 				if(intent.getAction().equals(BluetoothDevice.ACTION_FOUND)) {
 					try {
@@ -679,7 +719,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	
 				} else if(intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
 					try {
-						ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) informaService._phone).getWifiNetworks());
+						ILogPack ILogPack = new ILogPack(Phone.Keys.VISIBLE_WIFI_NETWORKS, ((PhoneSucker) _phone).getWifiNetworks());
 						onUpdate(ILogPack);
 					} catch(NullPointerException e) {
 						Log.e(LOG, "CONSIDERED HANDLED:\n" + e.toString());

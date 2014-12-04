@@ -6,15 +6,16 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.utils.Constants.IRegionDisplayListener;
 import org.witness.informacam.utils.Constants.Logger;
+
+import android.app.Activity;
+import android.util.Log;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-
-import android.app.Activity;
-import android.util.Log;
 
 public class IVideoRegion extends IRegion {
 	public List<IVideoTrail> trail = null;
@@ -45,11 +46,11 @@ public class IVideoRegion extends IRegion {
 	
 	@Override
 	public void update(Activity a) {
-		InformaCam informaCam = InformaCam.getInstance();
+		
 		getBoundsAtTimestampInQuestion().calculate(mListener.getSpecs(),a);
 		
-		if (informaCam.informaService != null)
-		informaCam.informaService.updateRegion(this);
+		if (InformaService.getInstance() != null)
+		InformaService.getInstance().updateRegion(this);
 	}
 	
 	public void setBoundsAtTime(long timestamp, IRegionBounds bounds) {

@@ -27,14 +27,14 @@ public class Cron extends Service {
 		
 		final InformaCam informaCam = InformaCam.getInstance();
 		
-		if(informaCam.informaService != null) {
-			informaCam.informaService.startAllSuckers();
+		if(InformaService.getInstance() != null) {
+			InformaService.getInstance().startAllSuckers();
 			
 			(new Handler()).postDelayed(new Runnable() {
 				@Override
 				public void run() {
-					if(informaCam.informaService != null) {
-						informaCam.informaService.stopAllSuckers();
+					if(InformaService.getInstance() != null) {
+						InformaService.getInstance().stopAllSuckers();
 					}
 				}
 			},  (long) (60 * 1000 * Suckers.DEFAULT_CRON_ACTIVE_INTERVAL));
@@ -58,8 +58,8 @@ public class Cron extends Service {
 		Log.d(LOG, "Cron.onDestroy()");
 		
 		InformaCam informaCam = InformaCam.getInstance();
-		if(informaCam.informaService != null) {
-			informaCam.informaService.stopAllSuckers();
+		if(InformaService.getInstance() != null) {
+			InformaService.getInstance().stopAllSuckers();
 		}
 	}
 

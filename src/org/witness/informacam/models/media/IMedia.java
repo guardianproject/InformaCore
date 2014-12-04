@@ -20,6 +20,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.crypto.EncryptionUtility;
 import org.witness.informacam.crypto.KeyUtility;
+import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.informa.embed.ImageConstructor;
 import org.witness.informacam.informa.embed.VideoConstructor;
 import org.witness.informacam.json.JSONArray;
@@ -49,7 +50,6 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
 import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.IMedia.MimeType;
-import org.witness.informacam.utils.Constants.Models.IUser;
 import org.witness.informacam.utils.Constants.Suckers.CaptureEvent;
 import org.witness.informacam.utils.Constants.Suckers.Geo;
 import org.witness.informacam.utils.MediaHasher;
@@ -300,15 +300,15 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		boolean startedByUs = false;
 		
-		if (InformaCam.getInstance().informaService == null)
+		if (InformaService.getInstance() == null)
 		{
-			InformaCam.getInstance().startInforma();
+			
 			startedByUs = true;
 			
 			int numTries = 5;
 			int tryIdx = 0;
 					
-			while (InformaCam.getInstance().informaService == null && tryIdx < numTries)
+			while (InformaService.getInstance() == null && tryIdx < numTries)
 			{
 				try {Thread.sleep(1000);}
 				catch(Exception e){}
@@ -318,11 +318,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			}
 		}
 		
-		if (InformaCam.getInstance().informaService != null)
-			InformaCam.getInstance().informaService.addRegion(region);
-		
-		if (startedByUs)
-			InformaCam.getInstance().stopInforma();
+		if (InformaService.getInstance() != null)
+			InformaService.getInstance().addRegion(region);
 		
 		associatedRegions.add(region);
 		if(region.isInnerLevelRegion()) {

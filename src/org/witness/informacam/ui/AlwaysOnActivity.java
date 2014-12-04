@@ -78,25 +78,17 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 
 	private void startMonitoring () {
 		
-			//this is for when we don't want InformaCam to launch the camera
-			if(informaCam.informaService == null) {
-				informaCam.startInforma();
-				
-			}
-			else
-			{
-				onInformaStart(null);
-			}
+			onInformaStart(null);
+			
 		
 	}
 
 	private void stopMonitoring ()
 	{
-		if(informaCam.informaService != null && informaCam.informaService.suckersActive()) {
+		if(InformaService.getInstance() != null && InformaService.getInstance().suckersActive()) {
 						
-			informaCam.informaService.stopAllSuckers();
+			InformaService.getInstance().stopAllSuckers();
 			informaCam.ioService.stopDCIMObserver();
-			informaCam.stopInforma();
 			
 			IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
 			if(dcimDescriptor.dcimList.size() > 0) {
@@ -120,13 +112,10 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 	@Override
 	public void onInformaStart(Intent intent) {
 		
-		informaCam.informaService = InformaService.getInstance();		
 		
-		if (!informaCam.informaService.suckersActive())
-		{
-			informaCam.informaService.startAllSuckers();
+		InformaService.getInstance().startAllSuckers();
 			informaCam.ioService.startDCIMObserver(AlwaysOnActivity.this, parentId, cameraComponent);
-		}
+		
 		
 		
 	}
