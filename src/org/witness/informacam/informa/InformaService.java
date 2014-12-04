@@ -617,9 +617,12 @@ public class InformaService extends Service implements SuckerCacheListener {
 	
 	public void resetCacheFiles ()
 	{
-		String lastCache = cacheFiles.get(cacheFiles.size()-1);
-		cacheFiles = new ArrayList<String>();
-		cacheFiles.add(lastCache);
+		if (cacheFiles.size() > 0)
+		{
+			String lastCache = cacheFiles.get(cacheFiles.size()-1);
+			cacheFiles = new ArrayList<String>();
+			cacheFiles.add(lastCache);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

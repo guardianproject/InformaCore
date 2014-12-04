@@ -95,8 +95,12 @@ public class EntryJob extends BackgroundTask {
 					media.dcimEntry.timezone = TimeUtility.getTimezone();
 					media._id = media.generateId(entry.originalHash);
 
-					media.associatedCaches = new ArrayList<String>();
-					media.associatedCaches.addAll(Arrays.asList(informaCache));
+					if (informaCache != null && informaCache.length > 0)
+					{
+						media.associatedCaches = new ArrayList<String>();
+						media.associatedCaches.addAll(Arrays.asList(informaCache));
+					}
+					
 					media.genealogy = new IGenealogy();
 
 					media.genealogy.dateCreated = media.dcimEntry.timeCaptured;

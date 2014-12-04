@@ -129,7 +129,7 @@ public class IDCIMDescriptor extends Model {
 			if (informaCam.informaService != null)
 			{
 				List<String> cacheFiles = informaCam.informaService.getCacheFiles();
-				intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
+				intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));
 				informaCam.informaService.resetCacheFiles();
 			}
 			
