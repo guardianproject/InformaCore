@@ -445,12 +445,14 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		Notification notification = new NotificationCompat.Builder(this)
 		.setContentTitle(getString(R.string.app_name))		
-		.setSmallIcon(R.drawable.ic_launcher)		
+		.setSmallIcon(R.drawable.ic_notify)		
 		.setContentIntent(pi)
 		.setOngoing(true)
 		.build();
 		
-		startForeground(1337,notification);
+		notification.setLatestEventInfo(this, getString(R.string.app_name), "", pi);
+
+		startForeground(13371,notification);
 	}
 	
 	public void stopAllSuckers() {
