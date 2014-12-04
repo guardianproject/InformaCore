@@ -1,7 +1,5 @@
 package org.witness.informacam.ui;
 
-import java.util.Iterator;
-
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
 import org.witness.informacam.informa.InformaService;
@@ -23,6 +21,7 @@ import android.os.Message;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.Toast;
 
 public class AlwaysOnActivity extends Activity implements InformaCamStatusListener, InformaCamEventListener {
 	private final static String LOG = App.Camera.LOG;
@@ -32,7 +31,6 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 	private ComponentName cameraComponent = null;
 	private String cameraIntentFlag = Camera.Intents.CAMERA;
 	private int storageType = Storage.Type.FILE_SYSTEM;
-	private boolean controlsInforma = true;
 	private String parentId = null;
 
 	Bundle bundle;
@@ -45,6 +43,8 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 		super.onCreate(savedInstanceState);
 		
 		informaCam = (InformaCam)getApplication();		
+		informaCam.setStatusListener(this);
+		informaCam.setEventListener(this);
 		
 		setContentView(R.layout.activity_informacam_running);
 		Button btnStop = (Button)findViewById(R.id.informacam_button);
@@ -64,21 +64,15 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 			parentId = getIntent().getStringExtra(Codes.Extras.MEDIA_PARENT);
 		}
 
+		
 		try {
 
-				if (informaCam.informaService != null && informaCam.informaService.suckersActive())
-				{
-					stopMonitoring();
-				}
-				else
-				{
-					startMonitoring();
-				}
-
-		} catch(NullPointerException e) {
-			e.printStackTrace();
-
-			startService(new Intent(this, InformaCam.class));
+			startMonitoring();
+			
+		} catch(Exception e) {
+				
+			Toast.makeText(this, "There was an error starting InformaCam", Toast.LENGTH_SHORT).show();
+			finish();
 		}
 	}
 
@@ -87,8 +81,10 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 			//this is for when we don't want InformaCam to launch the camera
 			if(informaCam.informaService == null) {
 				informaCam.startInforma();
-			} else {
-				controlsInforma = false;
+				
+			}
+			else
+			{
 				onInformaStart(null);
 			}
 		
@@ -96,7 +92,7 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 
 	private void stopMonitoring ()
 	{
-		if(controlsInforma && informaCam.informaService.suckersActive()) {
+		if(informaCam.informaService != null && informaCam.informaService.suckersActive()) {
 						
 			informaCam.informaService.stopAllSuckers();
 			informaCam.ioService.stopDCIMObserver();
@@ -111,15 +107,13 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 			}
 			finish();
 			
-		} else {
-			onInformaStop(null);
 		}
 	}
 
 	@Override
 	public void onInformaCamStart(Intent intent) {
-		
-		startMonitoring();
+				
+		onInformaStart(null);
 		
 	}
 
@@ -127,8 +121,12 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 	public void onInformaStart(Intent intent) {
 		
 		informaCam.informaService = InformaService.getInstance();		
-		informaCam.informaService.startAllSuckers();
-		informaCam.ioService.startDCIMObserver(AlwaysOnActivity.this, parentId, cameraComponent);
+		
+		if (!informaCam.informaService.suckersActive())
+		{
+			informaCam.informaService.startAllSuckers();
+			informaCam.ioService.startDCIMObserver(AlwaysOnActivity.this, parentId, cameraComponent);
+		}
 		
 		
 	}
