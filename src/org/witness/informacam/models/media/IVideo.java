@@ -24,7 +24,14 @@ public class IVideo extends IMedia {
 	
 	@Override
 	public Bitmap getBitmap(IAsset bitmapAsset) {
-		return IOUtility.getBitmapFromFile(dcimEntry.thumbnail.path, dcimEntry.thumbnail.source);
+		try
+		{
+			return IOUtility.getBitmapFromFile(dcimEntry.thumbnail.path, dcimEntry.thumbnail.source);
+		}
+		catch (IOException ioe)
+		{
+			return null;
+		}
 	}
 	
 	@Override

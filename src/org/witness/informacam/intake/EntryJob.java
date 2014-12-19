@@ -251,7 +251,7 @@ public class EntryJob extends BackgroundTask {
 		}
 	}
 
-	private void parseThumbnails() {
+	private void parseThumbnails() throws IOException {
 		Bitmap b = null;
 
 		if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {

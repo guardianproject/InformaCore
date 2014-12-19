@@ -237,7 +237,7 @@ public class IOUtility {
 		return false;
 	}
 
-	public final static Bitmap getBitmapFromFile(String pathToFile, int source) {
+	public final static Bitmap getBitmapFromFile(String pathToFile, int source) throws IOException {
 		InputStream is = InformaCam.getInstance().ioService.getStream(pathToFile, source);
 
 		BitmapFactory.Options opts = new BitmapFactory.Options();

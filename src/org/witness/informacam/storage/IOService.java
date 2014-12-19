@@ -335,11 +335,11 @@ public class IOService {
 	}
 	
 	
-	public InputStream getStream(IAsset asset) {
+	public InputStream getStream(IAsset asset) throws IOException {
 		return getStream(asset.path, asset.source);
 	}
 	
-	public InputStream getStream(String pathToData, int source) {
+	public InputStream getStream(String pathToData, int source) throws IOException {
 
 		InputStream is = null;
 		
@@ -395,12 +395,10 @@ public class IOService {
 		case Storage.Type.CONTENT_RESOLVER:
 			break;
 		case Storage.Type.FILE_SYSTEM:
-			try {
-				java.io.File file_ = new java.io.File(pathToData);
-				is = new java.io.FileInputStream(file_);
-			} catch (FileNotFoundException e) {
-				Log.e(LOG, e.toString(),e);
-			}
+		
+			java.io.File file_ = new java.io.File(pathToData);
+			is = new java.io.FileInputStream(file_);
+		
 			break;
 		}
 

@@ -90,7 +90,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	private Handler mHandler = null;
 	
 	public Bitmap getBitmap(IAsset bitmapAsset) {
-		return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source);
+		try
+		{
+			return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source);
+		}
+		catch (IOException ioe)
+		{
+			return null;
+		}
 	}
 
 	public Bitmap testImage ()
@@ -443,6 +450,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 				for(String ac : associatedCaches) {
 					
+					try
+					{
 						// get the data and loop through capture types
 						InputStream isCache = informaCam.ioService.getStream(ac, Type.IOCIPHER);
 						
@@ -489,6 +498,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	
 						progress += progressInterval;
 						sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+					}
+					catch (IOException ioe)
+					{
+						Logger.d(LOG,"unable to get stream: " + ioe.toString());
+					}
 					
 				}
 			}
