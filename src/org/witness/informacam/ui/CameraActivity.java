@@ -1,11 +1,7 @@
 package org.witness.informacam.ui;
 
-import info.guardianproject.iocipher.File;
-
 import java.util.Iterator;
 import java.util.List;
-
-import javax.xml.transform.Source;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
@@ -23,10 +19,10 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -55,6 +51,11 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		setContentView(R.layout.activity_camera_waiter);
 		
 		informaCam = (InformaCam)getApplication();		
+		
+		if (InformaService.getInstance().suckersActive())
+		{
+			controlsInforma = false; //someone else started informa, so we shouldn't mess with it
+		}
 		
 		setContentView(R.layout.activity_camera_waiter);
 		
@@ -105,9 +106,9 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				init();
 			}
 		} catch(NullPointerException e) {
-			e.printStackTrace();
-
-			startService(new Intent(this, InformaCam.class));
+			
+			Log.e(LOG,"error getting intent",e);
+			finish();
 		}
 	}
 
@@ -142,16 +143,16 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				setResult(Activity.RESULT_CANCELED);
 				finish();
 			} else {
-				controlsInforma = false;
-				onInformaStart(null);
+			
+					onInformaStart(null);
 				
 			}
 		}
 		else 			
 		{
 			//this is for when we don't want InformaCam to launch the camera
-			controlsInforma = false;
-			onInformaStart(null);
+		
+				onInformaStart(null);
 			
 		}
 	}
@@ -198,8 +199,11 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 		if(InformaService.getInstance().suckersActive()) {
 						
-			InformaService.getInstance().stopAllSuckers();
-			informaCam.ioService.stopDCIMObserver();
+			if (controlsInforma)
+			{
+				InformaService.getInstance().stopAllSuckers();
+				informaCam.ioService.stopDCIMObserver();
+			}
 			
 			if (data != null)
 			{
@@ -271,8 +275,11 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	@Override
 	public void onInformaStart(Intent intent) {
 			
-		InformaService.getInstance().startAllSuckers();
-		informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
+		if (controlsInforma)
+		{
+			InformaService.getInstance().startAllSuckers();
+			informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
+		}
 		
 		if (cameraIntentFlag != null)
 		{
@@ -296,11 +303,12 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			});
 				
 		}
+		
+		
 	}
 
 	@Override
 	public void onInformaCamStop(Intent intent) {
-		
 		
 	}
 
