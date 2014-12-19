@@ -172,7 +172,7 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 	
 	protected void startRecording() throws IOException
     {
-		updateText("Recording video...");
+		updateText(getString(R.string.recording_video_));
 		
         Date date=new Date();
         fileVideoPath = new File(fileBasePath,"rec"+date.toString().replace(" ", "_").replace(":", "_")+".ts").getAbsolutePath();
@@ -185,19 +185,21 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
         recorder.setCamera(camera);    
         recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         
+       // CamcorderProfile cp = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
+        //recorder.setProfile(cp);
+
+      //  int vHeight = camera.getParameters().getPreviewSize().height;
+      //  int vWidth = camera.getParameters().getPreviewSize().width;
+        
         //this sets the streaming format "TS"
-        recorder.setOutputFormat(/*MediaRecorder.OutputFormat.OUTPUT_FORMAT_MPEG2TS*/8);
-        
-        CamcorderProfile cpHigh = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
- 
-        int width=640, height=480;
-        int frameRate = 15;
+        recorder.setOutputFormat(/*MediaRecorder.OutputFormat.OUTPUT_FORMAT_MPEG2TS*/8);  
         recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        
-        recorder.setVideoSize(width, height);
-        recorder.setVideoFrameRate(frameRate);
-        recorder.setVideoEncodingBitRate(cpHigh.videoBitRate);
       
+        recorder.setVideoSize(720,480);
+        recorder.setVideoFrameRate(15);
+        recorder.setVideoEncodingBitRate(7000000);
+        
+        
         /**
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -209,12 +211,59 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
         
         recorder.setPreviewDisplay(holder.getSurface());
  
+       
         ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
         recorder.setOutputFile(pipe[1].getFileDescriptor());
         
         AutoCloseInputStream acis = new AutoCloseInputStream(pipe[0]);
         File file = new File(fileVideoPath);        
         new PipeFeeder(acis,new FileOutputStream(file)).start();
+        
+       
+        /*
+        final LocalServerSocket lSS = new LocalServerSocket("ic" + new Date().getTime());
+        
+        new Thread()
+        {
+        	public void run ()
+        	{
+        		try {
+					LocalSocket ls = lSS.accept();
+					
+					File file = new File(fileVideoPath);  
+					InputStream in = ls.getInputStream();
+					OutputStream out = new FileOutputStream(file);
+					
+					byte[] buf = new byte[8000];
+					int len;
+
+					try {
+						int idx = 0;
+						while ((len = in.read(buf)) != -1)
+						{
+							out.write(buf, 0, len);
+							idx += buf.length;
+							Log.d("video","writing to IOCipher at " + idx);
+						}
+						
+						in.close();
+						//out.flush();
+						//out.close();
+						
+					} catch (IOException e) {
+					//	Log.e("Video", "File transfer failed:", e);
+					}
+					
+
+				} catch (IOException e) {
+					Log.w(LOG,"unable to record video",e);
+				}
+        		
+        	}
+        }.start();
+        
+        recorder.setOutputFile(lSS.getFileDescriptor());
+        (*/
         
         recorder.prepare();
         recorder.start();
@@ -251,11 +300,17 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 		
         if(recorder!=null)
         {    
-        	
-    		recorder.stop();
+        	try
+        	{
+        		recorder.stop();
     		  
-    		camera.takePicture(null, null, this);
-    		
+        		camera.takePicture(null, null, this);
+        		
+        	}
+        	catch (IllegalStateException ise)
+        	{
+        		Log.d(LOG,"problem stopping recorder",ise);
+        	}
         }
     }
 

@@ -14,27 +14,28 @@ public class PipeFeeder extends Thread {
 	public PipeFeeder(InputStream in, OutputStream out) {
 		this.in = in;
 		this.out = out;
-		setDaemon(true);
+	//	setDaemon(true);
+		this.setPriority(Thread.MAX_PRIORITY);
 	}
 
 	@Override
 	public void run() {
 		
-		byte[] buf = new byte[16000];
+		byte[] buf = new byte[8096];
 		int len;
 
 		try {
-			//int idx = 0;
+			int idx = 0;
 			while ((len = in.read(buf)) != -1)
 			{
 				out.write(buf, 0, len);
-				//idx += buf.length;
-				//Log.d("video","writing to IOCipher at " + idx);
+				idx += buf.length;
+				Log.d("video","writing to IOCipher at " + idx);
 			}
 			
 			in.close();
-			//out.flush();
-			//out.close();
+			out.flush();
+			out.close();
 			
 		} catch (IOException e) {
 		//	Log.e("Video", "File transfer failed:", e);

@@ -8,9 +8,9 @@ import org.witness.informacam.R;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
-import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
@@ -122,6 +122,13 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 		     if (info.facing == facing)
 		     {
 		    	 camera = Camera.open(nCam);
+		    	 try {
+					camera.reconnect();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		    	 
 		    	 cameraInfo = info;
 		    //	 Size size = choosePictureSize(camera.getParameters().getSupportedPictureSizes());
 
@@ -134,12 +141,11 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 				 if (this.getCameraDirection() == CameraInfo.CAMERA_FACING_BACK)
 				 {
 					 params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-					// params.setRecordingHint(isVideoMode);
-					 
 					 
 				 }
 									
 				camera.setParameters(params);
+				camera.startPreview();
 
 		    	 return true;
 		     }
@@ -186,7 +192,8 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 			camera.setPreviewDisplay(holder);
 			
 		} catch(IOException e) {
-			Log.e(LOG, e.toString());
+			Log.e(LOG, "error setting preview display",e);
+			
 		}
 	}
 
@@ -263,5 +270,44 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	     camera.setDisplayOrientation(result);
 	     
 	     return result;
+	}
+	
+	/**
+	 * This method configures the camera with a set of defaults for brightness,
+	 * flash, camera mode, and picture sizes.
+	 */
+	private void setCameraDefaults()
+	{
+	    Camera.Parameters params = camera.getParameters();
+
+	    // Supported picture formats (all devices should support JPEG).
+	    List<Integer> formats = params.getSupportedPictureFormats();
+
+	    if (formats.contains(ImageFormat.JPEG))
+	    {
+	        params.setPictureFormat(ImageFormat.JPEG);
+	        params.setJpegQuality(100);
+	    }
+	    else
+	        params.setPictureFormat(PixelFormat.RGB_565);
+
+	    // Now the supported picture sizes.
+	    List<Size> sizes = params.getSupportedPictureSizes();
+	    Camera.Size size = sizes.get(sizes.size()-1);
+	    params.setPictureSize(size.width, size.height);
+
+	    // Set the brightness to auto.
+	    params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
+
+	    // Set the flash mode to auto.
+	    params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+
+	    // Set the scene mode to auto.
+	    params.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
+
+	    // Lastly set the focus to auto.
+	    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+
+	    camera.setParameters(params);
 	}
 }
