@@ -141,7 +141,7 @@ public class ImageUtility {
 	}
 
 	public static Bitmap createThumb(Bitmap source, int[] dims) {
-		Log.d(LOG, "btw, dims: " + dims[0] + "x" + dims[1]);
+	//	Log.d(LOG, "btw, dims: " + dims[0] + "x" + dims[1]);
 		
 		float scaleW = 96f/dims[0];
 		float scaleH = 96f/dims[1];
@@ -150,7 +150,10 @@ public class ImageUtility {
 		matrix.postScale(scaleW, scaleH);
 
 		try {
-			return Bitmap.createBitmap(source, 0, 0, dims[0], dims[1], matrix, false);
+			if (dims[0] > 0 && dims[1] > 0)
+				return Bitmap.createBitmap(source, 0, 0, dims[0], dims[1], matrix, false);
+			else
+				return Bitmap.createBitmap(source,0,0,128,128);
 		} catch(IllegalArgumentException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();

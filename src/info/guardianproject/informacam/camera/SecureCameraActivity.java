@@ -52,10 +52,19 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 			{
 				//default to video mode
 				isVideoMode = true;
+				
 			}
 		}
 	}
 	
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		
+	
+	}
+
 
 	@Override
 	public void onClick(View view) {
@@ -146,8 +155,11 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 				{
 					public void run ()
 					{
-						camera.startPreview();
-						mPreviewing = true;
+						if (camera != null)
+						{
+							camera.startPreview();
+							mPreviewing = true;
+						}
 					}
 					
 				},100);
@@ -170,18 +182,33 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 
 	}
 	
-	protected void startRecording() throws IOException
+	protected void startRecording () throws IOException
+	{
+		updateText("preparing...");
+
+		initRecording();
+		
+		handler.postDelayed(new Runnable ()
+		{
+			
+			public void run ()
+			{
+				updateText(getString(R.string.recording_video_));
+		        recorder.start();
+			}
+		},2000);
+		
+	}
+	
+	protected void initRecording() throws IOException
     {
-		updateText(getString(R.string.recording_video_));
 		
         Date date=new Date();
-        fileVideoPath = new File(fileBasePath,"rec"+date.toString().replace(" ", "_").replace(":", "_")+".ts").getAbsolutePath();
+        fileVideoPath = new File(fileBasePath,"rec"+date.toString().replace(" ", "_").replace(":", "_")+".mp4").getAbsolutePath();
         
         recorder = new MediaRecorder(); 
-        
-        camera.lock();
-        camera.unlock();
 
+        camera.unlock();
         recorder.setCamera(camera);    
         recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         
@@ -192,12 +219,15 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
       //  int vWidth = camera.getParameters().getPreviewSize().width;
         
         //this sets the streaming format "TS"
-        recorder.setOutputFormat(/*MediaRecorder.OutputFormat.OUTPUT_FORMAT_MPEG2TS*/8);  
+      //  recorder.setOutputFormat(/*MediaRecorder.OutputFormat.OUTPUT_FORMAT_MPEG2TS*/8);  
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
       
-        recorder.setVideoSize(720,480);
-        recorder.setVideoFrameRate(15);
-        recorder.setVideoEncodingBitRate(7000000);
+        recorder.setVideoSize(640, 480);
+        recorder.setVideoEncodingBitRate(500000);
+       // recorder.setAudioEncodingBitRate(44100);
+        recorder.setVideoFrameRate(30);
+        recorder.setMaxDuration(-1); 
         
         
         /**
@@ -266,9 +296,7 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
         (*/
         
         recorder.prepare();
-        recorder.start();
 
-        
     }
 
     
