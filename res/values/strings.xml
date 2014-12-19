@@ -55,4 +55,5 @@
     <string name="network_error_restarting_upload_">Network error. Restarting upload...</string>
     <string name="successful_upload_to_">"Successful upload to "</string>
     <string name="upload">Upload</string>
+    <string name="recording_video_">Recording video...</string>
 </resources>
