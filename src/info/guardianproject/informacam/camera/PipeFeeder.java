@@ -14,7 +14,7 @@ public class PipeFeeder extends Thread {
 	public PipeFeeder(InputStream in, OutputStream out) {
 		this.in = in;
 		this.out = out;
-	//	setDaemon(true);
+		setDaemon(true);
 		this.setPriority(Thread.MAX_PRIORITY);
 	}
 
@@ -38,7 +38,7 @@ public class PipeFeeder extends Thread {
 			out.close();
 			
 		} catch (IOException e) {
-		//	Log.e("Video", "File transfer failed:", e);
+			Log.e("Video", "File transfer failed:", e);
 		}
 	}
 }
