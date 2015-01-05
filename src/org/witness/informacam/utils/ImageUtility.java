@@ -153,12 +153,12 @@ public class ImageUtility {
 			if (dims[0] > 0 && dims[1] > 0)
 				return Bitmap.createBitmap(source, 0, 0, dims[0], dims[1], matrix, false);
 			else
-				return Bitmap.createBitmap(source,0,0,128,128);
+				return Bitmap.createBitmap(source,0,0,source.getWidth()/2,source.getHeight()/2);
 		} catch(IllegalArgumentException e) {
 			Log.e(LOG, e.toString());
 			e.printStackTrace();
 			
-			return Bitmap.createBitmap(source, 0, 0, dims[1], dims[0], matrix, false);
+			return null;
 		}
 	}
 }

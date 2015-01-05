@@ -52,7 +52,8 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		informaCam = (InformaCam)getApplication();		
 		
-		if (InformaService.getInstance().suckersActive())
+		if (InformaService.getInstance() != null
+				&& InformaService.getInstance().suckersActive())
 		{
 			controlsInforma = false; //someone else started informa, so we shouldn't mess with it
 		}

@@ -65,30 +65,34 @@ public class IAsset extends Model implements Serializable {
 		inflate(asset);
 	}
 	
-	public boolean copy(int fromSource, int toSource, String rootFolder) throws IOException {
+	public String copy(int fromSource, int toSource, String rootFolder) throws IOException {
 		return copy(fromSource, toSource, rootFolder, true);
 	}
 	
-	public boolean copy(int fromSource, int toSource, String rootFolder, boolean copyStreams) throws IOException {
+	public String copy(int fromSource, int toSource, String rootFolder, boolean copyStreams) throws IOException {
 		InformaCam informaCam = InformaCam.getInstance();
-		Logger.d(LOG, "COPYINGING " + path + " from " + fromSource + " to " + toSource);
+		
 		
 		String oldPath = path;
 		String newPath = IOUtility.buildPath(new String[] { rootFolder, name });
-		if(toSource == Type.FILE_SYSTEM) {
-			newPath = IOUtility.buildPath(new String[] { newPath });
-		}
+		//if(toSource == Type.FILE_SYSTEM) {
+		//	newPath = IOUtility.buildPath(new String[] { newPath });
+	//	}
+		
+		Logger.d(LOG, "COPYING " + path + " from " + fromSource + " to " + toSource + ": " + newPath);
 		
 		if(copyStreams) {
+			
+			
 			InputStream is = informaCam.ioService.getStream(oldPath, fromSource);
 			if(is == null || !informaCam.ioService.saveBlob(is, new IAsset(newPath, toSource))) {
-				return false;
+				return null;
 			}
 		}
 		
 		source = toSource;
 		path = newPath;
-		return true;
+		return newPath;
 	}
 
 }

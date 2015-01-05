@@ -67,7 +67,7 @@ public class Constants {
 	public final static class Logger {
 		public Logger() {}
 		
-		public final static boolean DEBUG = false;
+		public final static boolean DEBUG = true;
 		
 		public static void e(String LOG, ExceptionInInitializerError e) {
 			Log.e(LOG, e.toString(),e);

@@ -212,6 +212,8 @@ public class IDCIMDescriptor extends Model {
 
 			informaCam.startService(intakeIntent);
 		}
+		
+		
 	}
 
 	public void startSession() {

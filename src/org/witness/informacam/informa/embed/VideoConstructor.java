@@ -39,11 +39,10 @@ public class VideoConstructor {
 	ITransportStub connection;
 
 	private final static String LOG = Ffmpeg.LOG;
-
+	private boolean intendedForIOCipher = false;
+	
 	public VideoConstructor(Context context) throws FileNotFoundException, IOException {
-		fileBinDir = context.getDir("bin",Context.MODE_PRIVATE);
-		File filesDir = context.getFilesDir();
-		
+		fileBinDir = context.getDir("bin",Context.MODE_PRIVATE);		
 		ffmpegCtrl = new FfmpegController(context, context.getCacheDir());
 		ffmpegBinPath = ffmpegCtrl.getBinaryPath();
 	}
@@ -58,32 +57,42 @@ public class VideoConstructor {
 		sourceAsset = this.media.dcimEntry.fileAsset;
 		metadata = media.getAsset(this.media.dcimEntry.name + ".j3m");
 		
-		java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
-		if(!publicRoot.exists()) {
-			publicRoot.mkdir();
+		java.io.File fileDest = new java.io.File(destinationAsset.path);
+		if (fileDest.exists())
+			fileDest.delete(); //delete a file if it is there
+		else
+		{
+			fileDest.getParentFile().mkdirs();
 		}
 		
-		boolean intendedForIOCipher = false;
+		
+		intendedForIOCipher = (destinationAsset.source == Storage.Type.IOCIPHER);
+		String metadataPath = metadata.path;
+		String sourcePath = sourceAsset.path;
+		
 		if(sourceAsset.source == Type.IOCIPHER) {
+			
+			String basePath = fileDest.getParentFile().getAbsolutePath();
+			
 			// If the assets were in IOCIPHER, we have to save them to local storage.
 			// unfortunately, Ffmpeg CLI works that way.
-			metadata.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder);
-			sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder);			
+			metadataPath = metadata.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);
+			sourcePath = sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);			
 			
 			// this means we also have to save the resulting media to public
 			// (and copy to iocipher later)
-			this.destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
-			intendedForIOCipher = true;
+			//destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
+			
 		}
 		
-		constructVideo(intendedForIOCipher);
+		constructVideo(intendedForIOCipher,sourcePath,metadataPath);
 	}
 
-	private void constructVideo(final boolean intendedForIOCipher) throws IOException {
+	private void constructVideo(final boolean intendedForIOCipher, String sourcePath, String metadataPath) throws IOException {
 
 		String[] ffmpegCommand = new String[] {
-				ffmpegBinPath, "-y", "-i", sourceAsset.path,
-				"-attach", metadata.path,
+				ffmpegBinPath, "-y", "-i", sourcePath,
+				"-attach", metadataPath,
 				"-metadata:s:2", "mimetype=text/plain",
 				"-vcodec", "copy",
 				"-acodec", "copy",

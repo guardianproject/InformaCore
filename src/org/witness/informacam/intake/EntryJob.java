@@ -334,7 +334,7 @@ public class EntryJob extends BackgroundTask {
 					b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
 				}
 	
-				b_.recycle();
+			//	b_.recycle();
 			}
 			
 			mmr.release();
@@ -371,7 +371,7 @@ public class EntryJob extends BackgroundTask {
 				
 			}
 			
-			b.recycle();			
+			//b.recycle();			
 		}
 	}
 
@@ -452,7 +452,7 @@ public class EntryJob extends BackgroundTask {
 			{
 						
 			//	IAsset publicAsset = new IAsset(entry.fileAsset);
-				if(entry.fileAsset.copy(entry.fileAsset.source, Storage.Type.IOCIPHER, entry.originalHash)) {
+				if(entry.fileAsset.copy(entry.fileAsset.source, Storage.Type.IOCIPHER, entry.originalHash)!=null) {
 				//	Logger.d(LOG, "public Asset to delete?\n" + publicAsset.asJson().toString());
 					
 					if (entry.fileAsset.source == Storage.Type.FILE_SYSTEM)
