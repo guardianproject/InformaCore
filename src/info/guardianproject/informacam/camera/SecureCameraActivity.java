@@ -2,7 +2,6 @@ package info.guardianproject.informacam.camera;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileOutputStream;
-import info.guardianproject.iocipher.RandomAccessFile;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -18,7 +17,10 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.media.MediaRecorder.OnErrorListener;
+import android.media.MediaRecorder.OnInfoListener;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.os.Bundle;
@@ -30,7 +32,7 @@ import android.view.View;
 
 public class SecureCameraActivity extends SurfaceGrabberActivity {
 	
-	private final static String LOG = "SecureCamera";
+	private final static String TAG = "SecureCamera";
 	
 	private String fileBasePath = null;
 	private MediaRecorder recorder;
@@ -89,7 +91,7 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 						stopRecording ();
 					
 				} catch (IOException e) {
-					Log.d(LOG,"error stop/start recording",e);
+					Log.d(TAG,"error stop/start recording",e);
 				}
 			}
 			else
@@ -156,7 +158,7 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 
 			if (recorder == null) //not a thumb!
 			{
-				addResultPath(fileSecurePicture.getAbsolutePath());
+				addResultPath(fileSecurePicture.getAbsolutePath(),false);
 
 				//now restart preview after a short delay
 				handler.postDelayed(new Runnable ()
@@ -174,17 +176,18 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 			}
 			else
 			{
+				addResultPath(fileSecurePicture.getAbsolutePath(),true);
 				//is a thumb, so release the media recorder
 	    		releaseMediaRecorder();
 	    		
 	    		//now add the video path
-	    		addResultPath(fileVideoPath);
+	    		addResultPath(fileVideoPath,false);
 				
 
 			}
 			
 		} catch (Exception e) {
-			Log.e(LOG,"error capturing photo",e);
+			Log.e(TAG,"error capturing photo",e);
 		}
 		
 
@@ -209,7 +212,7 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 				}
 				catch (Exception e)
 				{
-					Log.e(LOG,"could not start video recroder",e);
+					Log.e(TAG,"could not start video recroder",e);
 					finish();
 				}
 			}
@@ -220,37 +223,85 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 	protected void initRecording() throws IOException
     {
 		
+		String fileExt = ".ts";//".3gp";//".mp4:l
         Date date=new Date();
-        fileVideoPath = new File(fileBasePath,"rec"+date.toString().replace(" ", "_").replace(":", "_")+".mp4").getAbsolutePath();
+        fileVideoPath = new File(fileBasePath,"rec"+date.toString().replace(" ", "_").replace(":", "_")+fileExt).getAbsolutePath();
+        
+        CamcorderProfile profile = null;
+        if(CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_480P)){
+            profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P);
+        }else{ profile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW); }
         
         recorder = new MediaRecorder(); 
 
+        recorder.setOnInfoListener(new OnInfoListener ()
+        {
+
+			@Override
+			public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
+				
+				Log.d(TAG,"mediarecorder info: " + arg1 + "," + arg2);
+			}
+        	
+        });
+        
+        recorder.setOnErrorListener(new OnErrorListener ()
+        {
+
+			@Override
+			public void onError(MediaRecorder arg0, int arg1, int arg2) {
+				Log.d(TAG,"mediarecorder error: " + arg1 + "," + arg2);
+				
+			}
+
+        	
+        });
+        
         camera.unlock();
         recorder.setCamera(camera);    
         //recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         
-        //recorder.setOutputFormat(/*MediaRecorder.OutputFormat.OUTPUT_FORMAT_MPEG2TS*/8);
-        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        recorder.setOutputFormat(/*MediaRecorder.OutputFormat.OUTPUT_FORMAT_MPEG2TS*/8);
+        //recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        //recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        //recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        //recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         
-        recorder.setVideoSize(640, 480);
-        recorder.setVideoEncodingBitRate(512*1024);
-        recorder.setVideoFrameRate(30);        
-        
-        recorder.setAudioSamplingRate(48000); 
-        recorder.setAudioEncodingBitRate(128000);
-        
-        recorder.setMaxDuration(9600000); //4 hours         
+                 
+        if (fileExt.equals(".3gp"))
+        {
+	        recorder.setVideoFrameRate(20);
+	        recorder.setVideoSize(352,288);        
+	        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
+        }
+        else
+        {
+        	
+        	recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        	
+        	recorder.setVideoFrameRate(profile.videoFrameRate);
+        	recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+        	recorder.setVideoEncodingBitRate(profile.videoBitRate);
+        	
+        	
+            
+            //recorder.setAudioSamplingRate(24000); 
+            //recorder.setAudioEncodingBitRate(64000);
+            
+            recorder.setMaxDuration(9600000); //4 hours
+            	
+        }
 
         recorder.setPreviewDisplay(holder.getSurface());
 
-        recordViaLocalPipe();
+        recordViaLocalSocket();
+        //recordViaLocalPipe();
 
         recorder.prepare();
     }
 	
+	/*
 	private void recordViaLocalPipe () throws IOException
 	{
 		File file = new File(fileVideoPath);
@@ -265,20 +316,20 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
         //recorder.setOutputFile(fileRAF.getFD());
         
      
-    }
+    }*/
 	
 	private void recordViaLocalSocket () throws IOException
 	{
-        
+           
         lSS = new LocalServerSocket("ic" + new Date().getTime());
         receiver = new LocalSocket();
 		receiver.connect(lSS.getLocalSocketAddress());	
-		receiver.setSendBufferSize(1000);
-		receiver.setReceiveBufferSize(1000);		
+		receiver.setSendBufferSize(1024);
+		receiver.setReceiveBufferSize(1024);		
 		
         sender = lSS.accept();
-        sender.setSendBufferSize(1000);
-        sender.setReceiveBufferSize(1000);
+        sender.setSendBufferSize(1024);
+        sender.setReceiveBufferSize(1024);
 		
 		new Thread ()
 		{
@@ -293,7 +344,7 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 					InputStream in = receiver.getInputStream();
 					OutputStream out = new FileOutputStream(new File(fileVideoPath));
 					
-					byte[] buf = new byte[8000];
+					byte[] buf = new byte[1024];
 					int len;
 
 					int idx = 0;
@@ -301,16 +352,16 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
 					{
 						out.write(buf, 0, len);
 						idx += buf.length;
-						Log.d("video","writing to IOCipher at " + idx);
+						Log.d(TAG,"writing to IOCipher at " + idx);
 					}
 					
-					Log.d("video","done streaming from localsocket");
-					in.close();
+					Log.d(TAG,"done streaming from localsocket");
+				//	in.close();
 					out.flush();
 					out.close();
 					
 				} catch (IOException e) {
-					Log.e("Video", "Video stream capture exception", e);
+					Log.e(TAG, "Video stream capture exception", e);
 				}
 			}
 		}.start();
@@ -328,16 +379,16 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
     }
     
     
-    private void addResultPath (String path)
+    private void addResultPath (String path, boolean isThumb)
     {
     
     	InformaCam informaCam = (InformaCam)getApplication();		
     	try {
-			informaCam.ioService.getDCIMDescriptor().addEntry(path, false, Storage.Type.IOCIPHER);
+			informaCam.ioService.getDCIMDescriptor().addEntry(path, isThumb, Storage.Type.IOCIPHER);
 		} catch (InstantiationException e) {
-			Log.e(LOG,"error",e);
+			Log.e(TAG,"error",e);
 		} catch (IllegalAccessException e) {
-			Log.e(LOG,"error",e);
+			Log.e(TAG,"error",e);
 		}
 	
 	}
@@ -351,15 +402,18 @@ public class SecureCameraActivity extends SurfaceGrabberActivity {
         {    
         	try
         	{
+
+	    		//addResultPath(fileVideoPath);
+	    		recorder.stop();
         		keepStreaming = false;
-        		recorder.stop();
-    		  
+
+        		//releaseMediaRecorder();        		
         		camera.takePicture(null, null, this);
         		
         	}
         	catch (IllegalStateException ise)
         	{
-        		Log.d(LOG,"problem stopping recorder",ise);
+        		Log.d(TAG,"problem stopping recorder",ise);
         	}
         }
     }

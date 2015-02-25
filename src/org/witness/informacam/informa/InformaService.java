@@ -140,6 +140,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 			.putExtra(Codes.Extras.RESTRICT_TO_PROCESS, android.os.Process.myPid()));
 
 		init();
+
 	}
 	
 	public static InformaService getInstance ()
@@ -434,25 +435,22 @@ public class InformaService extends Service implements SuckerCacheListener {
 		showNotification();
 	}
 	
+	
 	private void showNotification ()
 	{
 
-	    Intent i=new Intent(this, AlwaysOnActivity.class);
-		i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		  Intent notificationIntent = new Intent(this, AlwaysOnActivity.class);
+		    PendingIntent pendingIntent=PendingIntent.getActivity(this, 0,
+		            notificationIntent, Intent.FLAG_ACTIVITY_NEW_TASK);
 
-		PendingIntent pi=PendingIntent.getActivity(this, 0,
-	                        i, 0);
-
-		Notification notification = new NotificationCompat.Builder(this)
-		.setContentTitle(getString(R.string.app_name))		
-		.setSmallIcon(R.drawable.ic_notify)		
-		.setContentIntent(pi)
-		.setOngoing(true)
-		.build();
-		
-		notification.setLatestEventInfo(this, getString(R.string.app_name), "", pi);
-
-		startForeground(13371,notification);
+		    Notification notification=new NotificationCompat.Builder(this)
+		                                .setSmallIcon(R.drawable.ic_action_camera)
+		                                .setContentText(getString(R.string.proof_mode_activated))
+		                                .setContentIntent(pendingIntent)
+		                                .setOngoing(true).build();
+		    
+		    startForeground(991199, notification);
+		    	        
 	}
 	
 	public void stopAllSuckers() {

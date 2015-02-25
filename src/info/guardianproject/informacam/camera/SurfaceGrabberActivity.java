@@ -191,8 +191,10 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 	public void surfaceCreated(SurfaceHolder holder) {
 		try {
 
-	        
-			camera.setPreviewDisplay(holder);
+			if (camera != null)
+				camera.setPreviewDisplay(holder);
+			
+			this.holder = holder;
 			
 		} catch(IOException e) {
 			Log.e(LOG, "error setting preview display",e);

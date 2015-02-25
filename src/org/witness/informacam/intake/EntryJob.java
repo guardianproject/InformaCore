@@ -124,7 +124,7 @@ public class EntryJob extends BackgroundTask {
 						}
 						
 					
-					} else if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+					} else if(entry.mediaType.startsWith(Models.IMedia.MimeType.VIDEO_BASE)) {
 						IVideo video = new IVideo(media);
 
 						if(video.analyze()) {
@@ -195,7 +195,7 @@ public class EntryJob extends BackgroundTask {
 				//need exif reader for encrypted storage
 			}
 			
-		} else if(entry.mediaType.equals(MimeType.VIDEO)) {
+		} else if(entry.mediaType.startsWith(MimeType.VIDEO_BASE)) {
 			
 			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 
@@ -254,7 +254,7 @@ public class EntryJob extends BackgroundTask {
 	private void parseThumbnails() throws IOException {
 		Bitmap b = null;
 
-		if(entry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+		if(entry.mediaType.startsWith(Models.IMedia.MimeType.VIDEO_BASE)) {
 			
 			b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
 			if(b == null) {

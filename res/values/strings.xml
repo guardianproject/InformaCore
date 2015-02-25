@@ -56,4 +56,5 @@
     <string name="successful_upload_to_">"Successful upload to "</string>
     <string name="upload">Upload</string>
     <string name="recording_video_">Recording video...</string>
+    <string name="proof_mode_activated">Proof Mode Activated</string>
 </resources>

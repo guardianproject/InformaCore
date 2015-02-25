@@ -180,7 +180,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			for(IRegion region : associatedRegions) {
 				IRegionBounds bounds = null;
 
-				if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+				if(dcimEntry.mediaType.startsWith(MimeType.VIDEO_BASE)) {
 					IVideoRegion videoRegion = new IVideoRegion(region);
 					videoRegion = (IVideoRegion) region;
 					bounds = videoRegion.getBoundsAtTime(timestamp);
@@ -298,7 +298,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		IRegion region = new IRegion();
 
-		if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+		if(dcimEntry.mediaType.startsWith(MimeType.VIDEO_BASE)) {
 			IVideoRegion videoRegion = new IVideoRegion(region);
 			region = videoRegion;
 		}
@@ -640,9 +640,17 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		exportAsset.source = exportDestination;
 		exportAsset.path = IOUtility.buildPublicPath(new String[] { exportAsset.name });
 		
-		if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO)) {
+		if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO_MP4)) {
 			exportAsset.name = exportAsset.name.replace(".mp4", ".mkv");
 			exportAsset.path = exportAsset.path.replace(".mp4", ".mkv");
+			
+			exportAsset.name = exportAsset.name.replace(".ts", ".mkv");
+			exportAsset.path = exportAsset.path.replace(".ts", ".mkv");
+		}
+		
+		if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO_3GPP)) {
+			exportAsset.name = exportAsset.name.replace(".3gp", ".mkv");
+			exportAsset.path = exportAsset.path.replace(".3gp", ".mkv");
 		}
 		
 		constructExport(exportAsset, submission);
@@ -664,7 +672,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		if(dcimEntry.mediaType.equals(MimeType.IMAGE)) {
 			@SuppressWarnings("unused")
 			ImageConstructor ic = new ImageConstructor(this, destinationAsset, submission);
-		} else if(dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+		} else if(dcimEntry.mediaType.startsWith(MimeType.VIDEO_BASE)) {
 			@SuppressWarnings("unused")
 			VideoConstructor vc = new VideoConstructor(InformaCam.getInstance(), this, destinationAsset, submission);
 		}

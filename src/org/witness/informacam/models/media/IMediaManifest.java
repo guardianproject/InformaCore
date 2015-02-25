@@ -164,7 +164,7 @@ public class IMediaManifest extends Model {
 			break;
 		case Models.IMediaManifest.Sort.TYPE_VIDEO:
 			for(IMedia m : listMedia) {
-				if(m.dcimEntry.mediaType.equals(MimeType.VIDEO)) {
+				if(m.dcimEntry.mediaType.startsWith(MimeType.VIDEO_BASE)) {
 					_listMedia.add(m);
 				}
 			}

@@ -92,9 +92,9 @@ public class IDCIMDescriptor extends Model {
 				entry.mediaType = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.MIME_TYPE));
 				entry.cameraComponent = cameraComponent;
 
-				if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
-					entry.mediaType = MimeType.VIDEO;
-				}
+				//if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
+				//entry.mediaType = MimeType.VIDEO;
+				//}
 			}
 
 			// String pattern = "^([a-zA-Z0-9]+)([a-zA-Z0-9_]*)\\.(jpg|mp4){1}$";
@@ -167,13 +167,13 @@ public class IDCIMDescriptor extends Model {
 
 				entry.mediaType = MimeType.IMAGE;
 				if (path.endsWith("mp4")||path.endsWith("ts"))
-					entry.mediaType = MimeType.VIDEO;
-				
+					entry.mediaType = MimeType.VIDEO_MP4;
+				else if (path.endsWith("3gp"))
+					entry.mediaType = MimeType.VIDEO_3GPP;
+					
 				entry.cameraComponent = cameraComponent;
 
-				if(entry.mediaType.equals(MimeType.VIDEO_3GPP)) {
-					entry.mediaType = MimeType.VIDEO;
-				}
+				
 			}
 
 			if(!isThumbnail) {

@@ -95,7 +95,8 @@ public class VideoConstructor {
 				"-attach", metadataPath,
 				"-metadata:s:2", "mimetype=text/plain",
 				"-vcodec", "copy",
-				"-acodec", "copy",
+				"-an",
+				//"-acodec", "copy",
 				destinationAsset.path
 		};
 
