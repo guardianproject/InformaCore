@@ -142,7 +142,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				finish();
 			} else {
 			
-					onInformaStart(null);
+					startCamera();
 				
 			}
 		}
@@ -153,6 +153,42 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				onInformaStart(null);
 			
 		}
+	}
+	
+	private void startCamera ()
+	{
+		if (controlsInforma)
+		{
+			Intent intentSuckers = new Intent(this, InformaService.class);
+			intentSuckers.setAction("startsuckers");
+			startService(intentSuckers);
+			
+			informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
+		}
+		
+		if (cameraIntentFlag != null)
+		{
+			cameraIntent = new Intent(cameraIntentFlag);
+			cameraIntent.setComponent(cameraComponent);
+			startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
+		}
+		else
+		{
+			setContentView(R.layout.activity_informacam_running);
+			Button btnStop = (Button)findViewById(R.id.informacam_button);
+			btnStop.setOnClickListener(new OnClickListener()
+			{
+
+				@Override
+				public void onClick(View arg0) {
+					
+					finish();//on destroy will do the rest
+				}
+				
+			});
+				
+		}
+		
 	}
 
 	@Override
@@ -195,7 +231,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
-		boolean isInformaActive = true;
+		boolean isInformaActive = InformaService.getInstance().suckersActive();
 		
 		if(isInformaActive) {
 						
@@ -279,37 +315,6 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	@Override
 	public void onInformaStart(Intent intent) {
 			
-		if (controlsInforma)
-		{
-			Intent intentSuckers = new Intent(this, InformaService.class);
-			intentSuckers.setAction("startsuckers");
-			startService(intentSuckers);
-			
-			informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
-		}
-		
-		if (cameraIntentFlag != null)
-		{
-			cameraIntent = new Intent(cameraIntentFlag);
-			cameraIntent.setComponent(cameraComponent);
-			startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
-		}
-		else
-		{
-			setContentView(R.layout.activity_informacam_running);
-			Button btnStop = (Button)findViewById(R.id.informacam_button);
-			btnStop.setOnClickListener(new OnClickListener()
-			{
-
-				@Override
-				public void onClick(View arg0) {
-					
-					finish();//on destroy will do the rest
-				}
-				
-			});
-				
-		}
 		
 		
 	}

@@ -77,6 +77,16 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 		}
 	}
 
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		if (!InformaService.getInstance().suckersActive())
+			finish();
+	}
+
+
 	private void startMonitoring () {
 		
 			onInformaStart(null);
@@ -93,15 +103,17 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 		
 		informaCam.ioService.stopDCIMObserver();
 		
-		IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
-		if(dcimDescriptor.dcimList.size() > 0) {
-			Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
-			setResult(Activity.RESULT_OK, result);
-		} else {
-			setResult(Activity.RESULT_CANCELED);
+		if (informaCam.ioService.getDCIMDescriptor() != null)
+		{
+			IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
+			if(dcimDescriptor.dcimList.size() > 0) {
+				Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
+				setResult(Activity.RESULT_OK, result);
+			} else {
+				setResult(Activity.RESULT_CANCELED);
+			}
+			finish();
 		}
-		finish();
-		
 		
 	}
 
