@@ -53,7 +53,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		informaCam = (InformaCam)getApplication();		
 		
-		controlsInforma = false; //someone else started informa, so we shouldn't mess with it
+		controlsInforma = true; //someone else started informa, so we shouldn't mess with it
 		
 		setContentView(R.layout.activity_camera_waiter);
 		
