@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
@@ -52,11 +53,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		informaCam = (InformaCam)getApplication();		
 		
-		if (InformaService.getInstance() != null
-				&& InformaService.getInstance().suckersActive())
-		{
-			controlsInforma = false; //someone else started informa, so we shouldn't mess with it
-		}
+		controlsInforma = true; //someone else started informa, so we shouldn't mess with it
 		
 		setContentView(R.layout.activity_camera_waiter);
 		
@@ -198,11 +195,17 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		setResult(Activity.RESULT_CANCELED);
 
-		if(InformaService.getInstance().suckersActive()) {
+		boolean isInformaActive = true;
+		
+		if(isInformaActive) {
 						
 			if (controlsInforma)
 			{
-				InformaService.getInstance().stopAllSuckers();
+
+				Intent intentSuckers = new Intent(this, InformaService.class);
+				intentSuckers.setAction("stopsuckers");
+				startService(intentSuckers);
+				
 				informaCam.ioService.stopDCIMObserver();
 			}
 			
@@ -278,7 +281,10 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			
 		if (controlsInforma)
 		{
-			InformaService.getInstance().startAllSuckers();
+			Intent intentSuckers = new Intent(this, InformaService.class);
+			intentSuckers.setAction("startsuckers");
+			startService(intentSuckers);
+			
 			informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
 		}
 		

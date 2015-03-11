@@ -2,6 +2,7 @@ package org.witness.informacam.ui;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
@@ -85,21 +86,23 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 
 	private void stopMonitoring ()
 	{
-		if(InformaService.getInstance() != null && InformaService.getInstance().suckersActive()) {
-						
-			InformaService.getInstance().stopAllSuckers();
-			informaCam.ioService.stopDCIMObserver();
-			
-			IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
-			if(dcimDescriptor.dcimList.size() > 0) {
-				Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
-				setResult(Activity.RESULT_OK, result);
-			} else {
-				setResult(Activity.RESULT_CANCELED);
-			}
-			finish();
-			
+
+		Intent intentSuckers = new Intent(this, InformaService.class);
+		intentSuckers.setAction("stopsuckers");
+		startService(intentSuckers);
+		
+		informaCam.ioService.stopDCIMObserver();
+		
+		IDCIMSerializable dcimDescriptor = informaCam.ioService.getDCIMDescriptor().asDescriptor();
+		if(dcimDescriptor.dcimList.size() > 0) {
+			Intent result = new Intent().putExtra(Codes.Extras.RETURNED_MEDIA, dcimDescriptor);
+			setResult(Activity.RESULT_OK, result);
+		} else {
+			setResult(Activity.RESULT_CANCELED);
 		}
+		finish();
+		
+		
 	}
 
 	@Override
@@ -112,9 +115,12 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 	@Override
 	public void onInformaStart(Intent intent) {
 		
+
+		Intent intentSuckers = new Intent(this, InformaService.class);
+		intentSuckers.setAction("startsuckers");
+		startService(intentSuckers);
 		
-		InformaService.getInstance().startAllSuckers();
-			informaCam.ioService.startDCIMObserver(AlwaysOnActivity.this, parentId, cameraComponent);
+		informaCam.ioService.startDCIMObserver(AlwaysOnActivity.this, parentId, cameraComponent);
 		
 		
 		

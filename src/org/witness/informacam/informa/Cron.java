@@ -1,6 +1,7 @@
 package org.witness.informacam.informa;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.intake.Intake;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.Suckers;
 
@@ -22,24 +23,23 @@ public class Cron extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		super.onStartCommand(intent, flags, startId);
-		//Toast.makeText(this, "Cron.onStartCommand()", Toast.LENGTH_LONG).show();
+		
 		Log.d(LOG, "Cron.onStartCommand()");
 		
-		final InformaCam informaCam = InformaCam.getInstance();
+		Intent intentSuckers = new Intent(this, InformaService.class);
+		intentSuckers.setAction("startsuckers");
+		this.startService(intentSuckers);
 		
-		if(InformaService.getInstance() != null) {
-			InformaService.getInstance().startAllSuckers();
 			
-			(new Handler()).postDelayed(new Runnable() {
-				@Override
-				public void run() {
-					if(InformaService.getInstance() != null) {
-						InformaService.getInstance().stopAllSuckers();
-					}
-				}
-			},  (long) (60 * 1000 * Suckers.DEFAULT_CRON_ACTIVE_INTERVAL));
-		}
-		
+		(new Handler()).postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				Intent intentSuckers = new Intent(Cron.this, InformaService.class);
+				intentSuckers.setAction("stopsuckers");
+				startService(intentSuckers);
+			}
+		},  (long) (60 * 1000 * Suckers.DEFAULT_CRON_ACTIVE_INTERVAL));
+	
 		
 		return START_STICKY;
 	}
@@ -57,10 +57,9 @@ public class Cron extends Service {
 		//Toast.makeText(this, "Cron.onDestroy()", Toast.LENGTH_LONG).show();
 		Log.d(LOG, "Cron.onDestroy()");
 		
-		InformaCam informaCam = InformaCam.getInstance();
-		if(InformaService.getInstance() != null) {
-			InformaService.getInstance().stopAllSuckers();
-		}
+		Intent intentSuckers = new Intent(Cron.this, InformaService.class);
+		intentSuckers.setAction("stopsuckers");
+		startService(intentSuckers);
 	}
 
 	@Override

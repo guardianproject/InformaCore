@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.witness.informacam.InformaCam;
+import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.intake.Intake;
 import org.witness.informacam.models.Model;
@@ -125,15 +126,18 @@ public class IDCIMDescriptor extends Model {
 
 			Intent intakeIntent = new Intent(informaCam, Intake.class);
 
-			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
-						
+			
 			if (InformaService.getInstance() != null)
 			{
 				List<String> cacheFiles = InformaService.getInstance().getCacheFiles();
 				intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));
-				InformaService.getInstance().resetCacheFiles();
+
+				Intent intentSuckers = new Intent(informaCam, InformaService.class);
+				intentSuckers.setAction("resetcache");
+				informaCam.startService(intentSuckers);
 			}
 			
+			intakeIntent.putExtra(Codes.Extras.RETURNED_MEDIA, new IDCIMSerializable(intakeList));
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
 			if(parentId != null) {
 				intakeIntent.putExtra(Codes.Extras.MEDIA_PARENT, parentId);
@@ -203,7 +207,10 @@ public class IDCIMDescriptor extends Model {
 						
 			List<String> cacheFiles = InformaService.getInstance().getCacheFiles();
 			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
-			InformaService.getInstance().resetCacheFiles();
+
+			Intent intentSuckers = new Intent(informaCam, InformaService.class);
+			intentSuckers.setAction("resetcache");
+			informaCam.startService(intentSuckers);
 			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);
 			if(parentId != null) {
