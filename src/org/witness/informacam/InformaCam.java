@@ -327,22 +327,30 @@ public class InformaCam extends Application {
 	
 	private void setModels() {
 		
-		try {
-			String apkName = getPackageResourcePath();
-			java.io.File dexDump = getDir(IManifest.DEX, Context.MODE_PRIVATE);
-			if(!dexDump.exists()) {
-				dexDump.mkdir();
-			}
-			DexFile dex = DexFile.loadDex(apkName, new java.io.File(dexDump, "dex").getAbsolutePath(), 0);
-			for(Enumeration<String> classes = dex.entries(); classes.hasMoreElements() ;) {
-				String clz = classes.nextElement();
-				if(clz.contains("org.witness.informacam.models")) {
-					models.add(clz);
+		new Thread ()
+		{
+			
+			public void run ()
+			{
+				try {
+					String apkName = getPackageResourcePath();
+					java.io.File dexDump = getDir(IManifest.DEX, Context.MODE_PRIVATE);
+					if(!dexDump.exists()) {
+						dexDump.mkdir();
+					}
+					DexFile dex = DexFile.loadDex(apkName, new java.io.File(dexDump, "dex").getAbsolutePath(), 0);
+					for(Enumeration<String> classes = dex.entries(); classes.hasMoreElements() ;) {
+						String clz = classes.nextElement();
+						if(clz.contains("org.witness.informacam.models")) {
+							models.add(clz);
+						}
+					}
+				} catch (IOException e) {
+					Logger.e(LOG, e);
 				}
 			}
-		} catch (IOException e) {
-			Logger.e(LOG, e);
-		}
+		}.start();
+			
 	}
 	
 	public void shutdown() {
