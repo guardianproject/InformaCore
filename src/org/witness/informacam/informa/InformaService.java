@@ -462,7 +462,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 		    Notification notification=new NotificationCompat.Builder(this)
 		                                .setSmallIcon(R.drawable.ic_action_camera)
-		                                .setContentText(getString(R.string.proof_mode_activated))
+		                                .setContentTitle(getString(R.string.proof_mode_activated))
 		                                .setContentIntent(pendingIntent)
 		                                .setOngoing(true).build();
 		    
