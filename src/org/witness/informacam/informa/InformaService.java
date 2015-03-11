@@ -19,12 +19,14 @@ import org.witness.informacam.informa.suckers.GeoFusedSucker;
 import org.witness.informacam.informa.suckers.GeoHiResSucker;
 import org.witness.informacam.informa.suckers.GeoSucker;
 import org.witness.informacam.informa.suckers.PhoneSucker;
+import org.witness.informacam.intake.Intake;
 import org.witness.informacam.json.JSONArray;
 import org.witness.informacam.json.JSONException;
 import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.models.j3m.ILocation;
 import org.witness.informacam.models.j3m.ILogPack;
 import org.witness.informacam.models.j3m.ISuckerCache;
+import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IRegion;
 import org.witness.informacam.ui.AlwaysOnActivity;
@@ -86,13 +88,14 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private Timer cacheTimer;
 	
 	InformaCam informaCam;
-	private static InformaService mInstance;
 	
 	Handler h = new Handler();
 	String associatedMedia = null;
 	
 	Intent stopIntent = new Intent().setAction(Actions.INFORMA_STOP);
 
+	private static InformaService mInstance = null;
+	
 	private InformaBroadcaster[] broadcasters = {
 			new InformaBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)),
 			new InformaBroadcaster(new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
@@ -111,15 +114,19 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return binder;
 	}
 
+	public static InformaService getInstance ()
+	{
+		return mInstance;
+	}
+	
 	@Override
 	public void onCreate() {
 		Log.d(LOG, "started.");
 		
-		mInstance = this;
-		
 		if (Debug.WAIT_FOR_DEBUGGER)
 			android.os.Debug.waitForDebugger();
 		
+		mInstance = this;
 		informaCam =  (InformaCam)getApplication();
 
 		if (informaCam.ioService == null || (!informaCam.ioService.isMounted()))
@@ -143,20 +150,31 @@ public class InformaService extends Service implements SuckerCacheListener {
 
 	}
 	
-	public static InformaService getInstance ()
-	{
-		return mInstance;
-	}
-	
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		
+		if (intent.getAction()!=null)
+		{
+			if (intent.getAction().equals("startsuckers"))
+			{
+				this.startAllSuckers();
+			}
+			else if (intent.getAction().equals("stopsuckers"))
+			{
+				this.stopAllSuckers();
+			}
+			else if (intent.getAction().equals("resetcache"))
+			{
+				resetCacheFiles();
+			}
+		}
 		
 		return START_STICKY;//super.onStartCommand(intent, flags, startId);
 		
 		
 	}
+	
 
 	/**
 	* Gets the state of Airplane Mode.
@@ -385,9 +403,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 	{
 		return suckersActive;
 	}
-	
-	@SuppressWarnings("unchecked")
-	public void startAllSuckers() {
+		
+	private void startAllSuckers() {
 		
 		if(suckersActive) {
 			return;
@@ -453,7 +470,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		    	        
 	}
 	
-	public void stopAllSuckers() {
+	private void stopAllSuckers() {
 		if(!suckersActive) {
 			return;
 		}
@@ -655,7 +672,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 		return cacheFiles;
 	}
 	
-	public void resetCacheFiles ()
+	private void resetCacheFiles ()
 	{
 		if (cacheFiles.size() > 0)
 		{
