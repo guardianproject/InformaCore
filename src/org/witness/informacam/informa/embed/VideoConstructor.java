@@ -93,10 +93,9 @@ public class VideoConstructor {
 		String[] ffmpegCommand = new String[] {
 				ffmpegBinPath, "-y", "-i", sourcePath,
 				"-attach", metadataPath,
-				"-metadata:s:2", "mimetype=text/plain",
-				"-vcodec", "copy",
-				"-an",
-				//"-acodec", "copy",
+				"-metadata:s:2", "mimetype=\"text/plain\"",
+				"-vcodec", "copy",				
+				"-acodec", "copy",
 				destinationAsset.path
 		};
 
