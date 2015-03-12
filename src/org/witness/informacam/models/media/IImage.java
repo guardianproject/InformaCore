@@ -51,7 +51,6 @@ public class IImage extends IMedia {
 
 		genealogy.hashes = new ArrayList<String>();
 		
-		/*
 		String hash = null;
 		
 		try
@@ -67,8 +66,6 @@ public class IImage extends IMedia {
 		}
 		if (hash != null)
 			genealogy.hashes.add(hash);
-		*/
-		
 		
 		return true;
 	}

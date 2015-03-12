@@ -906,6 +906,63 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return null;
 	}
 	
+	public String buildCSV(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
+		
+		System.gc();
+		
+		int progress = 0;
+		InformaCam informaCam = InformaCam.getInstance();
+
+		INotification notification = new INotification();
+		notification.icon = dcimEntry.thumbnail;
+
+		// create data package
+		if(data == null) {
+			data = new IData();
+		}
+		data.exif = dcimEntry.exif;
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		mungeSensorLogs();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		mungeData();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		mungeGenealogyAndIntent();
+		progress += 20;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		StringBuffer sbCSV = new StringBuffer();
+		
+		try {
+
+			
+			
+	//		j3m.put(Models.IMedia.j3m.DATA, data.asJson());
+	//		j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
+	//		j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
+			
+
+			return sbCSV.toString();
+			
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+			
+		} catch (Exception e) {
+			Logger.e(LOG, e);
+			
+		}
+
+		return null;
+	}
+	
 	public String renderDetailsAsText(int depth) {
 		StringBuffer details = new StringBuffer();
 		switch(depth) {
