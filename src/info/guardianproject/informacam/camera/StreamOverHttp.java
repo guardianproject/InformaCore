@@ -25,7 +25,8 @@ import android.util.Log;
  * from: http://stackoverflow.com/a/9096241
  */
 public class StreamOverHttp{
-   private static final boolean debug = true;
+	
+   private static boolean debug = false;
  
    private final File file;
    private final String fileMimeType;
@@ -402,7 +403,8 @@ public class StreamOverHttp{
    
    private final static void log (String msg)
    {
-	   Log.d("StreamProxy",msg);
+	   if (debug)
+		   Log.d("StreamProxy",msg);
    }
 }
  
