@@ -808,7 +808,10 @@ public class InformaCam extends Application {
 	}
 	
 	public int getCredentialManagerStatus() {
-		return credentialManager.getStatus();
+		if (credentialManager != null)
+			return credentialManager.getStatus();
+		else
+			return Codes.Status.UNINITIALIZED;
 	}
 	
 	public boolean isOutsideTheLoop(String action) {
