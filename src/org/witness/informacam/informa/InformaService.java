@@ -154,7 +154,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		
-		if (intent.getAction()!=null)
+		if (intent != null && intent.getAction()!=null)
 		{
 			if (intent.getAction().equals("startsuckers"))
 			{
