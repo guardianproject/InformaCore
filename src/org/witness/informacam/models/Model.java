@@ -299,5 +299,101 @@ public class Model extends JSONObject {
 
 		return json;
 	}
+	
+	@SuppressWarnings("rawtypes")
+	public String asCSV() {
+		fields = this.getClass().getFields();
+
+		StringBuffer header = new StringBuffer();
+		StringBuffer values = new StringBuffer();
+		
+		for(Field f : fields) {
+			f.setAccessible(true);
+			
+			header.append(f.getName()).append(',');
+
+			try {
+				Object value = f.get(this);
+
+				if(f.getName().contains("this$")) {
+					continue;
+				}
+
+				if(f.getName().equals("NULL") || f.getName().equals("LOG")) {
+					continue;
+				}
+
+				boolean isModel = false;
+
+				if(f.getType().getSuperclass() == Model.class) {
+					isModel = true;
+				}
+
+				if(f.getType() == List.class) {
+					
+					synchronized (value)
+					{
+						
+						Iterator it = ((List<?>) value).iterator();
+						
+						while (it.hasNext()){
+							Object v = it.next();
+							
+							if(v instanceof Model) {
+								values.append(((Model) v).asCSV()).append(';');
+							} else {
+								values.append(v).append(';');
+							}
+						}
+
+					}
+				} else if(f.getType() == byte[].class) {
+					values.append(new String((byte[]) value)).append(',');
+				} else if(f.getType() == float[].class) {
+					
+					for (float val : (float[]) value)
+					{
+						values.append(val).append(';');
+
+					}
+				
+
+					values.append(',');
+					
+				} else if(f.getType() == int[].class) {
+					
+
+					for (int val : (int[]) value)
+					{
+						values.append(val).append(';');
+
+					}
+				
+					values.append(',');
+					
+				} else if(isModel) {
+					values.append(((Model) value).asCSV()).append(',');
+					
+				} else {
+					values.append(value).append(',');
+				}
+			} catch (IllegalArgumentException e) {
+				Log.e(LOG, "error making CSV", e);
+
+			} catch (IllegalAccessException e) {
+				Log.e(LOG, "error making CSV", e);
+
+			} catch (JSONException e) {
+				Log.e(LOG, "error making CSV", e);
+			} catch (NullPointerException e) {
+				Log.e(LOG, "error making CSV", e);
+
+			}
+
+		}
+
+		return header.toString() + '\n' + values.toString() + '\n';
+	}
+
 
 }
