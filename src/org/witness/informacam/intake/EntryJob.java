@@ -283,7 +283,7 @@ public class EntryJob extends BackgroundTask {
 					InputStream is = informaCam.ioService.getStream(fileThumb.getAbsolutePath(), entry.fileAsset.source);
 	
 					BitmapFactory.Options opts = new BitmapFactory.Options();
-					opts.inSampleSize = 8;
+					opts.inSampleSize = 4;
 	
 					b_ = BitmapFactory.decodeStream(is, null, opts);
 				}
@@ -344,7 +344,7 @@ public class EntryJob extends BackgroundTask {
 			InputStream is = informaCam.ioService.getStream(entry.fileAsset.path, entry.fileAsset.source);
 
 			BitmapFactory.Options opts = new BitmapFactory.Options();
-			opts.inSampleSize = 8;
+			opts.inSampleSize = 4;
 
 			b = BitmapFactory.decodeStream(is, null, opts);
 			
