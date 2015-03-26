@@ -57,4 +57,6 @@
     <string name="upload">Upload</string>
     <string name="recording_video_">Recording video...</string>
     <string name="proof_mode_activated">Proof Mode Activated</string>
+    <string name="proof_mode_string">PROOF MODE is now active. Use the menu or notification to return to this screen to "finish".</string>
+    <string name="proof_mode_button">FINISH CAPTURE</string>
 </resources>

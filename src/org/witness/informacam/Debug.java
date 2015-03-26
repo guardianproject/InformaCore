@@ -21,11 +21,11 @@ public class Debug {
 	public static void testUser_1() {
 		InformaCam informaCam = InformaCam.getInstance();
 		
-		Logger.d(LOG, "TEST USER SETTINGS INABLED:");
-		Logger.d(LOG, informaCam.user.asJson().toString());
+	//	Logger.d(LOG, "TEST USER SETTINGS INABLED:");
+	//	Logger.d(LOG, informaCam.user.asJson().toString());
 		
 		boolean enc = (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false);
-		Logger.d(LOG, "USER ENC: " + enc);
+	//	Logger.d(LOG, "USER ENC: " + enc);
 	}
 	
 	public static void googledriveTest() {
