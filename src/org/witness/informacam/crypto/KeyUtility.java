@@ -50,16 +50,21 @@ import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.models.credentials.IKeyStore;
 import org.witness.informacam.models.credentials.ISecretKey;
+import org.witness.informacam.models.notifications.INotification;
+import org.witness.informacam.models.organizations.IOrganization;
+import org.witness.informacam.storage.FormUtility;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.Constants.App;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
+import org.witness.informacam.utils.Constants.Models;
 import org.witness.informacam.utils.Constants.Models.ICredentials;
 import org.witness.informacam.utils.Constants.Models.IUser;
 
 import android.os.Bundle;
+import android.os.Message;
 import android.util.Base64;
 import android.util.Log;
 
@@ -134,25 +139,152 @@ public class KeyUtility {
 
 	@SuppressWarnings("deprecation")
 	public static boolean initDevice() {
+	
 		int progress = 1;
 		Bundle data = new Bundle();
 		data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.UI.UPDATE);
 		data.putInt(Codes.Keys.UI.PROGRESS, progress);
 
-		final String authToken;
-		String secretAuthToken, keyStorePassword;
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.update(data);
 
+		informaCam.setCredentialManager(new CredentialManager(informaCam, !informaCam.ioService.isMounted(), true) {
+			@Override
+			public void onCacheWordUninitialized() {
+				if(firstUse) {
+				
+					Log.d(LOG, "INIT: onCacheWordUninitialized()");
+
+					try {
+						setMasterPassword(informaCam.user.getString(IUser.PASSWORD).toCharArray());
+					} catch (Exception e) {
+						Log.e(LOG, e.toString());
+						e.printStackTrace();
+					}
+				} else {
+					super.onCacheWordUninitialized();
+				}
+			}
+
+			
+			@Override
+			public void onCacheWordOpened() {
+				// there is not credential block, so override this.
+				if(firstUse) {
+					Log.d(LOG, "INIT: onCacheWordOpened()");
+					
+					cacheWord.setTimeout(-1);
+					
+					informaCam.ioService.initIOCipher(cacheWord.getEncryptionKey());
+					
+					new Thread ()
+					{
+						public void run ()
+						{
+							initDeviceAsync (informaCam, informaCam.getCredentialManager());
+						}
+					}.start();
+
+				} else {
+					super.onCacheWordOpened();
+				}
+			}
+		});
+		
+		return true;
+	}
+	
+	private static void initDeviceAsync (InformaCam informaCam, CredentialManager credMgr)
+	{
 		try {
+			final String authToken;
+
 			String basePath = informaCam.user.getJSONArray(IUser.PATH_TO_BASE_IMAGE).getString(0);
 			byte[] baseImageBytes = informaCam.ioService.getBytes(basePath, Storage.Type.INTERNAL_STORAGE);
+
+			authToken = generatePassword(baseImageBytes);
+			
+			String authTokenBlobBytes = new String(credMgr.setAuthToken(authToken));
+			JSONObject authTokenBlob = (JSONObject) new JSONTokener(authTokenBlobBytes).nextValue();
+			authTokenBlob.put(ICredentials.PASSWORD_BLOCK, authTokenBlob.getString("value"));
+			authTokenBlob.remove("value");
+			
+			initDeviceKeys(authToken, baseImageBytes);
+			
+			if(informaCam.ioService.saveBlob(authTokenBlob.toString().getBytes(), new java.io.File(IUser.CREDENTIALS))) {
+				informaCam.user.setHasCredentials(true);
+				
+			}
+			
+
+			informaCam.initData();
+			
+			
+			for(String s : informaCam.getAssets().list("includedOrganizations")) {
+				
+				InputStream ictdIS = informaCam.ioService.getStream("includedOrganizations/" + s, Type.APPLICATION_ASSET);
+				
+				byte[] ictdBytes = new byte[ictdIS.available()];
+				ictdIS.read(ictdBytes);
+				
+		
+				IOrganization organization = informaCam.installICTD((JSONObject) new JSONTokener(new String(ictdBytes)).nextValue(), informaCam.h, informaCam);
+				if(organization != null && !informaCam.user.isInOfflineMode) {
+					
+					/*
+					INotification notification = new INotification(informaCam.getResources().getString(R.string.key_sent), informaCam.getResources().etResources().getString(R.string.you_have_sent_your_credentials_to_x, organization.organizationName), Models.INotification.Type.NEW_KEY);
+					notification.taskComplete = false;
+					informaCam.addNotification(notification, null);
+					*/
+				//	ITransportStub transportStub = new ITransportStub(organization, notification);
+				//	transportStub.setAsset(IUser.PUBLIC_CREDENTIALS, IUser.PUBLIC_CREDENTIALS, MimeType.ZIP, Type.IOCIPHER);
+				//	TransportUtility.initTransport(transportStub);
+				}
+			}
+			
+		
+		try {
+			for(String s : informaCam.getAssets().list("includedForms")) {
+				InputStream formXML = informaCam.ioService.getStream("includedForms/" + s, Type.APPLICATION_ASSET);
+				FormUtility.importAndParse(formXML);
+			}
+		} catch(Exception e) {
+			Log.e(LOG, e.toString());
+			e.printStackTrace();
+		}
+	
+		
+		// Tell others we are done!
+		Bundle data = new Bundle();
+		data.putInt(Codes.Extras.MESSAGE_CODE, org.witness.informacam.utils.Constants.Codes.Messages.UI.REPLACE);
+		
+		Message message = new Message();
+		message.setData(data);
+		
+		informaCam.update(data);
+			
+		} catch (Exception e) {
+			Log.e(LOG, e.toString(),e);
+		}
+	}
+	
+	private static boolean initDeviceKeys (String authToken, byte[] baseImageBytes)
+	{
+		InformaCam informaCam = InformaCam.getInstance();
+
+		int progress = 1;
+		Bundle data = new Bundle();
+		data.putInt(Codes.Extras.MESSAGE_CODE, Codes.Messages.UI.UPDATE);
+		data.putInt(Codes.Keys.UI.PROGRESS, progress);
+
+		try {
+			
+			String secretAuthToken, keyStorePassword;
 
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 
-			authToken = generatePassword(baseImageBytes);
 			secretAuthToken = generatePassword(baseImageBytes);
 			keyStorePassword = generatePassword(baseImageBytes);
 			
@@ -160,60 +292,12 @@ public class KeyUtility {
 			
 			baseImageBytes = null;
 
-			informaCam.ioService.initIOCipher(authToken);
+			//informaCam.ioService.initIOCipher(authToken);
 
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
 			informaCam.update(data);
 			
-			informaCam.setCredentialManager(new CredentialManager(informaCam, !informaCam.ioService.isMounted(), true) {
-				@Override
-				public void onCacheWordUninitialized() {
-					if(firstUse) {
-					
-						Log.d(LOG, "INIT: onCacheWordUninitialized()");
-
-						try {
-							setMasterPassword(informaCam.user.getString(IUser.PASSWORD));
-						} catch (JSONException e) {
-							Log.e(LOG, e.toString());
-							e.printStackTrace();
-						}
-					} else {
-						super.onCacheWordUninitialized();
-					}
-				}
-				
-				@Override
-				public void onCacheWordOpened() {
-					// there is not credential block, so override this.
-					if(firstUse) {
-						Log.d(LOG, "INIT: onCacheWordOpened()");
-						
-						cacheWord.setTimeoutSeconds(-1);
-						
-						String authTokenBlobBytes = new String(setAuthToken(authToken));
-
-						try {
-							JSONObject authTokenBlob = (JSONObject) new JSONTokener(authTokenBlobBytes).nextValue();
-							authTokenBlob.put(ICredentials.PASSWORD_BLOCK, authTokenBlob.getString("value"));
-							authTokenBlob.remove("value");
-
-							if(informaCam.ioService.saveBlob(authTokenBlob.toString().getBytes(), new java.io.File(IUser.CREDENTIALS))) {
-								informaCam.user.setHasCredentials(true);
-								
-							}
-						} catch (JSONException e) {
-							Log.e(LOG, e.toString(),e);
-						}
-						catch (IOException e) {
-							Log.e(LOG, e.toString(),e);
-						}
-					} else {
-						super.onCacheWordOpened();
-					}
-				}
-			});
 			
 			progress += 10;
 			data.putInt(Codes.Keys.UI.PROGRESS, progress);
@@ -350,22 +434,10 @@ public class KeyUtility {
 			}
 
 			return true;
-		} catch (NoSuchAlgorithmException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (JSONException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (NoSuchProviderException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (PGPException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		} catch (IOException e) {
-			Log.e(LOG, e.toString());
-			e.printStackTrace();
-		}
+		} catch (Exception e) {
+			Log.e(LOG, e.toString(),e);
+			
+		} 
 
 		return false;
 

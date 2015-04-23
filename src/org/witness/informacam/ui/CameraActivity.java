@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.informa.Cron;
 import org.witness.informacam.informa.InformaService;
 import org.witness.informacam.models.j3m.IDCIMDescriptor.IDCIMSerializable;
 import org.witness.informacam.utils.Constants.App;
@@ -20,9 +19,12 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -228,7 +230,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 
 
 	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	public void onActivityResult(int requestCode, int resultCode, Intent resultMedia) {
 		setResult(Activity.RESULT_CANCELED);
 
 		boolean isInformaActive = InformaService.getInstance().suckersActive();
@@ -245,12 +247,44 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				informaCam.ioService.stopDCIMObserver();
 			}
 			
-			if (data != null)
+			if (resultMedia != null)
 			{
-				if ( data.hasExtra("path"))
+				if (resultMedia.hasExtra(MediaStore.EXTRA_OUTPUT))
+				{
+					Object mExtra = resultMedia.getExtras().get(MediaStore.EXTRA_OUTPUT);
+					
+					if (mExtra instanceof String)
+					{
+						try {
+							informaCam.ioService.getDCIMDescriptor().addEntry((String)mExtra, false, storageType);
+						} catch (InstantiationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IllegalAccessException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					else if (mExtra instanceof String[])
+					{
+						for (String path : (String[])mExtra)
+						{
+							try {
+								informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
+							} catch (InstantiationException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (IllegalAccessException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+				else if (resultMedia.getData() != null)
 				{
 					//secure cams returned single file
-					String path = data.getStringExtra("path");
+					String path = resultMedia.getData().getPath();
 					
 					try {
 						informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
@@ -262,17 +296,20 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 						e.printStackTrace();
 					}
 				}
-				else if ( data.hasExtra("paths"))
+				else if (resultMedia.hasExtra("paths"))
 				{
 					
+					Parcelable[] parcelableUris = resultMedia.getParcelableArrayExtra("paths");
+
+	                //Java doesn't allow array casting, this is a little hack
+	                Uri[] uris = new Uri[parcelableUris.length];
+	                System.arraycopy(parcelableUris, 0, uris, 0, parcelableUris.length);
+
 					
-					//secure cams returned single file
-					String[] paths = data.getStringArrayExtra("paths");
-					
-					for (String path : paths)
+					for (Uri uri : uris)
 					{
 						try {
-							informaCam.ioService.getDCIMDescriptor().addEntry(path, false, storageType);
+							informaCam.ioService.getDCIMDescriptor().addEntry(uri.getPath(), false, storageType);
 						} catch (InstantiationException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

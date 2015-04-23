@@ -114,6 +114,11 @@ public class SignatureService {
 		return KeyUtility.applySignature(data, secretKey, publicKey, privateKey);		
 	}
 	
+	public boolean hasSecretKey ()
+	{
+		return secretKey != null;
+	}
+	
 	
 
 }

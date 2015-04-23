@@ -46,6 +46,7 @@ import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.transport.TransportUtility;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
@@ -359,14 +360,23 @@ public class InformaCam extends Application {
 				((InnerBroadcaster) br).setMounted(false);
 				unregisterReceiver(br);
 			} catch(IllegalArgumentException e) {
-				Logger.e(LOG, e);
+				Log.w(LOG,e);
 			}
 		}
 
 		//saveStates();
 			
-		ioService.unmount();
-				
+		try
+		{
+			ioService.unmount();
+		}
+		catch (IllegalStateException ise)
+		{
+			Log.w(Informa.LOG,"Can't unmount cleanly due to async task threads, but that's okay!");
+		}
+		
+		//reset credential manager
+		setCredentialManager(new CredentialManager(this, !ioService.isMounted()));
 		
 		stopService(informaServiceIntent);
 		
@@ -520,7 +530,7 @@ public class InformaCam extends Application {
 	}
 
 	public boolean attemptLogin(String password) {
-		return credentialManager.login(password);
+		return credentialManager.login(password.toCharArray());
 	}
 	
 	public int getProcess() {
@@ -590,7 +600,7 @@ public class InformaCam extends Application {
 		return mEventListener;
 	}
 	
-	public IOrganization installICTD(JSONObject ictd, Handler callback, Activity a) {
+	public IOrganization installICTD(JSONObject ictd, Handler callback, Context a) {
 		IOrganization organization = null;
 		JSONArray forms = null;
 		
@@ -785,6 +795,11 @@ public class InformaCam extends Application {
 		}
 		
 		return false;
+	}
+	
+	public CredentialManager getCredentialManager ()
+	{
+		return credentialManager;
 	}
 	
 	public void setCredentialManager(CredentialManager credentialManager) {

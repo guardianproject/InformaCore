@@ -245,7 +245,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 							h.postDelayed(this, 200);
 							return;
 						} else {
-							Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
+						//Don't show notifications the user can't do anything about
+							//Toast.makeText(InformaService.this, getString(R.string.gps_not_available_your), Toast.LENGTH_LONG).show();
 							GPS_WAITING = 0; //reset
 						}
 						

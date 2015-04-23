@@ -14,7 +14,7 @@ import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.Models;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import android.content.Context;
 import android.graphics.Typeface;
 import android.view.View;
 import android.widget.TextView;
@@ -69,7 +69,7 @@ public class IInstalledOrganizations extends Model {
 		InformaCam.getInstance().saveState(this);
 	}
 
-	public void addOrganization(final IOrganization organization, Activity a) {
+	public void addOrganization(final IOrganization organization, Context a) {
 		final IOrganization possibleDuplicate = getByFingerprint(organization.organizationFingerprint);
 		
 		if(possibleDuplicate == null) {
@@ -191,7 +191,7 @@ public class IInstalledOrganizations extends Model {
 				
 				infoViews.add(orgDetails);
 			}
-			
+			/*
 			@SuppressWarnings("unused")
 			YesNoPopup updateICTDPopup = new YesNoPopup(a, infoViews) {
 				@Override
@@ -210,7 +210,7 @@ public class IInstalledOrganizations extends Model {
 					
 					cancel();
 				}
-			};
+			};*/
 			
 			
 		}

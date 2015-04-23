@@ -485,20 +485,24 @@ public class IOService {
 		return null;
 	}
 
-	public boolean initIOCipher(String authToken) {
+	public boolean initIOCipher(byte[] authToken) {
 		try {
-			java.io.File fileExternal = mContext.getExternalFilesDir(Storage.ROOT);
+			java.io.File fileExternal = mContext.getExternalFilesDir(null);//Storage.ROOT);
+			
 			if (fileExternal == null)
 			{
-				fileExternal = mContext.getFilesDir();
-				
+				fileExternal = mContext.getFilesDir();				
 			}
 			
-			java.io.File storageRoot = new java.io.File(fileExternal.getAbsolutePath(), Storage.IOCIPHER);
-			vfs = new VirtualFileSystem(storageRoot);
-			vfs.mount(authToken);
+			java.io.File storageRoot = new java.io.File(fileExternal, Storage.IOCIPHER);
 			
-			Log.d(LOG, "MOUNTED IOCIPHER");
+			vfs = VirtualFileSystem.get();
+			
+			if (!storageRoot.exists())			
+				vfs.createNewContainer(storageRoot.getAbsolutePath(), authToken);							
+			
+			if (!vfs.isMounted())
+				vfs.mount(storageRoot.getAbsolutePath(),authToken);
 			
 			info.guardianproject.iocipher.File organizationRoot = new info.guardianproject.iocipher.File(Storage.ORGS_ROOT);
 			if(!organizationRoot.exists()) {
@@ -576,7 +580,7 @@ public class IOService {
 
 	}
 
-	public void unmount() {
+	public void unmount() throws IllegalStateException {
 		
 		if (vfs != null)
 			vfs.unmount();

@@ -1,7 +1,5 @@
 package org.witness.informacam.intake;
 
-import info.guardianproject.informacam.camera.PipeFeeder;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -39,7 +37,6 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
 public class EntryJob extends BackgroundTask {
