@@ -173,7 +173,7 @@ public class KeyUtility {
 				if(firstUse) {
 					Log.d(LOG, "INIT: onCacheWordOpened()");
 					
-					cacheWord.setTimeout(-1);
+					cacheWord.setTimeout(0);
 					
 					informaCam.ioService.initIOCipher(cacheWord.getEncryptionKey());
 					
