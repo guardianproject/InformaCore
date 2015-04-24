@@ -4,13 +4,6 @@
 [submodule "external/ODKFormParser"]
 	path = external/ODKFormParser
 	url = https://github.com/guardianproject/ODKFormParser.git
-[submodule "external/IOCipher"]
-	path = external/IOCipher
-	url = https://github.com/guardianproject/IOCipher.git
-	ignore = dirty
-[submodule "external/CacheWord"]
-	path = external/CacheWord
-	url = https://github.com/guardianproject/cacheword.git
 [submodule "external/OnionKit"]
 	path = external/OnionKit
 	url = https://github.com/guardianproject/NetCipher.git
