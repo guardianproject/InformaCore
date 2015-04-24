@@ -727,12 +727,18 @@ public class InformaCam extends Application {
 	
 	public Intent exportCredentials() {
 		java.io.File credentials = getPublicCredentials();
-		Intent intent = new Intent()
-			.setAction(Intent.ACTION_SEND)
-			.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(credentials))
-			.setType("*/*");
-
-		return Intent.createChooser(intent, getString(R.string.send));
+		
+		if (credentials != null)
+		{
+			Intent intent = new Intent()
+				.setAction(Intent.ACTION_SEND)
+				.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(credentials))
+				.setType("*/*");
+	
+			return Intent.createChooser(intent, getString(R.string.send));
+		}
+		else
+			return null;
 	}
 	
 	public void importAsset(String assetPath, String destinationPath, int assetSource, int destinationSource, Model model) throws InstantiationException, IllegalAccessException {
