@@ -426,7 +426,7 @@ public class Constants {
 			public static final String PUBLIC_KEY = "publicKey";
 			public static final String BELONGS_TO_USER = "belongs_to_user";
 			public static final String LANG_DEFAULT = "langDefault";
-			public static final String ASSET_ENCRYPTION = "assetEncryption";
+		//	public static final String ASSET_ENCRYPTION = "assetEncryption";
 		}
 
 		public class IMediaManifest {
@@ -618,6 +618,7 @@ public class Constants {
 				public final static String GLOBALEAKS = "globaleaks";
 				public final static String APP = "application";
 				public final static String S3 = "s3";
+				public final static String CAMERAV_EXPRESS = "camerav_express";
 			}
 			
 			public class ResultCodes {

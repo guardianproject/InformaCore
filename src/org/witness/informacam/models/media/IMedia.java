@@ -620,7 +620,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		notification.mediaId = this._id;
 
 		ITransportStub submission = null;
-		int exportDestination = Type.FILE_SYSTEM; //all exports are to the file system
+		int exportDestination = dcimEntry.fileAsset.source;
+				//Type.FILE_SYSTEM; //all exports are to the file system
 		
 		if(isLocalShare) {
 			notification.type = Models.INotification.Type.SHARED_MEDIA;
@@ -638,6 +639,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		IAsset exportAsset = new IAsset(exportDestination);
 		exportAsset.name = exportFileName;
 		exportAsset.source = exportDestination;
+		
 		exportAsset.path = IOUtility.buildPublicPath(new String[] { exportAsset.name });
 		
 		if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO_MP4)) {

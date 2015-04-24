@@ -24,7 +24,7 @@ public class Debug {
 	//	Logger.d(LOG, "TEST USER SETTINGS INABLED:");
 	//	Logger.d(LOG, informaCam.user.asJson().toString());
 		
-		boolean enc = (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false);
+	//	boolean enc = (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false);
 	//	Logger.d(LOG, "USER ENC: " + enc);
 	}
 	
@@ -45,6 +45,7 @@ public class Debug {
 		}
 	}
 	
+	/*
 	public static void fix_default_asset_encryption() {
 		InformaCam informaCam = InformaCam.getInstance();
 		
@@ -57,5 +58,5 @@ public class Debug {
 		ed.commit();
 		
 		Logger.d(LOG, "USER'S ENC SETTINGS NOW: " + (Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false));
-	}
+	}*/
 }

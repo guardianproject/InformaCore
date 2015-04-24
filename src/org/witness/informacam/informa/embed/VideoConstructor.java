@@ -1,11 +1,11 @@
 package org.witness.informacam.informa.embed;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.ffmpeg.android.FfmpegController;
@@ -20,7 +20,6 @@ import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Ffmpeg;
 import org.witness.informacam.utils.Constants.Logger;
 import org.witness.informacam.utils.Constants.MetadataEmbededListener;
-import org.witness.informacam.utils.Constants.Models;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -39,7 +38,7 @@ public class VideoConstructor {
 	ITransportStub connection;
 
 	private final static String LOG = Ffmpeg.LOG;
-	private boolean intendedForIOCipher = false;
+	//private boolean intendedForIOCipher = false;
 	
 	public VideoConstructor(Context context) throws FileNotFoundException, IOException {
 		fileBinDir = context.getDir("bin",Context.MODE_PRIVATE);		
@@ -57,43 +56,66 @@ public class VideoConstructor {
 		sourceAsset = this.media.dcimEntry.fileAsset;
 		metadata = media.getAsset(this.media.dcimEntry.name + ".j3m");
 		
-		java.io.File fileDest = new java.io.File(destinationAsset.path);
-		if (fileDest.exists())
-			fileDest.delete(); //delete a file if it is there
-		else
-		{
-			fileDest.getParentFile().mkdirs();
-		}
-		
-		
-		intendedForIOCipher = (destinationAsset.source == Storage.Type.IOCIPHER);
 		String metadataPath = metadata.path;
 		String sourcePath = sourceAsset.path;
 		
-		if(sourceAsset.source == Type.IOCIPHER) {
+		int streamCount = 2;
+		
+		if (destinationAsset.source == Type.FILE_SYSTEM)
+		{
+
+			java.io.File fileDest = new java.io.File(destinationAsset.path);
+			if (fileDest.exists())
+				fileDest.delete(); //delete a file if it is there
+			else
+			{
+				fileDest.getParentFile().mkdirs();
+			}
+		
+			if(sourceAsset.source == Type.IOCIPHER) {
+				
+				String basePath = fileDest.getParentFile().getAbsolutePath();
+				
+				// If the assets were in IOCIPHER, we have to save them to local storage.
+				// unfortunately, Ffmpeg CLI works that way.
+				metadataPath = metadata.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);
+				sourcePath = sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);			
 			
-			String basePath = fileDest.getParentFile().getAbsolutePath();
+				streamCount = 1; //we are only exporting encrypted video now, not with audio
+				
+				// this means we also have to save the resulting media to public
+				// (and copy to iocipher later)
+				//destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
+				
+			}
+
+			constructVideo(streamCount,sourcePath,metadataPath);
+		}
+		else if (destinationAsset.source == Type.IOCIPHER)
+		{
+			info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(new info.guardianproject.iocipher.File(sourceAsset.path));
 			
-			// If the assets were in IOCIPHER, we have to save them to local storage.
-			// unfortunately, Ffmpeg CLI works that way.
-			metadataPath = metadata.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);
-			sourcePath = sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);			
+			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(new info.guardianproject.iocipher.File(destinationAsset.path));
 			
-			// this means we also have to save the resulting media to public
-			// (and copy to iocipher later)
-			//destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
+			IOUtils.copyLarge(fis, fos);
 			
+			if(connection != null) {
+				
+				connection.setAsset(destinationAsset, "video/mp4", destinationAsset.source);
+				((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
+			}
+			
+			((MetadataEmbededListener) media).onMetadataEmbeded(destinationAsset);
 		}
 		
-		constructVideo(intendedForIOCipher,sourcePath,metadataPath);
 	}
 
-	private void constructVideo(final boolean intendedForIOCipher, String sourcePath, String metadataPath) throws IOException {
-
+	private void constructVideo(int streamCount, String sourcePath, String metadataPath) throws IOException {
+		
 		String[] ffmpegCommand = new String[] {
 				ffmpegBinPath, "-y", "-i", sourcePath,
 				"-attach", metadataPath,
-				"-metadata:s:2", "mimetype=\"text/plain\"",
+				"-metadata:s:" + streamCount, "mimetype=\"text/plain\"",
 				"-vcodec", "copy",				
 				"-acodec", "copy",
 				destinationAsset.path
@@ -116,11 +138,9 @@ public class VideoConstructor {
 				@Override
 				public void processComplete(int exitValue) {
 					Log.d(LOG, "ffmpeg process completed");
-					InformaCam informaCam = InformaCam.getInstance();
-					
-					int storageType = Storage.Type.FILE_SYSTEM;
 					
 					// if user wanted this encrypted, copy the destination asset
+					/*
 					if(intendedForIOCipher) {
 						try {
 							destinationAsset.copy(Type.FILE_SYSTEM, Type.IOCIPHER, media.rootFolder);
@@ -131,17 +151,17 @@ public class VideoConstructor {
 						
 						java.io.File publicRoot = new java.io.File(IOUtility.buildPublicPath(new String[] { media.rootFolder }));
 						informaCam.ioService.clear(publicRoot.getAbsolutePath(), Type.FILE_SYSTEM);
-					}
+					}*/
 					
 					if(connection != null) {
 						
-						connection.setAsset(destinationAsset, "video/mp4", storageType);
+						connection.setAsset(destinationAsset, "video/mp4", destinationAsset.source);
 						((MetadataEmbededListener) media).onMediaReadyForTransport(connection);
 					}
 					
 					((MetadataEmbededListener) media).onMetadataEmbeded(destinationAsset);
 				}
-			});
+			},null);
 
 
 		} catch (Exception e) {
@@ -165,7 +185,7 @@ public class VideoConstructor {
 			public void processComplete(int exitValue) {
 				Logger.d(LOG, "DONE WITH: " + exitValue);
 			}
-		});
+		},null);
 	}
 	
 	public String hashVideo(String pathToMedia, int fileType, String extension) {
@@ -210,7 +230,7 @@ public class VideoConstructor {
 							if (newHash == null)
 								newHash = "unknown";
 					}
-				});
+				},null);
 				
 				while (newHash == null)
 				{
@@ -223,6 +243,54 @@ public class VideoConstructor {
 				
 				return newHash;
 			}
+			else if (fileType == Type.IOCIPHER)
+			{
+				/**
+				try {
+					
+				    String[] cmdHash = { ffmpegBinPath, "-i", "pipe:",
+							"-vcodec", "copy", "-an", "-f", "md5", "-" };
+				    
+				    InputStream is = new info.guardianproject.iocipher.FileInputStream(new info.guardianproject.iocipher.File(pathToMedia));
+				    
+				    execProcess(cmdHash, new ShellUtils.ShellCallback () {
+				    	
+						@Override
+						public void shellOut(String shellLine) {
+							
+							if(shellLine.contains("MD5=")) {
+								String hashLine = shellLine.split("=")[1];
+								newHash = hashLine.split(" ")[0].trim();
+							}
+							
+						}
+		
+						@Override
+						public void processComplete(int exitValue) {
+							
+								if (newHash == null)
+									newHash = "unknown";
+						}
+					},is);
+					
+					while (newHash == null)
+					{
+						try { Thread.sleep(500); } 
+						catch (Exception e){}
+					}
+					
+					if (fileType == Type.IOCIPHER)
+						tmpMedia.delete();
+					
+					return newHash;
+				    
+				} catch (Exception ex) {
+					Log.d("VideoCon","error",ex);
+				    return null;
+				}*/
+				
+				return "hashNotYetImplemented";
+			}
 			else
 			{
 				return null;
@@ -231,16 +299,22 @@ public class VideoConstructor {
 		}
 		catch (Exception e)
 		{
-			return null;
+			Log.d("VideoCon","error",e);
 		}
+		
+		return null;
 	}
 	
-	private static void execProcess(String[] cmds, ShellUtils.ShellCallback sc) {
+	private static void execProcess(String[] cmds, ShellUtils.ShellCallback sc, InputStream is) {
 		ProcessBuilder pb = new ProcessBuilder(cmds);
 		pb.redirectErrorStream(true);
 		Process process;
 		try {
 			process = pb.start();
+
+			if (is != null)
+				IOUtils.copy(is,process.getOutputStream());
+		
 			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
 			String line;
@@ -298,7 +372,7 @@ public class VideoConstructor {
 				public void processComplete(int exitValue) {
 					
 				}
-			});
+			},null);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

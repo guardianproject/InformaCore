@@ -253,22 +253,33 @@ public class EntryJob extends BackgroundTask {
 
 		if(entry.mediaType.startsWith(Models.IMedia.MimeType.VIDEO_BASE)) {
 			
-			b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
-			if(b == null) {
-				b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
-			}
 
-			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-			Bitmap b_ = null;
-			
 			if (entry.fileAsset.source == Storage.Type.FILE_SYSTEM)
 			{
-				mmr.setDataSource(entry.fileAsset.path);
-			
-				b_ = mmr.getFrameAtTime();
-				if(b_ == null) {
-				} else {
-					Logger.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
+				b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
+				if(b == null) {
+					b = MediaStore.Images.Thumbnails.getThumbnail(this.informaCam.getContentResolver(), entry.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
+				}
+
+				if(b == null) {
+				
+						
+					MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+					Bitmap b_ = null;
+					
+					mmr.setDataSource(entry.fileAsset.path);
+				
+					b_ = mmr.getFrameAtTime();
+					if(b_ == null) {
+					} else {
+						Logger.d(LOG, "got a video bitmap: (height " + b_.getHeight() + ")");
+						b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
+						
+					}
+					
+					mmr.release();
+					
+				
 				}
 			
 			}
@@ -282,59 +293,12 @@ public class EntryJob extends BackgroundTask {
 					BitmapFactory.Options opts = new BitmapFactory.Options();
 					opts.inSampleSize = 4;
 	
-					b_ = BitmapFactory.decodeStream(is, null, opts);
+					b = BitmapFactory.decodeStream(is, null, opts);
 				}
 				
-				/**
-				try
-				{
-				   ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
-				   ParcelFileDescriptor.AutoCloseOutputStream acos = new ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]);
-			       new PipeFeeder(new info.guardianproject.iocipher.FileInputStream(entry.fileAsset.path),acos).start();
-			       
-			       mmr.setDataSource(pipe[0].getFileDescriptor());
-				}
-				catch (Exception ioe)
-				{
-					//Logger.e(LOG, ioe);
-
-					mmr.release();
-					return;
-				}*/
+				
 			}
-
-			if (b_ != null)
-			{
-				/*
-				byte[] previewBytes = IOUtility.getBytesFromBitmap(b_, false);
-				
-				if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
-					info.guardianproject.iocipher.File preview = new info.guardianproject.iocipher.File(entry.originalHash, entry.name + ".thumb");
-					informaCam.ioService.saveBlob(previewBytes, preview);
-					entry.thumbnail = new IAsset(preview.getAbsolutePath());
-				} else {
-					java.io.File preview = new java.io.File(IOUtility.buildPublicPath(new String [] {"thumbnails"}), entry.name + ".thumb");
-					
-					try {
-						informaCam.ioService.saveBlob(previewBytes, preview, true);
-					} catch (IOException e) {
-						Logger.e(LOG, e);
-					}
-					
-					entry.thumbnail = new IAsset(preview.getAbsolutePath());
-				}
-				
-				previewBytes = null;
-				 */
-				
-				if(b == null) {
-					b = ImageUtility.createThumb(b_, new int[] {entry.exif.width, entry.exif.height});
-				}
 	
-			//	b_.recycle();
-			}
-			
-			mmr.release();
 			
 			
 		} else if(entry.mediaType.equals(Models.IMedia.MimeType.IMAGE)) {
@@ -350,10 +314,10 @@ public class EntryJob extends BackgroundTask {
 		if(b != null) {
 			String thumbnailFileName = entry.name +  ".thumb";
 			
-			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
+			if(entry.fileAsset.source == Storage.Type.IOCIPHER) {
 				info.guardianproject.iocipher.File thumbnail = new info.guardianproject.iocipher.File(entry.originalHash, thumbnailFileName);
 				informaCam.ioService.saveBlob(IOUtility.getBytesFromBitmap(b), thumbnail);
-				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
+				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath(),entry.fileAsset.source);
 			} else {
 				java.io.File thumbnail = new java.io.File(IOUtility.buildPublicPath(new String [] {"thumbnails"}), thumbnailFileName);
 			
@@ -364,7 +328,7 @@ public class EntryJob extends BackgroundTask {
 					Logger.e(LOG, e);
 				}
 				
-				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath());
+				entry.thumbnail = new IAsset(thumbnail.getAbsolutePath(),entry.fileAsset.source);
 				
 			}
 			
@@ -414,7 +378,7 @@ public class EntryJob extends BackgroundTask {
 
 		// Make folder for assets according to preferences
 		if(!entry.mediaType.equals(Models.IDCIMEntry.THUMBNAIL)) {
-			if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
+			if(entry.fileAsset.source == Storage.Type.IOCIPHER) {
 				info.guardianproject.iocipher.File rootFolder = new info.guardianproject.iocipher.File("thumbnails");
 				try {
 					if(!rootFolder.exists()) {
@@ -443,6 +407,7 @@ public class EntryJob extends BackgroundTask {
 
 	protected void commit() {
 		//XXX: get preference here, save and delete original if encryptOriginals
+		/*
 		if((Boolean) informaCam.user.getPreference(IUser.ASSET_ENCRYPTION, false)) {
 			Logger.d(LOG, "COPY AND DELETE...");
 			try
@@ -460,6 +425,6 @@ public class EntryJob extends BackgroundTask {
 			} catch (Exception e) {
 				Logger.e(LOG, e);
 			}
-		}
+		}*/
 	}
 }

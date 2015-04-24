@@ -62,7 +62,10 @@ public class IDCIMDescriptor extends Model {
 			entry.mediaType = Models.IDCIMEntry.THUMBNAIL;
 		}
 
-		Cursor cursor = InformaCam.getInstance().getContentResolver().query(authority, null, null, null, sortBy);
+		Cursor cursor = null;
+		
+		if (sourceType !=Storage.Type.IOCIPHER) 
+			cursor = InformaCam.getInstance().getContentResolver().query(authority, null, null, null, sortBy);
 
 		if(cursor != null && cursor.moveToFirst()) {
 			path = cursor.getString(cursor.getColumnIndexOrThrow(MediaColumns.DATA));
@@ -170,7 +173,7 @@ public class IDCIMDescriptor extends Model {
 				}
 
 				entry.mediaType = MimeType.IMAGE;
-				if (path.endsWith("mp4")||path.endsWith("ts"))
+				if (path.endsWith("mp4")||path.endsWith("ts")||path.endsWith("mov"))
 					entry.mediaType = MimeType.VIDEO_MP4;
 				else if (path.endsWith("3gp"))
 					entry.mediaType = MimeType.VIDEO_3GPP;
