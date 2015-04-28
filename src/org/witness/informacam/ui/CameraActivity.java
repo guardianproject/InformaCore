@@ -155,6 +155,8 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				onInformaStart(null);
 			
 		}
+		
+		doInit = false;
 	}
 	
 	private void startCamera ()
