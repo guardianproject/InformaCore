@@ -1,11 +1,12 @@
 package org.witness.informacam.informa.embed;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.StringBufferInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.ffmpeg.android.FfmpegController;
@@ -14,7 +15,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.models.media.IAsset;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.transport.ITransportStub;
-import org.witness.informacam.storage.IOUtility;
+import org.witness.informacam.utils.MediaHasher;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Ffmpeg;
@@ -72,6 +73,7 @@ public class VideoConstructor {
 				fileDest.getParentFile().mkdirs();
 			}
 		
+			/**
 			if(sourceAsset.source == Type.IOCIPHER) {
 				
 				String basePath = fileDest.getParentFile().getAbsolutePath();
@@ -87,12 +89,14 @@ public class VideoConstructor {
 				// (and copy to iocipher later)
 				//destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
 				
-			}
+			}*/
 
 			constructVideo(streamCount,sourcePath,metadataPath);
 		}
 		else if (destinationAsset.source == Type.IOCIPHER)
 		{
+			//should use JCodec here to make MKV file in java from source MP4 and metadata track
+			
 			info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(new info.guardianproject.iocipher.File(sourceAsset.path));
 			
 			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(new info.guardianproject.iocipher.File(destinationAsset.path));
@@ -203,7 +207,6 @@ public class VideoConstructor {
 			{
 				tmpMedia = new java.io.File(pathToMedia);
 			
-			
 				String[] cmdHash = new String[] {
 						ffmpegBinPath, "-i", tmpMedia.getCanonicalPath(),
 						"-vcodec", "copy", "-an", "-f", "md5", "-"
@@ -232,20 +235,25 @@ public class VideoConstructor {
 					}
 				},null);
 				
+				//wait for a hash to be found, or set to unknown
 				while (newHash == null)
 				{
 					try { Thread.sleep(500); } 
 					catch (Exception e){}
 				}
 				
-				if (fileType == Type.IOCIPHER)
-					tmpMedia.delete();
-				
 				return newHash;
 			}
 			else if (fileType == Type.IOCIPHER)
 			{
-				/**
+			
+				//just use the hash of the first thumbnail for now
+				String thumbPath = pathToMedia + ".thumb.jpg";
+				InputStream is = new info.guardianproject.iocipher.FileInputStream(new info.guardianproject.iocipher.File(thumbPath));
+			    newHash = MediaHasher.getJpegHash(is); //this is sha-1
+			    is.close();
+			    return newHash;
+				/*
 				try {
 					
 				    String[] cmdHash = { ffmpegBinPath, "-i", "pipe:",
@@ -270,10 +278,10 @@ public class VideoConstructor {
 							
 								if (newHash == null)
 									newHash = "unknown";
-						}
+						}https://news.google.com/
 					},is);
 					
-					while (newHash == null)
+					while (newHash == null)https://news.google.com/
 					{
 						try { Thread.sleep(500); } 
 						catch (Exception e){}
@@ -287,9 +295,9 @@ public class VideoConstructor {
 				} catch (Exception ex) {
 					Log.d("VideoCon","error",ex);
 				    return null;
-				}*/
+				}
+				*/
 				
-				return "hashNotYetImplemented";
 			}
 			else
 			{
@@ -311,12 +319,21 @@ public class VideoConstructor {
 		Process process;
 		try {
 			process = pb.start();
-
+			BufferedReader reader = null;
+			
 			if (is != null)
-				IOUtils.copy(is,process.getOutputStream());
-		
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
+			{
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				
+				Pipe.pipe(process, is, baos);
+			
+				reader = new BufferedReader(new InputStreamReader(new StringBufferInputStream(baos.toString())));
+			}
+			else
+			{
+				reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			}
+			
 			String line;
 
 			while ((line = reader.readLine()) != null)
@@ -327,7 +344,9 @@ public class VideoConstructor {
 				}
 			}
 
-			sc.processComplete(process.waitFor());
+			int result = process.waitFor();
+			
+			sc.processComplete(result);
 			
 			process.destroy();   
 			
