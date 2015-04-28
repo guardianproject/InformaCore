@@ -77,6 +77,36 @@ public class MediaHasher
 		byte[] messageDigest = digester.digest();
 		return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
 	}
+	
+	public static String getJpegHash(byte[] jpegBytes) throws NoSuchAlgorithmException, IOException {
+		
+		JPEGDecoder decoder = new JPEGDecoder(new ByteArrayInputStream(jpegBytes));
+	    decoder.decodeHeader();
+	    int width = decoder.getImageWidth();
+	    //int height = decoder.getImageHeight();
+	    decoder.startDecode();
+	    
+	    int stride = width*4; //4 bytes per pixel RGBA
+	
+	    MessageDigest digester = MessageDigest.getInstance("SHA-1");
+		
+	//    System.out.println("Stride: " + stride);
+	    
+		for(int h=0; h<decoder.getNumMCURows(); h++) {
+			
+		    ByteBuffer bb = ByteBuffer.allocate(stride * decoder.getMCURowHeight());
+
+		//	System.out.println("handling row: " + h);
+			
+		    decoder.decodeRGB(bb, stride, 1);
+			
+			digester.update(bb.array());
+			
+		}
+		
+		byte[] messageDigest = digester.digest();
+		return new String(Hex.encode(messageDigest), Charset.forName("UTF-8"));
+	}
 
 	public static String getBitmapHash(Bitmap bitmap) throws NoSuchAlgorithmException, IOException {
 		MessageDigest digester = MessageDigest.getInstance("SHA-1");
