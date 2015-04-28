@@ -1069,7 +1069,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		try
 		{
 			reset();
-			sendMessage(Models.IMedia.VERSION, version.path, mHandler);
+			
+			Bundle b = new Bundle();
+			b.putString(Models.IMedia.VERSION, version.path);
+			b.putString(Models.IMedia._ID, this._id);
+			
+			Message msg = new Message();
+			msg.setData(b);
+
+			if(mHandler != null) {
+				mHandler.sendMessage(msg);
+			}
+			
 		}
 		catch (Exception e)
 		{
