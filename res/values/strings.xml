@@ -1,6 +1,6 @@
 <resources>
 
-    <string name="app_name">Proof++</string>
+    <string name="app_name">InformaCam</string>
     <string name="welcome">Welcome!</string>
     <string name="name">Name</string>
     <string name="password">Password</string>
@@ -59,4 +59,5 @@
     <string name="proof_mode_activated">Proof Mode Activated</string>
     <string name="proof_mode_string">PROOF MODE is now active. Use the menu or notification to return to this screen to "finish".</string>
     <string name="proof_mode_button">FINISH CAPTURE</string>
+    <string name="cacheword_unlocked">Touch to open</string>
 </resources>

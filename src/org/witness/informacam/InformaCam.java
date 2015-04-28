@@ -63,6 +63,7 @@ import org.witness.informacam.utils.InnerBroadcaster;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -529,8 +530,8 @@ public class InformaCam extends Application {
 		return false;
 	}
 
-	public boolean attemptLogin(String password) {
-		return credentialManager.login(password.toCharArray());
+	public boolean attemptLogin(char[] password) {
+		return credentialManager.login(password);
 	}
 	
 	public int getProcess() {

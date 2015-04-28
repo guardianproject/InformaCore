@@ -11,18 +11,21 @@ import java.security.GeneralSecurityException;
 import javax.crypto.SecretKey;
 
 import org.witness.informacam.InformaCam;
-import org.witness.informacam.models.credentials.ICredentials;
+import org.witness.informacam.R;
+import org.witness.informacam.ui.LoginActivity;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Codes;
 import org.witness.informacam.utils.Constants.IManifest;
 import org.witness.informacam.utils.Constants.Logger;
-import org.witness.informacam.utils.Constants.Models;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 public class CredentialManager implements ICacheWordSubscriber {
@@ -47,16 +50,35 @@ public class CredentialManager implements ICacheWordSubscriber {
 		this.firstUse = firstUse;
 		
 		cacheWord = new CacheWordHandler(this.context, this);
+    	cacheWord.setNotification(buildNotification());
 		cacheWord.connectToService();
 	}
+	
+
+	private Notification buildNotification ()
+	{
+
+		  Intent intentLaunch = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+		
+		    PendingIntent pendingIntent=PendingIntent.getActivity(context, 0,
+		    		intentLaunch, Intent.FLAG_ACTIVITY_NEW_TASK);
+
+		    return new NotificationCompat.Builder(context)
+		                                .setSmallIcon(R.drawable.ic_action_camera)
+		                                .setContentTitle(context.getString(R.string.app_name))
+		                                .setContentText(context.getString(R.string.cacheword_unlocked))
+		                                .setContentIntent(pendingIntent)
+		                                .setOngoing(true).build();
+		    
+		    	        
+	}
+	
+	
 	
 	public boolean login(char[] password) {
         
         try {
-        	//PassphraseSecrets secrets;
-           // secrets = PassphraseSecrets.fetchSecrets(context, password.toCharArray());
-          //  cacheWord.setCachedSecrets(secrets);
-            
+        	cacheWord.setTimeout(0);	
         	cacheWord.setPassphrase(password);
         	
             return true;
@@ -69,6 +91,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 		
 		return false;
 	}
+	
 	
 	public boolean logout() {
 		cacheWord.lock();
