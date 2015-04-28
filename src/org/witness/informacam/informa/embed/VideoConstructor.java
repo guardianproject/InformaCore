@@ -95,13 +95,13 @@ public class VideoConstructor {
 		}
 		else if (destinationAsset.source == Type.IOCIPHER)
 		{
+			//FOR NOW, just set destination to source, so we don't need to make huge copies
 			//should use JCodec here to make MKV file in java from source MP4 and metadata track
-			
-			info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(new info.guardianproject.iocipher.File(sourceAsset.path));
-			
-			info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(new info.guardianproject.iocipher.File(destinationAsset.path));
-			
-			IOUtils.copyLarge(fis, fos);
+			//info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(new info.guardianproject.iocipher.File(sourceAsset.path));
+			//info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(new info.guardianproject.iocipher.File(destinationAsset.path));
+	//		IOUtils.copyLarge(fis, fos);
+		
+			destinationAsset.path = sourceAsset.path;
 			
 			if(connection != null) {
 				
