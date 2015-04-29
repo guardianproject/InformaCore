@@ -11,6 +11,7 @@ import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -836,6 +837,73 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 
 		return true;
+	}
+
+	public String buildSummary(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
+		
+		System.gc();
+		
+		int progress = 0;
+		InformaCam informaCam = InformaCam.getInstance();
+
+		INotification notification = new INotification();
+		notification.icon = dcimEntry.thumbnail;
+
+		// create data package
+		if(data == null) {
+			data = new IData();
+		}
+		data.exif = dcimEntry.exif;
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		mungeSensorLogs();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		mungeData();
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		mungeGenealogyAndIntent();
+		progress += 20;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		/*
+		String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
+		if(dcimEntry.mediaType.equals(MimeType.LOG)) {
+			mimeType = context.getString(R.string.log);
+		}
+		*/
+		
+		progress += 10;
+		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+		StringBuffer result = new StringBuffer();
+		try {
+	
+			result.append("Device Key: ").append(genealogy.createdOnDevice).append("\n");
+			result.append("Date Created: ").append(new Date(genealogy.dateCreated).toLocaleString()).append("\n");
+			
+			if (data.exif.make != null)
+				result.append("Device: ").append(data.exif.make + ' ' + data.exif.model).append("\n");
+				
+			if (data.exif.location != null && data.exif.location.length > 0)
+				result.append("Location: ").append(data.exif.location[0]+ "," + data.exif.location[1]).append("\n");
+					
+//			data.sensorCapture.get(0);
+
+			return result.toString();
+			
+		} catch (JSONException e) {
+			Logger.e(LOG, e);
+			
+		} catch (Exception e) {
+			Logger.e(LOG, e);
+			
+		}
+
+		return null;
 	}
 
 	public String buildJ3M(Context context, boolean signData, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {

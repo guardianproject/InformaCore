@@ -12,7 +12,6 @@ import javax.crypto.SecretKey;
 
 import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
-import org.witness.informacam.ui.LoginActivity;
 import org.witness.informacam.utils.Constants.Actions;
 import org.witness.informacam.utils.Constants.App.Crypto;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
@@ -78,6 +77,7 @@ public class CredentialManager implements ICacheWordSubscriber {
 	public boolean login(char[] password) {
         
         try {
+
         	cacheWord.setTimeout(0);	
         	cacheWord.setPassphrase(password);
         	
