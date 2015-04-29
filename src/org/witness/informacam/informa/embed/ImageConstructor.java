@@ -72,12 +72,12 @@ public class ImageConstructor {
 				fileDest.getParentFile().mkdirs();
 			}
 			
-			IOUtils.copy(new java.io.FileInputStream(sourceAsset.path),new java.io.FileOutputStream(fileDest));
+			//IOUtils.copy(new java.io.FileInputStream(sourceAsset.path),new java.io.FileOutputStream(fileDest));
 
 			String metadata = new String(informaCam.ioService.getBytes(this.media.getAsset(media.dcimEntry.name + ".j3m")));
 			
 			try {
-				int c = constructImage(destinationAsset.path, destinationAsset.path, metadata, metadata.length());			
+				int c = constructImage(sourceAsset.path, destinationAsset.path, metadata, metadata.length());			
 				
 				if(c > 0) {
 					finish();
