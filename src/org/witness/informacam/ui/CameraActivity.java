@@ -55,10 +55,10 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		informaCam = (InformaCam)getApplication();		
 		
-		controlsInforma = true; //someone else started informa, so we shouldn't mess with it
+		//if suckers are active, then you are NOT controlling the informaservice, so don't turn it on/off
+		controlsInforma = !InformaService.getInstance().suckersActive();
 		
 		setContentView(R.layout.activity_camera_waiter);
-		
 		
 		if(getIntent().hasExtra(Codes.Extras.MEDIA_PARENT)) {
 			parentId = getIntent().getStringExtra(Codes.Extras.MEDIA_PARENT);
