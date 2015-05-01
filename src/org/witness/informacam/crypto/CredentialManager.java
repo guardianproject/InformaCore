@@ -38,18 +38,21 @@ public class CredentialManager implements ICacheWordSubscriber {
 	InformaCam informaCam = InformaCam.getInstance();
 	private final static String LOG = Crypto.LOG;
 	
-	public CredentialManager(Context context, boolean initIOCipher) {
-		this(context, initIOCipher, false);
+	public CredentialManager(Context context, boolean initIOCipher, boolean showNotification) {
+		this(context, initIOCipher, false, showNotification);
 	}
 	
-	public CredentialManager(Context context, boolean initIOCipher, boolean firstUse) {
+	public CredentialManager(Context context, boolean initIOCipher, boolean firstUse, boolean showNotification) {
 		this.status = Codes.Status.UNKNOWN;
 		this.initIOCipher = initIOCipher;
 		this.context = context;
 		this.firstUse = firstUse;
 		
 		cacheWord = new CacheWordHandler(this.context, this);
-    	cacheWord.setNotification(buildNotification());
+		
+		if (showNotification)
+			cacheWord.setNotification(buildNotification());
+		
 		cacheWord.connectToService();
 	}
 	

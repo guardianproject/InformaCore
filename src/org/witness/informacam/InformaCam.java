@@ -74,6 +74,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
 import dalvik.system.DexFile;
@@ -229,12 +230,14 @@ public class InformaCam extends Application {
 		final int RUN = 3;
 		int startCode = LOGIN;
 
+		boolean runForeground = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("prefRunForeground", false);
+
 		try {
 			FileInputStream fis = this.openFileInput(IManifest.USER);			
 			if(fis.available() == 0) {
 				startCode = INIT;
 			} else {
-				setCredentialManager(new CredentialManager(this, !ioService.isMounted()));
+				setCredentialManager(new CredentialManager(this, !ioService.isMounted(),runForeground));
 				
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
@@ -377,7 +380,7 @@ public class InformaCam extends Application {
 		}
 		
 		//reset credential manager
-		setCredentialManager(new CredentialManager(this, !ioService.isMounted()));
+		setCredentialManager(new CredentialManager(this, !ioService.isMounted(),false));
 		
 		stopService(informaServiceIntent);
 		
