@@ -49,18 +49,50 @@ public class ImageConstructor {
 		
 		if(sourceAsset.source == Type.IOCIPHER) {
 			
-			info.guardianproject.iocipher.File fileDest = new info.guardianproject.iocipher.File(destinationAsset.path);
-			if (fileDest.exists())
-				fileDest.delete(); //delete a file if it is there
-			else
+			if (destinationAsset.source == Type.IOCIPHER)
 			{
-				fileDest.getParentFile().mkdirs();
-			}
-	
-			//now copy the main image to external
-			IOUtils.copy(new info.guardianproject.iocipher.FileInputStream(sourceAsset.path),new info.guardianproject.iocipher.FileOutputStream(fileDest));
+				info.guardianproject.iocipher.File fileDest = new info.guardianproject.iocipher.File(destinationAsset.path);
+				if (fileDest.exists())
+					fileDest.delete(); //delete a file if it is there
+				else
+				{
+					fileDest.getParentFile().mkdirs();
+				}
 		
-			finish();
+				//now copy the main image to external
+				IOUtils.copy(new info.guardianproject.iocipher.FileInputStream(sourceAsset.path),new info.guardianproject.iocipher.FileOutputStream(fileDest));
+				
+
+				finish();
+			}
+			else if (destinationAsset.source == Type.FILE_SYSTEM)
+			{
+				java.io.File fileDest = new java.io.File(destinationAsset.path);
+				if (fileDest.exists())
+					fileDest.delete(); //delete a file if it is there
+				else
+				{
+					fileDest.getParentFile().mkdirs();
+				}
+		
+				//now copy the main image to external
+				IOUtils.copy(new info.guardianproject.iocipher.FileInputStream(sourceAsset.path),new java.io.FileOutputStream(fileDest));
+				
+				String metadata = new String(informaCam.ioService.getBytes(this.media.getAsset(media.dcimEntry.name + ".j3m")));
+				
+				try {
+					int c = constructImage(destinationAsset.path, destinationAsset.path, metadata, metadata.length());			
+					
+					if(c > 0) {
+						finish();
+					}
+				}
+				catch (Exception e)
+				{
+					Log.e(LOG,"error unable to export image",e);
+				}
+			}
+			
 		}
 		else if (sourceAsset.source == Type.FILE_SYSTEM)
 		{

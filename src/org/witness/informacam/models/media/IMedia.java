@@ -523,6 +523,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		mHandler = h;
 		
 		int progress = 0;
+		
 		InformaCam informaCam = InformaCam.getInstance();
 
 		INotification notification = new INotification();
@@ -587,12 +588,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		
 		j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(bSig.toByteArray()));
 		j3mObject.put(Models.IMedia.j3m.J3M, j3m);
+
+		ITransportStub submission = null;
+		int exportDestination = dcimEntry.fileAsset.source;
+	
+		if (isLocalShare)
+			exportDestination = Type.FILE_SYSTEM;
 		
-		IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m");
-		
+		IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m", exportDestination);
+				
 		OutputStream os = null;
 		
-		if (j3mAsset.source == Type.FILE_SYSTEM)
+		if (j3mAsset.source == Type.FILE_SYSTEM || isLocalShare)
 			os = new java.io.FileOutputStream(j3mAsset.path);
 		else if (j3mAsset.source == Type.IOCIPHER)
 			os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
@@ -620,22 +627,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		notification.generateId();
 		notification.mediaId = this._id;
 
-		ITransportStub submission = null;
-		int exportDestination = dcimEntry.fileAsset.source;
-				//Type.FILE_SYSTEM; //all exports are to the file system
+		notification.type = Models.INotification.Type.EXPORTED_MEDIA;
 		
-		if(isLocalShare) {
-			notification.type = Models.INotification.Type.SHARED_MEDIA;
-		} else {
-
-			notification.type = Models.INotification.Type.EXPORTED_MEDIA;
-			
-			if(organization != null && doSubmission) {
-				notification.taskComplete = false;
-				informaCam.addNotification(notification, h);
-				submission = new ITransportStub(organization, notification);
-			}
+		if(organization != null && doSubmission) {
+			notification.taskComplete = false;
+			informaCam.addNotification(notification, h);
+			submission = new ITransportStub(organization, notification);
 		}
+		
 		
 		IAsset exportAsset = new IAsset(exportDestination);
 		exportAsset.name = exportFileName;
@@ -773,9 +772,8 @@ public class IMedia extends Model implements MetadataEmbededListener {
 			
 			j3mObject.put(Models.IMedia.j3m.SIGNATURE, new String(sig));
 			j3mObject.put(Models.IMedia.j3m.J3M, j3m);
-			
-		//	IAsset j3mAsset = addAsset(Models.IMedia.Assets.J3M);
-			IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m");
+
+			IAsset j3mAsset = addAsset(dcimEntry.name + ".j3m", dcimEntry.fileAsset.source);
 			progress += 10;
 			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
 
@@ -1157,15 +1155,14 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		}
 	}
 	
-	public IAsset addAsset(String name) {
+	public IAsset addAsset(String name, int exportDestination) {
 		String path = IOUtility.buildPath(new String[] { rootFolder, name });
-		int source = dcimEntry.fileAsset.source;
 		
-		if(source == Type.FILE_SYSTEM) {
+		if(exportDestination == Type.FILE_SYSTEM) {
 			path = IOUtility.buildPublicPath(new String[] { name });
 		}
 		
-		return new IAsset(path, source, name);
+		return new IAsset(path, exportDestination, name);
 	}
 
 	public IAsset getAsset(String name) {
