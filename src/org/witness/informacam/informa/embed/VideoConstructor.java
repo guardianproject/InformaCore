@@ -73,7 +73,7 @@ public class VideoConstructor {
 				fileDest.getParentFile().mkdirs();
 			}
 		
-			/**
+			
 			if(sourceAsset.source == Type.IOCIPHER) {
 				
 				String basePath = fileDest.getParentFile().getAbsolutePath();
@@ -83,15 +83,9 @@ public class VideoConstructor {
 				metadataPath = metadata.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);
 				sourcePath = sourceAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, basePath);			
 			
-				streamCount = 1; //we are only exporting encrypted video now, not with audio
-				
-				// this means we also have to save the resulting media to public
-				// (and copy to iocipher later)
-				//destinationAsset.copy(Type.IOCIPHER, Type.FILE_SYSTEM, media.rootFolder, false);
-				
-			}*/
+			}
 
-			constructVideo(streamCount,sourcePath,metadataPath);
+			constructVideo(streamCount,sourcePath,metadataPath,destinationAsset.path);
 		}
 		else if (destinationAsset.source == Type.IOCIPHER)
 		{
@@ -114,7 +108,7 @@ public class VideoConstructor {
 		
 	}
 
-	private void constructVideo(int streamCount, String sourcePath, String metadataPath) throws IOException {
+	private void constructVideo(int streamCount, String sourcePath, String metadataPath, String outPath) throws IOException {
 		
 		String[] ffmpegCommand = new String[] {
 				ffmpegBinPath, "-y", "-i", sourcePath,
@@ -122,7 +116,7 @@ public class VideoConstructor {
 				"-metadata:s:" + streamCount, "mimetype=\"text/plain\"",
 				"-vcodec", "copy",				
 				"-acodec", "copy",
-				destinationAsset.path
+				outPath
 		};
 
 		StringBuffer sb = new StringBuffer();

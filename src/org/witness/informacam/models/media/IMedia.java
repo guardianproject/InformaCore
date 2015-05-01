@@ -599,7 +599,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 		OutputStream os = null;
 		
-		if (j3mAsset.source == Type.FILE_SYSTEM || isLocalShare)
+		if (j3mAsset.source == Type.FILE_SYSTEM)
 			os = new java.io.FileOutputStream(j3mAsset.path);
 		else if (j3mAsset.source == Type.IOCIPHER)
 			os = new info.guardianproject.iocipher.FileOutputStream(j3mAsset.path);
@@ -639,7 +639,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		IAsset exportAsset = new IAsset(exportDestination);
 		exportAsset.name = exportFileName;
 		exportAsset.source = exportDestination;
-		
 		exportAsset.path = IOUtility.buildPublicPath(new String[] { exportAsset.name });
 		
 		if(this.dcimEntry.mediaType.equals(Models.IMedia.MimeType.VIDEO_MP4)) {
