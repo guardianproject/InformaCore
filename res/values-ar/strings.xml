@@ -1,9 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="ok">موافق</string>
-  <string name="continue_">واصل</string>
-  <string name="get_in">تسجيل الدخول</string>
+  <string name="app_name">انفورماكام</string>
+  <string name="ok">حسنا</string>
   <string name="cancel">إلغاء</string>
-  <string name="send">إرسال\u2026</string>
-  <string name="export">التصدير</string>
+  <!--<string name="gps_not_available_your">GPS is not fully available.  Your data might not be as accurate.</string>-->
 </resources>

@@ -1,12 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="welcome">Bienvenu!</string>
+  <string name="app_name">InformaCam</string>
   <string name="ok">OK</string>
-  <string name="continue_">Continuer</string>
-  <string name="get_in">Entrer</string>
   <string name="cancel">Annuler</string>
-  <string name="send">Envoyer\u2026</string>
-  <string name="export">Exporter</string>
-  <string name="name">Nom</string>
-  <string name="done">C\'est Fini!</string>
+  <!--<string name="gps_not_available_your">GPS is not fully available.  Your data might not be as accurate.</string>-->
 </resources>
