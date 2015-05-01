@@ -182,10 +182,13 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				IRegionBounds bounds = null;
 
 				if(dcimEntry.mediaType.startsWith(MimeType.VIDEO_BASE)) {
-					IVideoRegion videoRegion = new IVideoRegion(region);
-					videoRegion = (IVideoRegion) region;
-					bounds = videoRegion.getBoundsAtTime(timestamp);
-					region = videoRegion;
+					if (region instanceof IVideoRegion)
+					{
+						IVideoRegion videoRegion = new IVideoRegion(region);
+						videoRegion = (IVideoRegion) region;
+						bounds = videoRegion.getBoundsAtTime(timestamp);
+						region = videoRegion;
+					}
 				} else {
 					bounds = region.bounds;
 				}
