@@ -6,7 +6,7 @@ if ! type -P android &> /dev/null; then
     exit 1
 fi
 
-declare -a MAPFILE=('external/android-ffmpeg-java' 'external/OnionKit/libnetcipher' 'external/ODKFormParser' 'external/CacheWord/cachewordlib' 'external/google-play-services')
+declare -a MAPFILE=('external/android-ffmpeg-java' 'external/OnionKit/libnetcipher' 'external/ODKFormParser' 'external/CacheWord/cachewordlib' 'external/google-play-services' 'external/CameraCipher')
 
 for project in "${MAPFILE[@]}"; do
     android update lib-project --path $project -t android-19

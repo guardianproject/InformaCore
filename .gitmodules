@@ -7,3 +7,6 @@
 [submodule "external/OnionKit"]
 	path = external/OnionKit
 	url = https://github.com/guardianproject/NetCipher.git
+[submodule "external/CameraCipher"]
+	path = external/CameraCipher
+	url = https://github.com/n8fr8/CameraCipher.git
