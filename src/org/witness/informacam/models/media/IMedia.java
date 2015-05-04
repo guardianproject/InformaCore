@@ -882,6 +882,7 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		StringBuffer result = new StringBuffer();
 		try {
 	
+			result.append("Media ID: ").append(this._id).append("\n");
 			result.append("Device Key: ").append(genealogy.createdOnDevice).append("\n");
 			result.append("Date Created: ").append(new Date(genealogy.dateCreated).toLocaleString()).append("\n");
 			
@@ -890,8 +891,6 @@ public class IMedia extends Model implements MetadataEmbededListener {
 				
 			if (data.exif.location != null && data.exif.location.length > 0)
 				result.append("Location: ").append(data.exif.location[0]+ "," + data.exif.location[1]).append("\n");
-					
-//			data.sensorCapture.get(0);
 
 			return result.toString();
 			
