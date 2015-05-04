@@ -237,7 +237,7 @@ public class InformaCam extends Application {
 			if(fis.available() == 0) {
 				startCode = INIT;
 			} else {
-				setCredentialManager(new CredentialManager(this, !ioService.isMounted(),runForeground));
+				setCredentialManager(new CredentialManager(this, !ioService.isMounted(),false,runForeground));
 				
 				byte[] ubytes = new byte[fis.available()];
 				fis.read(ubytes);
@@ -296,7 +296,7 @@ public class InformaCam extends Application {
 		
 		ISecretKey sKey =  (ISecretKey) getModel(new ISecretKey());
 		
-		if (sKey != null)
+		if (sKey != null && sKey.secretKey != null)
 		{
 			signatureService.initKey(sKey);
 			
@@ -380,7 +380,7 @@ public class InformaCam extends Application {
 		}
 		
 		//reset credential manager
-		setCredentialManager(new CredentialManager(this, !ioService.isMounted(),false));
+		setCredentialManager(new CredentialManager(this, !ioService.isMounted(),false,false));
 		
 		stopService(informaServiceIntent);
 		

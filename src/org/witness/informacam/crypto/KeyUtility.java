@@ -148,7 +148,7 @@ public class KeyUtility {
 		InformaCam informaCam = InformaCam.getInstance();
 		informaCam.update(data);
 
-		informaCam.setCredentialManager(new CredentialManager(informaCam, !informaCam.ioService.isMounted(), true) {
+		informaCam.setCredentialManager(new CredentialManager(informaCam, !informaCam.ioService.isMounted(), true, true) {
 			@Override
 			public void onCacheWordUninitialized() {
 				if(firstUse) {

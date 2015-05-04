@@ -38,9 +38,6 @@ public class CredentialManager implements ICacheWordSubscriber {
 	InformaCam informaCam = InformaCam.getInstance();
 	private final static String LOG = Crypto.LOG;
 	
-	public CredentialManager(Context context, boolean initIOCipher, boolean showNotification) {
-		this(context, initIOCipher, false, showNotification);
-	}
 	
 	public CredentialManager(Context context, boolean initIOCipher, boolean firstUse, boolean showNotification) {
 		this.status = Codes.Status.UNKNOWN;
