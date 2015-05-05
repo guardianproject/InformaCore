@@ -9,9 +9,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -838,6 +843,100 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 		return true;
 	}
+	
+	public boolean exportCSV(Context context, Handler h, IOrganization organization, boolean share) throws FileNotFoundException, InstantiationException, IllegalAccessException {
+		//	Logger.d(LOG, "EXPORTING A MEDIA ENTRY: " + _id);
+		//	Logger.d(LOG, "ORIGINAL ASSET SETTINGS: " + dcimEntry.fileAsset.asJson().toString());
+			System.gc();
+			
+			mHandler = h;
+			
+			int progress = 0;
+			InformaCam informaCam = InformaCam.getInstance();
+
+			INotification notification = new INotification();
+			notification.icon = dcimEntry.thumbnail;
+			notification.label = context.getString(R.string.export);
+
+			String mimeType = dcimEntry.mediaType.equals(MimeType.IMAGE) ? context.getString(R.string.image) :context.getString(R.string.video);
+			if(dcimEntry.mediaType.equals(MimeType.LOG)) {
+				mimeType = context.getString(R.string.log);
+			}
+
+			notification.content = context.getString(R.string.you_exported_this_x, mimeType);
+			if(organization != null) {
+				intent.intendedDestination = organization.organizationName;
+				notification.content = context.getString(R.string.you_exported_this_x_to_x, mimeType, organization.organizationName);
+			}
+			progress += 10;
+			sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+			try {
+			
+				IAsset csvAsset = addAsset(dcimEntry.name + ".csv", dcimEntry.fileAsset.source);
+				progress += 10;
+				sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+				notification.generateId();
+				notification.mediaId = this._id;
+				
+				String csv = buildCSV(context, h);
+				
+				OutputStream os = null;
+				
+				if (csvAsset.source == Type.FILE_SYSTEM)
+					os = new java.io.FileOutputStream(csvAsset.path);
+				else if (csvAsset.source == Type.IOCIPHER)
+					os = new info.guardianproject.iocipher.FileOutputStream(csvAsset.path);
+				
+				ByteArrayInputStream is = new ByteArrayInputStream(csv.getBytes());
+				
+				// encrypt if the organization is not null
+				if(organization != null)
+				{					
+					EncryptionUtility.encrypt(is, os, Base64.encode(informaCam.ioService.getBytes(organization.publicKey, Type.IOCIPHER), Base64.DEFAULT));				
+				}
+				else
+				{				
+					IOUtils.copyLarge(is, os);
+				}	
+				
+				os.flush();
+				os.close();
+				
+				ITransportStub submission = null;
+				if(share) {
+					notification.type = Models.INotification.Type.SHARED_MEDIA;
+				} else {
+					notification.type = Models.INotification.Type.EXPORTED_MEDIA;
+					
+					if(organization != null) {
+						notification.taskComplete = false;
+						informaCam.addNotification(notification, h);
+						
+						submission = new ITransportStub(organization, notification);
+						submission.setAsset(csvAsset, dcimEntry.mediaType, Storage.Type.IOCIPHER);
+					}
+				}
+				
+				onMetadataEmbeded(csvAsset);
+				progress += 10;
+				sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
+
+			} catch (JSONException e) {
+				Logger.e(LOG, e);
+				return false;
+			} catch (ConcurrentModificationException e) {
+				Logger.e(LOG, e);
+				return false;
+			}
+			catch (Exception e) {
+				Logger.e(LOG, e);
+				return false;
+			}
+
+			return true;
+		}
 
 	public String buildSummary(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		
@@ -975,61 +1074,83 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return null;
 	}
 	
-	public String buildCSV(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException {
-		
-		System.gc();
-		
-		int progress = 0;
-		InformaCam informaCam = InformaCam.getInstance();
+	public String buildCSV(Context context, Handler h) throws FileNotFoundException, InstantiationException, IllegalAccessException 
+	{
 
-		INotification notification = new INotification();
-		notification.icon = dcimEntry.thumbnail;
 
-		// create data package
-		if(data == null) {
-			data = new IData();
+		StringBuffer result = new StringBuffer();
+		
+		try
+		{
+
+			String j3m = buildJ3M(context, false, null);
+			
+			ArrayList<ISensorCapture> listSensorEvents = new ArrayList<ISensorCapture>(data.sensorCapture);
+			
+			Collections.sort(listSensorEvents,new Comparator<ISensorCapture>()
+			{
+	
+				@Override
+				public int compare(ISensorCapture lhs, ISensorCapture rhs) {
+					
+					if (lhs.timestamp < rhs.timestamp)
+						return -1;
+					else if (lhs.timestamp == rhs.timestamp)
+						return 0;
+					else
+						return 1;
+				}
+				
+			});
+			
+			DateFormat dateFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);				
+
+			//do charts
+			final String[] sensorTypes = {"datetime","gps_coords","gps_accuracy","lightMeterValue","pressureHPAOrMBAR","pitch","roll","azimuth","acc_x","acc_y","acc_z","bluetoothDeviceAddress","cellTowerId","visibleWifiNetworks"};
+			
+			HashMap<String,String> hmRow = new HashMap<String,String>();
+			
+			for (String sensorType : sensorTypes)
+			{
+				result.append(sensorType).append(',');
+				hmRow.put(sensorType, "");
+			}
+			
+			result.append("\n");
+			
+			for (ISensorCapture sensor : listSensorEvents)
+			{
+				hmRow.put("datetime", dateFormat.format(sensor.timestamp));
+				
+				for (String sensorType : sensorTypes)
+				{	
+					if (sensor.sensorPlayback.has(sensorType))
+					{																			
+						String val = sensor.sensorPlayback.get(sensorType).toString();
+						
+						val = val.replace(',',' ');//replace commas with spaces for csv output
+						hmRow.put(sensorType, val);
+					}
+					
+				}
+				
+				for (String sensorType : sensorTypes)
+				{
+					result.append(hmRow.get(sensorType)).append(',');
+					
+				}
+				result.append("\n");
+			}
+	
+			
 		}
-		data.exif = dcimEntry.exif;
-		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-		mungeSensorLogs();
-		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-		mungeData();
-		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-		mungeGenealogyAndIntent();
-		progress += 20;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-		progress += 10;
-		sendMessage(Codes.Keys.UI.PROGRESS, progress, h);
-
-		StringBuffer sbCSV = new StringBuffer();
-		
-		try {
-
-			
-			
-	//		j3m.put(Models.IMedia.j3m.DATA, data.asJson());
-	//		j3m.put(Models.IMedia.j3m.GENEALOGY, genealogy.asJson());
-	//		j3m.put(Models.IMedia.j3m.INTENT, intent.asJson());
-			
-
-			return sbCSV.toString();
-			
-		} catch (JSONException e) {
-			Logger.e(LOG, e);
-			
-		} catch (Exception e) {
-			Logger.e(LOG, e);
-			
+		catch (Exception e)
+		{
+			e.printStackTrace();
 		}
-
-		return null;
+		
+	
+		return result.toString();
 	}
 	
 	public String renderDetailsAsText(int depth) {
