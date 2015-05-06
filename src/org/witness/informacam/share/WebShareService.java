@@ -7,9 +7,15 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
+import org.witness.informacam.R;
+import org.witness.informacam.ui.AlwaysOnActivity;
+
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import fi.iki.elonen.SimpleWebServer;
 
@@ -69,6 +75,7 @@ public class WebShareService extends Service {
 			public void run ()
 			{
 				mServer = new SimpleWebServer(mHost,mPort,mRoot,false);
+				showNotification ();
 				
 				try {
 					mServer.start();
@@ -91,6 +98,7 @@ public class WebShareService extends Service {
 			
 			public void run ()
 			{
+				stopForeground(true);
 				
 				try {
 					mServer.stop();
@@ -119,7 +127,7 @@ public class WebShareService extends Service {
 		           for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
 		           InetAddress inetAddress = enumIpAddr.nextElement();
 		                if (!inetAddress.isLoopbackAddress()) {
-		                return inetAddress.getHostAddress().toString();
+		                return inetAddress.getHostAddress();
 		                }
 		           }
 		       }
@@ -128,4 +136,23 @@ public class WebShareService extends Service {
 		      }
 		      return null;
 		}
+	
+	private void showNotification ()
+	{
+
+
+		  Intent intentLaunch = getPackageManager().getLaunchIntentForPackage(getPackageName());
+		
+		    PendingIntent pendingIntent=PendingIntent.getActivity(this, 0,
+		    		intentLaunch, Intent.FLAG_ACTIVITY_NEW_TASK);
+
+		    Notification notification=new NotificationCompat.Builder(this)
+		                                .setSmallIcon(R.drawable.ic_action_backup)
+		                                .setContentTitle(getString(R.string.remote_share_activated))
+		                                .setContentIntent(pendingIntent)
+		                                .setOngoing(true).build();
+		    
+		    startForeground(992000, notification);
+		    	        
+	}
 }

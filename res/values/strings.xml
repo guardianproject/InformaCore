@@ -60,4 +60,5 @@
     <string name="proof_mode_string">PROOF MODE is now active. Use the menu or notification to return to this screen to "finish".</string>
     <string name="proof_mode_button">FINISH CAPTURE</string>
     <string name="cacheword_unlocked">Touch to open</string>
+    <string name="remote_share_activated">Remote Sharing Activated</string>
 </resources>
