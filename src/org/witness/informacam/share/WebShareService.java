@@ -8,7 +8,6 @@ import java.net.NetworkInterface;
 import java.util.Enumeration;
 
 import org.witness.informacam.R;
-import org.witness.informacam.ui.AlwaysOnActivity;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -17,6 +16,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import ch.boye.httpclientandroidlib.conn.util.InetAddressUtils;
 import fi.iki.elonen.SimpleWebServer;
 
 public class WebShareService extends Service {
@@ -126,8 +126,11 @@ public class WebShareService extends Service {
 		       NetworkInterface intf = en.nextElement();
 		           for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
 		           InetAddress inetAddress = enumIpAddr.nextElement();
-		                if (!inetAddress.isLoopbackAddress()) {
-		                return inetAddress.getHostAddress();
+		                if (!inetAddress.isLoopbackAddress()&& InetAddressUtils.isIPv4Address(inetAddress.getHostAddress())) {
+		                	
+		                	return inetAddress.getHostAddress();
+		                
+		                
 		                }
 		           }
 		       }
