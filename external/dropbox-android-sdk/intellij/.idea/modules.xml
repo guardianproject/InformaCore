@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Main.iml" filepath="$PROJECT_DIR$/Main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/examples-DBRoulette.iml" filepath="$PROJECT_DIR$/examples-DBRoulette.iml" />
+    </modules>
+  </component>
+</project>
+

@@ -1,0 +1,100 @@
+1.6.3 (2015-1-9)
+---
+DropboxAPI.accountInfo: New fields: teamInfo, email, locale, isPaired.
+DropboxAPI.Entry: New field: readOnly.
+DropboxAPI.putFile: New option: autoRename.
+AndroidAuthSession: New options: desiredUid, alreadyAuthedUids.
+Fixed crash for when restricted profile blocks web browser launch.
+Add VersionedSerializable base class, which helps detect stale data.
+
+1.6.2 (2014-12-5)
+---
+Bug fixes
+
+1.6.1 (2014-03-13)
+---
+The OAuth 1 browser auth flow (used when the Dropbox Android app isn't
+installed) didn't work.  This is now fixed.
+
+1.6 (2014-01-29)
+---
+Added OAuth 2 support.  OAuth 1 is still supported.
+
+1.5.4 (2013-03-26)
+---
+Fix authentication bug on Android
+Raise minimum Android version to 1.6 (API4)
+
+1.5.3 (2012-11-28)
+---
+Fix NullPointerException in HTTP request utility.
+
+1.5.2 (2012-11-27)
+---
+Fix NullPointerException in ChunkedUploader.
+Fix InputStream leak in file downloader.
+
+1.5.1 (2012-8-20)
+---
+Fix packaging of .jar file.
+Minor changes to ChunkedUploader API.
+
+1.5 (2012-8-15)
+---
+Support for uploading large files via /chunked_upload
+
+1.3.1 (2012-5-16)
+---
+Increase metadata() file list limit to 25,000 (used to be 10,000).
+Fix parsing of 'client_mtime' metadata field.
+
+1.3 (2012-3-26)
+---
+Add support for the /delta API.
+Add support for the "copy ref" API.
+
+1.2.3 (2012-1-11)
+---
+Added file metadata to DropboxFileInfo when downloading files (and getting
+thumbnails).
+ - Same structure as the data returned by the metadata call.
+ - Saves having to do 2 RPCs to get both the file and its revision.
+DropboxFileInfo.getFileSize() is guaranteed to be the file size on file
+downloads (and thumbnail requests).
+ - Previously, on chunked downloads (if accepting gzip encodings), would be zero.
+
+1.2.2 (2011-11-15)
+---
+Small tweak to DropboxParseException
+
+1.2.1 (2011-10-11)
+---
+Improved documentation
+Added missing library
+Updated httpclient library to fix SSL issue
+Other minor fixes and improvements
+
+1.2 (2011-08-16)
+---
+Added README
+Added CHANGELOG
+Added a session type to simplify web OAuth flow
+ - This means you don't need to (and should not) ask for user credentials
+Enormous refactoring
+ - Most classes changed
+ - Most function signatures changed
+ - Removed config files and moved all config to the Session object
+ - Should be much easier to use now
+ - File upload methods now take an InputStream instead of File for more flexibility
+ - Fixed bugs
+Updated and added more Javadoc
+Added finely-tuned connection reuse and pooling
+Removed dependency on the signpost libraries
+Added new v1 API calls and rev parameter to old calls
+ - Revisions, search, restore, media, share
+Removed non-v1 API calls
+Changed how the SDK is packaged
+ - Includes source code (for Javadoc)
+ - Includes JAR dependencies and their licenses
+ - Includes Dropbox SDK license, readme, and changelog
+

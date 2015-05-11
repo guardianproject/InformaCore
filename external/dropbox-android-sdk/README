@@ -1,0 +1,6 @@
+How to install and use the SDK:
+- https://www.dropbox.com/developers/core/start/android
+
+Requirements:
+- Android API v3+
+- json_simple-1.1 (provided under "lib/")

@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+out_dir="bytecode"
+main_class="$1" ; shift
+
+if [ ! -d "$out_dir" ]; then
+    echo "ERROR: \"$out_dir\" directory doesn't exist.  Did you run ./compile yet?" 1>&2
+    exit 1
+fi
+
+cp="$out_dir"
+for jar in "../../lib/"*.jar "../../lib/test/"*.jar; do
+    cp="$cp:$jar"
+done
+
+exec java -classpath "$cp" "$main_class" "$@"

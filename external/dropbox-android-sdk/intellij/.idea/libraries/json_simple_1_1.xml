@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="json_simple-1.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../lib/json_simple-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../lib/commons-logging-1.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../lib/httpclient-4.0.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../lib/httpcore-4.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../lib/httpmime-4.0.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

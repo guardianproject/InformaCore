@@ -1,0 +1,5 @@
+com.dropbox.client2
+com.dropbox.client2.android
+com.dropbox.client2.exception
+com.dropbox.client2.jsonextract
+com.dropbox.client2.session

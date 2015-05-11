@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+out_dir="bytecode"
+main_class="$1" ; shift
+
+cp=""
+for jar in "../../lib/"*.jar "../../lib/test/"*.jar; do
+    cp="$cp:$jar"
+done
+
+if [ -e "$out_dir" ]; then
+    rm -r "$out_dir"
+fi
+
+mkdir -p "$out_dir"
+exec javac -d "$out_dir" -classpath "$cp" "$main_class.java"

@@ -1,0 +1,27 @@
+This directory includes an example command-line program that uses the /sharing_token
+API to copy files between different Dropbox accounts.
+call to maintain a local cache of your Dropbox's file names.
+
+Before you can run this example, you'll need a Dropbox application key.
+You can create one at https://www.dropbox.com/developers/apps
+
+To compile:  ./compile
+To run:      ./run
+
+-------------------
+Example usage:
+
+0. Compile the program
+   > ./compile
+
+1. Reset the state, tell the program to use the given app key and secret.
+   > ./run reset <app-key> <app-secret>
+
+2. Link to a Dropbox account (do this at least twice, with two different accounts)
+   > ./run link
+
+3. List the accounts that are linked, remember the UIDs
+   > ./run list
+
+4. Update the local cache to match what's on Dropbox.
+   > ./run <uid>:/path/to/source/file <uid>:/path/to/target/file

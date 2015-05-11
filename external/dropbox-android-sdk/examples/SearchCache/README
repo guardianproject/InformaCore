@@ -1,0 +1,27 @@
+This directory includes an example command-line program that uses the /delta API
+call to maintain a local cache of your Dropbox's file names.
+
+Before you can run this example, you'll need a Dropbox App Folder application, along
+with its key and secret.  You can get one at https://www.dropbox.com/developers/apps
+
+To compile:  ./compile
+To run:      ./run
+
+-------------------
+Example usage:
+
+0. Compile the program
+   > ./compile
+
+1. Link to your Dropbox account
+   > ./run link <app-key> <app-secret>
+
+2. Go to Dropbox and make changes to the contents of the App Folder.
+
+3. Update the local cache to match what's on Dropbox.
+   > ./run update
+
+4. Search the local cache.
+   > ./run find 'txt'
+
+Repeat steps 2-4 any number of times.

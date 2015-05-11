@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="android" name="Android">
+      <configuration>
+        <option name="GEN_FOLDER_RELATIVE_PATH_APT" value="/../examples/DBRoulette/gen" />
+        <option name="GEN_FOLDER_RELATIVE_PATH_AIDL" value="/../examples/DBRoulette/gen" />
+        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/../examples/DBRoulette/AndroidManifest.xml" />
+        <option name="RES_FOLDER_RELATIVE_PATH" value="/../examples/DBRoulette/res" />
+        <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/../examples/DBRoulette/assets" />
+        <option name="LIBS_FOLDER_RELATIVE_PATH" value="/../examples/DBRoulette/libs" />
+        <option name="UPDATE_PROPERTY_FILES" value="false" />
+        <resOverlayFolders>
+          <path>/../examples/DBRoulette/res-overlay</path>
+        </resOverlayFolders>
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../examples/DBRoulette">
+      <sourceFolder url="file://$MODULE_DIR$/../examples/DBRoulette/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../examples/DBRoulette/gen" isTestSource="false" generated="true" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="Main" />
+    <orderEntry type="library" scope="RUNTIME" name="json_simple-1.1" level="project" />
+  </component>
+</module>
+

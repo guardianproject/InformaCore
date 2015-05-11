@@ -1,0 +1,48 @@
+/*
+    Javadoc style sheet that uses colors and fonts that match the Dropbox website.
+
+    Modified from: http://sensemaya.org/maya/2009/07/10/making-javadoc-more-legible
+*/
+
+body { background-color: #FFFFFF; color:#333; font-size: 100%; }
+
+body { font-size: 0.875em; line-height: 1.286em; font-family: "Lucida Grande", "Segoe UI", "Arial", "Verdana", "Lucida Sans Unicode", "Tahoma", sans-serif; }
+code, pre { color: #444; line-height: 1.286em; font-family: "Consolas", "Lucida Console", "Droid Sans Mono", "Andale Mono", "Monaco", "Lucida Sans Typewriter"; }
+
+a, a code { text-decoration: none; color: #1F75CC; }
+a:visited, a:visited code { color: #2866a4; }
+a:hover, a:hover code { background-color: #ccddff; }
+
+.TableRowColor a code { text-decoration: none; color: #1F75CC; }
+.TableRowColor a:visited code { color: #2866a4; }
+.TableRowColor a:hover code { background-color: #ccddff; }
+
+table[border="1"] { border: 1px solid #ddd; }
+table[border="1"] td, table[border="1"] th { border: 1px solid #ddd; }
+table[cellpadding="3"] td { padding: 0em; }
+
+font[size="-1"] { font-size: 0.85em; line-height: 1.5em; }
+font[size="-2"] { font-size: 0.8em; }
+font[size="+2"] { font-size: 1.4em; line-height: 1.3em; padding: 0.4em 0; }
+
+/* Headings */
+h1 { font-size: 1.5em; line-height: 1.286em;}
+
+/* Table colors */
+.TableHeadingColor     { background: #1f75cc; color:#fff; margin: 0; }
+.TableSubHeadingColor  { background: #ddd; color:#444; } /* Light mauve */
+.TableRowColor         { background: #FFFFFF; color:#666; font-size: 0.95em; } /* White */
+
+/* Font used in left-hand frame lists */
+.FrameTitleFont   { font-size: 100%; }
+.FrameHeadingFont { font-size:  90%; }
+.FrameItemFont { font-size:  0.9em; line-height: 1.3em; }
+
+/* Navigation bar fonts and colors */
+.NavBarCell1    { background-color:#E0E6DF; }
+.NavBarCell1Rev { background-color:#16569A; color:#FFFFFF}
+.NavBarFont1    { }
+.NavBarFont1Rev { color:#FFFFFF; }
+
+.NavBarCell2    { background-color:#FFFFFF; color:#000000}
+.NavBarCell3    { background-color:#FFFFFF; color:#000000}

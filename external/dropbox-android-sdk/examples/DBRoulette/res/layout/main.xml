@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+	<Button 
+      android:id="@+id/auth_button" 
+	  android:text="Link with Dropbox" 
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+	  />
+    <LinearLayout
+        android:id="@+id/logged_in_display" 
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        >
+		<ImageView  
+          android:id="@+id/image_view" 
+		  android:layout_width="fill_parent" 
+		  android:layout_height="fill_parent" 
+		  android:layout_weight="1"
+		  />
+		<LinearLayout
+		    android:orientation="horizontal"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    >
+		    <Button 
+		      android:id="@+id/roulette_button" 
+		      android:text="Roulette" 
+		      android:layout_width="fill_parent"
+		      android:layout_height="wrap_content"
+	          android:layout_weight="1"
+		      />
+		    <Button 
+		      android:id="@+id/photo_button" 
+		      android:text="New Photo" 
+		      android:layout_width="fill_parent"
+		      android:layout_height="wrap_content"
+	          android:layout_weight="1"
+		      />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
+	      
