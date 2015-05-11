@@ -1,5 +1,7 @@
 package org.witness.informacam.intake;
 
+import info.guardianproject.iocipher.File;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -16,6 +18,7 @@ import org.witness.informacam.models.media.IImage;
 import org.witness.informacam.models.media.ILog;
 import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.models.media.IVideo;
+import org.witness.informacam.share.DropboxSyncManager;
 import org.witness.informacam.storage.IOUtility;
 import org.witness.informacam.utils.BackgroundProcessor;
 import org.witness.informacam.utils.BackgroundTask;
@@ -145,6 +148,12 @@ public class EntryJob extends BackgroundTask {
 						if (mListener != null) {
 							mListener.onUpdate(message);
 						}
+						
+						if (media.dcimEntry.fileAsset.source == Storage.Type.IOCIPHER)
+						{
+							DropboxSyncManager.getInstance().uploadFileAsync(new File(media.dcimEntry.fileAsset.path));
+						}
+						
 					}
 
 				} else {
