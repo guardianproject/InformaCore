@@ -1,7 +1,9 @@
-package fi.iki.elonen;
+package org.witness.informacam.share.www;
 
 import java.io.File;
 import java.util.Map;
+
+import fi.iki.elonen.NanoHTTPD;
 
 /**
 * @author Paul S. Hawke (paul.hawke@gmail.com)

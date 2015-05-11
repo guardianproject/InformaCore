@@ -1,4 +1,4 @@
-package fi.iki.elonen;
+package org.witness.informacam.share.www;
 
 /**
 * @author Paul S. Hawke (paul.hawke@gmail.com)

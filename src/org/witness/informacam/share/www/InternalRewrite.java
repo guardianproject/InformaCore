@@ -1,8 +1,8 @@
-package fi.iki.elonen;
+package org.witness.informacam.share.www;
 
 import java.util.Map;
 
-import static fi.iki.elonen.NanoHTTPD.Response;
+import fi.iki.elonen.NanoHTTPD.Response;
 
 /**
  * @author Paul S. Hawke (paul.hawke@gmail.com)

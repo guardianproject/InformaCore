@@ -1,6 +1,8 @@
-package fi.iki.elonen;
+package org.witness.informacam.share.www;
 
 import java.io.IOException;
+
+import fi.iki.elonen.NanoHTTPD;
 
 public class ServerRunner {
     public static void run(Class serverClass) {

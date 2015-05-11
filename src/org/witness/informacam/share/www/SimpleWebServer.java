@@ -1,4 +1,4 @@
-package fi.iki.elonen;
+package org.witness.informacam.share.www;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileInputStream;
@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.StringTokenizer;
+
+import fi.iki.elonen.NanoHTTPD;
 
 public class SimpleWebServer extends NanoHTTPD {
     /**
@@ -504,7 +506,8 @@ public class SimpleWebServer extends NanoHTTPD {
                  	if (file.endsWith(".mp4"))
                  	{
                  		
- 	                    msg.append("<div class=\"img\"><a href=\"").append(encodeUri(uri + file)).append("\"><img width=200 height=150 src=\"").append(encodeUri(uri + file)).append(".thumb.jpg\"/></a>");
+ 	                    msg.append("<div class=\"img\"><a href=\"").append(encodeUri(uri + file))
+ 	                    .append("\"><img width=200 height=150 src=\"").append(encodeUri(uri + file)).append(".thumb.jpg\"/></a>");
  	                    File curFile = new File(f, file);
  	                    long len = curFile.length();
  	                    msg.append("<div class=\"desc\">");
@@ -521,7 +524,8 @@ public class SimpleWebServer extends NanoHTTPD {
  	                }
                  	else if (file.endsWith(".jpg"))
                  	{
-                 		 msg.append("<div class=\"img\"><a href=\"").append(encodeUri(uri + file)).append("\"><img width=200 height=150 src=\"").append(encodeUri(uri + file)).append("\"/></a>");
+                 		 msg.append("<div class=\"img\"><a href=\"").append(encodeUri(uri + file))
+                 		 .append("\"><img width=200 height=150 src=\"").append(encodeUri(uri + file)).append("\"/></a>");
   	                    File curFile = new File(f, file);
   	                    long len = curFile.length();
   	                    msg.append("<div class=\"desc\">");

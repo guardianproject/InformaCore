@@ -8,6 +8,7 @@ import java.net.NetworkInterface;
 import java.util.Enumeration;
 
 import org.witness.informacam.R;
+import org.witness.informacam.share.www.SimpleWebServer;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -17,7 +18,6 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import ch.boye.httpclientandroidlib.conn.util.InetAddressUtils;
-import fi.iki.elonen.SimpleWebServer;
 
 public class WebShareService extends Service {
 
@@ -46,25 +46,28 @@ public class WebShareService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		
-		if (intent.getAction().equals(ACTION_SERVER_START))
+		if (intent.getAction() != null)
 		{
-			if (intent.hasExtra("host"))
-				mHost = intent.getExtras().getString("host");
-			
-			if (intent.hasExtra("port"))
-				mPort = intent.getExtras().getInt("port");
-			
-			if (intent.hasExtra("root"))
-				mRoot = new File(intent.getExtras().getString("root"));
-			
-			startServer();
-		}
-		else if (intent.getAction().equals(ACTION_SERVER_STOP))
-		{
-			stopServer();
+			if (intent.getAction().equals(ACTION_SERVER_START))
+			{
+				if (intent.hasExtra("host"))
+					mHost = intent.getExtras().getString("host");
+				
+				if (intent.hasExtra("port"))
+					mPort = intent.getExtras().getInt("port");
+				
+				if (intent.hasExtra("root"))
+					mRoot = new File(intent.getExtras().getString("root"));
+				
+				startServer();
+			}
+			else if (intent.getAction().equals(ACTION_SERVER_STOP))
+			{
+				stopServer();
+			}
 		}
 		
-		return super.onStartCommand(intent, flags, startId);
+		 return START_STICKY;
 	}
 
 	private void startServer ()
