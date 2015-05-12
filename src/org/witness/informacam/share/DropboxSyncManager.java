@@ -4,7 +4,9 @@ import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileInputStream;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.LinkedList;
+import java.util.Properties;
 
 import android.app.Activity;
 import android.util.Log;
@@ -24,14 +26,15 @@ public class DropboxSyncManager {
 	
 	// In the class declaration section:
 	private DropboxAPI<AndroidAuthSession> mDBApi;
-    
-	private String mStoredAccessKey;
-	private String mStoredAccessSecret;
+    private AndroidAuthSession mSession;
+
+	private boolean isAuthenticating = false;
+	
+	private String mStoredAccessToken;
 	
 	private LinkedList<File> llFileQ;
 	
 	private static DropboxSyncManager mInstance;
-	private boolean isAuthenticating = false;
 	
 	private DropboxSyncManager ()
 	{
@@ -50,7 +53,9 @@ public class DropboxSyncManager {
 	{
 		if (mDBApi == null)
 		{
-			if (mStoredAccessKey == null)
+			loadCredentials();
+			
+			if (mStoredAccessToken == null)
 			{
 				// And later in some initialization function:
 				AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
@@ -64,11 +69,10 @@ public class DropboxSyncManager {
 			else
 			{
 				AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-				 AndroidAuthSession session = new AndroidAuthSession(appKeys, new AccessTokenPair(mStoredAccessKey, mStoredAccessSecret));
-				 
-				mDBApi = new DropboxAPI<AndroidAuthSession>(session);
+				AndroidAuthSession session = new AndroidAuthSession(appKeys);
+				session.setOAuth2AccessToken(mStoredAccessToken);
 				
-				return true;
+				return session.isLinked();
 			}
 		}
 		
@@ -142,30 +146,89 @@ public class DropboxSyncManager {
 	
 	private void authenticate (Activity a)
 	{
+		mSession = mDBApi.getSession();
+		
 		// MyActivity below should be your activity class name
-		mDBApi.getSession().startOAuth2Authentication(a);
+		mSession.startOAuth2Authentication(a);
 	}
 	
 	public void finishAuthentication ()
 	{
+		
 		if (mDBApi != null && isAuthenticating)
-			if (mDBApi.getSession().authenticationSuccessful()) {
-	        try {
-	            // Required to complete auth, sets the access token on the session
-	            mDBApi.getSession().finishAuthentication();
-	            
-	            String accessToken = mDBApi.getSession().getOAuth2AccessToken();
-	            
-	            //mDBApi.getSession().getAccessType();
-	            //mStoredAccessKey = mDBApi.getSession().getAccessTokenPair().key;
-	            //mStoredAccessSecret = mDBApi.getSession().getAccessTokenPair().secret;
-	            
-	            isAuthenticating = false;
-	            
-	        } catch (IllegalStateException e) {
-	            Log.i("DbAuthLog", "Error authenticating", e);
-	        }
-	    }
+		{
+			mSession = mDBApi.getSession();
+	
+			if (mSession.authenticationSuccessful()) {
+		        try {
+		            // Required to complete auth, sets the access token on the session
+		        	mSession.finishAuthentication();
+			           
+		            
+		            saveCredentials();
+		    
+		            isAuthenticating = false;
+		            
+		        } catch (IllegalStateException e) {
+		            Log.e("DbAuthLog", "Error authenticating", e);
+		        }
+		        catch (IOException e) {
+		            Log.e("DbAuthLog", "Error I/O", e);
+		        }
+		    }
+		}
 
+	}
+	
+	private boolean loadCredentials ()
+	{
+		try
+		{
+			Properties props = new Properties();
+			info.guardianproject.iocipher.File fileProps = new info.guardianproject.iocipher.File("/dropbox.properties");
+			
+			if (fileProps.exists())
+			{
+		        info.guardianproject.iocipher.FileInputStream fis = new info.guardianproject.iocipher.FileInputStream(fileProps);        
+		        props.loadFromXML(fis);
+		        
+		        mStoredAccessToken = props.getProperty("dbtoken");
+		        
+		        return true;
+			}
+	        
+	        
+		}
+		catch (IOException ioe)
+		{
+			Log.e("DbAuthLog", "Error I/O", ioe);
+		}
+		
+		return false;
+	}
+	
+	private void saveCredentials () throws IOException
+	{
+		
+		if (mSession != null && mSession.isLinked()
+				&& mSession.getOAuth2AccessToken() != null)
+		{
+			
+	        mStoredAccessToken = mSession.getOAuth2AccessToken();
+	        
+	        Properties props = new Properties();
+	        props.setProperty("dbtoken", mStoredAccessToken);
+	        
+	        info.guardianproject.iocipher.File fileProps = new info.guardianproject.iocipher.File("/dropbox.properties");
+	        info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(fileProps);
+	        props.storeToXML(fos,"");
+	        fos.close();
+	        
+		}
+		else
+		{
+			Log.d("Dropbox","no valid dropbox session / not linked");
+	        
+		}
 	}
 }
