@@ -2,8 +2,8 @@ package org.witness.informacam.share.www;
 
 import info.guardianproject.iocipher.File;
 import info.guardianproject.iocipher.FileInputStream;
-import info.guardianproject.iocipher.FilenameFilter;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -18,6 +18,10 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 
+import org.witness.informacam.models.media.IMedia;
+
+import android.content.Context;
+import android.net.Uri;
 import fi.iki.elonen.NanoHTTPD;
 
 public class SimpleWebServer extends NanoHTTPD {
@@ -450,6 +454,95 @@ public class SimpleWebServer extends NanoHTTPD {
         return null;
     }
 
+    List<IMedia> mListMedia = null;
+    Context mContext = null;
+    
+    public void setMedia (Context context, List<IMedia> listMedia)
+    {
+    	mListMedia = listMedia;
+    	mContext = context;
+    }
+    
+    //we aren't really going to show any directories, just display our shared media
+    private String listDirectory(String strUri, File f) {
+    	
+    	Uri uri = Uri.parse(strUri);
+    	
+    	int startIdx = 0;
+    	int length = 10;
+    	
+        // String heading = "Directory " + uri;
+         String heading = "CameraV Web Share";
+         StringBuilder msg = new StringBuilder(
+         	"<html><head><title>" + heading + "</title>" +
+             "<link rel=\"stylesheet\" type=\"text/css\" href=\"/style.css\"/>" +
+             "</head><body><h2>" + heading + "</h2>");
+
+         if (mListMedia != null && mListMedia.size() > 0) {
+             
+         	 
+         	 if (mListMedia.size() > 0) {
+                  msg.append("<section class=\"files\">");
+                  for (int i = startIdx; i < (startIdx+length) && i < mListMedia.size(); i++)
+                  {
+                	  
+                	  IMedia media = mListMedia.get(i);
+                  	
+                	  String pathMedia = media.dcimEntry.fileAsset.path;
+                	  String pathThumb = media.dcimEntry.thumbnail.path;
+                	  StringBuffer desc = new StringBuffer();
+                	  desc.append("<b>").append(media.dcimEntry.fileAsset.name).append("</b><br/><br/>");
+					try {
+						desc.append("<pre>").append(media.buildSummary(mContext, null)).append("</pre>");
+						
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (InstantiationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                	  
+  	                    msg.append("<div class=\"thumbnailBorder\">");
+  	                    
+  	                    msg.append("<a href=\"").append(encodeUri(pathMedia))
+  	                    .append("\"><img src=\"").append(encodeUri(pathThumb)).append("\"/></a><br/>");
+  	                    
+  	                  msg.append("<a href=\"").append(encodeUri(pathMedia)).append("\">Download Media</a>");
+  	                  msg.append(" | ");
+  	                  msg.append("<a href=\"").append(encodeUri(pathMedia+".j3m")).append("\">Download J3M</a> ");
+  	                  msg.append(" | ");
+  	                  msg.append("<a href=\"").append(encodeUri(pathMedia+".csv")).append("\">Download CSV</a>");
+	                  msg.append("<br/><br/>");
+  	                  
+  	                    File curFile = new File(pathMedia);
+  	                    long len = curFile.length();
+  	                    msg.append("<div class=\"desc\">");
+  	                    msg.append(desc).append(" (");
+  	                    if (len < 1024) {
+  	                        msg.append(len).append(" bytes");
+  	                    } else if (len < 1024 * 1024) {
+  	                        msg.append(len / 1024).append(".").append(len % 1024 / 10 % 100).append(" KB");
+  	                    } else {
+  	                        msg.append(len / (1024 * 1024)).append(".").append(len % (1024 * 1024) / 10 % 100).append(" MB");
+  	                    }
+  	                    msg.append(")</div></div>");                  	
+                  
+                  }
+                  
+                  msg.append("</section>");
+              }
+         }
+             
+          
+         msg.append("</body></html>");
+         return msg.toString();
+     }
+    
+    /**
     private String listDirectory(String uri, File f) {
        // String heading = "Directory " + uri;
         String heading = "CameraV Web Share";
@@ -483,7 +576,7 @@ public class SimpleWebServer extends NanoHTTPD {
         Collections.sort(directories);
         if (up != null || directories.size() + files.size() > 0) {
             
-        	/*
+        	
             if (up != null || directories.size() > 0) {
             	
                 msg.append("<section class=\"directories\">");
@@ -497,8 +590,7 @@ public class SimpleWebServer extends NanoHTTPD {
                 msg.append("</section>");
                
             }
-             */
-        	
+            
         	 if (files.size() > 0) {
                  msg.append("<section class=\"files\">");
                  for (String file : files) {
@@ -547,5 +639,6 @@ public class SimpleWebServer extends NanoHTTPD {
          
         msg.append("</body></html>");
         return msg.toString();
-    }
+    }**/
+    
 }

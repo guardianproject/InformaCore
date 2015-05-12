@@ -6,9 +6,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+import java.util.List;
 
+import org.witness.informacam.InformaCam;
 import org.witness.informacam.R;
+import org.witness.informacam.models.media.IMedia;
 import org.witness.informacam.share.www.SimpleWebServer;
+import org.witness.informacam.utils.Constants.Models;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -43,6 +47,16 @@ public class WebShareService extends Service {
 	}
 
 
+	private void initMediaShare ()
+	{
+		InformaCam informaCam = InformaCam.getInstance();
+		int sorting = Models.IMediaManifest.Sort.DATE_DESC;		
+		List<IMedia> listMedia = informaCam.mediaManifest.sortBy(sorting);
+		mServer.setMedia(this, listMedia);
+		
+	}
+	
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		
@@ -60,6 +74,7 @@ public class WebShareService extends Service {
 					mRoot = new File(intent.getExtras().getString("root"));
 				
 				startServer();
+				
 			}
 			else if (intent.getAction().equals(ACTION_SERVER_STOP))
 			{
@@ -79,9 +94,11 @@ public class WebShareService extends Service {
 			{
 				mServer = new SimpleWebServer(mHost,mPort,mRoot,false);
 				showNotification ();
+				initMediaShare();
 				
 				try {
 					mServer.start();
+					
 		        } catch (IOException ioe) {
 		            System.err.println("Couldn't start server:\n" + ioe);
 		            System.exit(-1);
