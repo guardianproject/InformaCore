@@ -98,50 +98,53 @@ public class DropboxSyncManager {
 	
 	public synchronized void uploadMediaAsync (IMedia media) 
 	{
-		if (llMediaQ == null)
-			llMediaQ = new LinkedList<IMedia>();
-		
-		llMediaQ.add(media);
-
-		showNotification();
-				
-		if (mDBApi != null && (mThread == null || (!mThread.isAlive())))
+		if (mDBApi != null) //if there is no active session, then ignore
 		{
-
-			mThread = new Thread ()
-			{
-				public void run ()
-				{
-				
-					IMedia media = null;
-					
-					int numUploaded = 0;
-					
-					while ( llMediaQ.peek() != null)
-					{
-						media = llMediaQ.pop();
-						try {
-							Entry result = uploadMedia (media);
-							if (result != null)
-								numUploaded++;
-							
-							uploadMetadata(media,"j3m");
-							uploadMetadata(media,"csv");
-							
-						} catch (FileNotFoundException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (DropboxException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-
-					finishNotification(numUploaded);
-				}
-			};
+			if (llMediaQ == null)
+				llMediaQ = new LinkedList<IMedia>();
 			
-			mThread.start();
+			llMediaQ.add(media);
+	
+			showNotification();
+					
+			if (mThread == null || (!mThread.isAlive()))
+			{
+	
+				mThread = new Thread ()
+				{
+					public void run ()
+					{
+					
+						IMedia media = null;
+						
+						int numUploaded = 0;
+						
+						while ( llMediaQ.peek() != null)
+						{
+							media = llMediaQ.pop();
+							try {
+								Entry result = uploadMedia (media);
+								if (result != null)
+									numUploaded++;
+								
+								uploadMetadata(media,"j3m");
+								uploadMetadata(media,"csv");
+								
+							} catch (FileNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (DropboxException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+	
+						finishNotification(numUploaded);
+					}
+				};
+				
+				mThread.start();
+			}
 		}
 	}
 	
