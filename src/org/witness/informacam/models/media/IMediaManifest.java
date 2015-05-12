@@ -180,7 +180,7 @@ public class IMediaManifest extends Model {
 			m.isNew = false;
 		}
 		
-		save();
+		//save();
 		
 	}
 	

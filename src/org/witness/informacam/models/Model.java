@@ -17,6 +17,7 @@ import org.witness.informacam.json.JSONException;
 import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.json.JSONTokener;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Informa;
 
 import android.util.Log;
 
@@ -117,6 +118,9 @@ public class Model extends JSONObject {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void inflate(JSONObject values) throws InstantiationException, IllegalAccessException {
+		
+	//	Log.d(Informa.LOG,"Inflating model: " + getClass().getName() + " with values: " + values.toString());
+
 		fields = this.getClass().getFields();
 		for(Field f : fields) {
 			
@@ -124,6 +128,8 @@ public class Model extends JSONObject {
 				if(values.has(f.getName())) {
 					boolean isModel = false;
 
+		//			Log.d(Informa.LOG,"inflating field: " + f.getName() + " " + f.getType().getName());
+					
 					if(f.getType().getSuperclass() == Model.class) {
 						isModel = true;
 					}					
@@ -173,6 +179,7 @@ public class Model extends JSONObject {
 						((Model) val).inflate(values.getJSONObject(f.getName()));
 						f.set(this, val);
 					} else {
+						
 						f.set(this, values.get(f.getName()));
 					}
 				}

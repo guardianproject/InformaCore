@@ -195,7 +195,6 @@ public class IOService {
 		}
 		
 		info.guardianproject.iocipher.FileOutputStream fos = new info.guardianproject.iocipher.FileOutputStream(file);
-		Log.d(LOG, "touch (IOCipher) " + file.getAbsolutePath() + " (b " + is.available() + ")");
 		
 		IOUtils.copyLarge(is,  fos);
 		
@@ -587,7 +586,7 @@ public class IOService {
 	}
 	
 	public void startDCIMObserver(InformaCamEventListener listener, String parentId, ComponentName cameraComponent) {
-		InformaCam.getInstance().mediaManifest.setAllAsOld();
+		//InformaCam.getInstance().mediaManifest.setAllAsOld();
 		dcimObserver = new DCIMObserver(mContext, parentId, cameraComponent);
 	}
 	

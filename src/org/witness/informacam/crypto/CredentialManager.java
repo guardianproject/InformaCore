@@ -198,18 +198,30 @@ public class CredentialManager implements ICacheWordSubscriber {
 		}
 		
 		if(hasIOCipher) {
+			
 			try
 			{
 				informaCam.initData();
-				informaCam.user.inflate(informaCam.ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
 				
-				this.status = Codes.Status.UNLOCKED;
-				update(Codes.Messages.Home.INIT);
+			}
+			catch (Exception pge)
+			{
+				throw new RuntimeException("Could not initialize app data",pge);
+			}
+			
+			try
+			{
+				
+				informaCam.user.inflate(informaCam.ioService.getBytes(IManifest.USER, Type.INTERNAL_STORAGE));
+			
 			}
 			catch (Exception pge)
 			{
 				throw new RuntimeException("Could not initialize pgp secret key",pge);
 			}
+			
+			this.status = Codes.Status.UNLOCKED;
+			update(Codes.Messages.Home.INIT);
 			
 			informaCam.user.isLoggedIn = true;
 			informaCam.user.lastLogIn = System.currentTimeMillis();

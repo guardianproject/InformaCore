@@ -15,8 +15,11 @@ import org.witness.informacam.utils.Constants.InformaCamEventListener;
 import org.witness.informacam.utils.InformaCamBroadcaster.InformaCamStatusListener;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -25,6 +28,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -158,6 +162,26 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		
 		doInit = false;
 	}
+	// Our handler for received Intents. This will be called whenever an Intent
+	// with an action named "custom-event-name" is broadcasted.
+	private BroadcastReceiver mPhotoReceiver = new BroadcastReceiver() {
+	  @Override
+	  public void onReceive(Context context, Intent intent) {
+	    // Get extra data included in the Intent
+	    String mediaPath = intent.getStringExtra("media");
+
+		try {
+			informaCam.ioService.getDCIMDescriptor().addEntry(mediaPath, false, storageType);
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	  }
+	};
+	
 	
 	private void startCamera ()
 	{
@@ -166,12 +190,15 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			Intent intentSuckers = new Intent(this, InformaService.class);
 			intentSuckers.setAction("startsuckers");
 			startService(intentSuckers);
-			
 			informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
+			 LocalBroadcastManager.getInstance(this).registerReceiver(mPhotoReceiver,
+				      new IntentFilter("new-media"));
+						
 		}
 		
 		if (cameraIntentFlag != null)
 		{
+			
 			cameraIntent = new Intent(cameraIntentFlag);
 			cameraIntent.setComponent(cameraComponent);
 			startActivityForResult(cameraIntent, Codes.Routes.IMAGE_CAPTURE);
@@ -247,6 +274,8 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 				startService(intentSuckers);
 				
 				informaCam.ioService.stopDCIMObserver();
+				  LocalBroadcastManager.getInstance(this).unregisterReceiver(mPhotoReceiver);
+
 			}
 			
 			if (resultMedia != null)

@@ -215,10 +215,8 @@ public class KeyUtility {
 				informaCam.user.setHasCredentials(true);
 				
 			}
-			
 
 			informaCam.initData();
-			
 			
 			for(String s : informaCam.getAssets().list("includedOrganizations")) {
 				
@@ -428,6 +426,8 @@ public class KeyUtility {
 				informaCam.user.remove(IUser.EMAIL);
 				informaCam.user.hasPrivateKey = true;
 
+				informaCam.user.save();
+				
 				progress += 9;
 				data.putInt(Codes.Keys.UI.PROGRESS, progress);
 				informaCam.update(data);

@@ -122,6 +122,11 @@ public class IMedia extends Model implements MetadataEmbededListener {
 		return getThumbnail (64);
 	}
 
+	public boolean hasThumbnail ()
+	{
+		return mThumbnail != null;
+	}
+	
 	public Bitmap getThumbnail (int size)
 	{
 		if (mThumbnail == null && dcimEntry.thumbnail != null)

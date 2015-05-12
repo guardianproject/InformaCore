@@ -34,12 +34,6 @@ public class IIntakeData extends Model {
 			dataObj.put("originalHash", originalHash);
 			
 			data = Base64.encode(dataObj.toString().getBytes(), Base64.DEFAULT);
-			
-			while (!informaCam.signatureService.hasSecretKey())
-			{
-				try { Thread.sleep(500);}catch(Exception e){}// wait for PGP keys to be init'd
-			}
-			
 			signature = new String(informaCam.signatureService.signData(data));
 		} catch(Exception e) {
 			Logger.e(LOG, e);

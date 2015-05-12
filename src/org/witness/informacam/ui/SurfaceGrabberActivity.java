@@ -214,7 +214,7 @@ public class SurfaceGrabberActivity extends Activity implements OnClickListener,
 					
 					informaCam.user.put(Models.IUser.PATH_TO_BASE_IMAGE, ja);
 					informaCam.user.hasBaseImage = true;
-					
+					informaCam.user.save();
 					setResult(Activity.RESULT_OK);
 					finish();
 					return;

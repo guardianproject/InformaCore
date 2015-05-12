@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringBufferInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -63,7 +64,6 @@ import org.witness.informacam.utils.InnerBroadcaster;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -301,6 +301,7 @@ public class InformaCam extends Application {
 			signatureService.initKey(sKey);
 			
 			mediaManifest = (IMediaManifest) getModel(mediaManifest);
+			
 			if(mediaManifest.getMediaList().size() > 0) {
 				for(IMedia m : mediaManifest.getMediaList()) {
 					m.isNew = false;
@@ -412,6 +413,7 @@ public class InformaCam extends Application {
 	}
 
 	private boolean saveState(Model model, info.guardianproject.iocipher.File cache) throws IOException {
+		
 		return ioService.saveBlob(model.asJson().toString().getBytes(), cache);
 	}
 	
@@ -515,6 +517,7 @@ public class InformaCam extends Application {
 		}
 
 		if(!Arrays.equals(bytes, new byte[0])) {
+			Log.d(Informa.LOG,"Inflating model: " + model.getClass().getName());
 			model.inflate(bytes);
 		}
 
