@@ -35,6 +35,7 @@ import org.witness.informacam.InformaCam;
 import org.witness.informacam.json.JSONException;
 import org.witness.informacam.json.JSONObject;
 import org.witness.informacam.utils.Constants.App;
+import org.witness.informacam.utils.Constants.App.Informa;
 import org.witness.informacam.utils.Constants.App.Storage;
 import org.witness.informacam.utils.Constants.App.Storage.Type;
 import org.witness.informacam.utils.Constants.Logger;
@@ -236,14 +237,52 @@ public class IOUtility {
 
 		return false;
 	}
-
+	
 	public final static Bitmap getBitmapFromFile(String pathToFile, int source) throws IOException {
+		return getBitmapFromFile(pathToFile, source, -1);
+	}
+	
+	public final static Bitmap getBitmapFromFile(String pathToFile, int source,int size) throws IOException {
 		InputStream is = InformaCam.getInstance().ioService.getStream(pathToFile, source);
 
 		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inPurgeable = true;
 		
-		return BitmapFactory.decodeStream(new BufferedInputStream(is), null, opts);
+		if (size != -1)
+		{
+	        opts.inJustDecodeBounds = true;
+	        BitmapFactory.decodeStream(is, null, opts);
+			
+	     // scale the image
+	        float maxSideLength = size;
+	        float scaleFactor = Math.min(maxSideLength / opts.outWidth, maxSideLength / opts.outHeight);
+	        // do not upscale!
+	        if (scaleFactor < 1) {
+	            opts.inDensity = 10000;
+	            opts.inTargetDensity = (int) ((float) opts.inDensity * scaleFactor);
+	        }
+	        opts.inJustDecodeBounds = false;
+	
+	        try {
+	            is.close();
+	        } catch (IOException e) {
+	            // ignore
+	        }
+	        try {
+	        	is = InformaCam.getInstance().ioService.getStream(pathToFile, source);
+	        } catch (FileNotFoundException e) {
+	            Log.e(Informa.LOG, "Image not found.", e);
+	            return null;
+	        }
+		}
+		
+        Bitmap bitmap = BitmapFactory.decodeStream(is, null, opts);
+        try {
+            is.close();
+        } catch (IOException e) {
+            // ignore
+        }
+
+		return bitmap;
 	}
 
 	public static List<String> unzipFile (byte[] rawContent, String root, int destination) {

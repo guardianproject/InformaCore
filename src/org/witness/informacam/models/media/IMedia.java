@@ -98,7 +98,18 @@ public class IMedia extends Model implements MetadataEmbededListener {
 	public Bitmap getBitmap(IAsset bitmapAsset) {
 		try
 		{
-			return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source);
+			return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source, -1);
+		}
+		catch (IOException ioe)
+		{
+			return null;
+		}
+	}
+	
+	public Bitmap getBitmap(IAsset bitmapAsset, int size) {
+		try
+		{
+			return IOUtility.getBitmapFromFile(bitmapAsset.path, bitmapAsset.source, size);
 		}
 		catch (IOException ioe)
 		{
@@ -108,13 +119,13 @@ public class IMedia extends Model implements MetadataEmbededListener {
 
 	public Bitmap testImage ()
 	{
-		return getThumbnail ();
+		return getThumbnail (64);
 	}
 
-	public Bitmap getThumbnail ()
+	public Bitmap getThumbnail (int size)
 	{
 		if (mThumbnail == null && dcimEntry.thumbnail != null)
-			mThumbnail = getBitmap(dcimEntry.thumbnail);
+			mThumbnail = getBitmap(dcimEntry.thumbnail, size);
 		
 		return mThumbnail;
 	}
