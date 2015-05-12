@@ -61,4 +61,7 @@
     <string name="proof_mode_button">FINISH CAPTURE</string>
     <string name="cacheword_unlocked">Touch to open</string>
     <string name="remote_share_activated">Remote Sharing Activated</string>
+    <string name="backing_up_camerav_gallery_to_dropbox">Dropbox backup started...</string>
+    <string name="camerav_syncing_photos_and_videos_">CameraV syncing photos and videos...</string>
+    <string name="dropbox_backup_complete">Dropbox backup complete</string>
 </resources>

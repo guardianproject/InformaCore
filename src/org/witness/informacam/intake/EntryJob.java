@@ -149,10 +149,8 @@ public class EntryJob extends BackgroundTask {
 							mListener.onUpdate(message);
 						}
 						
-						if (media.dcimEntry.fileAsset.source == Storage.Type.IOCIPHER)
-						{
-							DropboxSyncManager.getInstance().uploadFileAsync(new File(media.dcimEntry.fileAsset.path));
-						}
+						DropboxSyncManager.getInstance(null).uploadFileAsync(new File(media.dcimEntry.fileAsset.path));
+						
 						
 					}
 

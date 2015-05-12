@@ -5,10 +5,19 @@ import info.guardianproject.iocipher.FileInputStream;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Properties;
 
+import org.witness.informacam.R;
+
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.dropbox.client2.DropboxAPI;
@@ -16,7 +25,6 @@ import com.dropbox.client2.DropboxAPI.DropboxLink;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.AppKeyPair;
 
 public class DropboxSyncManager {
@@ -34,17 +42,23 @@ public class DropboxSyncManager {
 	
 	private LinkedList<File> llFileQ;
 	
-	private static DropboxSyncManager mInstance;
+	private Context mContext = null;
+
+	private NotificationCompat.Builder mBuilder;
+	private final static int NOTIFY_ID = 7777;
 	
-	private DropboxSyncManager ()
+	private static DropboxSyncManager mInstance;
+	private Thread mThread = null;
+	
+	private DropboxSyncManager (Context context)
 	{
-		
+		mContext = context;
 	}
 	
-	public static synchronized DropboxSyncManager getInstance ()
+	public static synchronized DropboxSyncManager getInstance (Context context)
 	{
 		if (mInstance == null)
-			mInstance = new DropboxSyncManager ();
+			mInstance = new DropboxSyncManager (context);
 		
 		return mInstance;
 	}
@@ -71,6 +85,7 @@ public class DropboxSyncManager {
 				AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
 				AndroidAuthSession session = new AndroidAuthSession(appKeys);
 				session.setOAuth2AccessToken(mStoredAccessToken);
+				mDBApi = new DropboxAPI<AndroidAuthSession>(session);
 				
 				return session.isLinked();
 			}
@@ -85,20 +100,28 @@ public class DropboxSyncManager {
 			llFileQ = new LinkedList<File>();
 		
 		llFileQ.add(file);
-		
-		if (mDBApi != null)
+
+		showNotification();
+				
+		if (mDBApi != null && (mThread == null || (!mThread.isAlive())))
 		{
-			new Thread ()
+
+			mThread = new Thread ()
 			{
 				public void run ()
 				{
 					File file = null;
 				
+					int numUploaded = 0;
+					
 					while ( llFileQ.peek() != null)
 					{
 						file = llFileQ.pop();
 						try {
-							uploadFile(file);
+							Entry result = uploadFile(file);
+							if (result != null)
+								numUploaded++;
+							
 						} catch (FileNotFoundException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -107,15 +130,36 @@ public class DropboxSyncManager {
 							e.printStackTrace();
 						}
 					}
+
+					finishNotification(numUploaded);
 				}
-			}.start();
+			};
+			
+			mThread.start();
 		}
 	}
 	
 	@SuppressWarnings("resource")
 	private Entry uploadFile (File file) throws DropboxException, FileNotFoundException
 	{
-		FileInputStream inputStream = new FileInputStream(file);
+		InputStream inputStream = null;
+		long fileLength = -1;
+		String fileName = null;
+		
+		if (file.exists())
+		{
+			inputStream = new FileInputStream(file);
+			fileLength = file.length();
+			fileName = file.getName();
+		}
+		else if ((new java.io.File(file.getAbsolutePath())).exists())
+		{
+			java.io.File newFile = new java.io.File(file.getAbsolutePath());
+			//this is an unencrypted file... let's still use it!
+			inputStream = new java.io.FileInputStream(newFile);
+			fileLength = newFile.length();
+			fileName = newFile.getName();
+		}
 		
 		String remotePath = "/" + file.getName();
 		
@@ -135,8 +179,8 @@ public class DropboxSyncManager {
 		
 		if (!remoteExists)
 		{	
-			Entry response = mDBApi.putFile("/" + file.getName(), inputStream,
-			                                file.length(), null, null);
+			Entry response = mDBApi.putFile("/" + fileName, inputStream,
+					fileLength, null, null);
 			return response;
 		//	Log.i("DbExampleLog", "The uploaded file's rev is: " + response.rev);
 		}
@@ -230,5 +274,48 @@ public class DropboxSyncManager {
 			Log.d("Dropbox","no valid dropbox session / not linked");
 	        
 		}
+	}
+	
+	private void showNotification ()
+	{
+
+		    if (mBuilder == null)
+		    {
+				  Intent intentLaunch = mContext.getPackageManager().getLaunchIntentForPackage(mContext.getPackageName());
+					
+				    PendingIntent pendingIntent=PendingIntent.getActivity(mContext, 0,
+				    		intentLaunch, Intent.FLAG_ACTIVITY_NEW_TASK);
+
+				    mBuilder =new NotificationCompat.Builder(mContext)
+			                                .setSmallIcon(R.drawable.ic_action_backup)
+			                                .setContentTitle(mContext.getString(R.string.backing_up_camerav_gallery_to_dropbox))
+			                                .setContentIntent(pendingIntent);
+				    
+				    
+		    }
+
+		    mBuilder.setContentTitle(mContext.getString(R.string.backing_up_camerav_gallery_to_dropbox));
+		    mBuilder.setProgress(0, 100, true);
+		    mBuilder.setContentText(mContext.getString(R.string.camerav_syncing_photos_and_videos_));
+		    
+		    NotificationManager mNotificationManager =
+		    	    (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+		    	// mId allows you to update the notification later on.
+		    	mNotificationManager.notify(NOTIFY_ID,mBuilder.build());
+		    	        
+	}
+	
+	private void finishNotification (int numUploaded)
+	{
+		  NotificationManager mNotificationManager =
+		    	    (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+		  
+		    String contentText = "CameraV synced " + numUploaded + " new photos and videos.";
+		    
+		    mBuilder.setContentTitle(mContext.getString(R.string.dropbox_backup_complete));
+		    mBuilder.setContentText(contentText);
+		    mBuilder.setProgress(100, 100, false);
+		    
+		    mNotificationManager.notify(NOTIFY_ID,mBuilder.build());
 	}
 }
