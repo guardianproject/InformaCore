@@ -435,6 +435,9 @@ public class Constants {
 				public final static int DATE_ASC = 3;
 				public final static int TYPE_PHOTO = 1;
 				public final static int TYPE_VIDEO = 2;
+				public final static int SOURCE_IOCIPHER = 4;
+				public final static int SOURCE_FILE_SYSTEM = 4;
+				
 				//public final static int LOCATION = 0;
 				public final static String IS_SHOWING = "isShowing";
 			}
