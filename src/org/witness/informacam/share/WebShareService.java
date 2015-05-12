@@ -5,6 +5,7 @@ import info.guardianproject.iocipher.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -27,11 +28,13 @@ public class WebShareService extends Service {
 
 	private static SimpleWebServer mServer;
 	private File mRoot = new File("/");
-	private String mHost = "localhost";
+	private String mHost = null;
 	private int mPort = 9999;
 	
 	public final static String ACTION_SERVER_START = "start";
 	public final static String ACTION_SERVER_STOP = "stop";
+	
+	private String[] mMediaList = null;
 	
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -44,6 +47,7 @@ public class WebShareService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		
+		
 	}
 
 
@@ -52,7 +56,25 @@ public class WebShareService extends Service {
 		InformaCam informaCam = InformaCam.getInstance();
 		int sorting = Models.IMediaManifest.Sort.DATE_DESC;		
 		List<IMedia> listMedia = informaCam.mediaManifest.sortBy(sorting);
-		mServer.setMedia(this, listMedia);
+		
+		if (mMediaList != null && mMediaList.length > 0)
+		{
+			ArrayList<IMedia> listMediaSelect = new ArrayList<IMedia>();
+			
+			for (String mediaId : mMediaList)
+			{
+				for (IMedia media : listMedia)
+					if (media._id.equals(mediaId))
+						listMediaSelect.add(media);
+			}
+			
+			mServer.setMedia(this, listMediaSelect);
+		}
+		else
+		{
+			
+			mServer.setMedia(this, listMedia);
+		}
 		
 	}
 	
@@ -62,8 +84,13 @@ public class WebShareService extends Service {
 		
 		if (intent.getAction() != null)
 		{
+
 			if (intent.getAction().equals(ACTION_SERVER_START))
 			{
+
+				if (intent.hasExtra("medialist"))
+					mMediaList = intent.getStringArrayExtra("medialist");
+				
 				if (intent.hasExtra("host"))
 					mHost = intent.getExtras().getString("host");
 				

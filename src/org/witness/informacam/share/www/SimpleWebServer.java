@@ -1,11 +1,11 @@
 package org.witness.informacam.share.www;
 
 import info.guardianproject.iocipher.File;
-import info.guardianproject.iocipher.FileInputStream;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringBufferInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -19,6 +19,7 @@ import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 
 import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.utils.Constants.App.Storage;
 
 import android.content.Context;
 import android.net.Uri;
@@ -270,6 +271,8 @@ public class SimpleWebServer extends NanoHTTPD {
     }
 
     private Response respond(Map<String, String> headers, String uri) {
+    	
+    	    
         // Remove URL arguments
         uri = uri.trim().replace(File.separatorChar, '/');
         if (uri.indexOf('?') >= 0) {
@@ -281,19 +284,116 @@ public class SimpleWebServer extends NanoHTTPD {
             return createResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "FORBIDDEN: Won't serve ../ for security reasons.");
         }
 
-        boolean canServeUri = false;
-        File homeDir = null;
-        List<File> roots = getRootDirs();
-        for (int i = 0; !canServeUri && i < roots.size(); i++) {
-            homeDir = roots.get(i);
-            canServeUri = canServeUri(uri, homeDir);
-        }
-        if (!canServeUri) {
-            return createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Error 404, file not found.");
-        }
-
         // Browsers get confused without '/' after the directory, send a redirect.
-        File f = new File(homeDir, uri);
+        java.io.File f = null;
+        
+        if (uri.length() > 0)
+        {
+            String[] uriParts = uri.split("\\.");
+
+        	String mediaId = uriParts[0].substring(1);
+	        IMedia media = getMediaFile(mediaId);
+	        
+	        if (media != null)
+	        {
+	        	if (uriParts.length == 1)
+	        	{
+			        if (media.dcimEntry.fileAsset.source == Storage.Type.IOCIPHER)
+			        	f = new info.guardianproject.iocipher.File(media.dcimEntry.fileAsset.path);
+			        else //if file system
+			        	f = new java.io.File(media.dcimEntry.fileAsset.path);
+	        	}
+	        	else if (uriParts[1].equals("thumb"))
+	        	{
+	        		if (media.dcimEntry.fileAsset.source == Storage.Type.IOCIPHER)
+			        	f = new info.guardianproject.iocipher.File(media.dcimEntry.thumbnail.path);
+			        else //if file system
+			        	f = new java.io.File(media.dcimEntry.thumbnail.path);
+	        	}
+	        	else if (uriParts[1].equals("j3m"))
+	        	{
+	        		String j3m;
+					try {
+						j3m = media.buildJ3M(mContext, false, null);
+					
+		        		String mime = "text/plain";
+		        		InputStream is = new StringBufferInputStream(j3m);
+		        		Response res = createResponse(Response.Status.OK, mime, is);
+	                    res.addHeader("Content-Length", "" + j3m.length());
+	                    return res;
+	                    
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (InstantiationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                    
+                    
+	        	}
+	        	else if (uriParts[1].equals("csv"))
+	        	{
+	        		String j3m;
+					try {
+						j3m = media.buildCSV(mContext, null);
+					
+		        		String mime = "text/plain";
+		        		InputStream is = new StringBufferInputStream(j3m);
+		        		Response res = createResponse(Response.Status.OK, mime, is);
+	                    res.addHeader("Content-Length", "" + j3m.length());
+	                    return res;
+	                    
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (InstantiationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                    
+                    
+	        	}
+	        	
+	        }
+	        else
+	        {
+	            boolean canServeUri = false;
+	            File homeDir = null;
+	            List<File> roots = getRootDirs();
+	            for (int i = 0; !canServeUri && i < roots.size(); i++) {
+	                homeDir = roots.get(i);
+	                canServeUri = canServeUri(uri, homeDir);
+	            }
+	            if (!canServeUri) {
+	                return createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Error 404, file not found.");
+	            }
+
+	        	f = new info.guardianproject.iocipher.File(homeDir, uri);
+	        }
+        }
+        else
+        {
+            boolean canServeUri = false;
+            File homeDir = null;
+            List<File> roots = getRootDirs();
+            for (int i = 0; !canServeUri && i < roots.size(); i++) {
+                homeDir = roots.get(i);
+                canServeUri = canServeUri(uri, homeDir);
+            }
+            if (!canServeUri) {
+                return createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Error 404, file not found.");
+            }
+
+           	f = new info.guardianproject.iocipher.File(homeDir, uri);
+        }
+        
         if (f.isDirectory() && !uri.endsWith("/")) {
             uri += "/";
             Response res = createResponse(Response.Status.REDIRECT, NanoHTTPD.MIME_HTML, "<html><body>Redirected: <a href=\"" +
@@ -350,7 +450,7 @@ public class SimpleWebServer extends NanoHTTPD {
     /**
      * Serves file from homeDir and its' subdirectories (only). Uses only URI, ignores all headers and HTTP parameters.
      */
-    Response serveFile(String uri, Map<String, String> header, File file, String mime) {
+    Response serveFile(String uri, Map<String, String> header, java.io.File file, String mime) {
         Response res;
         try {
             // Calculate etag
@@ -391,12 +491,26 @@ public class SimpleWebServer extends NanoHTTPD {
                     }
 
                     final long dataLen = newLen;
-                    FileInputStream fis = new FileInputStream(file) {
-                        @Override
-                        public int available() throws IOException {
-                            return (int) dataLen;
-                        }
-                    };
+                    java.io.InputStream fis = null;
+                    
+                    if (file instanceof info.guardianproject.iocipher.File)
+                    {
+	                     fis = new info.guardianproject.iocipher.FileInputStream(file.getAbsolutePath()) {
+	                        @Override
+	                        public int available() throws IOException {
+	                            return (int) dataLen;
+	                        }
+	                    };
+                    }
+                    else
+                    {
+                    	fis = new java.io.FileInputStream(file) {
+	                        @Override
+	                        public int available() throws IOException {
+	                            return (int) dataLen;
+	                        }
+	                    };
+                    }
                     fis.skip(startFrom);
 
                     res = createResponse(Response.Status.PARTIAL_CONTENT, mime, fis);
@@ -408,7 +522,18 @@ public class SimpleWebServer extends NanoHTTPD {
                 if (etag.equals(header.get("if-none-match")))
                     res = createResponse(Response.Status.NOT_MODIFIED, mime, "");
                 else {
-                    res = createResponse(Response.Status.OK, mime, new FileInputStream(file));
+                	java.io.InputStream fis = null;
+                    
+                    if (file instanceof info.guardianproject.iocipher.File)
+                    {
+	                     fis = new info.guardianproject.iocipher.FileInputStream(file.getAbsolutePath());
+                    }
+                    else
+                    {
+                    	fis = new java.io.FileInputStream(file);	                      
+                    }
+                	
+                    res = createResponse(Response.Status.OK, mime, fis);
                     res.addHeader("Content-Length", "" + fileLen);
                     res.addHeader("ETag", etag);
                 }
@@ -444,7 +569,7 @@ public class SimpleWebServer extends NanoHTTPD {
         return res;
     }
 
-    private String findIndexFileInDirectory(File directory) {
+    private String findIndexFileInDirectory(java.io.File directory) {
         for (String fileName : INDEX_FILE_NAMES) {
             File indexFile = new File(directory, fileName);
             if (indexFile.exists()) {
@@ -463,8 +588,19 @@ public class SimpleWebServer extends NanoHTTPD {
     	mContext = context;
     }
     
+    private IMedia getMediaFile (String id)
+    {
+    	for (IMedia media : mListMedia)
+    	{
+    		if (media._id.equals(id))
+    			return media;
+    	}
+    	
+    	return null;
+    }
+    
     //we aren't really going to show any directories, just display our shared media
-    private String listDirectory(String strUri, File f) {
+    private String listDirectory(String strUri, java.io.File f) {
     	
     	Uri uri = Uri.parse(strUri);
     	
@@ -488,8 +624,8 @@ public class SimpleWebServer extends NanoHTTPD {
                 	  
                 	  IMedia media = mListMedia.get(i);
                   	
-                	  String pathMedia = media.dcimEntry.fileAsset.path;
-                	  String pathThumb = media.dcimEntry.thumbnail.path;
+                	  String pathMedia = media._id;
+                	  
                 	  StringBuffer desc = new StringBuffer();
                 	  desc.append("<b>").append(media.dcimEntry.fileAsset.name).append("</b><br/><br/>");
 					try {
@@ -509,7 +645,7 @@ public class SimpleWebServer extends NanoHTTPD {
   	                    msg.append("<div class=\"thumbnailBorder\">");
   	                    
   	                    msg.append("<a href=\"").append(encodeUri(pathMedia))
-  	                    .append("\"><img src=\"").append(encodeUri(pathThumb)).append("\"/></a><br/>");
+  	                    .append("\"><img src=\"").append(encodeUri(pathMedia + ".thumb")).append("\"/></a><br/>");
   	                    
   	                  msg.append("<a href=\"").append(encodeUri(pathMedia)).append("\">Download Media</a>");
   	                  msg.append(" | ");
