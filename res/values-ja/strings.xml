@@ -60,4 +60,5 @@
   <string name="proof_mode_string">プルーフモードがアクティブになりました。 「完了」するため、この画面に戻るには、メニューまたは通知を使用してください。</string>
   <string name="proof_mode_button">キャプチャ完了</string>
   <string name="cacheword_unlocked">タッチして開く</string>
+  <string name="remote_share_activated">リモート共有がアクティブになりました</string>
 </resources>

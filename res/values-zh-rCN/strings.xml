@@ -60,4 +60,5 @@
   <string name="proof_mode_string">证明模式现已激活。使用菜单或通知返回此屏幕以“完成”。</string>
   <string name="proof_mode_button">完成捕捉</string>
   <string name="cacheword_unlocked">触摸打开</string>
+  <string name="remote_share_activated">远程共享已激活</string>
 </resources>
