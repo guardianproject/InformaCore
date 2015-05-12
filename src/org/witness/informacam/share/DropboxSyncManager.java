@@ -6,13 +6,15 @@ import info.guardianproject.iocipher.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringBufferInputStream;
 import java.util.LinkedList;
 import java.util.Properties;
 
 import org.witness.informacam.R;
+import org.witness.informacam.models.media.IMedia;
+import org.witness.informacam.utils.Constants.App.Storage;
 
 import android.app.Activity;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -40,7 +42,7 @@ public class DropboxSyncManager {
 	
 	private String mStoredAccessToken;
 	
-	private LinkedList<File> llFileQ;
+	private LinkedList<IMedia> llMediaQ;
 	
 	private Context mContext = null;
 
@@ -94,12 +96,12 @@ public class DropboxSyncManager {
 		return true;
 	}
 	
-	public synchronized void uploadFileAsync (File file) 
+	public synchronized void uploadMediaAsync (IMedia media) 
 	{
-		if (llFileQ == null)
-			llFileQ = new LinkedList<File>();
+		if (llMediaQ == null)
+			llMediaQ = new LinkedList<IMedia>();
 		
-		llFileQ.add(file);
+		llMediaQ.add(media);
 
 		showNotification();
 				
@@ -110,17 +112,21 @@ public class DropboxSyncManager {
 			{
 				public void run ()
 				{
-					File file = null;
 				
+					IMedia media = null;
+					
 					int numUploaded = 0;
 					
-					while ( llFileQ.peek() != null)
+					while ( llMediaQ.peek() != null)
 					{
-						file = llFileQ.pop();
+						media = llMediaQ.pop();
 						try {
-							Entry result = uploadFile(file);
+							Entry result = uploadMedia (media);
 							if (result != null)
 								numUploaded++;
+							
+							uploadMetadata(media,"j3m");
+							uploadMetadata(media,"csv");
 							
 						} catch (FileNotFoundException e) {
 							// TODO Auto-generated catch block
@@ -140,28 +146,30 @@ public class DropboxSyncManager {
 	}
 	
 	@SuppressWarnings("resource")
-	private Entry uploadFile (File file) throws DropboxException, FileNotFoundException
+	private Entry uploadMedia (IMedia media) throws DropboxException, FileNotFoundException
 	{
 		InputStream inputStream = null;
 		long fileLength = -1;
 		String fileName = null;
-		
-		if (file.exists())
+		java.io.File file = null;
+			
+		if (media.dcimEntry.fileAsset.source == Storage.Type.IOCIPHER)
 		{
-			inputStream = new FileInputStream(file);
+			file = new File (media.dcimEntry.fileAsset.path);
+			inputStream = new FileInputStream(file.getAbsolutePath());
 			fileLength = file.length();
 			fileName = file.getName();
 		}
-		else if ((new java.io.File(file.getAbsolutePath())).exists())
+		else
 		{
-			java.io.File newFile = new java.io.File(file.getAbsolutePath());
+			file = new java.io.File (media.dcimEntry.fileAsset.path);			
 			//this is an unencrypted file... let's still use it!
-			inputStream = new java.io.FileInputStream(newFile);
-			fileLength = newFile.length();
-			fileName = newFile.getName();
+			inputStream = new java.io.FileInputStream(file);
+			fileLength = file.length();
+			fileName = file.getName();
 		}
 		
-		String remotePath = "/" + file.getName();
+		String remotePath = "/" + fileName;
 		
 		boolean remoteExists = false;
 		
@@ -179,9 +187,58 @@ public class DropboxSyncManager {
 		
 		if (!remoteExists)
 		{	
-			Entry response = mDBApi.putFile("/" + fileName, inputStream,
+			Entry response = mDBApi.putFile(remotePath, inputStream,
 					fileLength, null, null);
 			return response;
+		//	Log.i("DbExampleLog", "The uploaded file's rev is: " + response.rev);
+		}
+		
+		return null;
+	}
+	
+	@SuppressWarnings("resource")
+	private Entry uploadMetadata (IMedia media, String type) throws DropboxException, FileNotFoundException
+	{
+		String fileName = new File(media.dcimEntry.fileAsset.path).getName();
+		
+		String remotePath = "/" + fileName + "." + type;
+		
+		boolean remoteExists = false;
+		
+		try
+		{
+			DropboxLink dl = mDBApi.media(remotePath, true);
+			if (dl != null)
+				remoteExists = true;
+			
+		}
+		catch (Exception e)
+		{
+			remoteExists = false;
+		}
+		
+		if (!remoteExists)
+		{	
+			try {
+				String metadata = null;
+				
+				if (type.equals("j3m"))
+					metadata = media.buildJ3M(mContext, false, null);
+				else if (type.equals("csv"))
+					metadata = media.buildCSV(mContext, null);
+				
+				StringBufferInputStream inputStream = new StringBufferInputStream(metadata);
+				Entry response = mDBApi.putFile(remotePath, inputStream,
+						metadata.length(), null, null);
+				return response;
+				
+			} catch (InstantiationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		//	Log.i("DbExampleLog", "The uploaded file's rev is: " + response.rev);
 		}
 		

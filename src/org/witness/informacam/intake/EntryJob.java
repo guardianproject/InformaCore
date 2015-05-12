@@ -149,7 +149,7 @@ public class EntryJob extends BackgroundTask {
 							mListener.onUpdate(message);
 						}
 						
-						DropboxSyncManager.getInstance(null).uploadFileAsync(new File(media.dcimEntry.fileAsset.path));
+						DropboxSyncManager.getInstance(null).uploadMediaAsync(media);
 						
 						
 					}
