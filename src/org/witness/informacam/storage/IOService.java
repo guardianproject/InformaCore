@@ -374,12 +374,12 @@ public class IOService {
 			
 			try {
 				is = new info.guardianproject.iocipher.FileInputStream(file);
-				Log.d(LOG, "getting Stream (" + pathToData + ") available: " + is.available());
+				//Log.d(LOG, "getting Stream (" + pathToData + ") available: " + is.available());
 			} catch (FileNotFoundException e) {
-				Log.d(LOG, "no, no bytes (" + pathToData + ")");
+				//Log.d(LOG, "no, no bytes (" + pathToData + ")");
 				return null;
 			} catch (Exception e) {
-				Log.e(LOG, e.toString());
+				//Log.e(LOG, e.toString());
 			}
 
 			break;
