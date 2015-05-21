@@ -43,6 +43,7 @@ public class WebShareService extends Service {
 	WakeLock mWakeLock;
 	private final static String TAG = "WebShareService";
 	
+	private static String mOnionSite = null;
 	
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -140,7 +141,8 @@ public class WebShareService extends Service {
 		        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
 		        mWakeLock.acquire();
 		        
-				mServer = new SimpleWebServer(mHost,mPort,mRoot,false);
+		        boolean logQuiet = true;
+				mServer = new SimpleWebServer(mHost,mPort,mRoot,logQuiet);
 				showNotification ();
 				initMediaShare();
 				
@@ -190,31 +192,15 @@ public class WebShareService extends Service {
 		return (mServer != null && mServer.isAlive());
 	}
 
-	public static String[] getLocalIpAddresses(){
-		   try {
-			   ArrayList<String> alAddresses = new ArrayList<String>();
-			   
-		       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();  
-		       en.hasMoreElements();) {
-		       NetworkInterface intf = en.nextElement();
-		           for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-		           InetAddress inetAddress = enumIpAddr.nextElement();
-		                if (!inetAddress.isLoopbackAddress()&& InetAddressUtils.isIPv4Address(inetAddress.getHostAddress())) {
-		                	
-		                	alAddresses.add(inetAddress.getHostAddress());
-		                
-		                
-		                }
-		           }
-		       }
-		       
-		       return alAddresses.toArray(new String[alAddresses.size()]);
-		       
-		       } catch (Exception ex) {
-		          Log.e("IP Address", ex.toString());
-		      }
-		      return null;
-		}
+	public static String getOnionSite ()
+	{
+		return mOnionSite;
+	}
+	
+	public static void setOnionSite (String onionSite)
+	{
+		mOnionSite = onionSite;
+	}
 	
 	private void showNotification ()
 	{
