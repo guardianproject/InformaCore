@@ -351,8 +351,11 @@ public class Constants {
 				public static final String GPS_ALTITUDE = "gps_altitude";
 				public static final String GPS_SPEED = "gps_speed";
 				public static final String GPS_ACCURACY = "gps_accuracy";
+				public static final String GPS_TIME = "gps_time";
+				
 				public static final String NMEA_TIME = "nmeatime";
 				public static final String NMEA_MESSAGE = "nmeamessage";
+				
 			}
 		}
 	}

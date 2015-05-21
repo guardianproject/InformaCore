@@ -188,7 +188,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 		if (controlsInforma)
 		{
 			Intent intentSuckers = new Intent(this, InformaService.class);
-			intentSuckers.setAction("startsuckers");
+			intentSuckers.setAction(InformaService.ACTION_START_SUCKERS);
 			startService(intentSuckers);
 			informaCam.ioService.startDCIMObserver(CameraActivity.this, parentId, cameraComponent);
 			 LocalBroadcastManager.getInstance(this).registerReceiver(mPhotoReceiver,
@@ -270,7 +270,7 @@ public class CameraActivity extends Activity implements InformaCamStatusListener
 			{
 
 				Intent intentSuckers = new Intent(this, InformaService.class);
-				intentSuckers.setAction("stopsuckers");
+				intentSuckers.setAction(InformaService.ACTION_STOP_SUCKERS);
 				startService(intentSuckers);
 				
 				informaCam.ioService.stopDCIMObserver();

@@ -95,6 +95,10 @@ public class InformaService extends Service implements SuckerCacheListener {
 	Intent stopIntent = new Intent().setAction(Actions.INFORMA_STOP);
 
 	private static InformaService mInstance = null;
+
+	public final static String ACTION_START_SUCKERS = "startsuckers";
+	public final static String ACTION_STOP_SUCKERS = "stopsuckers";
+	public final static String ACTION_RESET_CACHE = "resetcache";	
 	
 	private InformaBroadcaster[] broadcasters = {
 			new InformaBroadcaster(new IntentFilter(BluetoothDevice.ACTION_FOUND)),
@@ -156,15 +160,15 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		if (intent != null && intent.getAction()!=null)
 		{
-			if (intent.getAction().equals("startsuckers"))
+			if (intent.getAction().equals(ACTION_START_SUCKERS))
 			{
 				this.startAllSuckers();
 			}
-			else if (intent.getAction().equals("stopsuckers"))
+			else if (intent.getAction().equals(ACTION_STOP_SUCKERS))
 			{
 				this.stopAllSuckers();
 			}
-			else if (intent.getAction().equals("resetcache"))
+			else if (intent.getAction().equals(ACTION_RESET_CACHE))
 			{
 				resetCacheFiles();
 			}
@@ -174,6 +178,8 @@ public class InformaService extends Service implements SuckerCacheListener {
 		
 		
 	}
+	
+	
 	
 
 	/**
@@ -284,6 +290,7 @@ public class InformaService extends Service implements SuckerCacheListener {
 	private void initCache() {
 		try {
 			cacheFile = new info.guardianproject.iocipher.File(cacheRoot, MediaHasher.hash(new String(startTime + "_" + System.currentTimeMillis()).getBytes(), "MD5"));
+			cacheFiles = new ArrayList<String>();
 			cacheFiles.add(cacheFile.getAbsolutePath());
 		} catch (NoSuchAlgorithmException e) {
 			Logger.e(LOG, e);

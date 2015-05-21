@@ -87,7 +87,7 @@ public class IDCIMDescriptor extends Model {
 			if(!isThumbnail) {
 				entry.timeCaptured = cursor.getLong(cursor.getColumnIndexOrThrow(MediaColumns.DATE_ADDED));
 				if(entry.timeCaptured < startTime) {
-					Logger.d(LOG, "this media occured too early to count");
+				//	Logger.d(LOG, "this media occured too early to count");
 					cursor.close();
 
 					return;
@@ -136,7 +136,7 @@ public class IDCIMDescriptor extends Model {
 				intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));
 
 				Intent intentSuckers = new Intent(informaCam, InformaService.class);
-				intentSuckers.setAction("resetcache");
+				intentSuckers.setAction(InformaService.ACTION_RESET_CACHE);
 				informaCam.startService(intentSuckers);
 			}
 			
@@ -212,7 +212,7 @@ public class IDCIMDescriptor extends Model {
 			intakeIntent.putExtra(Codes.Extras.INFORMA_CACHE, cacheFiles.toArray(new String[cacheFiles.size()]));			
 
 			Intent intentSuckers = new Intent(informaCam, InformaService.class);
-			intentSuckers.setAction("resetcache");
+			intentSuckers.setAction(InformaService.ACTION_RESET_CACHE);
 			informaCam.startService(intentSuckers);
 			
 			intakeIntent.putExtra(Codes.Extras.TIME_OFFSET, timeOffset);

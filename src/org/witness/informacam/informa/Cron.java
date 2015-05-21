@@ -27,7 +27,7 @@ public class Cron extends Service {
 		Log.d(LOG, "Cron.onStartCommand()");
 		
 		Intent intentSuckers = new Intent(this, InformaService.class);
-		intentSuckers.setAction("startsuckers");
+		intentSuckers.setAction(InformaService.ACTION_START_SUCKERS);
 		this.startService(intentSuckers);
 		
 			
@@ -35,7 +35,7 @@ public class Cron extends Service {
 			@Override
 			public void run() {
 				Intent intentSuckers = new Intent(Cron.this, InformaService.class);
-				intentSuckers.setAction("stopsuckers");
+				intentSuckers.setAction(InformaService.ACTION_STOP_SUCKERS);
 				startService(intentSuckers);
 			}
 		},  (long) (60 * 1000 * Suckers.DEFAULT_CRON_ACTIVE_INTERVAL));
@@ -58,7 +58,7 @@ public class Cron extends Service {
 		Log.d(LOG, "Cron.onDestroy()");
 		
 		Intent intentSuckers = new Intent(Cron.this, InformaService.class);
-		intentSuckers.setAction("stopsuckers");
+		intentSuckers.setAction(InformaService.ACTION_STOP_SUCKERS);
 		startService(intentSuckers);
 	}
 

@@ -58,18 +58,20 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 		if (mLastLocation != null){
 			try {
 				
-			if (mLastLocation.hasAccuracy())			
+				if (mLastLocation.hasAccuracy())			
 					iLogPack.put(Geo.Keys.GPS_ACCURACY, mLastLocation.getAccuracy()+"");
+				
+				if (mLastLocation.hasAltitude())			
+					iLogPack.put(Geo.Keys.GPS_ALTITUDE, mLastLocation.getAltitude()+"");
 			
-			if (mLastLocation.hasAltitude())			
-				iLogPack.put(Geo.Keys.GPS_ALTITUDE, mLastLocation.getAltitude()+"");
-		
-			if (mLastLocation.hasSpeed())			
-				iLogPack.put(Geo.Keys.GPS_SPEED, mLastLocation.getSpeed()+"");
-		
-			if (mLastLocation.hasBearing())			
-				iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
+				if (mLastLocation.hasSpeed())			
+					iLogPack.put(Geo.Keys.GPS_SPEED, mLastLocation.getSpeed()+"");
 			
+				if (mLastLocation.hasBearing())			
+					iLogPack.put(Geo.Keys.GPS_BEARING, mLastLocation.getBearing()+"");	
+				
+				iLogPack.put(Geo.Keys.GPS_TIME, mLastLocation.getTime()+"");	
+				
 			} catch (Exception e) {
 				Log.d(LOG,"json exception in location data",e);
 			}
@@ -90,17 +92,20 @@ public class GeoFusedSucker extends GeoSucker implements ConnectionCallbacks, On
 		
 		if (mLastLocation != null) {
 			return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
-		} else {
+		} 
+		/**
+		 //TODO don't get the last location, as that can be old and cached
+		else {
 			
 			if (mLocationClient.isConnected())
 			{				
 				mLastLocation = mLocationClient.getLastLocation();
-			
+				
 				if (mLastLocation != null)
 					return new double[] {mLastLocation.getLatitude(),mLastLocation.getLongitude()};
 				
 			}
-		}
+		}*/
 		
 		//nothing here right now
 		return null;

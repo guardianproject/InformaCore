@@ -98,7 +98,7 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 	{
 
 		Intent intentSuckers = new Intent(this, InformaService.class);
-		intentSuckers.setAction("stopsuckers");
+		intentSuckers.setAction(InformaService.ACTION_STOP_SUCKERS);
 		startService(intentSuckers);
 		
 		informaCam.ioService.stopDCIMObserver();
@@ -129,7 +129,7 @@ public class AlwaysOnActivity extends Activity implements InformaCamStatusListen
 		
 
 		Intent intentSuckers = new Intent(this, InformaService.class);
-		intentSuckers.setAction("startsuckers");
+		intentSuckers.setAction(InformaService.ACTION_START_SUCKERS);
 		startService(intentSuckers);
 		
 		informaCam.ioService.startDCIMObserver(AlwaysOnActivity.this, parentId, cameraComponent);
