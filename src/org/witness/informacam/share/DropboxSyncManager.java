@@ -59,13 +59,18 @@ public class DropboxSyncManager {
 	
 	public static synchronized DropboxSyncManager getInstance (Context context)
 	{
-		if (mInstance == null)
+		if (mInstance == null && context != null)
 			mInstance = new DropboxSyncManager (context);
 		
 		return mInstance;
 	}
 	
-	public boolean init (Activity a)
+	public boolean isSyncing ()
+	{
+		return mDBApi != null;
+	}
+	
+	public boolean start (Activity a)
 	{
 		if (mDBApi == null)
 		{
@@ -96,6 +101,11 @@ public class DropboxSyncManager {
 		return true;
 	}
 	
+	public void stop ()
+	{
+		mDBApi = null;
+	}
+	
 	public synchronized void uploadMediaAsync (IMedia media) 
 	{
 		if (mDBApi != null) //if there is no active session, then ignore
@@ -119,7 +129,7 @@ public class DropboxSyncManager {
 						
 						int numUploaded = 0;
 						
-						while ( llMediaQ.peek() != null)
+						while (mDBApi != null &&  llMediaQ.peek() != null)
 						{
 							media = llMediaQ.pop();
 							try {
