@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,9 +57,16 @@ public class IOUtility {
 	private final static String LOG = App.Storage.LOG;
 	
 	public static String buildPublicPath(String[] segments) {
-		//Logger.d(LOG, Storage.EXTERNAL_DIR);
+		
+		java.io.File fileExt = new java.io.File(Storage.EXTERNAL_DIR);
+		if (!fileExt.canWrite());
+		{
+			fileExt = new File("/sdcard/InformaCam");
+		}
+		
 		String builtPath = buildPath(segments); 
-		return StringUtils.join(new String[] {Storage.EXTERNAL_DIR, builtPath }, builtPath.startsWith("/") ? "" : "/");
+		
+		return StringUtils.join(new String[] {fileExt.getAbsolutePath(), builtPath }, builtPath.startsWith("/") ? "" : "/");
 	}
 	
 	public static String buildPath(String[] segments) {
